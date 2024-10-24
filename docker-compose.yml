@@ -128,7 +128,7 @@ x-robot: &robot
     - -x
     - -c
     - |
-      uv sync --frozen --reinstall-package cogip-tools -C build-dir=/src/build/$${ROBOT_ID}
+      uv sync --verbose --frozen --reinstall-package cogip-tools -C build-dir=/src/build/$${ROBOT_ID}
       uv run cogip-server &
       wait-for-it -t 0 localhost:809$${ROBOT_ID}
       uv run cogip-planner &
@@ -401,6 +401,10 @@ services:
     environment:
       << : *env-robot
       ROBOT_ID: 1
+        #depends_on:
+        #  build_wheel:
+        #    required: false
+        #    condition: service_completed_successfully
     profiles:
       - robot1
 

@@ -318,7 +318,7 @@ class Planner:
                         else:
                             # Intermediate pose
                             match self.game_context.avoidance_strategy:
-                                case AvoidanceStrategy.Disabled | AvoidanceStrategy.VisibilityRoadMapQuadPid:
+                                case AvoidanceStrategy.Disabled | AvoidanceStrategy.VisibilityRoadMapQuadPid | AvoidanceStrategy.VisibilityRoadMapCpp:
                                     new_controller = ControllerEnum.QUADPID
                                 case AvoidanceStrategy.VisibilityRoadMapLinearPoseDisabled:
                                     new_controller = ControllerEnum.LINEAR_POSE_DISABLED
@@ -457,7 +457,6 @@ class Planner:
             self.shared_properties["pose_order"] = None
         else:
             self.shared_properties["pose_order"] = new_pose.path_pose.model_dump(exclude_unset=True)
-            self.shared_properties["last_avoidance_pose_current"] = None
 
     async def set_pose_reached(self):
         """
@@ -465,8 +464,7 @@ class Planner:
         """
         logger.debug("Planner: set_pose_reached()")
 
-        self.shared_properties["last_avoidance_pose_current"] = None
-
+        logger.info(f"Planner: Intermediate {len(self.avoidance_path)}")
         if len(self.avoidance_path) > 1:
             # The pose reached is intermediate, do nothing.
             return
@@ -581,11 +579,9 @@ class Planner:
             bb_radius = radius + self.properties.robot_width / 2
 
         obstacle = models.DynRoundObstacle(
-            x=center.x,
-            y=center.y,
-            radius=radius,
+            x=center.x, y=center.y,angle=0,
+            radius=radius
         )
-        obstacle.create_bounding_box(bb_radius, self.properties.obstacle_bb_vertices)
 
         return obstacle
 
@@ -614,8 +610,8 @@ class Planner:
                 for obstacle in obstacles
                 if table.contains(obstacle)
             ]
-        self.obstacles += [p for p in self.game_context.plant_supplies.values() if p.enabled and table.contains(p)]
-        self.obstacles += [p for p in self.game_context.pot_supplies.values() if p.enabled and table.contains(p)]
+        #self.obstacles += [p for p in self.game_context.plant_supplies.values() if p.enabled and table.contains(p)]
+        #self.obstacles += [p for p in self.game_context.pot_supplies.values() if p.enabled and table.contains(p)]
         self.obstacles += [p for p in self.game_context.fixed_obstacles if table.contains(p)]
 
         self.shared_properties["obstacles"] = [

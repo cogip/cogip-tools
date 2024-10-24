@@ -24,6 +24,8 @@ def avoidance_process(
     last_emitted_pose_order: models.PathPose | None = None
     start = time.time() - shared_properties["path_refresh_interval"] + 0.01
 
+    path = []
+
     while not shared_properties["exiting"]:
         queue_sio.put(("avoidance_path", [pose.pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
         path_refresh_interval = shared_properties["path_refresh_interval"]
@@ -58,6 +60,7 @@ def avoidance_process(
             logger.debug("Avoidance: Skip path update (speed test)")
             continue
 
+
         if last_avoidance_pose_current:
             # Check if pose order is far enough from current pose
             dist_xy = math.dist((pose_current.x, pose_current.y), (pose_order.x, pose_order.y))
@@ -89,22 +92,8 @@ def avoidance_process(
         else:
             dyn_obstacles = TypeAdapter(models.DynObstacleList).validate_python(shared_properties["obstacles"])
 
-        if any([obstacle.contains(pose_current.pose) for obstacle in dyn_obstacles]):
-            logger.debug("Avoidance: pose current in obstacle")
-            path = []
-        elif any([obstacle.contains(pose_order.pose) for obstacle in dyn_obstacles]):
-            logger.debug("Avoidance: pose order in obstacle")
-            path = []
-        else:
-            shared_properties["last_avoidance_pose_current"] = (pose_current.x, pose_current.y)
-
-            if pose_current.x == pose_order.x and pose_current.y == pose_order.y:
-                # If the pose order is just a rotation from the pose current, the avoidance will not find any path,
-                # so set the path manually
-                logger.debug("Avoidance: rotation only")
-                path = [pose_current, pose_order]
-            else:
-                path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
+        if len(path) < 2 or avoidance.check_recompute(pose_current, pose_order):
+            path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
 
         if len(path) == 0:
             logger.debug("Avoidance: No path found")
@@ -153,7 +142,7 @@ def avoidance_process(
 
         last_emitted_pose_order = new_pose_order.model_copy()
 
-        logger.debug("Avoidance: Update path")
+        logger.info("Avoidance: Update path")
         queue_sio.put(("path", [pose.pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
         queue_sio.put(("pose_order", new_pose_order.model_dump(exclude_defaults=True)))
 
