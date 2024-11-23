@@ -23,7 +23,7 @@
 #endif
 
 #ifndef OBSTACLE_BOUNDING_BOX_MARGIN
-#  define OBSTACLE_BOUNDING_BOX_MARGIN    0.2  /**< bounding box margin in percent of the radius */
+#  define OBSTACLE_BOUNDING_BOX_MARGIN    1.5  /**< bounding box margin in percent of the radius */
 #endif
 
 namespace cogip {
@@ -77,6 +77,9 @@ public:
 
     /// Enable or disable obstacle.
     void enable(bool enabled) { enabled_ = enabled; };
+
+    /// Get bounding box
+    const BoundingBox& bounding_box() const { return bounding_box_; }
 
 protected:
     cogip_defs::Pose center_;           ///< obstacle center

@@ -30,6 +30,9 @@ public:
         );
 
 private:
+    /// Update bounding box.
+    void update_bounding_box();
+
     double length_x_;                     ///< length on X axis when angle = 0
     double length_y_;                     ///< length on Y axis when angle = 0
 };

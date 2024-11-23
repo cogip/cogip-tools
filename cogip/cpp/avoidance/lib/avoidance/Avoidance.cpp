@@ -58,7 +58,7 @@ void Avoidance::validateObstaclePoints()
             }
 
             /* Validate bounding box points */
-            for (auto &point: obstacle) {
+            for (auto &point: obstacle.bounding_box()) {
                 if (!_borders.is_point_inside(point)) {
                     continue;
                 }

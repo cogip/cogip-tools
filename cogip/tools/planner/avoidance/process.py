@@ -92,8 +92,8 @@ def avoidance_process(
         else:
             dyn_obstacles = TypeAdapter(models.DynObstacleList).validate_python(shared_properties["obstacles"])
 
-        if len(path) < 2 or avoidance.check_recompute(pose_current, pose_order):
-            path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
+        #if len(path) == 0 or avoidance.check_recompute(pose_current, pose_order):
+        path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
 
         if len(path) == 0:
             logger.debug("Avoidance: No path found")
