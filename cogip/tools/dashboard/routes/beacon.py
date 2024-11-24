@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -12,4 +14,5 @@ class BeaconRouter(APIRouter):
             """
             Homepage of the dashboard web server.
             """
-            return templates.TemplateResponse("dashboard.html", {"request": request})
+            robot_id = int(os.getenv("ROBOT_ID", 0))
+            return templates.TemplateResponse("dashboard.html", {"request": request, "robot_id": robot_id})

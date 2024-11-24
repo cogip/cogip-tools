@@ -12,4 +12,4 @@ class BeaconRouter(APIRouter):
             """
             Homepage of the dashboard web server.
             """
-            return templates.TemplateResponse("dashboard.html", {"request": request})
+            return templates.TemplateResponse("dashboard.html", {"request": request, "robot_id": 0})
