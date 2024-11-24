@@ -64,7 +64,7 @@ class PlannerNamespace(socketio.AsyncNamespace):
         Receive a list of all obstacles.
         These obstacles are sent to planner to monitor/dashboards for display.
         """
-        await self.emit("obstacles", obstacles, namespace="/dashboard")
+        await self.emit("obstacles", (self.context.robot_id, obstacles), namespace="/dashboard")
 
     async def on_wizard(self, sid, message: list[dict[str, Any]]):
         """

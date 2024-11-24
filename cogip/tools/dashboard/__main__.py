@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+import os
 from pathlib import Path
 from typing import Annotated
 
@@ -20,12 +21,12 @@ def main_opt(
         typer.Option(
             "-i",
             "--id",
-            min=0,
+            min=1,
             max=9,
             help="Robot ID.",
-            envvar=["ROBOT_ID", "DASHBOARD_ID"],
+            envvar=["ROBOT_ID"],
         ),
-    ] = 0,
+    ] = 1,
     reload: Annotated[
         bool,
         typer.Option(
@@ -47,6 +48,8 @@ def main_opt(
 ):
     if debug:
         logger.setLevel(logging.DEBUG)
+
+    os.environ["ROBOT_ID"] = str(id)
 
     uvicorn_args = ("cogip.tools.dashboard.app:app",)
     uvicorn_kwargs = {
