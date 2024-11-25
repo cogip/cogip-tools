@@ -150,6 +150,10 @@ cogip_defs::Coords ObstaclePolygon::nearest_point(const cogip_defs::Coords &p) c
     return tmp;
 }
 
+void ObstaclePolygon::update_bounding_box_() {
+
+}
+
 } // namespace obstacles
 
 } // namespace cogip

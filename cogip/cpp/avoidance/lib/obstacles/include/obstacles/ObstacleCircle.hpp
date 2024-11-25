@@ -22,8 +22,10 @@ class ObstacleCircle : public Obstacle {
 public:
     /// Constructor
     ObstacleCircle(
-        const cogip::cogip_defs::Pose &center,   ///< [in] center of the circle
-        double radius                            ///< [in] radius of the circle
+        const cogip::cogip_defs::Pose &center,  ///< [in] center of the circle
+        double radius,                          ///< [in] radius of the circle
+        uint32_t bounding_box_points_number,    ///< [in] bounding box points number
+        double bounding_box_margin              ///< [in] bounding box margin
         );
 
     bool is_point_inside(const cogip_defs::Coords &p) const override;
@@ -31,8 +33,14 @@ public:
     cogip_defs::Coords nearest_point(const cogip_defs::Coords &p) const override;
 
 private:
+    /// Number of points to define the bounding box
+    uint32_t bounding_box_point_number_;
+
+    /// Margin for the bounding box
+    double bounding_box_margin_;
+
     /// Update bounding box.
-    void update_bounding_box();
+    void update_bounding_box_() override;
 
     /// Check if a line defined by two points A,B is crossing a circle.
     /// @return true if (AB) crosses circle, false otherwise

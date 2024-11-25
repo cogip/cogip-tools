@@ -67,11 +67,11 @@ public:
     /// Override operator ==
     bool operator==(const Pose& other) {
         return (
-            areDoublesEqual(x(), other.x()) &&
-            areDoublesEqual(y(), other.y()) &&
-            areDoublesEqual(O(), other.O()) &&
-            areDoublesEqual(max_speed_ratio_linear(), other.max_speed_ratio_linear()) &&
-            areDoublesEqual(max_speed_ratio_angular(), other.max_speed_ratio_angular()) &&
+            utils::areDoublesEqual(x(), other.x()) &&
+            utils::areDoublesEqual(y(), other.y()) &&
+            utils::areDoublesEqual(O(), other.O()) &&
+            utils::areDoublesEqual(max_speed_ratio_linear(), other.max_speed_ratio_linear()) &&
+            utils::areDoublesEqual(max_speed_ratio_angular(), other.max_speed_ratio_angular()) &&
             allow_reverse() == other.allow_reverse() &&
 	    bypass_anti_blocking() == other.bypass_anti_blocking() &&
             timeout_ms() == other.timeout_ms() &&

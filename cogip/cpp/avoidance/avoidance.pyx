@@ -4,7 +4,7 @@ from libcpp.vector cimport vector
 from libcpp cimport bool
 from cython.operator cimport dereference as deref
 
-cdef extern from "avoidance/Avoidance.hpp" namespace "":
+cdef extern from "avoidance/Avoidance.hpp" namespace "cogip::avoidance":
     cdef cppclass Avoidance:
         Avoidance(const ObstaclePolygon& borders)
         size_t getPathSize()
@@ -12,7 +12,7 @@ cdef extern from "avoidance/Avoidance.hpp" namespace "":
         void addDynamicObstacle(Obstacle& obstacle)
         void removeDynamicObstacle(Obstacle& obstacle)
         void clearDynamicObstacles()
-        bool buildGraph(const Coords& start, const Coords& finish)
+        bool avoidance(const Coords& start, const Coords& finish)
         bool checkRecompute(const Coords& start, const Coords& finish) const
 
 cdef extern from "obstacles/Obstacle.hpp" namespace "cogip::obstacles":
@@ -32,7 +32,9 @@ cdef extern from "obstacles/ObstaclePolygon.hpp" namespace "cogip::obstacles":
 cdef extern from "obstacles/ObstacleCircle.hpp" namespace "cogip::obstacles":
     cdef cppclass ObstacleCircle(Obstacle):
         ObstacleCircle()  # Default constructor
-        ObstacleCircle(Pose& center, double radius)
+        ObstacleCircle(Pose& center, double radius,
+                       unsigned int bb_points_number,
+                       double bb_margin)
 
 cdef extern from "cogip_defs/Coords.hpp" namespace "cogip::cogip_defs":
     cdef cppclass Coords:
@@ -142,11 +144,15 @@ cdef class CppObstacleCircle(CppObstacle):
                   x: float,
                   y: float,
                   angle: float,
-                  radius: float):
+                  radius: float,
+                  bb_points_number: int,
+                  bb_margin:float):
         """
         Initialize an obstacle circle with a center and a Radius.
         """
-        self.c_obstacle_circle = new ObstacleCircle(Pose(x, y, angle), radius)
+        self.c_obstacle_circle = new ObstacleCircle(Pose(x, y, angle), radius,
+                                                    bb_points_number,
+                                                    bb_margin)
         self.c_obstacle = self.c_obstacle_circle
 
         # Save coordinates
@@ -198,13 +204,13 @@ cdef class CppAvoidance:
         """
         self.c_avoidance.clearDynamicObstacles()
 
-    def build_graph(self, double start_x, double start_y, double finish_x, double finish_y):
+    def avoidance(self, double start_x, double start_y, double finish_x, double finish_y):
         """
         Build a graph between the start and finish points in the avoidance area.
         """
         cdef Coords start = Coords(start_x, start_y)
         cdef Coords finish = Coords(finish_x, finish_y)
-        return self.c_avoidance.buildGraph(start, finish)
+        return self.c_avoidance.avoidance(start, finish)
 
     def check_recompute(self, double start_x, double start_y, double finish_x, double finish_y):
         """

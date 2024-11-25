@@ -18,7 +18,7 @@ from cogip.models.artifacts import (
     SolarPanels,
     SolarPanelsID,
 )
-from cogip.models.models import DynObstacleRect
+from cogip.models.models import DynObstacleRect,DynRoundObstacle
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.singleton import Singleton
 from . import actions
@@ -237,10 +237,11 @@ class GameContext(metaclass=Singleton):
         # Positions are related to the default camp yellow.
         self.fixed_obstacles: list[DynObstacleRect] = []
 
-        pose = AdaptedPose(x=1000 - 450, y=1)
-        self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=450)]
-        pose = AdaptedPose(x=1000 - 225, y=800)
-        self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=450)]
+        pose = AdaptedPose(x=1000 - 300, y=1)
+        #self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=450)]
+        self.fixed_obstacles += [DynRoundObstacle(x=pose.x, y=pose.y, angle=0, radius=250)]
+        #pose = AdaptedPose(x=1000 - 225, y=800)
+        #self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=450)]
 
         #pose = AdaptedPose(x=1000 - 75, y=225)
         #self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=150, length_y=450)]

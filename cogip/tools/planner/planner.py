@@ -317,9 +317,9 @@ class Planner:
                         else:
                             # Intermediate pose
                             match self.game_context.avoidance_strategy:
-                                case AvoidanceStrategy.Disabled | AvoidanceStrategy.VisibilityRoadMapQuadPid | AvoidanceStrategy.VisibilityRoadMapCpp:
+                                case AvoidanceStrategy.Disabled | AvoidanceStrategy.VisibilityRoadMapQuadPid:
                                     new_controller = ControllerEnum.QUADPID
-                                case AvoidanceStrategy.VisibilityRoadMapLinearPoseDisabled:
+                                case AvoidanceStrategy.VisibilityRoadMapLinearPoseDisabled | AvoidanceStrategy.VisibilityRoadMapCpp:
                                     new_controller = ControllerEnum.LINEAR_POSE_DISABLED
                         await self.set_controller(new_controller)
                         if self.sio.connected:

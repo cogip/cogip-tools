@@ -32,6 +32,10 @@ public:
     cogip_defs::Coords nearest_point(const cogip_defs::Coords &p) const override;
 
 private:
+    /// Update bounding box.
+    void update_bounding_box_() override;
+
+    /// Compute center of the polygon
     cogip_defs::Pose calculateCentroid(const std::vector<cogip_defs::Coords> &points) const;
 };
 

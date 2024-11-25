@@ -9,10 +9,12 @@ namespace cogip {
 
 namespace obstacles {
 
-ObstacleCircle::ObstacleCircle(const cogip_defs::Pose &center, double radius)
-    : Obstacle(center, radius)
+ObstacleCircle::ObstacleCircle(const cogip_defs::Pose &center, double radius,
+                               uint32_t bounding_box_points_number,
+                               double bounding_box_margin)
+    : Obstacle(center, radius, bounding_box_points_number, bounding_box_margin)
 {
-    update_bounding_box();
+    update_bounding_box_();
 }
 
 bool ObstacleCircle::is_point_inside(const cogip_defs::Coords &p) const {
@@ -64,8 +66,8 @@ cogip_defs::Coords ObstacleCircle::nearest_point(const cogip_defs::Coords &p) co
     double vect_norm = sqrt(vect.x() * vect.x() + vect.y() * vect.y());
 
     return cogip_defs::Coords(
-        center_.x() + (vect.x() / vect_norm) * radius_,
-        center_.y() + (vect.y() / vect_norm) * radius_
+        center_.x() + (vect.x() / vect_norm) * (radius_ * (1 + OBSTACLE_BOUNDING_BOX_MARGIN)),
+        center_.y() + (vect.y() / vect_norm) * (radius_ * (1 + OBSTACLE_BOUNDING_BOX_MARGIN))
     );
 }
 
@@ -98,15 +100,15 @@ bool ObstacleCircle::is_line_crossing_circle(const cogip_defs::Coords &a, const 
     }
 }
 
-void ObstacleCircle::update_bounding_box()
+void ObstacleCircle::update_bounding_box_()
 {
     if (radius_) {
         double radius = radius_ * (1 + OBSTACLE_BOUNDING_BOX_MARGIN);
 
-        clear();
+        bounding_box_.clear();
 
         for (uint8_t i = 0; i < OBSTACLE_BOUNDING_BOX_VERTICES; i++) {
-            push_back(cogip_defs::Coords(
+            bounding_box_.push_back(cogip_defs::Coords(
                 center_.x() + radius * cos(((double)i * 2 * M_PI) / (double)OBSTACLE_BOUNDING_BOX_VERTICES),
                 center_.y() + radius * sin(((double)i * 2 * M_PI) / (double)OBSTACLE_BOUNDING_BOX_VERTICES)));
         }

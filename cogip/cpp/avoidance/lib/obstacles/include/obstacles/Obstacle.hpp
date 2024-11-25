@@ -23,7 +23,7 @@
 #endif
 
 #ifndef OBSTACLE_BOUNDING_BOX_MARGIN
-#  define OBSTACLE_BOUNDING_BOX_MARGIN    0.2  /**< bounding box margin in percent of the radius */
+#  define OBSTACLE_BOUNDING_BOX_MARGIN    0.5  /**< bounding box margin in percent of the radius */
 #endif
 
 namespace cogip {
@@ -37,8 +37,10 @@ class Obstacle : public cogip_defs::Polygon  {
 public:
     /// Constructor
     Obstacle(
-        const cogip_defs::Pose &center = {0, 0, 0},///< [in] obstacle center
-        double radius = 0.0                        ///< [in] obstacle circumscribed circle radius
+        const cogip_defs::Pose &center = {0, 0, 0}, ///< [in] obstacle center
+        double radius = 0.0,                        ///< [in] obstacle circumscribed circle radius
+        uint32_t bounding_box_points_number = 8,    ///< [in] bounding box points number
+        double bounding_box_margin = 0.2            ///< [in] bounding box margin
         );
 
     /// Destructor
@@ -78,11 +80,19 @@ public:
     /// Enable or disable obstacle.
     void enable(bool enabled) { enabled_ = enabled; };
 
+    /// Get bounding box
+    const BoundingBox& bounding_box() const { return bounding_box_; }
+
 protected:
-    cogip_defs::Pose center_;           ///< obstacle center
-    double radius_;                       ///< obstacle circumscribed circle radius
-    BoundingBox bounding_box_;            ///< Precomputed bounding box for avoidance
-    bool enabled_;                        ///< Obstacle enabled or not
+    cogip_defs::Pose center_;               ///< obstacle center
+    double radius_;                         ///< obstacle circumscribed circle radius
+    BoundingBox bounding_box_;              ///< Precomputed bounding box for avoidance
+    bool enabled_;                          ///< Obstacle enabled or not
+    uint32_t bounding_box_points_number_;   ///< Number of points to define the bounding box
+    double bounding_box_margin_;            ///< Margin for the bounding box
+
+    /// Update bounding box.
+    virtual void update_bounding_box_() = 0;
 };
 
 } // namespace obstacles
