@@ -550,6 +550,7 @@ class MainWindow(QtWidgets.QMainWindow):
             state: True if connected, False if disconnected
         """
         self.connected_label.setText("Connected" if state else "Disconnected")
+        self.game_view.send_obstacles()
 
     @qtSlot(dict)
     def config_request(self, config: dict[str, Any]):

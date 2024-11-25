@@ -18,4 +18,5 @@ include(UseCython)
 # Include directories
 include_directories(${PYTHON_INCLUDE_DIRS})
 
-add_subdirectory(example)
+#add_subdirectory(example)
+add_subdirectory(avoidance)

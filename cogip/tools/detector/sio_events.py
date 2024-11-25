@@ -85,3 +85,10 @@ class SioEvents(socketio.ClientNamespace):
         logger.debug("Received lidar data")
         self._detector.properties.beacon_radius
         self._detector.update_lidar_data([d + self._detector.properties.beacon_radius for d in data])
+
+    def on_monitor_obstacles(self, data: list[(int, int)]) -> None:
+        """
+        Callback on Monitor obstacles.
+        """
+        self._detector.monitor_obstacles = [models.Vertex(x=x, y=y, z=360.0) for x, y in data]
+        logger.info(f"Received monitor obstacles list: {self._detector.monitor_obstacles}")

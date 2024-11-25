@@ -56,10 +56,13 @@ class Detector:
         self._robot_pose = models.Pose()
         self.robot_pose_lock = threading.Lock()
 
+        self._monitor_obstacles: list[models.Vertex] = []
+        self.monitor_obstacles_lock = threading.Lock()
+
         self.obstacles_updater_loop = ThreadLoop(
             "Obstacles updater loop",
             refresh_interval,
-            self.process_sensor_data,
+            self.send_obstacles,
             logger=True,
         )
 
@@ -133,6 +136,19 @@ class Detector:
         with self.robot_pose_lock:
             self._robot_pose = new_pose
 
+    @property
+    def monitor_obstacles(self) -> list[models.Vertex]:
+        """
+        List of obstacles sent by the Monitor
+        """
+        with self.monitor_obstacles_lock:
+            return self._monitor_obstacles
+
+    @monitor_obstacles.setter
+    def monitor_obstacles(self, new_list: list[models.Vertex]) -> None:
+        with self.monitor_obstacles_lock:
+            self._monitor_obstacles = new_list
+
     def update_refresh_interval(self) -> None:
         self.obstacles_updater_loop.interval = self.properties.refresh_interval
         self.sensor_reader_loop.interval = self.properties.refresh_interval
@@ -168,8 +184,23 @@ class Detector:
         y = robot_pose.y + distance * math.sin(angle)
 
         return [models.Vertex(x=x, y=y)]
+    
+    def send_obstacles(self):
+        obstacles_lidar = self.process_sensor_data()
+        obstacles_monitor = self.read_monitor_obstacles()
 
-    def process_sensor_data(self):
+        if self.sio.connected:
+            self.sio.emit("obstacles", [o.model_dump(exclude_defaults=True) for o in obstacles_monitor], namespace="/detector")
+
+    def read_monitor_obstacles(self) -> list[models.Vertex]:
+        """
+        Read obstacles sent by the monitor
+        """
+        logger.info(f"Monitor obstacles: {self._monitor_obstacles}")
+        return self._monitor_obstacles
+
+
+    def process_sensor_data(self) -> list[models.Vertex]:
         """
         Function executed in a thread loop to update and send dynamic obstacles.
         """
@@ -180,8 +211,8 @@ class Detector:
 
         obstacles = self.generate_obstacles(robot_pose, filtered_distances)
         logger.debug(f"Generated obstacles: {obstacles}")
-        if self.sio.connected:
-            self.sio.emit("obstacles", [o.model_dump(exclude_defaults=True) for o in obstacles], namespace="/detector")
+
+        return obstacles
 
     def start_sensors(self):
         """

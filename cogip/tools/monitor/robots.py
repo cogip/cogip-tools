@@ -151,7 +151,7 @@ class RobotManager(QtCore.QObject):
 
                 obstacle.set_position(x=dyn_obstacle.x, y=dyn_obstacle.y, rotation=dyn_obstacle.angle)
                 obstacle.set_size(length=dyn_obstacle.length_y, width=dyn_obstacle.length_x)
-                obstacle.set_bounding_box(dyn_obstacle.bb)
+                #obstacle.set_bounding_box(dyn_obstacle.bb)
 
                 current_rect_obstacles.append(obstacle)
             else:
@@ -163,7 +163,7 @@ class RobotManager(QtCore.QObject):
                     obstacle = DynCircleObstacleEntity(self._game_view.scene_entity)
 
                 obstacle.set_position(x=dyn_obstacle.x, y=dyn_obstacle.y, radius=dyn_obstacle.radius)
-                obstacle.set_bounding_box(dyn_obstacle.bb)
+                #obstacle.set_bounding_box(dyn_obstacle.bb)
 
                 current_round_obstacles.append(obstacle)
 

@@ -62,10 +62,13 @@ class Detector:
         self._robot_pose = models.Pose()
         self._robot_pose_lock = threading.Lock()
 
+        self._monitor_obstacles: list[models.Vertex] = []
+        self.monitor_obstacles_lock = threading.Lock()
+
         self._obstacles_updater_loop = ThreadLoop(
             "Obstacles updater loop",
             refresh_interval,
-            self.process_lidar_data,
+            self.send_obstacles,
             logger=True,
         )
 
@@ -151,6 +154,19 @@ class Detector:
         Last position of the robot.
         """
         return self._robot_pose
+    
+    @property
+    def monitor_obstacles(self) -> list[models.Vertex]:
+        """
+        List of obstacles sent by the Monitor
+        """
+        with self.monitor_obstacles_lock:
+            return self._monitor_obstacles
+
+    @monitor_obstacles.setter
+    def monitor_obstacles(self, new_list: list[models.Vertex]) -> None:
+        with self.monitor_obstacles_lock:
+            self._monitor_obstacles = new_list
 
     @robot_pose.setter
     def robot_pose(self, new_pose: models.Pose) -> None:
@@ -160,6 +176,17 @@ class Detector:
     def update_refresh_interval(self) -> None:
         self._obstacles_updater_loop.interval = self._properties.refresh_interval
         self._lidar_reader_loop.interval = self._properties.refresh_interval
+
+    def send_obstacles(self):
+        if True:
+            obstacles = self._monitor_obstacles
+        else:
+            obstacles = self.process_lidar_data()
+
+        logger.debug(f"Detector obstacles: {obstacles}")
+
+        if self._sio.connected:
+            self._sio.emit("obstacles", [o.model_dump(exclude_defaults=True) for o in obstacles], namespace="/detector")
 
     def update_lidar_data(self, lidar_data: list[int]):
         """
@@ -265,8 +292,9 @@ class Detector:
 
         obstacles = self.generate_obstacles(robot_pose, filtered_distances)
         logger.debug(f"Generated obstacles: {obstacles}")
-        if self._sio.connected:
-            self._sio.emit("obstacles", [o.model_dump(exclude_defaults=True) for o in obstacles], namespace="/detector")
+
+        return obstacles
+
 
     def start_lidar(self):
         """

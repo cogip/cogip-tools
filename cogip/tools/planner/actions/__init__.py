@@ -26,12 +26,13 @@ for path in Path(__file__).parent.glob("*.py"):
         spec = importlib.util.spec_from_file_location(module_name, module_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-    except ImportError:
+    except ImportError as e:
         logger.error(
             f"Import error in 'cogip/tools/planner/actions/{module_path.name}': "
             "Modules from the 'cogip.planner.actions' package cannot use relative import "
             "to allow dynamic discovery of Actions classes."
         )
+        logger.error(e)
         sys.exit(1)
 
     for name, obj in inspect.getmembers(module, inspect.isclass):

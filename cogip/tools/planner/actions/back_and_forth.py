@@ -18,23 +18,28 @@ class BackAndForthAction(Action):
     def __init__(self, planner: "Planner", actions: Actions):
         super().__init__("BackAnForth action", planner, actions)
         self.before_action_func = self.compute_poses
+        self.once = True
+        self.pose1 = None
+        self.pose2 = None
 
     async def compute_poses(self) -> None:
-        x = self.planner.pose_current.x
-        y = self.game_context.table.y_min + self.game_context.table.y_max - self.planner.pose_current.y
-        angle = -self.planner.pose_current.O
-        pose1 = Pose(
-            x=x,
-            y=y,
-            O=angle,
-            max_speed_linear=66,
-            max_speed_angular=66,
-        )
-        pose2 = Pose(**self.planner.pose_current.model_dump())
-        pose1.after_pose_func = partial(self.append_pose, pose1)
-        pose2.after_pose_func = partial(self.append_pose, pose2)
-        self.poses.append(pose1)
-        self.poses.append(pose2)
+        if self.once:
+            self.once = False
+            x = self.game_context.table.x_min + self.game_context.table.x_max - self.planner.pose_current.x
+            y = self.game_context.table.y_min + self.game_context.table.y_max - self.planner.pose_current.y
+            angle = -self.planner.pose_current.O
+            self.pose1 = Pose(
+                x=x,
+                y=y,
+                O=angle,
+                max_speed_linear=66,
+                max_speed_angular=66,
+            )
+            self.pose2 = Pose(**self.planner.pose_current.model_dump())
+            self.pose1.after_pose_func = partial(self.append_pose, self.pose1)
+            self.pose2.after_pose_func = partial(self.append_pose, self.pose2)
+        self.poses.append(self.pose1)
+        self.poses.append(self.pose2)
 
     async def append_pose(self, pose: Pose) -> None:
         self.poses.append(pose)
@@ -47,6 +52,6 @@ class BackAndForthActions(Actions):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(BackAndForthAction(planner, self))
-        self.append(BackAndForthAction(planner, self))
-        self.append(BackAndForthAction(planner, self))
-        self.append(BackAndForthAction(planner, self))
+        #self.append(BackAndForthAction(planner, self))
+        #self.append(BackAndForthAction(planner, self))
+        #self.append(BackAndForthAction(planner, self))
