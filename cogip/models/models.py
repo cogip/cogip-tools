@@ -175,6 +175,9 @@ class DynRoundObstacle(BaseModel):
     y: float = Field(...)
     angle: float = Field(...)
     radius: float = Field(...)
+    bb_points_number: int = 20
+    bb_margin: float = 0.2
+
     _cython_obj: 'CppObstacleCircle' = None  # Reference to the Cython object
 
     def __init__(self, **data):
@@ -184,7 +187,9 @@ class DynRoundObstacle(BaseModel):
             x=self.x,
             y=self.y,
             angle=self.angle,
-            radius=self.radius
+            radius=self.radius,
+            bb_points_number=self.bb_points_number,
+            bb_margin=self.bb_margin
         )
 
     @classmethod
@@ -194,6 +199,8 @@ class DynRoundObstacle(BaseModel):
             y=cython_obj.y,
             angle=cython_obj.angle,
             radius=cython_obj.radius,
+            bb_points_number=cython_obj.bb_points_number,
+            bb_margin=cython_obj.bb_margin,
             _cython_obj=cython_obj
         )
 

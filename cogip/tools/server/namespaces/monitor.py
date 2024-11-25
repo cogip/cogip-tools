@@ -41,6 +41,15 @@ class MonitorNamespace(socketio.AsyncNamespace):
         """
         await self.emit("sensors_data", sensors_data, namespace="/detector")
 
+    async def on_monitor_obstacles(self, sid, monitor_obstacles: list[(int, int)]):
+        """
+        Callback on monitor_obstacles.
+
+        In emulation mode, send obstacle list
+        """
+        await self.emit("monitor_obstacles", monitor_obstacles, namespace="/detector")
+
+
     async def on_starter_changed(self, sid, pushed: bool):
         """
         Callback on starter_changed message.

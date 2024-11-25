@@ -54,6 +54,7 @@ def main_opt(
     win.signal_actuators_closed.connect(controller.actuators_closed)
     win.signal_new_actuator_command.connect(controller.new_actuator_command)
     win.signal_starter_changed.connect(controller.starter_changed)
+    win.game_view.emit_obstacles.connect(controller.emit_monitor_obstacles)
 
     # Connect UI signals to GameView slots
     win.signal_add_obstacle.connect(win.game_view.add_obstacle)

@@ -1,7 +1,9 @@
 /* Standard includes */
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
 #include <deque>
+#include <iostream>
+#include <map>
+#include <vector>
 
 /* Project includes */
 #include "avoidance/Avoidance.hpp"
@@ -12,8 +14,12 @@
 #define START_INDEX     0
 #define FINISH_INDEX    1
 
+namespace cogip {
+
+namespace avoidance {
+
 Avoidance::Avoidance(const cogip::obstacles::ObstaclePolygon &borders)
-    : _validPointsCount(0), _isAvoidanceComputed(false), _borders(borders), _logger("Avoidance") {
+    : _isAvoidanceComputed(false), _borders(borders), _logger("Avoidance") {
         _allObstacles.insert(&_fixedObstacles);
         _allObstacles.insert(&_dynamicObstacles);
 }
@@ -53,12 +59,12 @@ void Avoidance::validateObstaclePoints()
             }
 
             /* Check if the center of this obstacle is not in another obstacle */
-            if (is_point_in_obstacles(obstacle.center(), &obstacle)) {
-                continue;
-            }
+            //if (is_point_in_obstacles(obstacle.center(), &obstacle)) {
+            //    continue;
+            //}
 
             /* Validate bounding box points */
-            for (auto &point: obstacle) {
+            for (auto &point: obstacle.bounding_box()) {
                 if (!_borders.is_point_inside(point)) {
                     continue;
                 }
@@ -66,20 +72,33 @@ void Avoidance::validateObstaclePoints()
                     continue;
                 }
                 /* Found a valid point */
-                _validPoints[_validPointsCount++] = { point.x(), point.y() };
+                _validPoints.push_back(cogip::cogip_defs::Coords(point.x(), point.y()));
             }
         }
+    }
+
+    std::cout << "validateObstaclePoints: number of valid points = " << _validPoints.size() << std::endl;
+    std::cout << "validateObstaclePoints: valid points list = " << std::endl;
+    for (const auto& point : _validPoints) {
+        std::cout << "{"
+                      << point.x()
+                      << ", "
+                      << point.y()
+                      << "}" << std::endl;
     }
 }
 
 void Avoidance::buildAvoidanceGraph()
 {
+    std::cout << "buildAvoidanceGraph: build avoidance graph" << std::endl;
+
     /* Validate all possible points */
     validateObstaclePoints();
+    _graph.clear();
 
     /* For each segment of the valid points list */
-    for (int p = 0; p < _validPointsCount; p++) {
-        for (int p2 = p + 1; p2 < _validPointsCount; p2++) {
+    for (int p = 0; p < _validPoints.size(); p++) {
+        for (int p2 = p + 1; p2 < _validPoints.size(); p2++) {
             bool collide = false;
             /* Check if that segment crosses a polygon */
             for (auto l: _allObstacles) {
@@ -95,89 +114,121 @@ void Avoidance::buildAvoidanceGraph()
             }
             /* If no collision, both points of the segment are added to
              * the graph with distance between them */
-            if ((p < MAX_VERTICES) && (p2 < MAX_VERTICES)) {
-                if (!collide) {
-                    _graph[p] |= (1 << p2);
-                    _graph[p2] |= (1 << p);
-                } else {
-                    _graph[p] &= ~(1 << p2);
-                    _graph[p2] &= ~(1 << p);
-                }
+            if (!collide) {
+                // Calcul de la distance entre p et p2
+                double distance = utils::calculate_distance(_validPoints[p], _validPoints[p2]);
+                _graph[p][p2] = distance;
+                _graph[p2][p] = distance;
+                std::cout << "buildAvoidanceGraph: graph size = " << _graph.size() << std::endl;
             }
         }
+    }
+
+    printGraph();
+}
+
+void Avoidance::printGraph() const {
+    // Iterate through the outer map
+    for (const auto& outerPair : _graph) {
+        std::cout << "Point " << outerPair.first << " -> { ";
+
+        // Iterate through the inner map for each outer key
+        for (const auto& innerPair : outerPair.second) {
+            std::cout << "(" << innerPair.first << ": " << innerPair.second << ") ";
+        }
+
+        std::cout << "}" << std::endl;
     }
 }
 
 bool Avoidance::dijkstra()
 {
-    bool checked[MAX_VERTICES];  /**< List of vertices already checked */
-    double distance[MAX_VERTICES]; /**< Distance of each vertex from the start */
-    uint16_t v;  /**< Current vertex index */
-    uint16_t i;  /**< Index for iterating vertices */
+    constexpr double MAX_DISTANCE = std::numeric_limits<double>::infinity();
 
-    int parent[MAX_VERTICES];  /**< Parent relationship for path recovery */
-    uint8_t start = START_INDEX;
+    std::cout << "dijkstra: Compute Dijkstra" << std::endl;
 
-    /* Initialize arrays */
-    for (i = 0; i <= _validPointsCount; i++) {
+    std::map<int, bool> checked;               // List of vertices already checked
+    std::map<int, double> distance;           // Distance of each vertex from the start
+    std::map<int, int> parent;                // Parent relationship for path recovery
+
+    int start = START_INDEX;
+    int finish = FINISH_INDEX;
+
+    // Initialization
+    for (size_t i = 0; i < _validPoints.size(); ++i) {
         checked[i] = false;
         distance[i] = MAX_DISTANCE;
         parent[i] = -1;
     }
     _path.clear();
 
-    /* Start point has a weight of 0 */
+    // Start point has a distance of 0
     distance[start] = 0;
-    v = start;
 
-    /* If start point has no reachable neighbor, return error */
-    if (_graph[v] == 0) {
+    // Check if the start point has reachable neighbors
+    if (_graph.find(start) == _graph.end() || _graph[start].empty()) {
+        std::cerr << "dijkstra: Start pose has no reachable neighbors !" << std::endl;
         _isAvoidanceComputed = false;
         return false;
     }
 
-    /* Loop until finish point is found or all points are checked */
-    while ((v != FINISH_INDEX) && (!checked[v])) {
+    // Dijkstra: main loop
+    int v = start;
+    while ((v != finish) && !checked[v]) {
+        std::cout << "dijkstra: Checking point N°" << v << std::endl;
+
         double min_distance = MAX_DISTANCE;
 
+        // Mark the current vertex as checked
         checked[v] = true;
 
-        /* Parse all valid points */
-        for (i = 0; i < _validPointsCount; i++) {
-            /* Check if the current valid point is a neighbor */
-            if (_graph[v] & (1 << i)) {
-                double weight = (_validPoints[v].x() - _validPoints[i].x());
-                weight *= (_validPoints[v].x() - _validPoints[i].x());
-                weight += (_validPoints[v].y() - _validPoints[i].y())
-                          * (_validPoints[v].y() - _validPoints[i].y());
-                weight = sqrt(weight);
+        // Iterate through neighbors of the current vertex
+        for (auto it = _graph[v].begin(); it != _graph[v].end(); ++it) {
+            uint64_t neighbor = it->first;
+            double weight = it->second;
 
-                if ((weight >= 0) && (distance[i] > (distance[v] + weight))) {
-                    distance[i] = distance[v] + weight;
-                    parent[i] = v;
-                }
+            // Update distance and parent if a better path is found
+            if (distance[neighbor] > distance[v] + weight) {
+                distance[neighbor] = distance[v] + weight;
+                parent[neighbor] = v;
             }
         }
 
-        /* Select the next vertex with the lowest distance */
-        for (i = 1; i < _validPointsCount; i++) {
-            if ((!checked[i]) && (min_distance > distance[i])) {
-                min_distance = distance[i];
-                v = i;
+        // Find the next vertex with the smallest distance
+        min_distance = MAX_DISTANCE;
+        for (const auto& [index, dist] : distance) {
+            if (!checked[index] && dist < min_distance) {
+                min_distance = dist;
+                v = index;
             }
+        }
+
+        // No more vertices to check
+        if (min_distance == MAX_DISTANCE) {
+            std::cerr << "dijkstra: No more point to check !" << std::endl;
+            _isAvoidanceComputed = false;
+            _isAvoidanceComputed = false;
+            return false;
         }
     }
 
-    /* Build child path from start to finish pose by reversing parent path */
-    i = 1;
-    while (parent[i] > 0) {
-        _path.push_front(_validPoints[parent[i]]);
-        i = parent[i];
+    printParent(parent);
+
+    // Build the final path by following the parent relationships from finish to start
+    int current = finish;
+    while (current != -1 && current != start) {
+        _path.push_front(_validPoints[current]);
+        current = parent[current];
+        std::cout << "dijkstra: current point index = " << current << std::endl;
+        std::cout << "dijkstra: path size = " << _path.size() << std::endl;
     }
+    //_path.push_front(_validPoints[start]);
 
     _isAvoidanceComputed = true;
+
+    // Print the computed path
     printPath();
-    return _isAvoidanceComputed;
+    return true;
 }
 
 size_t Avoidance::getPathSize() const
@@ -196,20 +247,29 @@ cogip::cogip_defs::Coords Avoidance::getPathPose(uint8_t index) const
     throw std::out_of_range("Index out of range in Avoidance::getPose");
 }
 
-bool Avoidance::buildGraph(const cogip::cogip_defs::Coords &start, const cogip::cogip_defs::Coords &finish)
+bool Avoidance::avoidance(const cogip::cogip_defs::Coords &start, const cogip::cogip_defs::Coords &finish)
 {
+    std::cout << "avoidance: Compute avoidance" << std::endl;
+
     _startPose = start;
     _finishPose = finish;
     _isAvoidanceComputed = false;
 
     if (!_borders.is_point_inside(_finishPose)) {
-        std::cerr << "Finish pose outside borders !" << std::endl;
+        std::cerr << "avoidance: Finish pose outside borders !" << std::endl;
         return false;
     }
+
+    std::cout << "avoidance: Check start and finish poses" << std::endl;
 
     /* Check that the start and destination are not inside obstacles */
     for (auto l: _allObstacles) {
         for (auto obstacle: *l) {
+            std::cout << "avoidance: Check obstacle {"
+                      << obstacle.get().center().x()
+                      << ", "
+                      << obstacle.get().center().y()
+                      << "}" << std::endl;
             if (obstacle.get().is_point_inside(_finishPose)) {
                 std::cerr << "Finish pose inside obstacle !" << std::endl;
                 return false;
@@ -220,9 +280,13 @@ bool Avoidance::buildGraph(const cogip::cogip_defs::Coords &start, const cogip::
         }
     }
 
-    _validPointsCount = 0;
-    _validPoints[_validPointsCount++] = _startPose;
-    _validPoints[_validPointsCount++] = _finishPose;
+    std::cout << "avoidance: Check OK" << std::endl;
+
+    _validPoints.clear();
+    _validPoints.push_back(_startPose);
+    _validPoints.push_back(_finishPose);
+
+    std::cout << "avoidance: Start and finish poses are checked" << std::endl;
 
     buildAvoidanceGraph();
     return dijkstra();
@@ -243,16 +307,27 @@ bool Avoidance::checkRecompute(const cogip::cogip_defs::Coords &start, const cog
     return false;
 }
 
-void Avoidance::printPath()
-{
-    std::cout << "[" << std::endl;
-    if (_isAvoidanceComputed) {
+void Avoidance::printPath() const {
+    std::cout << "Path (size = " << _path.size() << ")" << std::endl;
 
-        for (auto p: _path) {
-            std::cout << "{\"x\":" << p.x() << ",\"y\":" << p.y() << "}," << std::endl;
-        }
+    // Iterate through the deque and print each Coords
+    for (const auto& coordsWrapper : _path) {
+        const cogip::cogip_defs::Coords& coords = coordsWrapper.get();
+        std::cout << "(" << coords.x() << ", " << coords.y() << ") ";
     }
-    std::cout << "]" << std::endl;
+
+    std::cout << std::endl;
+}
+
+void Avoidance::printParent(const std::map<int, int>& parent) {
+    std::cout << "Parent map: ";
+
+    // Iterate through the map and print each key-value pair
+    for (const auto& pair : parent) {
+        std::cout << "(" << pair.first << ", " << pair.second << ") ";
+    }
+
+    std::cout << std::endl;
 }
 
 const cogip::obstacles::ObstaclePolygon& Avoidance::getBorders() const
@@ -288,3 +363,7 @@ void Avoidance::clearDynamicObstacles() {
     std::lock_guard<std::mutex> lock(_dynamicObstaclesMutex);
     _dynamicObstacles.clear();
 }
+
+} // namespace avoidance
+
+} // namespace cogip

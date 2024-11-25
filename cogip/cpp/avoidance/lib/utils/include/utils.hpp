@@ -1,6 +1,10 @@
 #pragma once
 
-typedef void (*func_cb_t)(void);
+#include "cogip_defs/Coords.hpp"
+
+namespace cogip {
+
+namespace utils {
 
 /**
  * @brief Compare two floating-point numbers (double) with a specified tolerance.
@@ -16,17 +20,18 @@ typedef void (*func_cb_t)(void);
  */
 bool areDoublesEqual(double a, double b, double epsilon = 1e-3);
 
-#define FALSE   (0)
-#define TRUE    (!FALSE)
+/**
+ * @brief Calculate the Euclidean distance between two coordinates.
+ *
+ * This function computes the straight-line distance between two points
+ * in a 2D space, represented by the Coords class.
+ *
+ * @param[in]   a   The first coordinate point.
+ * @param[in]   b   The second coordinate point.
+ * @return double   The Euclidean distance between the two points.
+ */
+double calculate_distance(const cogip_defs::Coords &a, const cogip_defs::Coords &b);
 
-#define MIN(a, b)   (((a) < (b)) ? (a) : (b))
-#define MAX(a, b)   (((a) > (b)) ? (a) : (b))
+} // namespace utils
 
-#ifdef DEBUG
-    #define COGIP_DEBUG_COUT(x)    (std::cout << x << std::endl)
-    #define COGIP_DEBUG_CERR(x)    (std::cout << x << std::endl)
-    #undef DEBUG
-#else
-    #define COGIP_DEBUG_COUT(x)
-    #define COGIP_DEBUG_CERR(x)
-#endif
+} // namespace cogip

@@ -11,8 +11,11 @@ namespace cogip {
 namespace obstacles {
 
 Obstacle::Obstacle(
-    const cogip_defs::Pose &center, double radius)
-    : center_(center), radius_(radius), enabled_(true)
+    const cogip_defs::Pose &center, double radius,
+    double bounding_box_margin):
+        center_(center), radius_(radius),
+        bounding_box_margin_(bounding_box_margin),
+        enabled_(true)
 {
 }
 

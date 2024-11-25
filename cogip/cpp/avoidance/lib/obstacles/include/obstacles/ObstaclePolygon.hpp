@@ -32,7 +32,14 @@ public:
     cogip_defs::Coords nearest_point(const cogip_defs::Coords &p) const override;
 
 private:
-    cogip_defs::Pose calculateCentroid(const std::vector<cogip_defs::Coords> &points) const;
+    /// Update bounding box.
+    void update_bounding_box_() override;
+
+    /// Compute center of the polygon
+    int calculatePolygonCentroid();
+
+    /// Compute circumcircle radius
+    int calculatePolygonRadius();
 };
 
 } // namespace obstacles

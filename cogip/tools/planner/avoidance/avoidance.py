@@ -69,7 +69,9 @@ class Avoidance:
                 self.cpp_avoidance.clear_dynamic_obstacles()
                 for obstacle in obstacles:
                     self.cpp_avoidance.add_dynamic_obstacle(obstacle._cython_obj)
-                if self.cpp_avoidance.build_graph(pose_current.x, pose_current.y, goal.x, goal.y):
+                res = self.cpp_avoidance.avoidance(pose_current.x, pose_current.y, goal.x, goal.y)
+                logger.info(f"RESULT BUILD GRAPH = {res}")
+                if res == True:
                     path = [models.PathPose(**pose_current.model_dump())]
                     for i in range(0, self.cpp_avoidance.get_path_size()):
                         pose = models.PathPose.from_cython(self.cpp_avoidance.get_path_pose(i))
@@ -78,6 +80,8 @@ class Avoidance:
                     while len(path) > 1 and math.dist((path[1].x, path[1].y), (pose_current.x, pose_current.y)) < 10:
                         del path[1]
                     path.append(goal.model_copy())
+                else:
+                    path = []
             case _:
                 expand = int(robot_width * self.shared_properties["obstacle_bb_margin"])
                 if self.last_robot_width != robot_width or self.last_expand != expand:

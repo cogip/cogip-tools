@@ -26,6 +26,7 @@
 /// Standard includes
 #include <cstdint>
 #include <deque>
+#include <map>
 #include <mutex>
 #include <set>
 
@@ -34,13 +35,15 @@
 #include "obstacles/ObstaclePolygon.hpp"
 #include "logger/Logger.hpp"
 
+namespace cogip {
+
+namespace avoidance {
 
 /// @brief Class handling avoidance algorithm and graph management
 class Avoidance
 {
 public:
-    static const uint8_t MAX_VERTICES = 64; ///< Maximum number of vertices in the graph
-    static const uint32_t MAX_DISTANCE = UINT32_MAX; ///< Maximum distance value used for Dijkstra's algorithm
+    static constexpr uint32_t MAX_DISTANCE = UINT32_MAX; ///< Maximum distance value used for Dijkstra's algorithm
 
     /// @brief Constructor that takes obstacle borders as input
     ///
@@ -68,7 +71,7 @@ public:
     /// @param start Start position
     /// @param finish Finish position
     /// @return true if graph building is successful, false otherwise
-    bool buildGraph(const cogip::cogip_defs::Coords &start, const cogip::cogip_defs::Coords &finish);
+    bool avoidance(const cogip::cogip_defs::Coords &start, const cogip::cogip_defs::Coords &finish);
 
     /// @brief Check if avoidance recomputation is needed
     /// @param start Start position
@@ -77,7 +80,10 @@ public:
     bool checkRecompute(const cogip::cogip_defs::Coords &start, const cogip::cogip_defs::Coords &stop) const;
 
     /// @brief Print the computed path for debugging purposes
-    void printPath();
+    void printPath() const;
+
+    /// @brief Print the parent map
+    static void printParent(const std::map<int, int>& parent);
 
     /// @brief Get the current obstacle borders
     /// @return const cogip::obstacles::ObstaclePolygon& Current borders
@@ -110,14 +116,13 @@ public:
     void clearDynamicObstacles();
 
 private:
-    cogip::cogip_defs::Coords _validPoints[MAX_VERTICES]; ///< Array of valid points for graph vertices
-    uint8_t _validPointsCount; ///< Number of valid points in the graph
-    uint64_t _graph[MAX_VERTICES]; ///< Graph of valid segments between points, represented as bitmaps
+    std::vector<cogip::cogip_defs::Coords> _validPoints; ///< Array of valid points for graph vertices
+    std::map<uint64_t, std::map<uint64_t, double>> _graph; ///< Graph of valid segments between points, represented as bitmaps
 
     cogip::cogip_defs::Coords _startPose; ///< Start pose for the avoidance path
     cogip::cogip_defs::Coords _finishPose; ///< Finish pose for the avoidance path
 
-    std::deque<cogip::cogip_defs::Coords> _path; ///< Indexes of valid points from the start to the finish in the computed path
+    std::deque<std::reference_wrapper<cogip::cogip_defs::Coords>> _path; ///< Indexes of valid points from the start to the finish in the computed path
     bool _isAvoidanceComputed; ///< Flag indicating if the avoidance path has been successfully computed
 
     cogip::obstacles::ObstaclePolygon _borders; ///< Borders of the avoidance area, used to define the boundaries
@@ -136,9 +141,16 @@ private:
     /// @brief Build the avoidance graph using the validated points
     void buildAvoidanceGraph();
 
+    /// Print the graph
+    void printGraph() const;
+
     /// @brief Apply the Dijkstra algorithm on the graph to find the shortest path
     /// @return true if the algorithm successfully finds a path, false otherwise
     bool dijkstra();
 };
+
+} // namespace avoidance
+
+} // namespace cogip
 
 /// @}
