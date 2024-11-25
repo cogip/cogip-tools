@@ -53,7 +53,8 @@ CMD ["sleep", "infinity"]
 
 FROM cogip-console AS cogip-gui
 
-RUN apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
         libegl1 \
         libxkbcommon0 \
         libdbus-1-3 \
