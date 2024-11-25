@@ -34,12 +34,11 @@ export function onMenu(menu, type, socket) {
       newButtonMenu.setAttribute("class", "btn btn-dark");
       newButtonMenu.innerHTML = menu.entries[value]["desc"];
       newButtonMenu.addEventListener("click", function () {
-        var cmd = menu.entries[value]["cmd"]
+        var cmd = menu.entries[value]["cmd"];
         console.log(type + "_cmd", cmd);
         if (type == "tool") {
           socket.emit(type + "_cmd", cmd);
-        }
-        else {
+        } else {
           socket.emit(type + "_cmd", 1, cmd);
         }
       });
