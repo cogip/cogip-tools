@@ -254,6 +254,7 @@ dependencies = [
     { name = "jinja2" },
     { name = "luma-oled" },
     { name = "more-itertools" },
+    { name = "nanobind" },
     { name = "numpy" },
     { name = "opencv-contrib-python" },
     { name = "polling2" },
@@ -298,7 +299,7 @@ requires-dist = [
     { name = "aiohttp", specifier = "==3.10.10" },
     { name = "aioserial", specifier = "==1.3.1" },
     { name = "cython", specifier = "~=3.0.11" },
-    { name = "cython-cmake", specifier = ">=0.2.1" },
+    { name = "cython-cmake", specifier = "~=0.2.1" },
     { name = "devtools", specifier = "==0.12.2" },
     { name = "fastapi", specifier = "==0.115.2" },
     { name = "gpiozero", specifier = "==2.0.1" },
@@ -306,6 +307,7 @@ requires-dist = [
     { name = "jinja2", specifier = "==3.1.2" },
     { name = "luma-oled", specifier = "==3.13.0" },
     { name = "more-itertools", specifier = "==10.1.0" },
+    { name = "nanobind", specifier = "~=2.4.0" },
     { name = "numpy", specifier = "<2" },
     { name = "opencv-contrib-python", specifier = "==4.10.0.84" },
     { name = "polling2", specifier = "==0.5.0" },
@@ -926,6 +928,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/38/e0/4f5855037a72cd8a7a2f60a3952d9aa45feedb37ae7831642102604e8a37/multidict-6.1.0-cp313-cp313-win32.whl", hash = "sha256:3a37ffb35399029b45c6cc33640a92bef403c9fd388acce75cdc88f58bd19a81", size = 26426 },
     { url = "https://files.pythonhosted.org/packages/7e/a5/17ee3a4db1e310b7405f5d25834460073a8ccd86198ce044dfaf69eac073/multidict-6.1.0-cp313-cp313-win_amd64.whl", hash = "sha256:e9aa71e15d9d9beaad2c6b9319edcdc0a49a43ef5c0a4c8265ca9ee7d6c67774", size = 28531 },
     { url = "https://files.pythonhosted.org/packages/99/b7/b9e70fde2c0f0c9af4cc5277782a89b66d35948ea3369ec9f598358c3ac5/multidict-6.1.0-py3-none-any.whl", hash = "sha256:48e171e52d1c4d33888e529b999e5900356b9ae588c2f09a52dcefb158b27506", size = 10051 },
+]
+
+[[package]]
+name = "nanobind"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/01/a28722f6626e5c8a606dee71cb40c0b2ab9f7715b96bd34a9553c79dbf42/nanobind-2.4.0.tar.gz", hash = "sha256:a0392dee5f58881085b2ac8bfe8e53f74285aa4868b1472bfaf76cfb414e1c96", size = 953467 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7a/07/abff41fcade3613349eac71dacb166352babef515efd960a751e3175c262/nanobind-2.4.0-py3-none-any.whl", hash = "sha256:8cf27b04fbadeb9deb4a73f02bd838bf9f7e3e5a8ce44c50c93142b5728da58a", size = 232882 },
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "cython", "cython-cmake"]
+requires = ["scikit-build-core", "cython", "cython-cmake", "nanobind"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -20,6 +20,7 @@ dependencies = [
     "Jinja2==3.1.2",
     "luma.oled==3.13.0",
     "more_itertools==10.1.0",
+    "nanobind~=2.4.0",
     "numpy<2",
     "opencv-contrib-python==4.10.0.84",
     "polling2==0.5.0",
