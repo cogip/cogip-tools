@@ -82,6 +82,7 @@ cogip-copilot-pami = "cogip.tools.copilot_pami.__main__:main"
 cogip-detector-pami = "cogip.tools.detector_pami.__main__:main"
 cogip-cansend = "cogip.tools.cansend.__main__:main"
 cogip-cpp-cython-example = "cogip.tools.cpp_cython_example.__main__:main"
+cogip-cpp-nanobind-example = "cogip.tools.cpp_nanobind_example.__main__:main"
 
 [tool.uv]
 python-preference = "only-managed"
