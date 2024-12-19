@@ -91,16 +91,16 @@ def start_plot(lidar_points: NDArray):
 
 def start_server(lidar_points: NDArray):
     lidar_data_filename = Path("lidar_data.json")
-    # if not lidar_data_filename.exists():
-    #     print("Error: JSON file does not exist.")
-    #     return
-    # try:
-    #     fake_data: list = json.loads(lidar_data_filename.read_text())
-    # except Exception as exc:
-    #     print(f"Error: failed to parse JSON file ({exc})")
-    #     return
-    lidar_data_file = lidar_data_filename.open("w")
-    lidar_data_file.write("[\n")
+    if not lidar_data_filename.exists():
+        print("Error: JSON file does not exist.")
+        return
+    try:
+        fake_data: list = json.loads(lidar_data_filename.read_text())
+    except Exception as exc:
+        print(f"Error: failed to parse JSON file ({exc})")
+        return
+    # lidar_data_file = lidar_data_filename.open("w")
+    # lidar_data_file.write("[\n")
 
     asgi_app.mount("/static", StaticFiles(directory=Path(__file__).with_name("static")), name="static")
     templates = Jinja2Templates(directory=Path(__file__).with_name("templates"))
@@ -111,19 +111,19 @@ def start_server(lidar_points: NDArray):
 
     @asgi_app.get("/data", response_class=JSONResponse)
     def get_data():
-        data = lidar_points.tolist()
-        lidar_data_file.write("  " + json.dumps(data) + ",\n")
+        # data = lidar_points.tolist()
+        # lidar_data_file.write("  " + json.dumps(data) + ",\n")
 
-        # data = fake_data.pop(0)
-        # fake_data.append(data)
+        data = fake_data.pop(0)
+        fake_data.append(data)
 
         return JSONResponse(content=data)
 
     try:
         asgi_server.run()
     except KeyboardInterrupt:
-        lidar_data_file.write("]\n")
-        lidar_data_file.close()
+        # lidar_data_file.write("]\n")
+        # lidar_data_file.close()
         pass
 
 
@@ -168,25 +168,28 @@ def main_opt(
         ),
     ] = 8000,
 ):
-    lidar = LDLidarDriver()
+    # lidar = LDLidarDriver()
 
-    if filter:
-        lidar.enablePointCloudDataFilter(True)
+    # if filter:
+    #     lidar.enablePointCloudDataFilter(True)
 
-    res: bool = lidar.connect(str(port), BaudRate.BAUD_230400)
-    print(f"Connect result: {res}")
+    # res: bool = lidar.connect(str(port), BaudRate.BAUD_230400)
+    # print(f"Connect result: {res}")
 
-    res: bool = lidar.waitLidarComm(3500)
-    print(f"Wait Lidar Comm result: {res}")
+    # res: bool = lidar.waitLidarComm(3500)
+    # print(f"Wait Lidar Comm result: {res}")
 
-    res: bool = lidar.start()
-    print(f"Start result: {res}")
+    # res: bool = lidar.start()
+    # print(f"Start result: {res}")
 
-    lidar_points: NDArray = lidar.getLidarPoints()
+    # lidar_points: NDArray = lidar.getLidarPoints()
 
-    console_thread = threading.Thread(target=start_console, args=(lidar_points,), name="Console thread")
-    console_thread.start()
+    # console_thread = threading.Thread(target=start_console, args=(lidar_points,), name="Console thread")
+    # console_thread.start()
 
+    plot = False
+    serve = True
+    lidar_points = None
     if serve:
         asgi_server.config.port = server_port
         server_thread = threading.Thread(target=start_server, args=(lidar_points,), name="Server thread")
@@ -199,7 +202,8 @@ def main_opt(
     else:
         try:
             # Keep the main thread alive
-            while console_thread.is_alive():
+            # while console_thread.is_alive():
+            while True:
                 time.sleep(0.1)
         except KeyboardInterrupt:
             print("KeyboardInterrupt received. Stopping the threads...")
@@ -207,9 +211,9 @@ def main_opt(
 
     asgi_server.should_exit = True
     server_thread.join()
-    console_thread.join()
+    # console_thread.join()
 
-    lidar.disconnect()
+    # lidar.disconnect()
 
 
 def main():

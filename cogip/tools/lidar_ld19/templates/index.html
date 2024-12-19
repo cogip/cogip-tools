@@ -7,67 +7,100 @@
     <script src="{{ url_for('static', path='js/chart.js') }}"></script>
     <script>
         let chart;
+        let zoomScale = 1; // Initial zoom scale
 
         // Process data to extract points
-        const getPoints = (data) => {
-            // Add a safeguard to ensure data is in the correct format
-            if (!Array.isArray(data)) {
-                console.error("Invalid data format:", data);
-                return [];
-            }
-
-            return data.map(([distance, intensity], angle) => {
+        const getPoints = (lidarData) => {
+            return lidarData.map(([distance, intensity], angle) => {
                 // Ensure we have valid numbers for distance and intensity
                 if (typeof distance !== "number" || typeof intensity !== "number") {
                     console.error("Invalid data at index", angle, ":", distance, intensity);
                     return null;
                 }
-                return { distance, angle, color: `rgb(${255 - intensity}, ${intensity}, 0)` };
-            }).filter(Boolean); // Filter out any invalid data
+                return {
+                    distance: distance,
+                    angle: angle,
+                    color: `rgb(${255 - intensity}, ${intensity}, 0)` };
+            })
         }
 
-        // Create a function to initialize the chart
-        function createChart(points) {
-            const ctx = document.getElementById('circleChart').getContext('2d');
+    function createChart(points) {
+        const ctx = document.getElementById('circleChart').getContext('2d');
 
-            // Create the chart
-            chart = new Chart(ctx, {
-                type: 'polarArea', // Using polarArea chart type
-                data: {
-                    datasets: [{
-                        label: 'Circle Points',
-                        data: points.map((point) => point.distance), // Use distance for the radius
-                        backgroundColor: points.map((point) => point.color), // Color based on intensity
-                        borderWidth: 0, // No border width, removes the white gaps between slices
-                        borderColor: 'transparent', // Ensures no border color (avoid white borders)
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { position: 'top' } },
-                    scales: {
-                        x: {
-                            beginAtZero: true, // Start radius from 0
-                            max: 3000, // Maximum value for radius
-                            ticks: {
-                                stepSize: 1000, // Adjust step size for ticks
-                                display: false, // Hide radial ticks
-                            },
-                        },
+        // Create the chart
+        chart = new Chart(ctx, {
+            type: 'polarArea', // Using polarArea chart type
+            data: {
+                datasets: [{
+                    label: 'Circle Points',
+                    data: points.map((point) => point.distance), // Use distance for the radius
+                    backgroundColor: points.map((point) => point.color), // Color based on intensity
+                    borderWidth: 0, // No border width, removes the white gaps between slices
+                    borderColor: 'transparent', // Ensures no border color (avoid white borders)
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }, // Disable legend if not needed
+                    tooltip: {
+                        callbacks: {
+                            title: () => null, // Remove the title in the tooltip
+                            label: function (tooltipItem) {
+                                const index = tooltipItem.dataIndex; // Index of the point being hovered
+                                const point = points[index]; // Retrieve point details
+                                return `Distance: ${point.distance}, Intensity: ${parseInt(255 - point.color.split(",")[0].slice(4))}`;
+                            }
+                        }
                     }
-                }
-            });
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true, // Start radius from 0
+                        max: 3000 * zoomScale, // Maximum value for radius
+                        ticks: {
+                            stepSize: 250, // Adjust step size for ticks
+                            z: 10
+                        },
+                        grid: {
+                            z: 10 // Ensure the grid lines appear above the data
+                        }
+                    },
+                },
+                animation: {
+                    duration: 0 // Disable animation by setting duration to 0
+                },
+            }
+        });
+    }
+
+
+    // Function to handle zoom with mouse wheel
+    function handleWheel(event) {
+        event.preventDefault();
+        const zoomSpeed = 0.05; // Adjust zoom speed
+
+        if (event.deltaY < 0 && zoomScale < 1) {
+            zoomScale += zoomSpeed; // Zoom in
+        } else if (event.deltaY > 0) {
+            zoomScale -= zoomSpeed; // Zoom out
         }
 
+        // Ensure zoomScale is within reasonable bounds
+        zoomScale = Math.max(0.2, Math.min(zoomScale, 1)); // Limit zoom between 0.2x and 1x
+
+        // Update chart's scale and redraw it
+        chart.options.scales.r.max = 3000 * zoomScale; // Adjust max radius
+        chart.update();
+    }
+
+        
         function fetchData() {
             fetch('/data')
                 .then(response => response.json())
                 .then(data => {
                     points = getPoints(data);
-                    if (points.length === 0) {
-                        console.error("No valid data to display.");
-                        return;
-                    }
+
                     // Update the chart with new data
                     if (chart) {
                         chart.data.datasets[0].data = points.map((point) => point.distance);
@@ -86,8 +119,12 @@
         // Set an interval to fetch data every 2 seconds
         setInterval(fetchData, 200);
 
-        // Fetch initial data on load
-        window.onload = fetchData;
+        // Set event listeners for mouse wheel
+        window.onload = () => {
+            fetchData();
+            const canvas = document.getElementById('circleChart');
+            canvas.addEventListener('wheel', handleWheel);
+        }
     </script>
     <style>
         /* Make the canvas circular and fix the size */
