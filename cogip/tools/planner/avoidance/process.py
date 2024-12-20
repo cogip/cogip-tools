@@ -45,10 +45,10 @@ def avoidance_process(
         pose_order = shared_properties["pose_order"]
         last_avoidance_pose_current = shared_properties["last_avoidance_pose_current"]
         if not pose_current:
-            logger.debug("Avoidance: Skip path update (no pose current)")
+            logger.info("Avoidance: Skip path update (no pose current)")
             continue
         if not pose_order:
-            logger.debug("Avoidance: Skip path update (no pose order)")
+            logger.info("Avoidance: Skip path update (no pose order)")
             continue
         if not last_avoidance_pose_current:
             last_emitted_pose_order = None
@@ -57,7 +57,7 @@ def avoidance_process(
         pose_order = models.PathPose.model_validate(pose_order)
 
         if strategy in [Strategy.LinearSpeedTest, Strategy.AngularSpeedTest]:
-            logger.debug("Avoidance: Skip path update (speed test)")
+            logger.info("Avoidance: Skip path update (speed test)")
             continue
 
 
@@ -66,7 +66,7 @@ def avoidance_process(
             dist_xy = math.dist((pose_current.x, pose_current.y), (pose_order.x, pose_order.y))
             dist_angle = abs(pose_current.O - pose_order.O)
             if dist_xy < 20 and dist_angle < 5:
-                logger.debug(
+                logger.info(
                     "Avoidance: Skip path update "
                     f"(pose current and order too close: {dist_xy:0.2f}mm {dist_angle:0.2f}°)"
                 )
@@ -83,20 +83,38 @@ def avoidance_process(
                 )
                 < 20
             ):
-                logger.debug(f"Avoidance: Skip path update (current pose too close: {dist:0.2f}mm)")
+                logger.info(f"Avoidance: Skip path update (current pose too close: {dist:0.2f}mm)")
                 continue
 
         # Create dynamic obstacles
-        if shared_properties["avoidance_strategy"] == AvoidanceStrategy.Disabled:
-            dyn_obstacles = []
+        if shared_properties["avoidance_strategy"] != AvoidanceStrategy.VisibilityRoadMapCpp:
+            if shared_properties["avoidance_strategy"] == AvoidanceStrategy.Disabled:
+                dyn_obstacles = []
+            else:
+                dyn_obstacles = TypeAdapter(models.DynObstacleList).validate_python(shared_properties["obstacles"])
+
+            if any([obstacle.contains(pose_current.pose) for obstacle in dyn_obstacles]):
+                logger.info("Avoidance: pose current in obstacle")
+                path = []
+            elif any([obstacle.contains(pose_order.pose) for obstacle in dyn_obstacles]):
+                logger.info("Avoidance: pose order in obstacle")
+                path = []
+            else:
+                shared_properties["last_avoidance_pose_current"] = (pose_current.x, pose_current.y)
+
+                if pose_current.x == pose_order.x and pose_current.y == pose_order.y:
+                    # If the pose order is just a rotation from the pose current, the avoidance will not find any path,
+                    # so set the path manually
+                    logger.info("Avoidance: rotation only")
+                    path = [pose_current, pose_order]
+                else:
+                    path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
         else:
             dyn_obstacles = TypeAdapter(models.DynObstacleList).validate_python(shared_properties["obstacles"])
-
-        #if len(path) == 0 or avoidance.check_recompute(pose_current, pose_order):
-        path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
+            path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
 
         if len(path) == 0:
-            logger.debug("Avoidance: No path found")
+            logger.info("Avoidance: No path found")
             shared_properties["last_avoidance_pose_current"] = None
             last_emitted_pose_order = None
             queue_sio.put(("blocked", None))
@@ -108,7 +126,7 @@ def avoidance_process(
         if len(path) == 1:
             # Only one pose in path means the pose order is reached and robot is waiting next order,
             # so do nothing.
-            logger.debug("Avoidance: len(path) == 1")
+            logger.info("Avoidance: len(path) == 1")
             continue
 
         if len(path) >= 2 and last_emitted_pose_order:
@@ -116,13 +134,13 @@ def avoidance_process(
             dist_angle = abs(path[1].O - last_emitted_pose_order.O)
             if not path[1].bypass_final_orientation:
                 if dist_xy < 20 and dist_angle < 5:
-                    logger.debug(
+                    logger.info(
                         f"Avoidance: Skip path update (new pose order too close: {dist_xy:0.2f}/{dist_angle:0.2f})"
                     )
                     continue
             else:
                 if dist_xy < 20:
-                    logger.debug(f"Avoidance: Skip path update (new pose order too close: {dist_xy:0.2f})")
+                    logger.info(f"Avoidance: Skip path update (new pose order too close: {dist_xy:0.2f})")
                     continue
 
         if len(path) > 2:
@@ -137,7 +155,7 @@ def avoidance_process(
         new_pose_order = path[1]
 
         if last_emitted_pose_order == new_pose_order:
-            logger.debug("Avoidance: ignore path update (last_emitted_pose_order == new_pose_order)")
+            logger.info("Avoidance: ignore path update (last_emitted_pose_order == new_pose_order)")
             continue
 
         last_emitted_pose_order = new_pose_order.model_copy()

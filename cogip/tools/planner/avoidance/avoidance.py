@@ -72,14 +72,13 @@ class Avoidance:
                 res = self.cpp_avoidance.avoidance(pose_current.x, pose_current.y, goal.x, goal.y)
                 logger.info(f"RESULT BUILD GRAPH = {res}")
                 if res == True:
-                    path = [models.PathPose(**pose_current.model_dump())]
                     for i in range(0, self.cpp_avoidance.get_path_size()):
                         pose = models.PathPose.from_cython(self.cpp_avoidance.get_path_pose(i))
                         pose.bypass_final_orientation = True
                         path.append(pose)
                     while len(path) > 1 and math.dist((path[1].x, path[1].y), (pose_current.x, pose_current.y)) < 10:
                         del path[1]
-                    path.append(goal.model_copy())
+                    #path.append(goal.model_copy())
                 else:
                     path = []
             case _:
@@ -145,7 +144,7 @@ class VisibilityRoadMapWrapper:
         converted_obstacles = []
 
         for obstacle in obstacles:
-            x_list, y_list = list(zip(*[(int(v.x), int(v.y)) for v in obstacle.bb]))
+            x_list, y_list = list(zip(*[(int(v.x), int(v.y)) for v in obstacle.bb()]))
             x_list = list(x_list)
             y_list = list(y_list)
             x_list.append(x_list[0])

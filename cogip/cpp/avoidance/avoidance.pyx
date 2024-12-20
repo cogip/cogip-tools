@@ -5,6 +5,27 @@ from libcpp cimport bool
 from cython.operator cimport dereference as deref
 
 # External C++ Classes and Functions
+cdef extern from "cogip_defs/Coords.hpp" namespace "cogip::cogip_defs":
+    cdef cppclass Coords:
+        Coords()
+        Coords(double x, double y)
+        double x() const
+        double y() const
+
+cdef extern from "cogip_defs/Pose.hpp" namespace "cogip::cogip_defs":
+    cdef cppclass Pose:
+        Pose()
+        Pose(double x, double y, double O)
+        double x() const
+        double y() const
+        double O() const
+
+cdef extern from "cogip_defs/Polygon.hpp" namespace "cogip::cogip_defs":
+    cdef cppclass Polygon(vector[Coords]):
+        Polygon()
+        Polygon(const Polygon&)
+        int point_index(const Coords& p) const
+
 cdef extern from "avoidance/Avoidance.hpp" namespace "cogip::avoidance":
     cdef cppclass Avoidance:
         Avoidance(const ObstaclePolygon& borders)
@@ -17,8 +38,10 @@ cdef extern from "avoidance/Avoidance.hpp" namespace "cogip::avoidance":
         bool check_recompute(const Coords& start, const Coords& finish) const
 
 cdef extern from "obstacles/Obstacle.hpp" namespace "cogip::obstacles":
-    cdef cppclass Obstacle:
+    cdef cppclass Obstacle(Polygon):
         Obstacle()  # Constructor
+        bool is_point_inside(const Coords& p) const
+        const Polygon& bounding_box() const
 
 cdef extern from "obstacles/ObstacleRectangle.hpp" namespace "cogip::obstacles":
     cdef cppclass ObstacleRectangle(Obstacle):
@@ -35,22 +58,30 @@ cdef extern from "obstacles/ObstacleCircle.hpp" namespace "cogip::obstacles":
         ObstacleCircle()  # Default constructor
         ObstacleCircle(Pose& center, double radius, double bb_margin, unsigned int bb_points_number)
 
-cdef extern from "cogip_defs/Coords.hpp" namespace "cogip::cogip_defs":
-    cdef cppclass Coords:
-        Coords()
-        Coords(double x, double y)
-        double x() const
-        double y() const
-
-cdef extern from "cogip_defs/Pose.hpp" namespace "cogip::cogip_defs":
-    cdef cppclass Pose:
-        Pose()
-        Pose(double x, double y, double O)
-        double x() const
-        double y() const
-        double O() const
-
 # Wrapping Pose class for Python
+cdef class CppCoords:
+    cdef Coords* c_coords
+
+    def __cinit__(self, double x, double y):
+        """
+        Initialize a Pose object.
+        """
+        self.c_coords = new Coords(x, y)
+
+    @property
+    def x(self):
+        return self.c_coords.x()
+
+    @property
+    def y(self):
+        return self.c_coords.y()
+
+    def __dealloc__(self):
+        """
+        Clean up memory for the Pose object.
+        """
+        del self.c_coords
+
 cdef class CppPose:
     cdef Pose* c_pose
 
@@ -78,6 +109,37 @@ cdef class CppPose:
         """
         del self.c_pose
 
+cdef class CppPolygon:
+    cdef Polygon* c_polygon  # Pointeur vers l'objet C++ Polygon
+    cdef unsigned int _index
+
+    def __cinit__(self):
+        self.c_polygon = new Polygon()
+
+    def __dealloc__(self):
+        del self.c_polygon
+
+    def __iter__(self):
+        """Initialize the iterator and return self."""
+        self._index = 0
+        return self
+
+    def __next__(self) -> Coords:
+        """Return the next element in the Polygon."""
+        cdef Coords p
+        cdef CppCoords cpp_coords
+        if self._index < self.c_polygon.size():
+            p = self.c_polygon.at(self._index)
+            self._index += 1
+            cpp_coords = CppCoords(p.x(), p.y())
+            return cpp_coords
+        else:
+            raise StopIteration()
+
+    def point_index(self, x: float, y: float) -> int:
+        cdef Coords p = Coords(x, y)
+        return self.c_polygon.point_index(p)
+
 # Wrapping Obstacle base class
 cdef class CppObstacle:
     cdef Obstacle* c_obstacle
@@ -87,6 +149,14 @@ cdef class CppObstacle:
         Clean up memory for the Obstacle object.
         """
         del self.c_obstacle
+
+    def contains(self, double x, double y):
+        return self.c_obstacle.is_point_inside(Coords(x, y))
+
+    def bounding_box(self):
+        cdef CppPolygon cpp_box = CppPolygon()
+        cpp_box.c_polygon = new Polygon(self.c_obstacle.bounding_box())
+        return cpp_box
 
 # Wrapping ObstacleRectangle for Python
 cdef class CppObstacleRectangle(CppObstacle):

@@ -130,9 +130,9 @@ void Avoidance::validate_obstacle_points()
     }
 
     std::cout << "validate_obstacle_points: number of valid points = " << valid_points_.size() << std::endl;
-    for (const auto &point : valid_points_) {
-        std::cout << "{" << point.x() << ", " << point.y() << "}" << std::endl;
-    }
+    //for (const auto &point : valid_points_) {
+    //    std::cout << "{" << point.x() << ", " << point.y() << "}" << std::endl;
+    //}
 }
 
 void Avoidance::build_avoidance_graph()
@@ -162,7 +162,7 @@ void Avoidance::build_avoidance_graph()
         }
     }
 
-    print_graph();
+    //print_graph();
 }
 
 bool Avoidance::dijkstra()
@@ -217,18 +217,17 @@ bool Avoidance::dijkstra()
         }
     }
 
-    _print_parents(parents);
+    //_print_parents(parents);
 
     int current = finish;
     while (current != -1 && current != start) {
         path_.emplace_front(valid_points_[current]);
         current = parents[current];
     }
-
     path_.emplace_front(valid_points_[start]);
 
     is_avoidance_computed_ = true;
-    print_path();
+    //print_path();
     return true;
 }
 

@@ -22,8 +22,6 @@ namespace cogip {
 
 namespace obstacles {
 
-using BoundingBox = cogip_defs::Polygon;
-
 /// @class Obstacle
 /// @brief Represents a generic polygonal obstacle for collision detection and avoidance.
 class Obstacle : public cogip_defs::Polygon {
@@ -71,12 +69,12 @@ public:
     void enable(bool enabled) { enabled_ = enabled; }
 
     /// @brief Get the bounding box.
-    inline const BoundingBox &bounding_box() const { return bounding_box_; }
+    inline const cogip_defs::Polygon& bounding_box() const { return bounding_box_; }
 
 protected:
     cogip_defs::Pose center_;                ///< Obstacle center.
     double radius_;                          ///< Obstacle circumscribed circle radius.
-    BoundingBox bounding_box_;               ///< Precomputed bounding box for avoidance.
+    cogip_defs::Polygon bounding_box_;       ///< Precomputed bounding box for avoidance.
     bool enabled_ = true;                    ///< Obstacle enabled or not.
     double bounding_box_margin_ = 0.2;       ///< Margin for the bounding box.
 

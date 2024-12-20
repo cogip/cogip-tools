@@ -192,6 +192,12 @@ class DynRoundObstacle(BaseModel):
             bb_margin=self.bb_margin
         )
 
+    def contains(self, pose: Pose):
+        return self._cython_obj.contains(pose.x, pose.y)
+    
+    def bb(self):
+        return self._cython_obj.bounding_box()
+
     @classmethod
     def from_cython(cls, cython_obj):
         return cls(
