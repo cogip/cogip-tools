@@ -22,7 +22,7 @@ nanobind_add_stub(
 # Install the library.
 install(
     TARGETS nanobind_example
-    LIBRARY DESTINATION cogip/cpp/
+    LIBRARY DESTINATION cogip/cpp/examples
 )
 
 # Copy stub files into the source directory.
@@ -40,5 +40,5 @@ install(
 # Copy stub files into the install directory so it will be added to the wheel package.
 install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/py.typed ${CMAKE_CURRENT_BINARY_DIR}/nanobind_example.pyi
-    DESTINATION cogip/cpp
+    DESTINATION cogip/cpp/examples
 )
