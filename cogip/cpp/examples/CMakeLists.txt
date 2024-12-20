@@ -1,0 +1,2 @@
+add_subdirectory(cython_example)
+add_subdirectory(nanobind_example)
