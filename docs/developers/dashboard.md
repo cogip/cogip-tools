@@ -2,11 +2,11 @@
 
 The dashboard is written with vanilla JS, CSS and HTML (and love). We made the choice to not used any frameworks like Angular or Vue.js... because dashboard is a very small web site.
 
-This dashboard uses only two externals frameworks, which are Bootstrap and Socket.io.
+This dashboard uses only two externals frameworks, which are TailwindCSS and Socket.io.
 
 Socket.io is useful to dynamically receive events from Copilot and display them.
 
-Bootstrap is a framework very powerful which comes with layout conception (grid to help us with responsively) and components (like modal that we use). But Bootstrap is a very large and heavy framework and we only use a percentage of what it offers. So we made the choice to purge it to reduce loading time on dashboard.
+TailwindCSS is a utility-first CSS framework packed with classes like flex, pt-4, text-center and rotate-90 that can be composed to build any design.
 
 !!! note "The manipulation below needs to be done each time we add or remove a class in html, css or js files in server."
 
@@ -16,11 +16,11 @@ This command line has to be executed in `cogip-tools/cogip/tools/dashboard` or `
    `sudo apt install npm`
 
 2. Install PurgeCSS as CLI (you may need to be super user)
-   `npm i -g purgecss`
+   `npm install`
 
-3. Run command to purge Bootstrap file according to what we use in our html, js and css files
-   `purgecss -css static/css/external/bootstrap-5.3.3.min.css --content templates/dashboard.html static/js/*.js --output static/css/purged`
+3. Run command to generate css file according to what we use in our html, js and css files
+   `npx tailwindcss -i cogip/tools/dashboard/static/css/input.css -o cogip/tools/dashboard/static/css/prod/output.css --watch --minify`
 
 Useful documentation:
 
-- https://purgecss.com/CLI.html
+[- https://purgecss.com/CLI.html](https://tailwindcss.com/docs/)

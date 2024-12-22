@@ -1,0 +1,12 @@
+@import "custom-scrollbar.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --grey-color: #acaeb1;
+    --red-cogip: #d01b1e;
+    --color-camp-1: #005CE6; /* blue */
+    --color-camp-2: #FFBF00; /* yellow */
+}

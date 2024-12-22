@@ -5,27 +5,24 @@ let obstacles = [];
 let robot = new Image();
 let order = new Image();
 
-export function updatePoseCurrent(robot_id, new_pose) {
-  if (robot.src === '') {
-    if (robot_id === 1) {
-      robot.src = "static/img/robot.png";
-    }
-    else {
-      robot.src = "static/img/pami.png";
-    }
+const ROBOT_IMAGES = {
+  1: "static/img/robot.png",
+  2: "static/img/pami.png",
+};
+
+function setRobotImage(imageObj, robotId) {
+  if (imageObj.src === "") {
+    imageObj.src = ROBOT_IMAGES[robotId] || ROBOT_IMAGES[2]; // Default to second image if robotId is not found
   }
+}
+
+export function updatePoseCurrent(robot_id, new_pose) {
+  setRobotImage(robot, robot_id);
   pose_current = new_pose;
 }
 
 export function updatePoseOrder(robot_id, new_pose) {
-  if (order.src === '') {
-    if (robot_id === 1) {
-      order.src = "static/img/robot.png";
-    }
-    else {
-      order.src = "static/img/pami.png";
-    }
-  }
+  setRobotImage(order, robot_id);
   pose_order = new_pose;
 }
 
@@ -46,7 +43,7 @@ let coordY = 0;
 
 export function resizeCanvas() {
   const footerHeight =
-    document.getElementsByClassName("footer")[0].offsetHeight;
+    document.getElementsByTagName("footer")[0].offsetHeight;
   const menuWidth = document.getElementById("menu").offsetWidth;
 
   let htmlCanvas = document.getElementById("board");
@@ -99,13 +96,12 @@ function setButtonPosition(htmlCanvas) {
   const rightPx = Math.max(
     window.innerWidth -
       document.getElementById("menu").offsetWidth -
-      10 -
       htmlCanvas.width,
     0
   );
 
   document.getElementById("buttonRefresh").style.right = rightPx + "px";
-  buttonCameraModal.style.right = rightPx - 49 + "px"; // 49 is width of refresh image
+  buttonCameraModal.style.right = rightPx - 59 + "px"; // 49 is width of refresh image
 }
 
 function getMousePos(canvas, evt) {
@@ -119,7 +115,7 @@ function getMousePos(canvas, evt) {
 }
 
 export function displayMsg(msg) {
-  let stateHTML = document.getElementById(`state_robot`);
+  let stateHTML = document.getElementById("state_robot");
 
   let pose_current_robot = pose_current;
 
