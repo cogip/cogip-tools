@@ -14,7 +14,7 @@ RUN apt-get update \
         openocd picocom \
         xserver-xorg-video-all xserver-xorg-input-all xserver-xorg-core xinit x11-xserver-utils chromium-browser unclutter \
         systemd-resolved systemd-timesyncd \
-        i2c-tools libi2c-dev \
+        i2c-tools libi2c-dev libserial-dev \
         cockpit dnsmasq iptables wait-for-it ifmetric can-utils
 
 # Configure locale, timezone and keyboard

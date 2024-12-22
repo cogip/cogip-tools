@@ -37,7 +37,7 @@ git submodule update --init
 ### Debian packages
 
 ```bash
-sudo apt install libxcb-xinerama0 socat protobuf-compiler build-essential swig cmake pkg-config
+sudo apt install libxcb-xinerama0 socat protobuf-compiler build-essential swig cmake pkg-config libserial-dev
 ```
 
 ### Build mcu-firmware

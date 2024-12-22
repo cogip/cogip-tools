@@ -5,7 +5,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 
 RUN apt-get update \
  && apt-get -y dist-upgrade --auto-remove --purge \
- && apt-get -y install curl wait-for-it git socat g++ \
+ && apt-get -y install curl wait-for-it git socat g++ pkg-config libserial-dev \
  && apt-get -y clean
 
 WORKDIR /src
