@@ -28,3 +28,4 @@ find_package(nanobind CONFIG REQUIRED)
 
 # Add C++ extensions
 add_subdirectory(examples)
+add_subdirectory(drivers)

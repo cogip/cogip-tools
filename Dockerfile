@@ -5,7 +5,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 
 RUN apt-get update \
  && apt-get -y dist-upgrade --auto-remove --purge \
- && apt-get -y install curl wait-for-it git socat g++ \
+ && apt-get -y install curl wait-for-it git socat g++ pkg-config libserial-dev \
  && apt-get -y clean
 
 WORKDIR /src
@@ -17,7 +17,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/
 RUN --mount=type=bind,source=.python-version,target=.python-version \
     uv python install
 
-# Create a virtual environmnent to respect PEP 668
+# Create a virtual environment to respect PEP 668
 RUN uv venv
 
 # Required because mcu-firmware is not compatible with uv
