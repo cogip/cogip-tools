@@ -1,7 +1,7 @@
 #include <string>
 
-class Example {
+class CythonExample {
 public:
-    Example() {};
+    CythonExample() {};
     std::string getMessage() const;
 };

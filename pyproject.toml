@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "cython", "cython-cmake"]
+requires = ["scikit-build-core", "cython", "cython-cmake", "nanobind"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -11,6 +11,8 @@ license = {file = "LICENSE"}
 dependencies = [
     "aiohttp==3.10.10",
     "aioserial==1.3.1",
+    "cython~=3.0.11",
+    "cython-cmake~=0.2.1",
     "devtools==0.12.2",
     "fastapi==0.115.2",
     "gpiozero==2.0.1",
@@ -18,6 +20,7 @@ dependencies = [
     "Jinja2==3.1.2",
     "luma.oled==3.13.0",
     "more_itertools==10.1.0",
+    "nanobind~=2.4.0",
     "numpy<2",
     "opencv-contrib-python==4.10.0.84",
     "polling2==0.5.0",
@@ -78,7 +81,8 @@ cogip-dashboard-beacon = "cogip.tools.dashboard_beacon.__main__:main"
 cogip-copilot-pami = "cogip.tools.copilot_pami.__main__:main"
 cogip-detector-pami = "cogip.tools.detector_pami.__main__:main"
 cogip-cansend = "cogip.tools.cansend.__main__:main"
-cogip-cpp-example = "cogip.tools.cpp_example.__main__:main"
+cogip-cpp-cython-example = "cogip.tools.cpp_cython_example.__main__:main"
+cogip-cpp-nanobind-example = "cogip.tools.cpp_nanobind_example.__main__:main"
 
 [tool.uv]
 python-preference = "only-managed"
