@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Lidar View</title>
+        <script src="{{ url_for('static', path='js/chart.js') }}"></script>
+        <script src="{{ url_for('static', path='js/chartjs-plugin-zoom.min.js') }}"></script>
+        <style>
+            body {
+                background-color: black;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            h1 {
+                text-align: center;
+                color: #666;
+                margin: 8px 0;
+            }
+
+            #resetZoom {
+                text-align: center;
+                color: #3080d0;
+                font-size: 0.8rem;
+                background-color: rgba(40, 44, 52, 0.75);
+                border: 1px solid rgba(48, 128, 208, 0.2);
+                border-radius: 6px;
+                padding: 8px;
+                cursor: pointer;
+                margin: 8px auto;
+            }
+
+            .parent {
+                display: flex;
+                justify-content: center;
+                overflow: hidden;
+            }
+
+            .chart-container {
+                width: 100%;
+                height: 100%;
+                max-width: 80vh;
+                max-height: 80vh;
+                aspect-ratio: 1 / 1;
+                box-sizing: border-box;
+                border: 2px solid #333;
+            }
+
+            #chart {
+                background-color: rgb(24, 24, 27);
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>Lidar View</h1>
+        <div class="parent">
+            <div class="chart-container">
+                <canvas id="chart"></canvas>
+            </div>
+        </div>
+        <a id="resetZoom">Reset zoom</a>
+        <script>
+            let chart;
+
+            // Process data to extract points
+            const getPoints = (lidarData) => {
+                return lidarData.map(([distance, intensity], angle) => {
+                    // Ensure we have valid numbers for distance and intensity
+                    if (typeof distance !== "number" || typeof intensity !== "number") {
+                        console.error("Invalid data at index", angle, ":", distance, intensity);
+                        return null;
+                    }
+                    const radians = (angle + 90) * (Math.PI / 180); // convert degrees to radians
+                    const x = -Math.cos(radians) * distance;
+                    const y = Math.sin(radians) * distance;
+
+                    return {
+                        x: x,
+                        y: y,
+                        distance: distance,
+                        angle: angle,
+                        color: `rgb(${255 - intensity}, ${intensity}, 0)` };
+                })
+            }
+
+            function createChart(points) {
+                const ctx = document.getElementById('chart').getContext('2d');
+
+                // Create the chart
+                chart = new Chart(ctx, {
+                    type: 'scatter', // Using scatter chart type
+                    data: {
+                        datasets: [{
+                            data: points,
+                            backgroundColor: points.map((point) => point.color), // Color based on intensity
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        aspectRatio: 1,
+                        plugins: {
+                            legend: { display: false }, // Disable legend if not needed
+                            tooltip: {
+                                callbacks: {
+                                    label: function (tooltipItem) {
+                                        const point = tooltipItem.raw;
+                                        return `Distance: ${point.distance}, Intensity: ${parseInt(255 - point.color.split(",")[0].slice(4))}, Angle ${point.angle}`;
+                                    }
+                                }
+                            },
+                            zoom: {
+                                zoom: {
+                                    wheel: {
+                                        enabled: true,
+                                        speed: 0.1, // Set zoom speed
+                                    },
+                                    pinch: {
+                                        enabled: true,
+                                        threshold: 10,
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                min: -3100,
+                                max: 3100,
+                                grid: {
+                                    display: false
+                                },
+                                beginAtZero: true,
+                                position: {
+                                    y: 0
+                                }
+                            },
+                            y: {
+                                min: -3100,
+                                max: 3100,
+                                grid: {
+                                    display: false
+                                },
+                                position: {
+                                    x: 0
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 0 // Disable animation by setting duration to 0
+                        },
+                    }
+                });
+            }
+
+            function fetchData() {
+                fetch('/data')
+                    .then(response => response.json())
+                    .then(data => {
+                        points = getPoints(data);
+
+                        // Update the chart with new data
+                        if (chart) {
+                            chart.data.datasets[0].data = points;
+                            chart.data.datasets[0].backgroundColor = points.map((point) => point.color);
+                            chart.update(); // Redraw the chart with new data
+                        } else {
+                            // If the chart is not yet created, create it now
+                            createChart(points);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+            }
+
+            // Set an interval to fetch data every 2 seconds
+            setInterval(fetchData, 200);
+
+            // Set event listeners for mouse wheel
+            window.onload = fetchData;
+
+            document.getElementById('resetZoom').addEventListener('click', () => { chart.resetZoom(); })
+        </script>
+    </body>
+</html>

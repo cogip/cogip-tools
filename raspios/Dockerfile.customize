@@ -103,7 +103,7 @@ RUN chmod 600 /etc/ssh/ssh_host_* \
 RUN --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=CMakeLists.txt,target=CMakeLists.txt \
-    --mount=type=bind,source=cogip,target=cogip \
+    --mount=type=bind,source=cogip,target=cogip,rw \
     --mount=type=bind,source=LICENSE,target=LICENSE \
     uv sync --no-dev --no-editable --frozen
 
