@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lidar View</title>
+    <script src="{{ url_for('static', path='js/chart.js') }}"></script>
+    <script>
+        let chart;
+        let zoomScale = 1; // Initial zoom scale
+
+        // Process data to extract points
+        const getPoints = (data) => {
+            // Add a safeguard to ensure data is in the correct format
+            if (!Array.isArray(data)) {
+                console.error("Invalid data format:", data);
+                return [];
+            }
+
+            return data.map(([distance, intensity], angle) => {
+                // Ensure we have valid numbers for distance and intensity
+                if (typeof distance !== "number" || typeof intensity !== "number") {
+                    console.error("Invalid data at index", angle, ":", distance, intensity);
+                    return null;
+                }
+                return { distance, angle, color: `rgb(${255 - intensity}, ${intensity}, 0)` };
+            }).filter(Boolean); // Filter out any invalid data
+        }
+
+        // Create a function to initialize the chart
+        function createChart(points) {
+            const ctx = document.getElementById('circleChart').getContext('2d');
+
+            // Create the chart
+            chart = new Chart(ctx, {
+                type: 'polarArea', // Using polarArea chart type
+                data: {
+                    datasets: [{
+                        label: 'Circle Points',
+                        data: points.map((point) => point.distance), // Use distance for the radius
+                        backgroundColor: points.map((point) => point.color), // Color based on intensity
+                        borderWidth: 0, // No border width, removes the white gaps between slices
+                        borderColor: 'transparent', // Ensures no border color (avoid white borders)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        x: {
+                            beginAtZero: true, // Start radius from 0
+                            max: 3000 * zoomScale, // Maximum value for radius
+                            ticks: {
+                                stepSize: 1000, // Adjust step size for ticks
+                                display: false, // Hide radial ticks
+                            },
+                            grid: {
+                                lineWidth: 1, // Set the grid line width
+                                color: 'rgba(255, 255, 255, 0.5)', // Set the grid line color
+                                zIndex: 1 // Ensure grid lines stay behind the data
+                            },
+                            pointsLabels: {
+                                font: {
+                                    size: 12, // Adjust font size
+                                    weight: 'bold',
+                                    family: 'Arial'
+                                },
+                                color: 'black', // Point label color
+                                zIndex: 2 // Ensure labels are on top of the data
+                            },
+                            zIndex: 2 // Ensure axis is drawn above the data
+                        },
+                    },
+                    animation: {
+                        duration: 0 // Disable animation by setting duration to 0
+                    }
+                }
+            });
+        }
+
+        // Function to handle zoom with mouse wheel
+        function handleWheel(event) {
+            event.preventDefault();
+            const zoomSpeed = 0.05; // Adjust zoom speed
+
+            if (event.deltaY < 0) {
+                zoomScale += zoomSpeed; // Zoom in
+            } else {
+                zoomScale -= zoomSpeed; // Zoom out
+            }
+
+            // Ensure zoomScale is within reasonable bounds
+            zoomScale = Math.max(0.5, Math.min(zoomScale, 5)); // Limit zoom between 0.5x and 5x
+
+            // Update chart's scale and redraw it
+            chart.options.scales.r.max = 3000 * zoomScale; // Adjust max radius
+            chart.update();
+        }
+
+        function fetchData() {
+            fetch('/data')
+                .then(response => response.json())
+                .then(data => {
+                    points = getPoints(data);
+                    if (points.length === 0) {
+                        console.error("No valid data to display.");
+                        return;
+                    }
+                    // Update the chart with new data
+                    if (chart) {
+                        chart.data.datasets[0].data = points.map((point) => point.distance);
+                        chart.data.datasets[0].backgroundColor = points.map((point) => point.color);
+                        chart.update(); // Redraw the chart with new data
+                    } else {
+                        // If the chart is not yet created, create it now
+                        createChart(points);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+        }
+
+        // Set an interval to fetch data every 2 seconds
+        setInterval(fetchData, 200);
+
+        // Set event listeners for mouse wheel
+        window.onload = () => {
+            fetchData();
+            const canvas = document.getElementById('circleChart');
+            canvas.addEventListener('wheel', handleWheel);
+        }
+    </script>
+    <style>
+        /* Make the canvas circular and fix the size */
+        #circleChart {
+            width: 600px !important;
+            height: 600px !important;
+            border-radius: 50% !important; /* Make the canvas a circle */
+            overflow: hidden; /* Ensure the content doesn't overflow the circle */
+            border: 2px solid black; /* Optional: Add a border around the circle */
+        }
+    </style>
+</head>
+<body>
+    <h1>Lidar View</h1>
+    <pre id="data"></pre>
+    <canvas id="circleChart" width="600" height="600"></canvas>
+</body>
+</html>

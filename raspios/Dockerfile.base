@@ -8,6 +8,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 RUN update-locale LANG=C
 
+# Temporary fix to be able to dist-upgrade (https://github.com/RPi-Distro/repo/issues/382)
+RUN sed -i 's/^MODULES=dep/MODULES=most/' /etc/initramfs-tools/initramfs.conf \
+ && update-initramfs -u
+
 RUN apt-get update
 RUN apt-get -y dist-upgrade --auto-remove --purge
 RUN apt-get -y clean

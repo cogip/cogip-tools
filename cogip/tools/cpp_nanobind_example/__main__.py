@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from numpy.typing import NDArray
 
-from cogip.cpp.nanobind_example import NanobindExample
+from cogip.cpp.examples.nanobind_example import NanobindExample
 
 
 def main():

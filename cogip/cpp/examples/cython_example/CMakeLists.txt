@@ -30,5 +30,5 @@ target_link_libraries(cython_example PRIVATE cpp_cython_example Python::Module)
 
 install(
     TARGETS cython_example
-    LIBRARY DESTINATION cogip/cpp/
+    LIBRARY DESTINATION cogip/cpp/examples
 )
