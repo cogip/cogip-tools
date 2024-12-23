@@ -11,27 +11,15 @@ RUN apt-get update \
 WORKDIR /src
 
 # Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
-
-# Install Python, version is specified in .python-version, a bind mount from root directory.
-RUN --mount=type=bind,source=.python-version,target=.python-version \
-    uv python install
-
-# Create a virtual environmnent to respect PEP 668
-RUN uv venv
+RUN curl -LsSf https://astral.sh/uv/0.5.11/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
 
 # Required because mcu-firmware is not compatible with uv
 ENV PATH="/src/.venv/bin:${PATH}"
 
-# Patch sysconfig of uv-managed Python installation. This Python version is compiled using clang
-# so uv will use clang by default to build wheels with C/C++ extensions. Some packages are not compatible
-# with clang. sysconfigpatcher will revert sysconfig variables to the default values
-# of a Python system installation to use gcc to build wheels.
-RUN uvx --isolated --from "git+https://github.com/bluss/sysconfigpatcher" sysconfigpatcher $(dirname $(dirname $(readlink .venv/bin/python)))
-
 # Pre-install some Python requirements for COGIP tools
 RUN --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=.python-version,target=.python-version \
     uv sync --no-install-project --frozen
 
 FROM uv_base AS cogip-console
