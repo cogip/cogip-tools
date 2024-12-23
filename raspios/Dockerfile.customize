@@ -30,9 +30,6 @@ RUN dpkg-reconfigure -f noninteractive keyboard-configuration
 # Disable auto-resize at first boot
 RUN rm -f /etc/init.d/resize2fs_once /etc/rc3.d/S01resize2fs_once
 
-# Enable WIFI interface
-RUN for filename in /var/lib/systemd/rfkill/*:wlan; do echo 0 > $filename; done
-
 # Auto console login
 RUN systemctl set-default multi-user.target \
  && systemctl enable getty@tty1.service \
@@ -104,6 +101,9 @@ RUN --mount=type=bind,source=uv.lock,target=uv.lock \
 
 # Add custom configuration files
 ADD raspios/overlay-rootfs /
+
+# Unlock wifi on startup
+RUN systemctl enable unblock-wifi.service
 
 # Fix file permissions
 RUN chmod 600 /etc/ssh/ssh_host_* \
