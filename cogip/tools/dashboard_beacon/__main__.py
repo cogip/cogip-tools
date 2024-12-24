@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+import os
 from pathlib import Path
 from typing import Annotated
 
@@ -15,13 +16,24 @@ def changes_callback(changes):
 
 
 def main_opt(
+    id: Annotated[
+        int,
+        typer.Option(
+            "-i",
+            "--id",
+            min=1,
+            max=9,
+            help="Robot ID.",
+            envvar=["ROBOT_ID"],
+        ),
+    ] = 0,
     reload: Annotated[
         bool,
         typer.Option(
             "-r",
             "--reload",
             help="Reload app on source file changes",
-            envvar=["COGIP_RELOAD", "DASHBOARD_BEACON_RELOAD"],
+            envvar=["COGIP_RELOAD", "DASHBOARD_RELOAD"],
         ),
     ] = False,
     debug: Annotated[
@@ -30,17 +42,19 @@ def main_opt(
             "-d",
             "--debug",
             help="Turn on debug messages",
-            envvar=["COGIP_DEBUG", "DASHBOARD_BEACON_DEBUG"],
+            envvar=["COGIP_DEBUG", "DASHBOARD_DEBUG"],
         ),
     ] = False,
 ):
     if debug:
         logger.setLevel(logging.DEBUG)
 
+    os.environ["ROBOT_ID"] = str(id)
+
     uvicorn_args = ("cogip.tools.dashboard_beacon.app:app",)
     uvicorn_kwargs = {
         "host": "0.0.0.0",
-        "port": 8080,
+        "port": 8080 + id,
         "workers": 1,
         "log_level": "warning",
     }
