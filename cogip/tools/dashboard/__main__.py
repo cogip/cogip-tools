@@ -21,12 +21,12 @@ def main_opt(
         typer.Option(
             "-i",
             "--id",
-            min=1,
+            min=0,
             max=9,
             help="Robot ID.",
             envvar=["ROBOT_ID"],
         ),
-    ] = 1,
+    ] = 0,
     reload: Annotated[
         bool,
         typer.Option(
