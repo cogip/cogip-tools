@@ -77,9 +77,9 @@ class Robot:
             logger.info(f"Beacon handler: disconnected from robot {self.robot_id}")
             await self.server.sio.emit("del_robot", self.robot_id, namespace="/dashboard")
 
-        # @self.sio.event(namespace="/dashboard")
-        # async def state(robot_id: int, state: dict[str, Any]):
-        #     await self.server.sio.emit("state", (robot_id, state), namespace="/dashboard")
+        @self.sio.event(namespace="/dashboard")
+        async def state(robot_id: int, state: dict[str, Any]):
+            await self.server.sio.emit("state", (robot_id, state), namespace="/dashboard")
 
         @self.sio.event(namespace="/dashboard")
         async def pose_current(robot_id: int, pose: dict[str, Any]):
@@ -89,13 +89,13 @@ class Robot:
         async def pose_order(robot_id: int, pose: dict[str, Any]):
             await self.server.sio.emit("pose_order", (robot_id, pose), namespace="/dashboard")
 
-        # @self.sio.event(namespace="/dashboard")
-        # async def obstacles(obstacles: list[dict[str, Any]]):
-        #     await self.server.sio.emit("obstacles", (self.robot_id, obstacles), namespace="/dashboard")
+        @self.sio.event(namespace="/dashboard")
+        async def obstacles(robot_id, obstacles: list[dict[str, Any]]):
+            await self.server.sio.emit("obstacles", (robot_id, obstacles), namespace="/dashboard")
 
-        # @self.sio.event(namespace="/dashboard")
-        # async def path(robot_id: int, path: list[dict[str, Any]]):
-        #     await self.server.sio.emit("path", (robot_id, path), namespace="/dashboard")
+        @self.sio.event(namespace="/dashboard")
+        async def path(robot_id: int, path: list[dict[str, Any]]):
+            await self.server.sio.emit("path", (robot_id, path), namespace="/dashboard")
 
         @self.sio.event(namespace="/beacon")
         async def pami_reset():
