@@ -113,7 +113,7 @@ class RobotManager(QtCore.QObject):
         self._sensors_emulation[robot_id] = False
         robot = self._robots.get(robot_id)
         if robot:
-            robot.start_sensors_emulation()
+            robot.stop_sensors_emulation()
 
     def emit_sensors_data(self, robot_id: int, data: list[int]) -> None:
         """
