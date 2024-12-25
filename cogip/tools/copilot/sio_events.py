@@ -20,6 +20,7 @@ class SioEvents(socketio.AsyncClientNamespace):
     def __init__(self, copilot: "copilot.Copilot"):
         super().__init__("/copilot")
         self.copilot = copilot
+        self.connected = False
 
     async def on_connect(self):
         """
@@ -34,6 +35,9 @@ class SioEvents(socketio.AsyncClientNamespace):
         logger.info("Connected to cogip-server")
         await self.emit("connected")
 
+        self.copilot.create_shared_memory()
+        self.connected = True
+
         if self.copilot.shell_menu:
             await self.emit("menu", self.copilot.shell_menu.model_dump(exclude_defaults=True, exclude_unset=True))
         await self.emit("register_menu", {"name": "copilot", "menu": menu.model_dump()})
@@ -43,6 +47,8 @@ class SioEvents(socketio.AsyncClientNamespace):
         On disconnection from cogip-server.
         """
         logger.info("Disconnected from cogip-server")
+        self.connected = False
+        self.copilot.delete_shared_memory()
 
     async def on_connect_error(self, data: dict[str, Any]) -> None:
         """
