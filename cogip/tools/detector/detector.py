@@ -11,6 +11,8 @@ except:  # noqa
     ydlidar = None
 
 from cogip import models
+from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.utils import ThreadLoop
 from . import logger
 from .properties import Properties
@@ -31,6 +33,7 @@ class Detector:
 
     def __init__(
         self,
+        robot_id: int,
         server_url: str,
         lidar_port: str | None,
         min_distance: int,
@@ -42,6 +45,7 @@ class Detector:
         Class constructor.
 
         Arguments:
+            robot_id: Robot ID
             server_url: server URL
             lidar_port: Serial port connected to the Lidar
             min_distance: Minimum distance to detect an obstacle
@@ -49,6 +53,7 @@ class Detector:
             beacon_radius: Radius of the opponent beacon support (a cylinder of 70mm diameter to a cube of 100mm width)
             refresh_interval: Interval between each update of the obstacle list (in seconds)
         """
+        self.robot_id = robot_id
         self._server_url = server_url
         self._lidar_port = lidar_port
         self._properties = Properties(
@@ -57,10 +62,13 @@ class Detector:
             beacon_radius=beacon_radius,
             refresh_interval=refresh_interval,
         )
+
+        self.shared_memory: SharedMemory | None = None
+        self.shared_pose_current_lock: WritePriorityLock | None = None
+        self.shared_pose_current: SharedPose | None = None
+
         self._lidar_data: list[int] = list()
         self._lidar_data_lock = threading.Lock()
-        self._robot_pose = models.Pose()
-        self._robot_pose_lock = threading.Lock()
 
         self._obstacles_updater_loop = ThreadLoop(
             "Obstacles updater loop",
@@ -99,6 +107,16 @@ class Detector:
 
         self._sio = socketio.Client(logger=False)
         self._sio.register_namespace(SioEvents(self))
+
+    def create_shared_memory(self):
+        self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
+        self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
+        self.shared_pose_current = self.shared_memory.get_pose_current()
+
+    def delete_shared_memory(self):
+        self.shared_pose_current = None
+        self.shared_pose_current_lock = None
+        self.shared_memory = None
 
     def connect(self):
         """
@@ -144,18 +162,6 @@ class Detector:
     @property
     def properties(self) -> Properties:
         return self._properties
-
-    @property
-    def robot_pose(self) -> models.Pose:
-        """
-        Last position of the robot.
-        """
-        return self._robot_pose
-
-    @robot_pose.setter
-    def robot_pose(self, new_pose: models.Pose) -> None:
-        with self._robot_pose_lock:
-            self._robot_pose = new_pose
 
     def update_refresh_interval(self) -> None:
         self._obstacles_updater_loop.interval = self._properties.refresh_interval
@@ -230,7 +236,7 @@ class Detector:
 
         return filtered_distances
 
-    def generate_obstacles(self, robot_pose: models.Pose, distances: list[int]) -> list[models.Vertex]:
+    def generate_obstacles(self, distances: list[int]) -> list[models.Vertex]:
         """
         Update obstacles list from lidar data.
         """
@@ -245,10 +251,17 @@ class Detector:
 
             angle = (360 - angle) % 360
 
+            # Copy the pose before computation to reduce critical section length
+            self.shared_pose_current_lock.start_reading()
+            robot_x = self.shared_pose_current.x
+            robot_y = self.shared_pose_current.y
+            robot_angle = self.shared_pose_current.angle
+            self.shared_pose_current_lock.finish_reading()
+
             # Compute obstacle position
-            obstacle_angle = math.radians((int(robot_pose.O) + angle) % 360)
-            x = robot_pose.x + distance * math.cos(obstacle_angle)
-            y = robot_pose.y + distance * math.sin(obstacle_angle)
+            obstacle_angle = math.radians((int(robot_angle) + angle) % 360)
+            x = robot_x + distance * math.cos(obstacle_angle)
+            y = robot_y + distance * math.sin(obstacle_angle)
 
             obstacles.append(models.Vertex(x=x, y=y))
 
@@ -260,10 +273,8 @@ class Detector:
         """
         with self._lidar_data_lock:
             filtered_distances = self.filter_distances()
-        with self._robot_pose_lock:
-            robot_pose = self.robot_pose.model_copy()
 
-        obstacles = self.generate_obstacles(robot_pose, filtered_distances)
+        obstacles = self.generate_obstacles(filtered_distances)
         logger.debug(f"Generated obstacles: {obstacles}")
         if self._sio.connected:
             self._sio.emit("obstacles", [o.model_dump(exclude_defaults=True) for o in obstacles], namespace="/detector")

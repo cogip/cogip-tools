@@ -108,6 +108,7 @@ def main_opt(
         server_url = f"http://localhost:809{id}"
 
     args = (
+        id,
         server_url,
         lidar_port,
         min_distance,

@@ -3,7 +3,6 @@ from typing import Any
 import polling2
 import socketio
 
-from cogip import models
 from . import detector, logger
 from .menu import menu
 
@@ -25,6 +24,7 @@ class SioEvents(socketio.ClientNamespace):
         logger.info("Connected to cogip-server")
         self.emit("connected")
         self.emit("register_menu", {"name": "detector", "menu": menu.model_dump()})
+        self._detector.create_shared_memory()
         self._detector.start()
 
     def on_disconnect(self) -> None:
@@ -33,6 +33,7 @@ class SioEvents(socketio.ClientNamespace):
         """
         logger.info("Disconnected from cogip-server")
         self._detector.stop()
+        self._detector.delete_shared_memory()
 
     def on_connect_error(self, data: dict[str, Any]) -> None:
         """
@@ -71,12 +72,6 @@ class SioEvents(socketio.ClientNamespace):
         self._detector.properties.__setattr__(name := config["name"], config["value"])
         if name == "refresh_interval":
             self._detector.update_refresh_interval()
-
-    def on_pose_current(self, data: dict[str, Any]) -> None:
-        """
-        Callback on robot pose message.
-        """
-        self._detector.robot_pose = models.Pose.model_validate(data)
 
     def on_sensors_data(self, data: list[int]) -> None:
         """

@@ -68,7 +68,6 @@ class CopilotNamespace(socketio.AsyncNamespace):
         """
         Callback on pose event.
         """
-        await self.emit("pose_current", pose, namespace="/detector")
         await self.emit("pose_current", pose, namespace="/planner")
         await self.emit("pose_current", (self.context.robot_id, pose), namespace="/dashboard")
         await self.recorder.async_record({"pose_current": pose})
