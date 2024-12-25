@@ -1,11 +1,11 @@
-from fastapi import FastAPI
+from socketio import ASGIApp
 
 from .server import Server
 
 
-def create_app() -> FastAPI:
+def create_app() -> ASGIApp:
     """
-    Create server and return FastAPI application for uvicorn/gunicorn.
+    Create server and return ASGIApp application for uvicorn/gunicorn.
     """
     server = Server()
     return server.app
