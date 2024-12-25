@@ -4,13 +4,22 @@ from typing import Any
 import socketio
 from pydantic import ValidationError
 from socketio.exceptions import ConnectionRefusedError
+from uvicorn.main import Server as UvicornServer
 
 from cogip import models
+from cogip.cpp.libraries.shared_memory import SharedMemory
 from . import context, logger, namespaces
 
 
 class Server:
-    _exiting: bool = False  # True if Uvicorn server was ask to shutdown
+    _original_uvicorn_exit_handler = UvicornServer.handle_exit  # Backup of original exit handler to overload it
+    _shared_memory: SharedMemory | None = None  # Shared memory instance
+
+    @staticmethod
+    def handle_exit(*args, **kwargs):
+        """Overload function for Uvicorn handle_exit"""
+        Server._shared_memory = None
+        Server._original_uvicorn_exit_handler(*args, **kwargs)
 
     def __init__(self):
         """
@@ -18,6 +27,15 @@ class Server:
 
         Create SocketIO server.
         """
+        self.context = context.Context()
+        self.context.robot_id = int(os.environ["ROBOT_ID"])
+        self.root_menu = models.ShellMenu(name="Root Menu", entries=[])
+        self.context.tool_menus["root"] = self.root_menu
+        self.context.current_tool_menu = "root"
+
+        if Server._shared_memory is None:
+            Server._shared_memory = SharedMemory(f"cogip_{self.context.robot_id}", owner=True)
+
         self.sio = socketio.AsyncServer(
             always_connect=False,
             async_mode="asgi",
@@ -34,11 +52,8 @@ class Server:
         self.sio.register_namespace(namespaces.RobotcamNamespace(self))
         self.sio.register_namespace(namespaces.BeaconNamespace(self))
 
-        self.context = context.Context()
-        self.context.robot_id = int(os.environ["ROBOT_ID"])
-        self.root_menu = models.ShellMenu(name="Root Menu", entries=[])
-        self.context.tool_menus["root"] = self.root_menu
-        self.context.current_tool_menu = "root"
+        # Overload default Uvicorn exit handler
+        UvicornServer.handle_exit = self.handle_exit
 
         @self.sio.event
         def connect(sid, environ, auth):
