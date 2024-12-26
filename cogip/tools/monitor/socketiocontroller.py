@@ -26,8 +26,6 @@ class SocketioController(QtCore.QObject):
             Qt signal emitted to log messages in UI console
         signal_new_menu:
             Qt signal emitted to load a new shell/tool menu
-        signal_new_robot_pose_current:
-            Qt signal emitted on robot pose current update
         signal_new_robot_pose_order:
             Qt signal emitted on robot pose order update
         signal_new_robot_state:
@@ -60,7 +58,6 @@ class SocketioController(QtCore.QObject):
 
     signal_new_console_text: qtSignal = qtSignal(str)
     signal_new_menu: qtSignal = qtSignal(str, models.ShellMenu)
-    signal_new_robot_pose_current: qtSignal = qtSignal(int, models.Pose)
     signal_new_robot_pose_order: qtSignal = qtSignal(int, models.Pose)
     signal_new_robot_state: qtSignal = qtSignal(int, models.RobotState)
     signal_new_robot_path: qtSignal = qtSignal(int, list)
@@ -266,14 +263,6 @@ class SocketioController(QtCore.QObject):
                 self.signal_actuator_state.emit(state)
             except ValidationError as exc:
                 logger.warning(f"Failed to decode ActuatorState: {exc}")
-
-        @self.sio.on("pose_current", namespace="/dashboard")
-        def on_pose_current(robot_id: int, data: dict[str, Any]) -> None:
-            """
-            Callback on robot pose current message.
-            """
-            pose = models.Pose.model_validate(data)
-            self.signal_new_robot_pose_current.emit(robot_id, pose)
 
         @self.sio.on("pose_order", namespace="/dashboard")
         def on_pose_order(robot_id: int, data: dict[str, Any]) -> None:

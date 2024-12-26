@@ -327,11 +327,8 @@ class MainWindow(QtWidgets.QMainWindow):
         view.closed.disconnect()
         self.update_view_menu()
 
-    @qtSlot(Pose)
     def new_robot_pose(self, robot_id: int, pose: Pose):
         """
-        Qt Slot
-
         Update robot position information in the status bar.
 
         Arguments:

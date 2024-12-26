@@ -9,7 +9,10 @@ from PySide6.Qt3DRender import Qt3DRender
 from PySide6.QtCore import Signal as qtSignal
 from PySide6.QtCore import Slot as qtSlot
 
+from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.shared_memory import SharedMemory
 from cogip.models import Pose
+from cogip.tools.monitor.mainwindow import MainWindow
 from .asset import AssetEntity
 from .robot_order import RobotOrderEntity
 from .sensor import LidarSensor, Sensor, ToFSensor
@@ -22,6 +25,7 @@ class RobotEntity(AssetEntity):
     Attributes:
         sensors_update_interval: Interval in milliseconds between each sensors update
         sensors_emit_interval: Interval in milliseconds between each sensors data emission
+        update_pose_current_interval: Interval in milliseconds between each current pose update
         sensors_emit_data_signal: Qt Signal emitting sensors data
         order_robot:: Entity that represents the robot next destination
     """
@@ -29,14 +33,16 @@ class RobotEntity(AssetEntity):
     sensors_update_interval: int = 5
     sensors_emit_interval: int = 20
     sensors_emit_data_signal: qtSignal = qtSignal(int, list)
+    update_pose_current_interval: int = 100
     order_robot: RobotOrderEntity = None
 
-    def __init__(self, robot_id: int, parent: Qt3DCore.QEntity | None = None):
+    def __init__(self, robot_id: int, win: MainWindow, parent: Qt3DCore.QEntity | None = None):
         """
         Class constructor.
 
         Inherits [AssetEntity][cogip.entities.asset.AssetEntity].
         """
+        self.win = win
         asset_path = Path(f"assets/{'robot' if robot_id == 1 else 'pami'}2024.dae")
         super().__init__(asset_path, parent=parent)
         self.robot_id = robot_id
@@ -44,6 +50,9 @@ class RobotEntity(AssetEntity):
         self.rect_obstacles_pool = []
         self.round_obstacles_pool = []
         self.beacon_entity: Qt3DCore.QEntity | None = None
+
+        self.shared_memory: SharedMemory | None = None
+        self.shared_pose_current: SharedPose | None = None
 
         if robot_id == 1:
             self.beacon_entity = Qt3DCore.QEntity(self)
@@ -68,6 +77,20 @@ class RobotEntity(AssetEntity):
 
         self.sensors_emit_timer = QtCore.QTimer()
         self.sensors_emit_timer.timeout.connect(self.emit_sensors_data)
+
+        self.update_pose_current_timer = QtCore.QTimer()
+        self.update_pose_current_timer.timeout.connect(self.update_pose_current)
+
+    def setEnabled(self, isEnabled):
+        if isEnabled:
+            self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
+            self.shared_pose_current = self.shared_memory.get_pose_current()
+            self.update_pose_current_timer.start(RobotEntity.update_pose_current_interval)
+        else:
+            self.update_pose_current_timer.stop()
+            self.shared_pose_current = None
+            self.shared_memory = None
+        return super().setEnabled(isEnabled)
 
     def post_init(self):
         """
@@ -125,16 +148,18 @@ class RobotEntity(AssetEntity):
         self.sensors_update_timer.timeout.connect(sensor.update_hit)
         self.sensors.append(sensor)
 
-    @qtSlot(Pose)
-    def new_robot_pose_current(self, new_pose: Pose) -> None:
+    def update_pose_current(self) -> None:
         """
-        Qt slot called to set the robot's new pose current.
-
-        Arguments:
-            new_pose: new robot pose
+        Update pose current from shared memory.
         """
-        self.transform_component.setTranslation(QtGui.QVector3D(new_pose.x, new_pose.y, 0))
-        self.transform_component.setRotationZ(new_pose.O)
+        self.transform_component.setTranslation(
+            QtGui.QVector3D(self.shared_pose_current.x, self.shared_pose_current.y, 0)
+        )
+        self.transform_component.setRotationZ(self.shared_pose_current.angle)
+        self.win.new_robot_pose(
+            self.robot_id,
+            Pose(x=self.shared_pose_current.x, y=self.shared_pose_current.y, O=self.shared_pose_current.angle),
+        )
 
     @qtSlot(Pose)
     def new_robot_pose_order(self, new_pose: Pose) -> None:

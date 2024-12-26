@@ -4,7 +4,7 @@ from PySide6.QtCore import Signal as qtSignal
 from cogip.entities.dynobstacle import DynCircleObstacleEntity, DynRectObstacleEntity
 from cogip.entities.robot import RobotEntity
 from cogip.models import DynObstacleList, DynObstacleRect, Pose
-from cogip.widgets.gameview import GameView
+from cogip.tools.monitor.mainwindow import MainWindow
 
 
 class RobotManager(QtCore.QObject):
@@ -16,7 +16,7 @@ class RobotManager(QtCore.QObject):
 
     sensors_emit_data_signal: qtSignal = qtSignal(int, list)
 
-    def __init__(self, game_view: GameView):
+    def __init__(self, win: MainWindow):
         """
         Class constructor.
 
@@ -24,7 +24,8 @@ class RobotManager(QtCore.QObject):
             game_view: parent of the robots
         """
         super().__init__()
-        self._game_view = game_view
+        self._win = win
+        self._game_view = win.game_view
         self._robots: dict[int, RobotEntity] = dict()
         self._available_robots: dict[int, RobotEntity] = dict()
         self._rect_obstacles_pool: list[DynRectObstacleEntity] = []
@@ -43,7 +44,7 @@ class RobotManager(QtCore.QObject):
             return
 
         if self._available_robots.get(robot_id) is None:
-            robot = RobotEntity(robot_id, self._game_view.scene_entity)
+            robot = RobotEntity(robot_id, self._win, self._game_view.scene_entity)
             self._game_view.add_asset(robot)
             robot.sensors_emit_data_signal.connect(self.emit_sensors_data)
             robot.setEnabled(False)
@@ -66,18 +67,6 @@ class RobotManager(QtCore.QObject):
         robot.stop_sensors_emulation()
         robot.setEnabled(False)
         self._available_robots[robot_id] = robot
-
-    def new_robot_pose_current(self, robot_id: int, new_pose: Pose) -> None:
-        """
-        Set the robot's new pose current.
-
-        Arguments:
-            robot_id: ID of the robot
-            new_pose: new robot pose
-        """
-        robot = self._robots.get(robot_id)
-        if robot:
-            robot.new_robot_pose_current(new_pose)
 
     def new_robot_pose_order(self, robot_id: int, new_pose: Pose) -> None:
         """
@@ -180,3 +169,9 @@ class RobotManager(QtCore.QObject):
 
         self._rect_obstacles_pool = current_rect_obstacles
         self._round_obstacles_pool = current_round_obstacles
+
+    def disable_robots(self):
+        """Disable all enabled robots."""
+        for robot in self._robots.values():
+            if robot.isEnabled():
+                robot.setEnabled(False)
