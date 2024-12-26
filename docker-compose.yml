@@ -58,11 +58,17 @@ x-watch-all: &watch-all
 x-build-console: &build-console
   build:
     context: .
+    args:
+      UID: ${UID:-1000}
+      GID: ${GID:-1000}
     target: cogip-console
 
 x-build-gui: &build-gui
   build:
     context: .
+    args:
+      UID: ${UID:-1000}
+      GID: ${GID:-1000}
     target: cogip-gui
 
 x-build-firmware: &build-firmware
@@ -114,6 +120,8 @@ x-robot: &robot
   cap_add:
     - SYS_PTRACE
   environment: &env-robot
+    UID: ${UID:-1000}
+    GID: ${GID:-1000}
     SERVER_DEBUG:
     SERVER_RELOAD:
     PLANNER_DEBUG:
@@ -142,12 +150,12 @@ x-robot: &robot
     - -c
     - |
       uv sync --frozen --reinstall-package cogip-tools -C build-dir=/src/build/$${ROBOT_ID}
-      uv run cogip-server &
+      gosu $${UID}:$${GID} uv run cogip-server &
       wait-for-it -t 0 localhost:809$${ROBOT_ID}
-      uv run cogip-planner &
-      uv run cogip-copilot --can-channel vcan0 -b 500000 -B 1000000 &
-      uv run cogip-detector &
-      uv run cogip-dashboard &
+      gosu $${UID}:$${GID} uv run cogip-planner &
+      gosu $${UID}:$${GID} uv run cogip-copilot --can-channel vcan0 -b 500000 -B 1000000 &
+      gosu $${UID}:$${GID} uv run cogip-detector &
+      gosu $${UID}:$${GID} uv run cogip-dashboard &
       sleep infinity
   stop_signal: SIGKILL
 
@@ -157,6 +165,8 @@ x-pami: &pami
   cap_add:
     - SYS_PTRACE
   environment: &env-pami
+    UID: ${UID:-1000}
+    GID: ${GID:-1000}
     SERVER_DEBUG:
     SERVER_RELOAD:
     PLANNER_DEBUG:
@@ -183,18 +193,20 @@ x-pami: &pami
     - -c
     - |
       uv sync --frozen --reinstall-package cogip-tools -C build-dir=/src/build/$${ROBOT_ID}
-      uv run cogip-server &
+      gosu $${UID}:$${GID} uv run cogip-server &
       wait-for-it -t 0 localhost:809$${ROBOT_ID}
-      uv run cogip-planner &
-      uv run cogip-copilot-pami --serial-port /var/run/cogip/ptyRPI-$${ROBOT_ID} &
-      uv run cogip-detector-pami &
-      uv run cogip-dashboard &
+      gosu $${UID}:$${GID} uv run cogip-planner &
+      gosu $${UID}:$${GID} uv run cogip-copilot-pami --serial-port /var/run/cogip/ptyRPI-$${ROBOT_ID} &
+      gosu $${UID}:$${GID} uv run cogip-detector-pami &
+      gosu $${UID}:$${GID} uv run cogip-dashboard &
       sleep infinity
 
 x-monitor: &monitor
   << : [*build-gui, *extra-hosts-common]
   network_mode: "host"
   environment: &env-monitor
+    UID: ${UID:-1000}
+    GID: ${GID:-1000}
     DISPLAY:
     QTWEBENGINE_DISABLE_SANDBOX: 1
     XDG_RUNTIME_DIR:
@@ -204,7 +216,7 @@ x-monitor: &monitor
     - -c
     - |
       wait-for-it -t 0 $${COGIP_SOCKETIO_SERVER_HOST}:$${COGIP_SOCKETIO_SERVER_PORT}
-      uv run cogip-monitor http://$${COGIP_SOCKETIO_SERVER_HOST}:$${COGIP_SOCKETIO_SERVER_PORT} &
+      gosu $${UID}:$${GID} uv run cogip-monitor http://$${COGIP_SOCKETIO_SERVER_HOST}:$${COGIP_SOCKETIO_SERVER_PORT} &
       sleep infinity
   working_dir: /src
   volumes:
