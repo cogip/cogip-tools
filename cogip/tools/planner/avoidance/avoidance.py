@@ -143,6 +143,6 @@ class VisibilityRoadMapWrapper:
             # Replace first and last poses with original start and goal
             # to preserve the same properties (like orientation)
             path[-1] = goal.model_copy()
-            path[0] = models.PathPose(**start.model_dump())
+            path[0] = start.model_copy()
 
         return path

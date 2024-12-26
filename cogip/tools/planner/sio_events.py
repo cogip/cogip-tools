@@ -103,12 +103,6 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         await self.planner.reset()
 
-    async def on_pose_current(self, pose: dict[str, Any]):
-        """
-        Callback on pose current message.
-        """
-        self.planner.set_pose_current(models.Pose.model_validate(pose))
-
     async def on_pose_reached(self):
         """
         Callback on pose reached message.

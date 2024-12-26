@@ -17,6 +17,8 @@ from PIL import ImageFont
 from pydantic import RootModel, TypeAdapter
 
 from cogip import models
+from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorState
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
@@ -82,6 +84,11 @@ class Planner:
         self.oled_address = oled_address
         self.debug = debug
 
+        self.shared_memory: SharedMemory | None = None
+        self.shared_pose_current_lock: WritePriorityLock | None = None
+        self.pose_current: SharedPose | None = None
+        self.create_shared_memory()
+
         # We have to make sure the Planner is the first object calling the constructor
         # of the Properties singleton
         if Properties in Singleton._instance:
@@ -136,7 +143,6 @@ class Planner:
                 "robot_id": self.robot_id,
                 "exiting": False,
                 "avoidance_strategy": self.game_context.avoidance_strategy,
-                "pose_current": {},
                 "pose_order": {},
                 "last_avoidance_pose_current": {},
                 "obstacles": [],
@@ -179,6 +185,18 @@ class Planner:
                 logger=self.debug,
             )
 
+    def create_shared_memory(self):
+        if self.shared_memory is None:
+            self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
+            self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
+            self.pose_current = self.shared_memory.get_pose_current()
+
+    def delete_shared_memory(self):
+        if self.shared_memory is not None:
+            self.pose_current = None
+            self.shared_pose_current_lock = None
+            self.shared_memory = None
+
     async def connect(self):
         """
         Connect to SocketIO server.
@@ -208,6 +226,7 @@ class Planner:
         Start sending obstacles list.
         """
         logger.info("Planner: start")
+        self.create_shared_memory()
         self.shared_properties["exiting"] = False
         await self.soft_reset()
         await self.set_pose_start(self.game_context.get_start_pose(self.start_position).pose)
@@ -277,6 +296,8 @@ class Planner:
         if self.avoidance_process and self.avoidance_process.is_alive():
             self.avoidance_process.join()
             self.avoidance_process = None
+
+        self.delete_shared_memory()
 
     async def reset(self):
         """
@@ -424,26 +445,10 @@ class Planner:
         Set the start position of the robot for the next game.
         """
         self.action = None
-        self.pose_current = pose_start.model_copy()
         self.pose_order = None
         self.pose_reached = True
         self.avoidance_path = []
         await self.sio_ns.emit("pose_start", pose_start.model_dump())
-
-    def set_pose_current(self, pose: models.Pose) -> None:
-        """
-        Set current pose of a robot.
-        """
-        self.pose_current = models.Pose.model_validate(pose)
-
-    @property
-    def pose_current(self) -> models.Pose:
-        return self._pose_current
-
-    @pose_current.setter
-    def pose_current(self, new_pose: models.Pose):
-        self._pose_current = new_pose
-        self.shared_properties["pose_current"] = new_pose.model_dump(exclude_unset=True)
 
     @property
     def pose_order(self) -> pose.Pose | None:
@@ -631,7 +636,7 @@ class Planner:
                 f"{'▶' if self.game_context.playing else '◼'}\n"
                 f"Camp: {self.game_context.camp.color.name}\n"
                 f"Strategy: {self.game_context.strategy.name}\n"
-                f"Pose: {self.pose_current.x},{self.pose_current.y},{self.pose_current.O}\n"
+                f"Pose: {self.pose_current.x},{self.pose_current.y},{self.pose_current.angle}\n"
                 f"Countdown: {self.game_context.countdown:.2f}"
             )
             with self.oled_image as draw:

@@ -6,6 +6,7 @@ from multiprocessing.managers import DictProxy
 from pydantic import TypeAdapter
 
 from cogip import models
+from cogip.cpp.libraries.shared_memory import LockName, SharedMemory
 from .. import logger
 from ..actions import Strategy
 from ..table import Table
@@ -19,6 +20,10 @@ def avoidance_process(
     queue_sio: Queue,
 ):
     logger.info("Avoidance: process started")
+    shared_memory = SharedMemory(f"cogip_{shared_properties["robot_id"]}")
+    shared_pose_current_lock = shared_memory.get_lock(LockName.PoseCurrent)
+    shared_data = shared_memory.get_data()
+
     avoidance = Avoidance(table, shared_properties)
     avoidance_path: list[models.PathPose] = []
     last_emitted_pose_order: models.PathPose | None = None
@@ -39,19 +44,21 @@ def avoidance_process(
 
         avoidance_path = []
 
-        pose_current = shared_properties["pose_current"]
         pose_order = shared_properties["pose_order"]
         last_avoidance_pose_current = shared_properties["last_avoidance_pose_current"]
-        if not pose_current:
-            logger.debug("Avoidance: Skip path update (no pose current)")
-            continue
         if not pose_order:
             logger.debug("Avoidance: Skip path update (no pose order)")
             continue
         if not last_avoidance_pose_current:
             last_emitted_pose_order = None
 
-        pose_current = models.PathPose.model_validate(pose_current)
+        shared_pose_current_lock.start_reading()
+        pose_current = models.PathPose(
+            x=shared_data.pose_current.x,
+            y=shared_data.pose_current.y,
+            O=shared_data.pose_current.angle,
+        )
+        shared_pose_current_lock.finish_reading()
         pose_order = models.PathPose.model_validate(pose_order)
 
         if strategy in [Strategy.LinearSpeedTest, Strategy.AngularSpeedTest]:
@@ -156,5 +163,10 @@ def avoidance_process(
         logger.debug("Avoidance: Update path")
         queue_sio.put(("path", [pose.pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
         queue_sio.put(("pose_order", new_pose_order.model_dump(exclude_defaults=True)))
+
+    # Remove reference to shared memory data to trigger garbage collection
+    shared_data = None
+    shared_pose_current_lock = None
+    shared_memory = None
 
     logger.info("Avoidance: process exited")
