@@ -94,6 +94,7 @@ x-firmware: &firmware
     - -x
     - -c
     - applications/$${FIRMWARE_APP}/bin/$${FIRMWARE_BOARD}/$${FIRMWARE_APP}.elf $${FIRMWARE_OPTIONS}
+  stop_signal: SIGKILL
 
 x-robot: &robot
   <<: [*build-console, *volumes-common, *extra-hosts-common, *watch-all]
@@ -201,6 +202,7 @@ x-monitor: &monitor
     - "/tmp/.X11-unix/:/tmp/.X11-unix/"
     - "/dev/dri/:/dev/dri/"
     - "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR"
+  stop_signal: SIGKILL
 
 services:
   beacon:
