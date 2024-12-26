@@ -117,6 +117,7 @@ x-firmware: &firmware
 x-robot: &robot
   <<: [*build-console, *volumes-common, *extra-hosts-common, *watch-all]
   network_mode: "host"
+  ipc: host
   cap_add:
     - SYS_PTRACE
   environment: &env-robot
@@ -162,6 +163,7 @@ x-robot: &robot
 x-pami: &pami
   <<: [*build-console, *volumes-common, *extra-hosts-common, *watch-all]
   network_mode: "host"
+  ipc: host
   cap_add:
     - SYS_PTRACE
   environment: &env-pami
@@ -204,6 +206,7 @@ x-pami: &pami
 x-monitor: &monitor
   << : [*build-gui, *extra-hosts-common]
   network_mode: "host"
+  ipc: host
   environment: &env-monitor
     UID: ${UID:-1000}
     GID: ${GID:-1000}
@@ -233,6 +236,7 @@ services:
     <<: [*build-console, *extra-hosts-common]
     hostname: beacon
     network_mode: "host"
+    ipc: host
     environment:
       ROBOT_ID: 0
       SERVER_BEACON_MAX_ROBOTS: 4
