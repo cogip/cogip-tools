@@ -32,15 +32,6 @@ class MonitorNamespace(socketio.AsyncNamespace):
         self.context.monitor_sid = None
         logger.info("Monitor disconnected.")
 
-    async def on_sensors_data(self, sid, sensors_data: list[int]):
-        """
-        Callback on sensors data.
-
-        In emulation mode, receive sensors data from the Monitor,
-        and forward to the Detector in charge of computing dynamic obstacles.
-        """
-        await self.emit("sensors_data", sensors_data, namespace="/detector")
-
     async def on_starter_changed(self, sid, pushed: bool):
         """
         Callback on starter_changed message.

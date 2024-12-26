@@ -98,7 +98,6 @@ def main_opt(
     controller.signal_del_robot.connect(robot_manager.del_robot)
     controller.signal_start_sensors_emulation.connect(robot_manager.start_sensors_emulation)
     controller.signal_stop_sensors_emulation.connect(robot_manager.stop_sensors_emulation)
-    robot_manager.sensors_emit_data_signal.connect(controller.emit_sensors_data)
 
     # Connect Controller signals to UI slots
     controller.signal_new_console_text.connect(win.log_text.append)

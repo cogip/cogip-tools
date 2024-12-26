@@ -4,6 +4,7 @@ import time
 
 import socketio
 from more_itertools import consecutive_groups
+from numpy.typing import NDArray
 
 try:
     import ydlidar
@@ -66,6 +67,8 @@ class Detector:
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
         self.shared_pose_current: SharedPose | None = None
+        self.shared_lidar_data: NDArray | None = None
+        self.shared_lidar_data_lock: WritePriorityLock | None = None
 
         self._lidar_data: list[int] = list()
         self._lidar_data_lock = threading.Lock()
@@ -81,6 +84,13 @@ class Detector:
             "Lidar reader loop",
             refresh_interval,
             self.read_lidar,
+            logger=True,
+        )
+
+        self._fake_lidar_reader_loop = ThreadLoop(
+            "Fake Lidar reader loop",
+            refresh_interval,
+            self.read_fake_lidar,
             logger=True,
         )
 
@@ -112,8 +122,12 @@ class Detector:
         self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
         self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
         self.shared_pose_current = self.shared_memory.get_pose_current()
+        self.shared_lidar_data = self.shared_memory.get_lidar_data()
+        self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
 
     def delete_shared_memory(self):
+        self.shared_lidar_data_lock = None
+        self.shared_lidar_data = None
         self.shared_pose_current = None
         self.shared_pose_current_lock = None
         self.shared_memory = None
@@ -132,6 +146,8 @@ class Detector:
         if self._laser:
             self._lidar_reader_loop.start()
             self.start_lidar()
+        else:
+            self._fake_lidar_reader_loop.start()
 
     def stop(self) -> None:
         """
@@ -141,6 +157,8 @@ class Detector:
         if self._laser:
             self._lidar_reader_loop.stop()
             self.stop_lidar()
+        else:
+            self._fake_lidar_reader_loop.stop()
 
     def try_connect(self):
         """
@@ -166,13 +184,6 @@ class Detector:
     def update_refresh_interval(self) -> None:
         self._obstacles_updater_loop.interval = self._properties.refresh_interval
         self._lidar_reader_loop.interval = self._properties.refresh_interval
-
-    def update_lidar_data(self, lidar_data: list[int]):
-        """
-        Receive Lidar data.
-        """
-        with self._lidar_data_lock:
-            self._lidar_data[:] = lidar_data[:]
 
     def filter_distances(self) -> list[int]:
         """
@@ -327,9 +338,14 @@ class Detector:
                     after = result[(isolated + 1) % 360]
                     result[isolated] = round((before + after) / 2)
 
-            self.update_lidar_data(result)
+            with self._lidar_data_lock:
+                self._lidar_data[:] = result[:]
         else:
             print("Failed to get Lidar Data")
+
+    def read_fake_lidar(self):
+        with self._lidar_data_lock:
+            self._lidar_data[:] = self.shared_lidar_data[:, 0].tolist()
 
     def stop_lidar(self):
         """

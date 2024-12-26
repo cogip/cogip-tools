@@ -1,5 +1,4 @@
 from PySide6 import QtCore
-from PySide6.QtCore import Signal as qtSignal
 
 from cogip.entities.dynobstacle import DynCircleObstacleEntity, DynRectObstacleEntity
 from cogip.entities.robot import RobotEntity
@@ -8,14 +7,6 @@ from cogip.tools.monitor.mainwindow import MainWindow
 
 
 class RobotManager(QtCore.QObject):
-    """
-
-    Attributes:
-        sensors_emit_data_signal: Qt Signal emitting sensors data
-    """
-
-    sensors_emit_data_signal: qtSignal = qtSignal(int, list)
-
     def __init__(self, win: MainWindow):
         """
         Class constructor.
@@ -46,7 +37,6 @@ class RobotManager(QtCore.QObject):
         if self._available_robots.get(robot_id) is None:
             robot = RobotEntity(robot_id, self._win, self._game_view.scene_entity)
             self._game_view.add_asset(robot)
-            robot.sensors_emit_data_signal.connect(self.emit_sensors_data)
             robot.setEnabled(False)
             self._available_robots[robot_id] = robot
 
@@ -103,16 +93,6 @@ class RobotManager(QtCore.QObject):
         robot = self._robots.get(robot_id)
         if robot:
             robot.stop_sensors_emulation()
-
-    def emit_sensors_data(self, robot_id: int, data: list[int]) -> None:
-        """
-        Send sensors data to server.
-
-        Arguments:
-            robot_id: ID of the robot
-            data: List of distances for each angle
-        """
-        self.sensors_emit_data_signal.emit(robot_id, data)
 
     def set_dyn_obstacles(self, dyn_obstacles: DynObstacleList) -> None:
         """

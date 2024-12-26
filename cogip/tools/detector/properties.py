@@ -27,7 +27,7 @@ class Properties(BaseModel):
     )
     refresh_interval: float = Field(
         ...,
-        ge=0.1,
+        ge=0.05,
         le=2.0,
         multiple_of=0.05,
         title="Refresh Interval",

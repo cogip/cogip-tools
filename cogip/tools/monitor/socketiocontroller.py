@@ -351,14 +351,3 @@ class SocketioController(QtCore.QObject):
             Change the state of a starter.
             """
             self.signal_starter_changed.emit(robot_id, pushed)
-
-    def emit_sensors_data(self, robot_id: int, data: list[int]) -> None:
-        """
-        Send sensors data to server.
-
-        Arguments:
-            robot_id: ID of the robot
-            data: List of distances for each angle
-        """
-        if self.sio.connected:
-            self.sio.emit("sensors_data", data, namespace="/monitor")

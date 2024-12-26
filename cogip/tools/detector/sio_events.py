@@ -72,11 +72,3 @@ class SioEvents(socketio.ClientNamespace):
         self._detector.properties.__setattr__(name := config["name"], config["value"])
         if name == "refresh_interval":
             self._detector.update_refresh_interval()
-
-    def on_sensors_data(self, data: list[int]) -> None:
-        """
-        Callback on Lidar data.
-        """
-        logger.debug("Received lidar data")
-        self._detector.properties.beacon_radius
-        self._detector.update_lidar_data([d + self._detector.properties.beacon_radius for d in data])
