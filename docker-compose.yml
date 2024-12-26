@@ -207,9 +207,6 @@ services:
     <<: [*build-console, *extra-hosts-common]
     hostname: beacon
     network_mode: "host"
-    ports:
-      - "8080:8080"
-      - "8090:8090"
     environment:
       SERVER_BEACON_MAX_ROBOTS: 4
       SERVER_BEACON_RELOAD:
@@ -395,9 +392,6 @@ services:
   robot1:
     << : *robot
     hostname: robot1
-    ports:
-      - "8081:8081"
-      - "8091:8091"
     environment:
       << : *env-robot
       ROBOT_ID: 1
@@ -407,9 +401,6 @@ services:
   robot2:
     << : *pami
     hostname: robot2
-    ports:
-      - "8082:8082"
-      - "8092:8092"
     environment:
       << : *env-pami
       ROBOT_ID: 2
@@ -421,9 +412,6 @@ services:
   robot3:
     << : *pami
     hostname: robot3
-    ports:
-      - "8083:8083"
-      - "8093:8093"
     environment:
       << : *env-pami
       ROBOT_ID: 3
@@ -435,9 +423,6 @@ services:
   robot4:
     << : *pami
     hostname: robot4
-    ports:
-      - "8084:8084"
-      - "8094:8094"
     environment:
       << : *env-pami
       ROBOT_ID: 4
