@@ -36,12 +36,24 @@ x-watch-cpp: &watch-cpp
   action: sync+restart
   target: /src/cogip
 
+x-watch-cmake-root: &watch-cmake-root
+  path: ./CMakeLists.txt
+  action: sync+restart
+  target: /src/CMakeLists.txt
+
+x-watch-cmake-cogip: &watch-cmake-cogip
+  path: ./cogip/CMakeLists.txt
+  action: sync+restart
+  target: /src/cogip/CMakeLists.txt
+
 x-watch-all: &watch-all
   develop:
     watch:
       - *watch-pyproject
-      - *watch-python
       - *watch-cpp
+      - *watch-cmake-root
+      - *watch-cmake-cogip
+      - *watch-python
 
 x-build-console: &build-console
   build:
@@ -501,6 +513,7 @@ services:
       - "./cogip:/src/cogip"
       - "./.python-version:/src/.python-version"
       - "./pyproject.toml:/src/pyproject.toml"
+      - "./CMakeLists.txt:/src/CMakeLists.txt"
       - "./uv.lock:/src/uv.lock"
       - "./dist:/src/dist"
       - "./LICENSE:/src/LICENSE"

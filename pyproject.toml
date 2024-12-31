@@ -95,8 +95,8 @@ ydlidar = { index = "ydlidar" }
 
 [tool.scikit-build]
 logging.level = "DEBUG"
-cmake.source-dir = "cogip/cpp"
-build-dir = "build"
+build-dir = "build/{wheel_tag}"
+wheel.py-api = "cp312"
 build.verbose = true
 editable.verbose = true
 wheel.packages = ["cogip"]
