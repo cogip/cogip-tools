@@ -3,6 +3,7 @@ from .models import (  # noqa
     DynObstacle,
     DynObstacleList,
     DynObstacleRect,
+    DynObstaclePolygon,
     DynRoundObstacle,
     LogMessage,
     MenuEntry,

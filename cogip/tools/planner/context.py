@@ -18,7 +18,7 @@ from cogip.models.artifacts import (
     SolarPanels,
     SolarPanelsID,
 )
-from cogip.models.models import DynObstacleRect
+from cogip.models.models import DynObstacleRect,DynRoundObstacle
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.singleton import Singleton
 from . import actions
@@ -40,7 +40,7 @@ class GameContext(metaclass=Singleton):
         self.game_duration: int = 90 if self.properties.robot_id == 1 else 100
         self.minimum_score: int = 0
         self.camp = Camp()
-        self.strategy = actions.Strategy.GameSolarFirst
+        self.strategy = actions.Strategy.BackAndForth
         self._table = TableEnum.Game
         self.avoidance_strategy = AvoidanceStrategy.VisibilityRoadMapQuadPid
         self.reset()
@@ -182,8 +182,6 @@ class GameContext(metaclass=Singleton):
         self.plant_supplies[PlantSupplyID.OppositeBottom].enabled = False
         self.plant_supplies[PlantSupplyID.CenterTop].enabled = False
 
-        for plant_supply in self.plant_supplies.values():
-            plant_supply.create_bounding_box(bb_radius, self.properties.obstacle_bb_vertices)
 
         # Pot supplies
         pot_supply_positions = {
@@ -203,8 +201,6 @@ class GameContext(metaclass=Singleton):
         self.pot_supplies[PotSupplyID.OppositeMiddle].enabled = False
         self.pot_supplies[PotSupplyID.OppositeBottom].enabled = False
 
-        for pot_supply in self.pot_supplies.values():
-            pot_supply.create_bounding_box(bb_radius, self.properties.obstacle_bb_vertices)
 
         # Drop-off zones
         dropoff_zone_positions = {
@@ -243,8 +239,6 @@ class GameContext(metaclass=Singleton):
         pose = AdaptedPose(x=1000 - 75, y=225)
         self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=150, length_y=450)]
 
-        for obstacle in self.fixed_obstacles:
-            obstacle.create_bounding_box(self.properties.robot_width / 2)
 
     def create_actuators_states(self):
         self.servo_states: dict[ServoEnum, Servo] = {}

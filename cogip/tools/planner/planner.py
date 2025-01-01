@@ -319,7 +319,7 @@ class Planner:
                             match self.game_context.avoidance_strategy:
                                 case AvoidanceStrategy.Disabled | AvoidanceStrategy.VisibilityRoadMapQuadPid:
                                     new_controller = ControllerEnum.QUADPID
-                                case AvoidanceStrategy.VisibilityRoadMapLinearPoseDisabled:
+                                case AvoidanceStrategy.VisibilityRoadMapLinearPoseDisabled | AvoidanceStrategy.VisibilityRoadMapCpp:
                                     new_controller = ControllerEnum.LINEAR_POSE_DISABLED
                         await self.set_controller(new_controller)
                         if self.sio.connected:
@@ -580,11 +580,9 @@ class Planner:
             bb_radius = radius + self.properties.robot_width / 2
 
         obstacle = models.DynRoundObstacle(
-            x=center.x,
-            y=center.y,
-            radius=radius,
+            x=center.x, y=center.y,angle=0,
+            radius=radius
         )
-        obstacle.create_bounding_box(bb_radius, self.properties.obstacle_bb_vertices)
 
         return obstacle
 

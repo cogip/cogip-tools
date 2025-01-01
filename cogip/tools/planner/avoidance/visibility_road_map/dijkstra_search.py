@@ -15,6 +15,8 @@ try:
 except ImportError:
     DebugWindow = bool
 
+from cogip.tools.planner import logger
+
 
 class DijkstraSearch:
     class Node:
@@ -57,12 +59,12 @@ class DijkstraSearch:
 
         while True:
             if self.has_node_in_set(close_set, goal_node):
-                # print("goal is found!")
+                logger.debug("Goal is found!")
                 goal_node.parent = current_node.parent
                 goal_node.cost = current_node.cost
                 break
             elif not open_set:
-                # print("Cannot find path")
+                logger.debug("Cannot find path")
                 break
 
             current_id = min(open_set, key=lambda o: open_set[o].cost)

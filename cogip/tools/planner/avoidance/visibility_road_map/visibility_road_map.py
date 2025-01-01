@@ -19,6 +19,7 @@ try:
 except ImportError:
     DebugWindow = bool
 
+from cogip.models import DynObstacle
 
 class VisibilityRoadMap:
     def __init__(
@@ -27,7 +28,7 @@ class VisibilityRoadMap:
         x_max: float,
         y_min: float,
         y_max: float,
-        fixed_obstacles: list["ObstaclePolygon"] = [],
+        fixed_obstacles: list["DynObstacle"] = [],
         win: DebugWindow | None = None,
     ):
         self.x_min = x_min
@@ -39,10 +40,10 @@ class VisibilityRoadMap:
         self.fixed_nodes: list[DijkstraSearch.Node] = []
 
         for obstacle in fixed_obstacles:
-            for vx, vy in zip(obstacle.cvx_list, obstacle.cvy_list):
-                if vx < self.x_min or vx > self.x_max or vy < self.y_min or vy > self.y_max:
+            for coord in obstacle.bb():
+                if coord.x < self.x_min or coord.x > self.x_max or coord.y < self.y_min or coord.y > self.y_max:
                     continue
-                self.fixed_nodes.append(DijkstraSearch.Node(vx, vy))
+                self.fixed_nodes.append(DijkstraSearch.Node(coord.x, coord.y))
 
     def planning(
         self,
@@ -50,7 +51,7 @@ class VisibilityRoadMap:
         start_y: float,
         goal_x: float,
         goal_y: float,
-        obstacles: list["ObstaclePolygon"],
+        obstacles: list["DynObstacle"],
         max_distance: int,
     ):
         nodes = deepcopy(self.fixed_nodes)
@@ -88,17 +89,16 @@ class VisibilityRoadMap:
         start_y: float,
         goal_x: float,
         goal_y: float,
-        obstacles: list["ObstaclePolygon"],
+        obstacles: list["DynObstacle"],
     ):
         # add start and goal as nodes
         nodes = [DijkstraSearch.Node(start_x, start_y), DijkstraSearch.Node(goal_x, goal_y, 0, None)]
 
-        # add vertexes in configuration space as nodes
         for obstacle in obstacles:
-            for vx, vy in zip(obstacle.cvx_list, obstacle.cvy_list):
-                if vx < self.x_min or vx > self.x_max or vy < self.y_min or vy > self.y_max:
+            for coord in obstacle.bb():
+                if coord.x < self.x_min or coord.x > self.x_max or coord.y < self.y_min or coord.y > self.y_max:
                     continue
-                nodes.append(DijkstraSearch.Node(vx, vy))
+                nodes.append(DijkstraSearch.Node(coord.x, coord.y))
 
         if self.win:
             self.win.visibility_nodes = [(node.x, node.y) for node in nodes]
@@ -117,7 +117,7 @@ class VisibilityRoadMap:
 
                 is_valid = True
                 for obstacle in obstacles:
-                    if not self.is_edge_valid(target_node, node, obstacle):
+                    if not obstacle.is_edge_valid(target_node.x, target_node.y, node.x, node.y):
                         is_valid = False
                         break
                 if is_valid:
@@ -129,11 +129,11 @@ class VisibilityRoadMap:
 
     @staticmethod
     def is_edge_valid(target_node, node, obstacle):
-        for i in range(len(obstacle.x_list) - 1):
+        for i in range(len(obstacle.bb()) - 1):
             p1 = Geometry.Point(target_node.x, target_node.y)
             p2 = Geometry.Point(node.x, node.y)
-            p3 = Geometry.Point(obstacle.x_list[i], obstacle.y_list[i])
-            p4 = Geometry.Point(obstacle.x_list[i + 1], obstacle.y_list[i + 1])
+            p3 = Geometry.Point(obstacle.bb()[i].x, obstacle.bb()[i].y)
+            p4 = Geometry.Point(obstacle.bb()[i + 1].x, obstacle.bb()[i + 1].y)
 
             if Geometry.is_seg_intersect(p1, p2, p3, p4):
                 return False
@@ -149,67 +149,3 @@ class VisibilityRoadMap:
             for index in road_map_info_list[i]:
                 self.win.road_map.append((node.x, node.y, nodes[index].x, nodes[index].y))
         self.win.update()
-
-
-class ObstaclePolygon:
-    def __init__(self, x_list: list[float], y_list: list[float], expand_distance: float = 0.0):
-        self.x_list = x_list
-        self.y_list = y_list
-        self.expand_distance = expand_distance
-        self.cvx_list: list[float] = []
-        self.cvy_list: list[float] = []
-
-        # Disable checks and fixes because obstacles must be correctly generated,
-        # but keep it for further debugging.
-        # self.close_polygon()
-        # self.make_clockwise()
-
-        self.calc_vertexes_in_configuration_space()
-
-    def make_clockwise(self):
-        if not self.is_clockwise():
-            print("not clockwise")
-            self.x_list = list(reversed(self.x_list))
-            self.y_list = list(reversed(self.y_list))
-
-    def is_clockwise(self):
-        n_data = len(self.x_list)
-        eval_sum = sum(
-            [(self.x_list[i + 1] - self.x_list[i]) * (self.y_list[i + 1] + self.y_list[i]) for i in range(n_data - 1)]
-        )
-        eval_sum += (self.x_list[0] - self.x_list[n_data - 1]) * (self.y_list[0] + self.y_list[n_data - 1])
-        return eval_sum >= 0
-
-    def close_polygon(self):
-        is_x_same = self.x_list[0] == self.x_list[-1]
-        is_y_same = self.y_list[0] == self.y_list[-1]
-        if is_x_same and is_y_same:
-            return  # no need to close
-
-        self.x_list.append(self.x_list[0])
-        self.y_list.append(self.y_list[0])
-
-    def calc_vertexes_in_configuration_space(self):
-        x_list = self.x_list[0:-1]
-        y_list = self.y_list[0:-1]
-        n_data = len(x_list)
-
-        for index in range(n_data):
-            offset_x, offset_y = self.calc_offset_xy(
-                x_list[index - 1],
-                y_list[index - 1],
-                x_list[index],
-                y_list[index],
-                x_list[(index + 1) % n_data],
-                y_list[(index + 1) % n_data],
-            )
-            self.cvx_list.append(offset_x)
-            self.cvy_list.append(offset_y)
-
-    def calc_offset_xy(self, px: float, py: float, x: float, y: float, nx: float, ny: float) -> tuple[float, float]:
-        p_vec = math.atan2(y - py, x - px)
-        n_vec = math.atan2(ny - y, nx - x)
-        offset_vec = math.atan2(math.sin(p_vec) + math.sin(n_vec), math.cos(p_vec) + math.cos(n_vec)) + math.pi / 2.0
-        offset_x = x + self.expand_distance * math.cos(offset_vec)
-        offset_y = y + self.expand_distance * math.sin(offset_vec)
-        return offset_x, offset_y

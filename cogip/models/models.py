@@ -7,11 +7,10 @@ All values are automatically verified and converted to the expected data type,
 an exception being raised if impossible.
 """
 
-import math
-
 import numpy as np
 from numpy.typing import ArrayLike
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import List, Tuple
 
 from cogip.protobuf import PB_PathPose
 
@@ -128,6 +127,7 @@ class PathPose(Pose):
     bypass_anti_blocking: bool = False
     timeout_ms: int = 0
     bypass_final_orientation: bool = False
+    _cython_obj: 'CppPose' = None  # Reference to the Cython object
 
     @property
     def pose(self) -> Pose:
@@ -150,89 +150,135 @@ class PathPose(Pose):
         pb_path_pose.timeout_ms = self.timeout_ms
         pb_path_pose.bypass_final_orientation = self.bypass_final_orientation
 
-
-class DynObstacleRect(BaseModel):
-    """
-    A dynamic rectangle obstacle created by the robot.
-
-    Attributes:
-        x: X coordinate of the obstacle center
-        y: Y coordinate of the obstacle center
-        angle: Orientation of the obstacle
-        length_x: length along X axis
-        length_y: length along Y axis
-        bb: bounding box
-    """
-
-    x: float
-    y: float
-    angle: float
-    length_x: float
-    length_y: float
-    bb: list[Vertex] = []
-
-    def contains(self, point: Vertex) -> bool:
-        half_length_x = self.length_x / 2
-        half_length_y = self.length_y / 2
-
-        return (self.x - half_length_x <= point.x <= self.x + half_length_x) and (
-            self.y - half_length_y <= point.y <= self.y + half_length_y
+    def __init__(self, **data):
+        super().__init__(**data)
+        from cogip.cpp.avoidance import CppPose  # Import here to avoid compilation issues
+        self._cython_obj = CppPose(
+            x=self.x,
+            y=self.y,
+            O=self.O,
         )
 
-    def create_bounding_box(self, bb_radius: float, nb_vertices: int = 4):
-        half_length_x = self.length_x / 2
-        half_length_y = self.length_y / 2
+    @classmethod
+    def from_cython(cls, cython_obj):
+        return cls(
+            x=cython_obj.x,
+            y=cython_obj.y,
+            O=cython_obj.O,
+            _cython_obj=cython_obj
+        )
 
-        self.bb = [
-            Vertex(x=self.x - half_length_x - bb_radius, y=self.y + half_length_y + bb_radius),
-            Vertex(x=self.x + half_length_x + bb_radius, y=self.y + half_length_y + bb_radius),
-            Vertex(x=self.x + half_length_x + bb_radius, y=self.y - half_length_y - bb_radius),
-            Vertex(x=self.x - half_length_x - bb_radius, y=self.y - half_length_y - bb_radius),
-        ]
-
-    def __hash__(self):
-        """
-        Hash function to allow this class to be used as a key in a dict.
-        """
-        return hash((type(self),) + tuple(self.__root__))
-
-
+# DTO for CppObstacleCircle
 class DynRoundObstacle(BaseModel):
-    """
-    A dynamic round obstacle created by the robot.
-
-    Attributes:
-        x: Center X position
-        y: Center Y position
-        radius: Radius of the obstacle
-        bb: bounding box
-    """
-
     x: float
     y: float
+    angle: float = Field(default=0.0)
     radius: float
-    bb: list[Vertex] = []
+    bb_points_number: int = 20
+    bb_margin: float = 0.2
 
-    def contains(self, point: Vertex) -> bool:
-        return (point.x - self.x) * (point.x - self.x) + (point.y - self.y) * (point.y - self.y) <= self.radius**2
+    _cython_obj: 'CppObstacleCircle' = None  # Reference to the Cython object
 
-    def create_bounding_box(self, bb_radius, nb_vertices):
-        self.bb = [
-            Vertex(
-                x=self.x + bb_radius * math.cos(tmp := (i * 2 * math.pi) / nb_vertices),
-                y=self.y + bb_radius * math.sin(tmp),
-            )
-            for i in reversed(range(nb_vertices))
-        ]
+    def __init__(self, **data):
+        super().__init__(**data)
+        from cogip.cpp.avoidance import CppObstacleCircle  # Import here to avoid compilation issues
+        self._cython_obj = CppObstacleCircle(
+            x=self.x,
+            y=self.y,
+            angle=self.angle,
+            radius=self.radius,
+            bb_points_number=self.bb_points_number,
+            bb_margin=self.bb_margin
+        )
 
-    def __hash__(self):
-        """
-        Hash function to allow this class to be used as a key in a dict.
-        """
-        return hash((type(self),) + tuple(self.__root__))
+    def contains(self, pose: Pose):
+        return self._cython_obj.contains(pose.x, pose.y)
 
+    def is_edge_valid(self, x1: float, y1: float, x2: float, y2: float):
+        return self._cython_obj.is_edge_valid(x1, y1, x2, y2)
 
-DynObstacle = DynRoundObstacle | DynObstacleRect
+    def bb(self):
+        return self._cython_obj.bounding_box()
+
+    @classmethod
+    def from_cython(cls, cython_obj):
+        return cls(
+            x=cython_obj.x,
+            y=cython_obj.y,
+            angle=cython_obj.angle,
+            radius=cython_obj.radius,
+            bb_points_number=cython_obj.bb_points_number,
+            bb_margin=cython_obj.bb_margin,
+            _cython_obj=cython_obj
+        )
+
+# DTO for CppObstaclePolygon
+class DynObstaclePolygon(BaseModel):
+    points: List[Tuple[float, float]] = Field(...) # List of polygon points
+    _cython_obj: 'CppObstaclePolygon' = None # Reference to the Cython object
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        from cogip.cpp.avoidance import CppObstaclePolygon  # Import here to avoid compilation issues
+        self._cython_obj = CppObstaclePolygon(
+            points=self.points
+        )
+
+    def contains(self, pose: Pose):
+        return self._cython_obj.contains(pose.x, pose.y)
+    
+    def is_edge_valid(self, x1: float, y1: float, x2: float, y2: float):
+        return self._cython_obj.is_edge_valid(x1, y1, x2, y2)
+    
+    def bb(self):
+        return self._cython_obj.bounding_box()
+
+    @classmethod
+    def from_cython(cls, cython_obj):
+        points = [(point.x(), point.y()) for point in cython_obj.c_obstacle_polygon.get_points()]
+        return cls(points=points, _cython_obj=cython_obj)
+
+# DTO for CppObstacleRectangle
+class DynObstacleRect(BaseModel):
+    x: float = 0.0
+    y: float = 0.0
+    angle: float = 0.0
+    length_x: float = 0.0
+    length_y: float = 0.0
+    _cython_obj: 'CppObstacleRectangle' = None  # Reference to the Cython object
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        from cogip.cpp.avoidance import CppObstacleRectangle  # Import here to avoid compilation issues
+        self._cython_obj = CppObstacleRectangle(
+            x=self.x,
+            y=self.y,
+            angle=self.angle,
+            length_x=self.length_x,
+            length_y=self.length_y
+        )
+
+    def contains(self, pose: Pose):
+        return self._cython_obj.contains(pose.x, pose.y)
+    
+    def is_edge_valid(self, x1: float, y1: float, x2: float, y2: float):
+        return self._cython_obj.is_edge_valid(x1, y1, x2, y2)
+    
+    def bb(self):
+        return self._cython_obj.bounding_box()
+
+    @classmethod
+    def from_cython(cls, cython_obj):
+        return cls(
+            x=cython_obj.x,
+            y=cython_obj.y,
+            angle=cython_obj.angle,
+            length_x=cython_obj.length_x,
+            length_y=cython_obj.length_y,
+            _cython_obj=cython_obj
+        )
+
+DynObstacle = DynRoundObstacle | DynObstaclePolygon | DynObstacleRect
 DynObstacleList = list[DynObstacle]
 
 

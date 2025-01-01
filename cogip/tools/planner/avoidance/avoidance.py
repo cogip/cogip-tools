@@ -5,6 +5,12 @@ from cogip import models
 from ..table import Table
 from .visibility_road_map import visibility_road_map
 
+from .. import logger
+from cogip.cpp.avoidance import CppAvoidance,CppObstaclePolygon
+from cogip.models import DynRoundObstacle, DynObstaclePolygon
+
+import math
+
 try:
     from .debug import DebugWindow
 except ImportError:
@@ -19,14 +25,33 @@ class AvoidanceStrategy(IntEnum):
     VisibilityRoadMapQuadPid = 1
     VisibilityRoadMapLinearPoseDisabled = 2
     StopAndGo = 3
+    VisibilityRoadMapCpp = 4
 
 
 class Avoidance:
     def __init__(self, table: Table, shared_properties: DictProxy):
         self.shared_properties = shared_properties
         self.visibility_road_map = VisibilityRoadMapWrapper(table, shared_properties)
+        self.cpp_avoidance = CppAvoidance(CppObstaclePolygon([
+            (table.x_min,table.y_min),
+            (table.x_max,table.y_min),
+            (table.x_max,table.y_max),
+            (table.x_min,table.y_max),
+            ]))
         self.last_robot_width: int = -1
         self.last_expand: int = -1
+
+    def check_recompute(
+            self,
+            pose_current: models.PathPose,
+            goal: models.PathPose
+    ) -> bool:
+        strategy = AvoidanceStrategy(self.shared_properties["avoidance_strategy"])
+        match strategy:
+            case AvoidanceStrategy.VisibilityRoadMapCpp:
+                return self.cpp_avoidance.check_recompute(pose_current.x, pose_current.y, goal.x, goal.y)
+            case _:
+                return True
 
     def get_path(
         self,
@@ -39,6 +64,23 @@ class Avoidance:
         match strategy:
             case AvoidanceStrategy.Disabled:
                 path = [models.PathPose(**pose_current.model_dump()), goal.model_copy()]
+            case AvoidanceStrategy.VisibilityRoadMapCpp:
+                path = [models.PathPose(**pose_current.model_dump())]
+                self.cpp_avoidance.clear_dynamic_obstacles()
+                for obstacle in obstacles:
+                    self.cpp_avoidance.add_dynamic_obstacle(obstacle._cython_obj)
+                res = self.cpp_avoidance.avoidance(pose_current.x, pose_current.y, goal.x, goal.y)
+                logger.debug(f"Avoidance: build graph success = {res}")
+                if res == True:
+                    for i in range(0, self.cpp_avoidance.get_path_size()):
+                        pose = models.PathPose.from_cython(self.cpp_avoidance.get_path_pose(i))
+                        pose.bypass_final_orientation = True
+                        path.append(pose)
+                    while len(path) > 1 and math.dist((path[1].x, path[1].y), (pose_current.x, pose_current.y)) < 10:
+                        del path[1]
+                    path.append(goal.model_copy())
+                else:
+                    path = []
             case _:
                 expand = int(robot_width * self.shared_properties["obstacle_bb_margin"])
                 if self.last_robot_width != robot_width or self.last_expand != expand:
@@ -99,23 +141,8 @@ class VisibilityRoadMapWrapper:
             self.win.point_start = start
             self.win.point_goal = goal.pose
 
-        converted_obstacles = []
-
-        for obstacle in obstacles:
-            x_list, y_list = list(zip(*[(int(v.x), int(v.y)) for v in obstacle.bb]))
-            x_list = list(x_list)
-            y_list = list(y_list)
-            x_list.append(x_list[0])
-            y_list.append(y_list[0])
-            converted_obstacles.append(
-                visibility_road_map.ObstaclePolygon(
-                    x_list,
-                    y_list,
-                    self.expand,
-                )
-            )
         if self.win:
-            self.win.dyn_obstacles.extend(converted_obstacles)
+            self.win.dyn_obstacles.extend(obstacles)
             self.win.update()
 
         # Compute path
@@ -124,7 +151,7 @@ class VisibilityRoadMapWrapper:
             start.y,
             goal.x,
             goal.y,
-            converted_obstacles,
+            obstacles,
             self.shared_properties["max_distance"],
         )
 
