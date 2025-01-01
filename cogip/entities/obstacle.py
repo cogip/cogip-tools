@@ -8,6 +8,8 @@ from PySide6.QtCore import Slot as qtSlot
 from cogip import models
 from cogip.entities.sensor import Sensor
 
+import math
+
 
 class ObstacleEntity(Qt3DCore.QEntity):
     """
@@ -26,6 +28,7 @@ class ObstacleEntity(Qt3DCore.QEntity):
     """
 
     enable_controller = qtSignal(bool)
+    obstacle_moved: qtSignal = qtSignal()
 
     def __init__(
         self,
@@ -184,22 +187,21 @@ class ObstacleEntity(Qt3DCore.QEntity):
         in the [GameView][cogip.widgets.gameview.GameView] object.
         """
         self.moving = True
+        self.obstacle_moved.emit()
 
-    def get_model(self) -> models.Obstacle:
+    def get_model(self) -> models.DynRoundObstacle:
         """
-        Returns the [Obstacle][cogip.models.models.Obstacle] model.
+        Returns the [Obstacle][cogip.models.models.DynRoundObstacle] model.
         Used to save the obstacles list.
 
         Returns:
             The obstacle model
         """
-        return models.Obstacle(
+        return models.DynRoundObstacle(
             x=self.transform.translation().x(),
             y=self.transform.translation().y(),
-            rotation=self.transform.rotationZ(),
-            length=self.mesh.yExtent(),
-            width=self.mesh.xExtent(),
-            height=self.mesh.zExtent(),
+            angle=self.transform.rotationZ(),
+            radius= math.sqrt(self.mesh.xExtent()**2 + self.mesh.yExtent()**2) / 2
         )
 
     @qtSlot(QtGui.QVector3D)

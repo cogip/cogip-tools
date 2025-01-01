@@ -82,6 +82,15 @@ def main_opt(
             envvar="DETECTOR_REFRESH_INTERVAL",
         ),
     ] = 0.2,
+    use_monitor_obstacles: Annotated[
+        bool,
+        typer.Option(
+            "-m",
+            "--use-monitor-obstacles",
+            help="Use obstacles sent by monitor, bypass lidar in simulation",
+            envvar=["DETECTOR_USE_MONITOR_OBSTACLES"],
+        ),
+    ] = True,
     reload: Annotated[
         bool,
         typer.Option(
@@ -114,6 +123,7 @@ def main_opt(
         max_distance,
         beacon_radius,
         refresh_interval,
+        use_monitor_obstacles,
     )
 
     if reload:

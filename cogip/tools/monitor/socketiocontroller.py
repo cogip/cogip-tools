@@ -373,3 +373,14 @@ class SocketioController(QtCore.QObject):
         """
         if self.sio.connected:
             self.sio.emit("sensors_data", data, namespace="/monitor")
+
+    def emit_monitor_obstacles(self, data: list[(int, int)]) -> None:
+        """
+        Sends obstacles created in monitor to server.
+
+        Arguments:
+            robot_id: ID of the robot
+            data: List of obstacles
+        """
+        if self.sio.connected:
+            self.sio.emit("monitor_obstacles", data, namespace="/monitor")

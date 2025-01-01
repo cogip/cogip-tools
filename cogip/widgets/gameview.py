@@ -140,6 +140,7 @@ class GameView(QtWidgets.QWidget):
     plane_intersection: QtGui.QVector3D = None
     mouse_enabled: bool = True
     new_move_delta: qtSignal = qtSignal(QtGui.QVector3D)
+    emit_obstacles: qtSignal = qtSignal(list)
 
     def __init__(self):
         """
@@ -285,7 +286,9 @@ class GameView(QtWidgets.QWidget):
         obstacle_entity.setParent(self.scene_entity)
         self.obstacle_entities.append(obstacle_entity)
         obstacle_entity.enable_controller.connect(self.enable_mouse)
+        obstacle_entity.obstacle_moved.connect(self.send_obstacles)
         self.new_move_delta.connect(obstacle_entity.new_move_delta)
+        self.send_obstacles()
         return obstacle_entity
 
     def load_obstacles(self, filename: Path):
@@ -302,6 +305,8 @@ class GameView(QtWidgets.QWidget):
         except ValidationError as exc:
             print(exc)
 
+        self.send_obstacles()
+
     def save_obstacles(self, filename: Path):
         """
         Save obstacles to a JSON file.
@@ -314,6 +319,23 @@ class GameView(QtWidgets.QWidget):
             obstacle_models.append(obstacle_entity.get_model())
         with filename.open("w") as fd:
             fd.write(json.dumps(obstacle_models, default=pydantic_encoder, indent=2))
+
+    def send_obstacles(self) -> None:
+        """
+        Send obstacles list to server.
+
+        Arguments:
+            robot_id: ID of the robot
+            data: List of obstacles
+        """
+        obstacles = []
+        for obstacle_entity in self.obstacle_entities:
+            obstacles.append(
+                (obstacle_entity.get_model().x,
+                 obstacle_entity.get_model().y)
+                )
+        self.emit_obstacles.emit(obstacles)
+
 
     def asset_ready(self):
         """

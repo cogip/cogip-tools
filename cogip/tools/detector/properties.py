@@ -33,3 +33,8 @@ class Properties(BaseModel):
         title="Refresh Interval",
         description="Interval between each update of the obstacle list (seconds)",
     )
+    use_monitor_obstacles: bool = Field(
+        ...,
+        title="Use monitor obstacles",
+        description="Use obstacles sent by monitor, bypass lidar in simulation",
+    )
