@@ -96,7 +96,7 @@ def main_opt(
     obstacle_sender_interval: Annotated[
         float,
         typer.Option(
-            min=0.1,
+            min=0.05,
             max=2.0,
             help="Interval between each send of obstacles to dashboards (in seconds)",
             envvar="PLANNER_OBSTACLE_SENDER_INTERVAL",
