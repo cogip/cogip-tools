@@ -108,12 +108,12 @@ A Docker Compose service is provided to build a binary distribution package for 
 docker compose up --build build_wheel
 ```
 
-This will produce `dist/cogip_tools-1.0.0-cp312-cp312-linux_aarch64.whl`.
+This will produce `dist/cogip_tools-1.0.0-cp312-abi3-linux_aarch64.whl`.
 
 This package can be copied to the Raspberry Pi and installed to deploy the Python tools:
 
 ```bash
-uv pip install cogip_tools-1.0.0-cp312-cp312-linux_aarch64.whl
+uv pip install cogip_tools-1.0.0-cp312-abi3-linux_aarch64.whl
 ```
 
 !!! warning "Docker image for linux/arm64"

@@ -5,6 +5,7 @@ include_directories(
 # Generate library with source code and binding.
 nanobind_add_module(
     nanobind_example
+    NB_SHARED STABLE_ABI LTO
     binding.cpp
     nanobind_example.cpp
 )

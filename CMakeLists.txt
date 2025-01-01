@@ -14,6 +14,7 @@ find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(
   Python 3.12
   REQUIRED COMPONENTS Interpreter Development.Module
+  OPTIONAL_COMPONENTS Development.SABIModule
 )
 
 # Configure support for C++ extensions using Cython binding
@@ -30,9 +31,9 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE nanobind_DIR)
 find_package(nanobind CONFIG REQUIRED)
 # Build nanobind shared library separately to install it in the root directory.
-nanobind_build_library(nanobind SHARED)
+nanobind_build_library(nanobind-abi3 SHARED)
 install(
-    TARGETS nanobind
+    TARGETS nanobind-abi3
     LIBRARY DESTINATION cogip/cpp
 )
 # Set RPATH globally for all targets
