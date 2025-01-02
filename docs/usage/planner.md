@@ -45,9 +45,9 @@ Options:
                                   env var: PLANNER_OBSTACLE_BB_VERTICES
                                   default: 6
 
-  --obstacle-sender-interval FLOAT
-                                  Interval between each send of obstacles to dashboards (in seconds)
-                                  env var: PLANNER_OBSTACLE_SENDER_INTERVAL
+  --obstacle-updater-interval FLOAT
+                                  Interval between each obstacles list update (in seconds)
+                                  env var: PLANNER_OBSTACLE_UPDATER_INTERVAL
                                   default: 0.2
 
   --path-refresh-interval FLOAT   Interval between each update of robot paths (in seconds)

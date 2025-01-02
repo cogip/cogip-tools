@@ -17,6 +17,7 @@ from PIL import ImageFont
 from pydantic import RootModel, TypeAdapter
 
 from cogip import models
+from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorState
@@ -50,7 +51,7 @@ class Planner:
         obstacle_bb_margin: float,
         obstacle_bb_vertices: int,
         max_distance: int,
-        obstacle_sender_interval: float,
+        obstacle_updater_interval: float,
         path_refresh_interval: float,
         plot: bool,
         starter_pin: int | None,
@@ -70,7 +71,7 @@ class Planner:
             obstacle_bb_margin: Obstacle bounding box margin in percent of the radius
             obstacle_bb_vertices: Number of obstacle bounding box vertices
             max_distance: Maximum distance to take avoidance points into account (mm)
-            obstacle_sender_interval: Interval between each send of obstacles to dashboards (in seconds)
+            obstacle_updater_interval: Interval between each send of obstacles to dashboards (in seconds)
             path_refresh_interval: Interval between each update of robot paths (in seconds)
             plot: Display avoidance graph in realtime
             starter_pin: GPIO pin connected to the starter
@@ -87,6 +88,8 @@ class Planner:
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
         self.pose_current: SharedPose | None = None
+        self.shared_detector_obstacles: SharedCoordsList | None = None
+        self.shared_detector_obstacles_lock: WritePriorityLock | None = None
         self.create_shared_memory()
 
         # We have to make sure the Planner is the first object calling the constructor
@@ -101,7 +104,7 @@ class Planner:
             obstacle_bb_margin=obstacle_bb_margin,
             obstacle_bb_vertices=obstacle_bb_vertices,
             max_distance=max_distance,
-            obstacle_sender_interval=obstacle_sender_interval,
+            obstacle_updater_interval=obstacle_updater_interval,
             path_refresh_interval=path_refresh_interval,
             plot=plot,
         )
@@ -117,10 +120,10 @@ class Planner:
         self.action: actions.Action | None = None
         self.actions = action_classes.get(self.game_context.strategy, actions.Actions)(self)
         self.obstacles: models.DynObstacleList = []
-        self.obstacles_sender_loop = AsyncLoop(
-            "Obstacles sender loop",
-            obstacle_sender_interval,
-            self.send_obstacles,
+        self.obstacles_updater_loop = AsyncLoop(
+            "Obstacles updater loop",
+            obstacle_updater_interval,
+            self.update_obstacles,
             logger=self.debug,
         )
         self._pose_current: models.Pose | None = None
@@ -190,9 +193,13 @@ class Planner:
             self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
             self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
             self.pose_current = self.shared_memory.get_pose_current()
+            self.shared_detector_obstacles = self.shared_memory.get_detector_obstacles()
+            self.shared_detector_obstacles_lock = self.shared_memory.get_lock(LockName.DetectorObstacles)
 
     def delete_shared_memory(self):
         if self.shared_memory is not None:
+            self.shared_detector_obstacles_lock: WritePriorityLock | None = None
+            self.shared_detector_obstacles: SharedCoordsList | None = None
             self.pose_current = None
             self.shared_pose_current_lock = None
             self.shared_memory = None
@@ -242,7 +249,7 @@ class Planner:
         await self.sio_ns.emit("starter_changed", self.starter.is_pressed)
         await self.sio_ns.emit("game_reset")
         await self.countdown_start()
-        self.obstacles_sender_loop.start()
+        self.obstacles_updater_loop.start()
         if self.oled_bus and self.oled_address:
             self.oled_update_loop.start()
 
@@ -269,7 +276,7 @@ class Planner:
 
         await self.countdown_stop()
 
-        await self.obstacles_sender_loop.stop()
+        await self.obstacles_updater_loop.stop()
         if self.oled_bus and self.oled_address:
             await self.oled_update_loop.stop()
 
@@ -564,69 +571,39 @@ class Planner:
             if not self.pose_order:
                 await self.sio_receiver_queue.put(self.set_pose_reached())
 
-    def create_dyn_obstacle(
-        self,
-        center: models.Vertex,
-        radius: float | None = None,
-        bb_radius: float | None = None,
-    ) -> models.DynRoundObstacle:
-        """
-        Create a dynamic obstacle.
-
-        Arguments:
-            center: center of the obstacle
-            radius: radius of the obstacle, use the value from global properties if not specified
-            bb_radius: radius of the bounding box
-        """
-        if radius is None:
-            radius = self.properties.obstacle_radius
-
-        if bb_radius is None:
-            bb_radius = radius + self.properties.robot_width / 2
-
-        obstacle = models.DynRoundObstacle(
-            x=center.x,
-            y=center.y,
-            radius=radius,
-        )
-        obstacle.create_bounding_box(bb_radius, self.properties.obstacle_bb_vertices)
-
-        return obstacle
-
-    def set_obstacles(self, obstacles: list[models.Vertex]) -> None:
-        """
-        Store obstacles detected by a robot sent by Detector.
-        Add bounding box and radius.
-        """
+    async def update_obstacles(self):
+        self.obstacles = []
         table = self.game_context.table
-        if self.robot_id == 1:
-            bb_radius = self.properties.obstacle_radius + self.properties.robot_length / 2
 
-            self.obstacles = [
-                self.create_dyn_obstacle(obstacle, bb_radius)
-                for obstacle in obstacles
-                if table.contains(obstacle, self.properties.obstacle_radius)
-            ]
+        # Add dynamic obstacles
+        if self.robot_id == 1:
+            margin = self.properties.obstacle_radius
+            radius = self.properties.obstacle_radius + self.properties.robot_length / 2
+            bb_radius = radius + self.properties.robot_width / 2
         else:
-            # In case of PAMI, the detected obstacle is at the front the real obstacle
-            # instead of at its center.
-            # Since we use a specific avoidance strategy that only needs to know the path
-            # is intersecting the obstacle, the radius can be reduced to the minimum to create
-            # a bounding box.
-            self.obstacles = [
-                self.create_dyn_obstacle(obstacle, radius=10, bb_radius=10)
-                for obstacle in obstacles
-                if table.contains(obstacle)
-            ]
+            margin = 0
+            radius = 10
+            bb_radius = 10
+        self.shared_detector_obstacles_lock.start_reading()
+        for detector_obstacle in self.shared_detector_obstacles:
+            if not table.contains(detector_obstacle, margin):
+                continue
+            obstacle = models.DynRoundObstacle(x=detector_obstacle.x, y=detector_obstacle.y, radius=radius)
+            obstacle.create_bounding_box(bb_radius, self.properties.obstacle_bb_vertices)
+            self.obstacles.append(obstacle)
+        self.shared_detector_obstacles_lock.finish_reading()
+
+        # Add static obstacles
         self.obstacles += [p for p in self.game_context.plant_supplies.values() if p.enabled and table.contains(p)]
         self.obstacles += [p for p in self.game_context.pot_supplies.values() if p.enabled and table.contains(p)]
         self.obstacles += [p for p in self.game_context.fixed_obstacles if table.contains(p)]
 
+        # Copy obstacles to shared properties
         self.shared_properties["obstacles"] = [
             obstacle.model_dump(exclude_defaults=True) for obstacle in self.obstacles
         ]
 
-    async def send_obstacles(self):
+        # Emit obstacles to dashboards
         await self.sio_ns.emit("obstacles", [o.model_dump(exclude_defaults=True) for o in self.obstacles])
 
     async def update_oled_display(self):
@@ -697,8 +674,8 @@ class Planner:
         if name in self.shared_properties:
             self.shared_properties[name] = value
         match name:
-            case "obstacle_sender_interval":
-                self.obstacles_sender_loop.interval = self.properties.obstacle_sender_interval
+            case "obstacle_updater_interval":
+                self.obstacles_updater_loop.interval = self.properties.obstacle_updater_interval
             case "robot_width" | "obstacle_bb_vertices":
                 self.game_context.create_artifacts()
                 self.game_context.create_fixed_obstacles()

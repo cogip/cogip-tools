@@ -93,13 +93,13 @@ def main_opt(
             envvar=["COGIP_MAX_DISTANCE", "PLANNER_MAX_DISTANCE"],
         ),
     ] = 2500,
-    obstacle_sender_interval: Annotated[
+    obstacle_updater_interval: Annotated[
         float,
         typer.Option(
             min=0.05,
             max=2.0,
-            help="Interval between each send of obstacles to dashboards (in seconds)",
-            envvar="PLANNER_OBSTACLE_SENDER_INTERVAL",
+            help="Interval between each obstacles list update (seconds)",
+            envvar="PLANNER_OBSTACLE_UPDATER_INTERVAL",
         ),
     ] = 0.2,
     path_refresh_interval: Annotated[
@@ -186,7 +186,7 @@ def main_opt(
         obstacle_bb_margin,
         obstacle_bb_vertices,
         max_distance,
-        obstacle_sender_interval,
+        obstacle_updater_interval,
         path_refresh_interval,
         plot,
         starter_pin,

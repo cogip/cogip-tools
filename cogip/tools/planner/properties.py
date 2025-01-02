@@ -72,14 +72,14 @@ class Properties(metaclass=Singleton):
             description="Maximum distance to take avoidance points into account (mm)",
         ),
     ]
-    obstacle_sender_interval: Annotated[
+    obstacle_updater_interval: Annotated[
         float,
         Field(
             ge=0.05,
             le=2.0,
             multiple_of=0.05,
-            title="Obstacle Sender Interval",
-            description="Interval between each send of obstacles to dashboards (seconds)",
+            title="Obstacle Updater Interval",
+            description="Interval between each obstacles list update (seconds)",
         ),
     ]
     path_refresh_interval: Annotated[

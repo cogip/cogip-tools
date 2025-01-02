@@ -12,6 +12,7 @@ except:  # noqa
     ydlidar = None
 
 from cogip import models
+from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.utils import ThreadLoop
@@ -69,6 +70,8 @@ class Detector:
         self.shared_pose_current: SharedPose | None = None
         self.shared_lidar_data: NDArray | None = None
         self.shared_lidar_data_lock: WritePriorityLock | None = None
+        self.shared_detector_obstacles: SharedCoordsList | None = None
+        self.shared_detector_obstacles_lock: WritePriorityLock | None = None
 
         self._lidar_data: list[int] = list()
         self._lidar_data_lock = threading.Lock()
@@ -124,8 +127,12 @@ class Detector:
         self.shared_pose_current = self.shared_memory.get_pose_current()
         self.shared_lidar_data = self.shared_memory.get_lidar_data()
         self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
+        self.shared_detector_obstacles = self.shared_memory.get_detector_obstacles()
+        self.shared_detector_obstacles_lock = self.shared_memory.get_lock(LockName.DetectorObstacles)
 
     def delete_shared_memory(self):
+        self.shared_detector_obstacles_lock = None
+        self.shared_detector_obstacles = None
         self.shared_lidar_data_lock = None
         self.shared_lidar_data = None
         self.shared_pose_current = None
@@ -286,9 +293,12 @@ class Detector:
             filtered_distances = self.filter_distances()
 
         obstacles = self.generate_obstacles(filtered_distances)
+        self.shared_detector_obstacles_lock.start_writing()
+        self.shared_detector_obstacles.clear()
+        for obstacle in obstacles:
+            self.shared_detector_obstacles.append(obstacle.x, obstacle.y)
+        self.shared_detector_obstacles_lock.finish_writing()
         logger.debug(f"Generated obstacles: {obstacles}")
-        if self._sio.connected:
-            self._sio.emit("obstacles", [o.model_dump(exclude_defaults=True) for o in obstacles], namespace="/detector")
 
     def start_lidar(self):
         """
