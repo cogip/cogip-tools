@@ -57,15 +57,6 @@ class PlannerNamespace(socketio.AsyncNamespace):
         await self.emit("pose_order", (self.context.robot_id, pose), namespace="/dashboard")
         await self.recorder.async_record({"pose_order": pose})
 
-    async def on_obstacles(self, sid, obstacles: list[dict[str, Any]]):
-        """
-        Callback on obstacles message.
-
-        Receive a list of all obstacles.
-        These obstacles are sent to planner to monitor/dashboards for display.
-        """
-        await self.emit("obstacles", (self.context.robot_id, obstacles), namespace="/dashboard")
-
     async def on_wizard(self, sid, message: list[dict[str, Any]]):
         """
         Callback on wizard message.

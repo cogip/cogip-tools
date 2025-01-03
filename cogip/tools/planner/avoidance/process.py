@@ -3,9 +3,9 @@ import time
 from multiprocessing import Queue
 from multiprocessing.managers import DictProxy
 
-from pydantic import TypeAdapter
-
 from cogip import models
+from cogip.cpp.libraries.obstacles import ObstacleCircle as SharedObstacleCircle
+from cogip.cpp.libraries.obstacles import ObstacleRectangle as SharedObstacleRectangle
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory
 from .. import logger
 from ..actions import Strategy
@@ -21,8 +21,11 @@ def avoidance_process(
 ):
     logger.info("Avoidance: process started")
     shared_memory = SharedMemory(f"cogip_{shared_properties["robot_id"]}")
-    shared_pose_current_lock = shared_memory.get_lock(LockName.PoseCurrent)
     shared_data = shared_memory.get_data()
+    shared_pose_current_lock = shared_memory.get_lock(LockName.PoseCurrent)
+    shared_circle_obstacles = shared_memory.get_circle_obstacles()
+    shared_rectangle_obstacles = shared_memory.get_rectangle_obstacles()
+    shared_obstacles_lock = shared_memory.get_lock(LockName.Obstacles)
 
     avoidance = Avoidance(table, shared_properties)
     avoidance_path: list[models.PathPose] = []
@@ -91,15 +94,20 @@ def avoidance_process(
                 continue
 
         # Create dynamic obstacles
-        if shared_properties["avoidance_strategy"] == AvoidanceStrategy.Disabled:
-            dyn_obstacles = []
-        else:
-            dyn_obstacles = TypeAdapter(models.DynObstacleList).validate_python(shared_properties["obstacles"])
+        dyn_obstacles: list[SharedObstacleCircle | SharedObstacleRectangle] = []
+        if shared_properties["avoidance_strategy"] != AvoidanceStrategy.Disabled:
+            # Deep copy of obstacles to not block the shared memory
+            shared_obstacles_lock.start_reading()
+            for obstacle in shared_circle_obstacles:
+                dyn_obstacles.append(SharedObstacleCircle(obstacle, deep_copy=True))
+            for obstacle in shared_rectangle_obstacles:
+                dyn_obstacles.append(SharedObstacleRectangle(obstacle, deep_copy=True))
+            shared_obstacles_lock.finish_reading()
 
-        if any([obstacle.contains(pose_current.pose) for obstacle in dyn_obstacles]):
+        if any([obstacle.is_point_inside(pose_current.x, pose_current.y) for obstacle in dyn_obstacles]):
             logger.debug("Avoidance: pose current in obstacle")
             path = []
-        elif any([obstacle.contains(pose_order.pose) for obstacle in dyn_obstacles]):
+        elif any([obstacle.is_point_inside(pose_order.x, pose_order.y) for obstacle in dyn_obstacles]):
             logger.debug("Avoidance: pose order in obstacle")
             path = []
         else:

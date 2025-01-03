@@ -153,63 +153,39 @@ class VisibilityRoadMap:
 
 class ObstaclePolygon:
     def __init__(self, x_list: list[float], y_list: list[float], expand_distance: float = 0.0):
-        self.x_list = x_list
-        self.y_list = y_list
+        self.cvx_list = x_list
+        self.cvy_list = y_list
         self.expand_distance = expand_distance
-        self.cvx_list: list[float] = []
-        self.cvy_list: list[float] = []
-
-        # Disable checks and fixes because obstacles must be correctly generated,
-        # but keep it for further debugging.
-        # self.close_polygon()
-        # self.make_clockwise()
+        self.x_list: list[float] = []
+        self.y_list: list[float] = []
 
         self.calc_vertexes_in_configuration_space()
-
-    def make_clockwise(self):
-        if not self.is_clockwise():
-            print("not clockwise")
-            self.x_list = list(reversed(self.x_list))
-            self.y_list = list(reversed(self.y_list))
-
-    def is_clockwise(self):
-        n_data = len(self.x_list)
-        eval_sum = sum(
-            [(self.x_list[i + 1] - self.x_list[i]) * (self.y_list[i + 1] + self.y_list[i]) for i in range(n_data - 1)]
-        )
-        eval_sum += (self.x_list[0] - self.x_list[n_data - 1]) * (self.y_list[0] + self.y_list[n_data - 1])
-        return eval_sum >= 0
-
-    def close_polygon(self):
-        is_x_same = self.x_list[0] == self.x_list[-1]
-        is_y_same = self.y_list[0] == self.y_list[-1]
-        if is_x_same and is_y_same:
-            return  # no need to close
-
         self.x_list.append(self.x_list[0])
         self.y_list.append(self.y_list[0])
+        self.cvx_list.pop(-1)
+        self.cvy_list.pop(-1)
 
     def calc_vertexes_in_configuration_space(self):
-        x_list = self.x_list[0:-1]
-        y_list = self.y_list[0:-1]
-        n_data = len(x_list)
+        cvx_list = self.cvx_list[0:-1]
+        cvy_list = self.cvy_list[0:-1]
+        n_data = len(cvx_list)
 
         for index in range(n_data):
             offset_x, offset_y = self.calc_offset_xy(
-                x_list[index - 1],
-                y_list[index - 1],
-                x_list[index],
-                y_list[index],
-                x_list[(index + 1) % n_data],
-                y_list[(index + 1) % n_data],
+                cvx_list[index - 1],
+                cvy_list[index - 1],
+                cvx_list[index],
+                cvy_list[index],
+                cvx_list[(index + 1) % n_data],
+                cvy_list[(index + 1) % n_data],
             )
-            self.cvx_list.append(offset_x)
-            self.cvy_list.append(offset_y)
+            self.x_list.append(offset_x)
+            self.y_list.append(offset_y)
 
     def calc_offset_xy(self, px: float, py: float, x: float, y: float, nx: float, ny: float) -> tuple[float, float]:
         p_vec = math.atan2(y - py, x - px)
         n_vec = math.atan2(ny - y, nx - x)
         offset_vec = math.atan2(math.sin(p_vec) + math.sin(n_vec), math.cos(p_vec) + math.cos(n_vec)) + math.pi / 2.0
-        offset_x = x + self.expand_distance * math.cos(offset_vec)
-        offset_y = y + self.expand_distance * math.sin(offset_vec)
+        offset_x = x - self.expand_distance * math.cos(offset_vec)
+        offset_y = y - self.expand_distance * math.sin(offset_vec)
         return offset_x, offset_y
