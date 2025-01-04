@@ -2,7 +2,7 @@ from PySide6 import QtCore
 
 from cogip.entities.dynobstacle import DynCircleObstacleEntity, DynRectObstacleEntity
 from cogip.entities.robot import RobotEntity
-from cogip.models import DynObstacleList, DynObstacleRect, Pose
+from cogip.models import Pose
 from cogip.tools.monitor.mainwindow import MainWindow
 
 
@@ -22,6 +22,9 @@ class RobotManager(QtCore.QObject):
         self._rect_obstacles_pool: list[DynRectObstacleEntity] = []
         self._round_obstacles_pool: list[DynCircleObstacleEntity] = []
         self._sensors_emulation: dict[int, bool] = {}
+        self._update_obstacles = QtCore.QTimer()
+        self._update_obstacles.timeout.connect(self.update_obstacles)
+        self._update_obstacles_interval = 50
 
     def add_robot(self, robot_id: int, virtual: bool = False) -> None:
         """
@@ -46,6 +49,9 @@ class RobotManager(QtCore.QObject):
         if self._sensors_emulation.get(robot_id, False):
             robot.start_sensors_emulation()
 
+        if len(self._robots) == 1:
+            self._update_obstacles.start(self._update_obstacles_interval)
+
     def del_robot(self, robot_id: int) -> None:
         """
         Remove a robot.
@@ -57,6 +63,8 @@ class RobotManager(QtCore.QObject):
         robot.stop_sensors_emulation()
         robot.setEnabled(False)
         self._available_robots[robot_id] = robot
+        if len(self._robots) == 0:
+            self._update_obstacles.stop()
 
     def new_robot_pose_order(self, robot_id: int, new_pose: Pose) -> None:
         """
@@ -94,7 +102,7 @@ class RobotManager(QtCore.QObject):
         if robot:
             robot.stop_sensors_emulation()
 
-    def set_dyn_obstacles(self, dyn_obstacles: DynObstacleList) -> None:
+    def update_obstacles(self) -> None:
         """
         Qt Slot
 
@@ -102,39 +110,47 @@ class RobotManager(QtCore.QObject):
 
         Reuse already created dynamic obstacles to optimize performance
         and memory consumption.
-
-        Arguments:
-            dyn_obstacles: List of obstacles sent by the firmware through the serial port
         """
         # Store new and already existing dyn obstacles
         current_rect_obstacles = []
         current_round_obstacles = []
 
-        for dyn_obstacle in dyn_obstacles:
-            if isinstance(dyn_obstacle, DynObstacleRect):
-                if len(self._rect_obstacles_pool):
-                    obstacle = self._rect_obstacles_pool.pop(0)
-                    obstacle.setEnabled(True)
-                else:
-                    obstacle = DynRectObstacleEntity(self._game_view.scene_entity)
+        for robot_id in self._robots:
+            robot = self._robots.get(robot_id)
+            if robot.shared_circle_obstacles is not None:
+                for circle_obstacle in robot.shared_circle_obstacles:
+                    if len(self._round_obstacles_pool):
+                        obstacle = self._round_obstacles_pool.pop(0)
+                        obstacle.setEnabled(True)
+                    else:
+                        obstacle = DynCircleObstacleEntity(self._game_view.scene_entity)
 
-                obstacle.set_position(x=dyn_obstacle.x, y=dyn_obstacle.y, rotation=dyn_obstacle.angle)
-                obstacle.set_size(length=dyn_obstacle.length_y, width=dyn_obstacle.length_x)
-                obstacle.set_bounding_box(dyn_obstacle.bb)
+                    obstacle.set_position(
+                        x=circle_obstacle.center.x,
+                        y=circle_obstacle.center.y,
+                        radius=circle_obstacle.radius,
+                    )
+                    obstacle.set_bounding_box(circle_obstacle.bounding_box)
 
-                current_rect_obstacles.append(obstacle)
-            else:
-                # Round obstacle
-                if len(self._round_obstacles_pool):
-                    obstacle = self._round_obstacles_pool.pop(0)
-                    obstacle.setEnabled(True)
-                else:
-                    obstacle = DynCircleObstacleEntity(self._game_view.scene_entity)
+                    current_round_obstacles.append(obstacle)
 
-                obstacle.set_position(x=dyn_obstacle.x, y=dyn_obstacle.y, radius=dyn_obstacle.radius)
-                obstacle.set_bounding_box(dyn_obstacle.bb)
+            if robot.shared_rectangle_obstacles is not None:
+                for rectangle_obstacle in robot.shared_rectangle_obstacles:
+                    if len(self._rect_obstacles_pool):
+                        obstacle = self._rect_obstacles_pool.pop(0)
+                        obstacle.setEnabled(True)
+                    else:
+                        obstacle = DynRectObstacleEntity(self._game_view.scene_entity)
 
-                current_round_obstacles.append(obstacle)
+                    obstacle.set_position(
+                        x=rectangle_obstacle.center.x,
+                        y=rectangle_obstacle.center.y,
+                        rotation=rectangle_obstacle.center.angle,
+                    )
+                    obstacle.set_size(length=rectangle_obstacle.length_y, width=rectangle_obstacle.length_x)
+                    obstacle.set_bounding_box(rectangle_obstacle.bounding_box)
+
+                    current_rect_obstacles.append(obstacle)
 
         # Disable remaining dyn obstacles
         while len(self._rect_obstacles_pool):

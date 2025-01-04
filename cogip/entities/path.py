@@ -33,7 +33,7 @@ class PathEntity(Qt3DCore.QEntity):
         """
         self.points = points
 
-        if len(self.points) < 2:
+        if len(self.points) < 1:
             return
 
         for line in self.lines:

@@ -32,8 +32,6 @@ class SocketioController(QtCore.QObject):
             Qt signal emitted on robot state update
         signal_new_robot_path:
             Qt signal emitted on robot path update
-        signal_new_dyn_obstacles:
-            Qt signal emitted on dynamic obstacles update
         signal_connected:
             Qt signal emitted on server connection state changes
         signal_exit:
@@ -61,7 +59,6 @@ class SocketioController(QtCore.QObject):
     signal_new_robot_pose_order: qtSignal = qtSignal(int, models.Pose)
     signal_new_robot_state: qtSignal = qtSignal(int, models.RobotState)
     signal_new_robot_path: qtSignal = qtSignal(int, list)
-    signal_new_dyn_obstacles: qtSignal = qtSignal(list)
     signal_connected: qtSignal = qtSignal(bool)
     signal_exit: qtSignal = qtSignal()
     signal_add_robot: qtSignal = qtSignal(int, bool)
@@ -287,14 +284,6 @@ class SocketioController(QtCore.QObject):
             """
             path = TypeAdapter(list[models.Vertex]).validate_python(data)
             self.signal_new_robot_path.emit(robot_id, path)
-
-        @self.sio.on("obstacles", namespace="/dashboard")
-        def on_obstacles(robot_id: int, data):
-            """
-            Callback on obstacles message.
-            """
-            obstacles = TypeAdapter(models.DynObstacleList).validate_python(data)
-            self.signal_new_dyn_obstacles.emit(obstacles)
 
         @self.sio.on("add_robot", namespace="/monitor")
         def on_add_robot(robot_id: int, virtual: bool) -> None:

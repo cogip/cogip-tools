@@ -93,7 +93,6 @@ def main_opt(
 
     # Connect Controller signals to robot manager
     controller.signal_new_robot_pose_order.connect(robot_manager.new_robot_pose_order)
-    controller.signal_new_dyn_obstacles.connect(robot_manager.set_dyn_obstacles)
     controller.signal_add_robot.connect(robot_manager.add_robot)
     controller.signal_del_robot.connect(robot_manager.del_robot)
     controller.signal_start_sensors_emulation.connect(robot_manager.start_sensors_emulation)
