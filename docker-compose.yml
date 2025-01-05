@@ -227,7 +227,7 @@ services:
       - -c
       - |
         uv run cogip-server-beacon &
-        uv run cogip-dashboard-beacon &
+        uv run cogip-dashboard &
         sleep infinity
     profiles:
       - beacon

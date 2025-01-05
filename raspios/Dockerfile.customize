@@ -125,7 +125,7 @@ RUN sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf &&
     chmod +x /etc/rc.local
 
 RUN systemctl enable cogip-server-beacon \
- && systemctl enable cogip-dashboard-beacon
+ && systemctl enable cogip-dashboard
 
 
 FROM common AS robot-common
