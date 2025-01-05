@@ -3,6 +3,7 @@
 import faulthandler
 import os
 import sys
+from pathlib import Path
 
 # Remove info logs from QWebEngineView.
 # This needs to be set in os.environ before importing typer.
@@ -34,6 +35,36 @@ def main_opt(
 
     # Create QApplication
     app = QtWidgets.QApplication(sys.argv)
+
+    # Set icon theme so that icons are visible in Docker containers.
+    if Path("/usr/share/icons/Yaru-dark").exists():
+        QtGui.QIcon.setThemeName("Yaru-dark")
+
+    # Set dark theme
+    palette = app.palette()
+    palette.setColor(QtGui.QPalette.ColorRole.Window, "#2a2a2a")
+    palette.setColor(QtGui.QPalette.ColorRole.WindowText, "#ffffff")
+    palette.setColor(QtGui.QPalette.ColorRole.Base, "#2a2a2a")
+    palette.setColor(QtGui.QPalette.ColorRole.AlternateBase, "#272727")
+    palette.setColor(QtGui.QPalette.ColorRole.ToolTipBase, "#ffffdc")
+    palette.setColor(QtGui.QPalette.ColorRole.ToolTipText, "#000000")
+    palette.setColor(QtGui.QPalette.ColorRole.Text, "#ffffff")
+    palette.setColor(QtGui.QPalette.ColorRole.Button, "#2a2a2a")
+    palette.setColor(QtGui.QPalette.ColorRole.ButtonText, "#ffffff")
+    palette.setColor(QtGui.QPalette.ColorRole.BrightText, "#ffffff")
+    palette.setColor(QtGui.QPalette.ColorRole.Highlight, "#e95420")
+    palette.setColor(QtGui.QPalette.ColorRole.HighlightedText, "#ffffff")
+    palette.setColor(QtGui.QPalette.ColorRole.Light, "#343434")
+    palette.setColor(QtGui.QPalette.ColorRole.Midlight, "#2f2f2f")
+    palette.setColor(QtGui.QPalette.ColorRole.Dark, "#252525")
+    palette.setColor(QtGui.QPalette.ColorRole.Mid, "#2f2f2f")
+    palette.setColor(QtGui.QPalette.ColorRole.Shadow, "#020202")
+    palette.setColor(QtGui.QPalette.ColorRole.Link, "#308cc6")
+    palette.setColor(QtGui.QPalette.ColorRole.LinkVisited, "#ff00ff")
+    palette.setColor(QtGui.QPalette.ColorRole.NoRole, "#000000")
+    palette.setColor(QtGui.QPalette.ColorRole.PlaceholderText, "#9b9b9b")
+    palette.setColor(QtGui.QPalette.ColorRole.Accent, "#308cc6")
+    app.setPalette(palette)
 
     # Create UI
     win = MainWindow(url)

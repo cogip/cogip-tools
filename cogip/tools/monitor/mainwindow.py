@@ -387,7 +387,7 @@ class MainWindow(QtWidgets.QMainWindow):
             empty_menu_title.setTextFormat(QtCore.Qt.RichText)
             empty_menu_title.setAlignment(QtCore.Qt.AlignHCenter)
             empty_menu_title.setFrameStyle(QtWidgets.QFrame.Panel | QtWidgets.QFrame.Sunken)
-            empty_menu_title.setStyleSheet("font-weight: bold; color: blue")
+            empty_menu_title.setStyleSheet("font-weight: bold; color: #d01b1e")
             empty_menu_layout.addWidget(empty_menu_title)
             empty_menu_layout.addStretch()
             self.menu_staked_widgets[menu_name].addWidget(empty_menu_widget)
@@ -416,7 +416,7 @@ class MainWindow(QtWidgets.QMainWindow):
         title.setTextFormat(QtCore.Qt.RichText)
         title.setAlignment(QtCore.Qt.AlignHCenter)
         title.setFrameStyle(QtWidgets.QFrame.Panel | QtWidgets.QFrame.Sunken)
-        title.setStyleSheet("font-weight: bold; color: blue")
+        title.setStyleSheet("font-weight: bold; color: #d01b1e")
         layout.addWidget(title)
 
         for entry in new_menu.entries:

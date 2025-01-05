@@ -67,7 +67,8 @@ RUN apt-get install -y \
         libxi6 \
         libxkbfile1 \
         libxcb-xkb1 libxcb-image0 libxcb-render-util0 libxcb-render0 libxcb-util1 \
-        libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxkbcommon-x11-0
+        libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxkbcommon-x11-0 \
+        yaru-theme-icon
 
 
 FROM uv_base AS cogip-firmware
