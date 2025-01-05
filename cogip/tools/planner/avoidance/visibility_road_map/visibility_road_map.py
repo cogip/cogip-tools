@@ -27,7 +27,6 @@ class VisibilityRoadMap:
         x_max: float,
         y_min: float,
         y_max: float,
-        fixed_obstacles: list["ObstaclePolygon"] = [],
         win: DebugWindow | None = None,
     ):
         self.x_min = x_min
@@ -37,12 +36,6 @@ class VisibilityRoadMap:
         self.win = win
 
         self.fixed_nodes: list[DijkstraSearch.Node] = []
-
-        for obstacle in fixed_obstacles:
-            for vx, vy in zip(obstacle.cvx_list, obstacle.cvy_list):
-                if vx < self.x_min or vx > self.x_max or vy < self.y_min or vy > self.y_max:
-                    continue
-                self.fixed_nodes.append(DijkstraSearch.Node(vx, vy))
 
     def planning(
         self,

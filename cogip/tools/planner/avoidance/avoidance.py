@@ -13,9 +13,6 @@ except ImportError:
     DebugWindow = bool
 
 
-fixed_obstacles = []
-
-
 class AvoidanceStrategy(IntEnum):
     Disabled = 0
     VisibilityRoadMapQuadPid = 1
@@ -62,31 +59,16 @@ class VisibilityRoadMapWrapper:
         self.table = table
         self.shared_properties = shared_properties
         self.robot_width: int = 0
-        self.fixed_obstacles: list[visibility_road_map.ObstaclePolygon] = []
 
     def set_properties(self, robot_width: int, expand: int):
         self.robot_width = robot_width
         self.expand = expand
-        self.fixed_obstacles.clear()
-
-        for obstacle in fixed_obstacles:
-            x_list, y_list = list(zip(*[(int(v.x), int(v.y)) for v in obstacle]))
-            x_list = list(x_list)
-            y_list = list(y_list)
-            x_list.append(x_list[0])
-            y_list.append(y_list[0])
-
-            self.fixed_obstacles.append(visibility_road_map.ObstaclePolygon(x_list, y_list, expand))
-
-        if self.win:
-            self.win.fixed_obstacles = self.fixed_obstacles[:]
 
         self.visibility_road_map = visibility_road_map.VisibilityRoadMap(
             x_min=self.table.x_min + robot_width / 2,
             x_max=self.table.x_max - robot_width / 2,
             y_min=self.table.y_min + robot_width / 2,
             y_max=self.table.y_max - robot_width / 2,
-            fixed_obstacles=self.fixed_obstacles,
             win=self.win,
         )
 

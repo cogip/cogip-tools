@@ -1,7 +1,6 @@
 import sys
 import threading
 import time
-from itertools import chain
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -60,7 +59,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def draw_obstacles(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(QtCore.Qt.black, 5, QtCore.Qt.SolidLine))
-        for obstacle in chain(self.win.fixed_obstacles, self.win.dyn_obstacles):
+        for obstacle in self.win.dyn_obstacles:
             points = QtGui.QPolygon(
                 [
                     QtCore.QPoint(self.margin + self.offset_x - y, self.margin + self.offset_y - x)
@@ -71,7 +70,7 @@ class MainWindow(QtWidgets.QWidget):
 
         qp.setPen(QtGui.QPen(QtCore.Qt.magenta, 20))
 
-        for obstacle in chain(self.win.fixed_obstacles, self.win.dyn_obstacles):
+        for obstacle in self.win.dyn_obstacles:
             cv_points = [
                 QtCore.QPoint(self.margin + self.offset_x - y, self.margin + self.offset_y - x)
                 for x, y in zip(obstacle.cvx_list, obstacle.cvy_list)
@@ -121,7 +120,6 @@ class DebugWindow:
         self.point_start: models.Pose | None = None
         self.point_goal: models.Pose | None = None
 
-        self.fixed_obstacles: list[visibility_road_map.ObstaclePolygon] = []
         self.dyn_obstacles: list[visibility_road_map.ObstaclePolygon] = []
 
         self.visibility_nodes: list[tuple[float, float]] = []
