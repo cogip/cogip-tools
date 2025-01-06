@@ -83,6 +83,13 @@ cogip-detector-pami = "cogip.tools.detector_pami.__main__:main"
 cogip-cansend = "cogip.tools.cansend.__main__:main"
 cogip-cpp-cython-example = "cogip.tools.cpp_cython_example.__main__:main"
 cogip-cpp-nanobind-example = "cogip.tools.cpp_nanobind_example.__main__:main"
+cogip-servo-ping = "cogip.tools.servos.scscl.ping:main"
+cogip-servo-read-write = "cogip.tools.servos.scscl.read_write:main"
+cogip-servo-read = "cogip.tools.servos.scscl.read:main"
+cogip-servo-reg-write = "cogip.tools.servos.scscl.reg_write:main"
+cogip-servo-sync-write = "cogip.tools.servos.scscl.sync_write:main"
+cogip-servo-wheel = "cogip.tools.servos.scscl.wheel:main"
+cogip-servo-write = "cogip.tools.servos.scscl.write:main"
 
 [tool.uv]
 python-preference = "only-managed"
