@@ -300,7 +300,7 @@ class SocketioController(QtCore.QObject):
             self.signal_new_robot_path.emit(robot_id, path)
 
         @self.sio.on("obstacles", namespace="/dashboard")
-        def on_obstacles(data):
+        def on_obstacles(robot_id: int, data):
             """
             Callback on obstacles message.
             """

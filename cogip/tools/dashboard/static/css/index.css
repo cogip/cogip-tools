@@ -52,14 +52,26 @@ h1 {
   margin-right: 0px;
 }
 
-#menu {
-  text-align: center;
+.tab-content #menu {
+  min-height: 87vh;
+  max-height: 87vh;
+}
+
+body #menu {
   min-height: 91vh;
   max-height: 91vh;
+}
+
+#menu {
+  text-align: center;
   padding-top: 10px;
   padding-right: 5px;
   padding-left: 15px;
   border-right: 1px solid var(--grey-color) !important;
+}
+
+.nav-tabs {
+  margin-top: 0;
 }
 
 .nav-link,
@@ -68,9 +80,9 @@ h1 {
   color:var(--grey-color);
 }
 
-#nav-tool-tab.active {
+.nav-link.active {
   border-color: var(--grey-color) !important;
-  background-color: var(--red-cogip);
+  background-color: var(--red-cogip) !important;
   color: white !important;
 }
 

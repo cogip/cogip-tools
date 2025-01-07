@@ -32,7 +32,7 @@ Tools running on the central beacon's Raspberry Pi 4 are:
   - [`Server Beacon`](usage/server_beacon.md) connecting all beacon components through a SocketIO server,
   and connected to the SocketIO server of all robots.
     It also runs a web server providing a `Dashboard` to control and monitor the robot.
-  - [`Dashboard Beacon`](usage/dashboard_beacon.md), a web server providing a dashboard to control and monitor the beacon, and display the dashboard of all robots.
+  - [`Dashboard`](usage/dashboard.md), a web server providing a dashboard to control and monitor the beacon, and display the dashboard of all robots.
   - [`Beaconcam`](usage/beaconcam.md) reading and analyzing images of the game area from the camera.
 
 !!! warning "Beacon services will be redesigned and are not yet available. Robots can run standalone."
