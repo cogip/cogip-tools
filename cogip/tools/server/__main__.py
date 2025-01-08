@@ -22,6 +22,13 @@ def main_opt(
             envvar=["ROBOT_ID", "SERVER_ID"],
         ),
     ] = 1,
+    dashboard_update_interval: Annotated[
+        float,
+        typer.Option(
+            help="Interval between messages to dashboard (in seconds)",
+            envvar="SERVER_DASHBOARD_UPDATE_INTERVAL",
+        ),
+    ] = 0.2,
     record_dir: Annotated[
         Path,
         typer.Option(
@@ -52,6 +59,7 @@ def main_opt(
         logger.setLevel(logging.DEBUG)
 
     os.environ["SERVER_RECORD_DIR"] = str(record_dir)
+    os.environ["SERVER_DASHBOARD_UPDATE_INTERVAL"] = str(dashboard_update_interval)
 
     uvicorn.run(
         "cogip.tools.server.app:app",

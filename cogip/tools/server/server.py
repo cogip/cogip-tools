@@ -7,17 +7,27 @@ from socketio.exceptions import ConnectionRefusedError
 from uvicorn.main import Server as UvicornServer
 
 from cogip import models
+from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
+from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import SharedMemory
+from cogip.utils.asyncloop import AsyncLoop
 from . import context, logger, namespaces
 
 
 class Server:
     _original_uvicorn_exit_handler = UvicornServer.handle_exit  # Backup of original exit handler to overload it
     _shared_memory: SharedMemory | None = None  # Shared memory instance
+    _shared_pose_current: SharedPose | None = None
+    _shared_circle_obstacles: SharedObstacleCircleList | None = None
+    _shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
 
     @staticmethod
     def handle_exit(*args, **kwargs):
         """Overload function for Uvicorn handle_exit"""
+        Server._shared_rectangle_obstacles = None
+        Server._shared_circle_obstacles = None
+        Server._shared_pose_current = None
         Server._shared_memory = None
         Server._original_uvicorn_exit_handler(*args, **kwargs)
 
@@ -32,9 +42,17 @@ class Server:
         self.root_menu = models.ShellMenu(name="Root Menu", entries=[])
         self.context.tool_menus["root"] = self.root_menu
         self.context.current_tool_menu = "root"
+        self.dashboard_updater_loop = AsyncLoop(
+            "Dashboard updater loop",
+            float(os.getenv("SERVER_DASHBOARD_UPDATE_INTERVAL", 0.2)),
+            self.update_dashboard,
+        )
 
         if Server._shared_memory is None:
             Server._shared_memory = SharedMemory(f"cogip_{self.context.robot_id}", owner=True)
+            Server._shared_pose_current = Server._shared_memory.get_pose_current()
+            Server._shared_circle_obstacles = Server._shared_memory.get_circle_obstacles()
+            Server._shared_rectangle_obstacles = Server._shared_memory.get_rectangle_obstacles()
 
         self.sio = socketio.AsyncServer(
             always_connect=False,
@@ -52,8 +70,10 @@ class Server:
         self.sio.register_namespace(namespaces.RobotcamNamespace(self))
         self.sio.register_namespace(namespaces.BeaconNamespace(self))
 
+        self.dashboard_updater_loop.start()
+
         # Overload default Uvicorn exit handler
-        UvicornServer.handle_exit = self.handle_exit
+        UvicornServer.handle_exit = Server.handle_exit
 
         @self.sio.event
         def connect(sid, environ, auth):
@@ -89,3 +109,32 @@ class Server:
             self.context.tool_menus[self.context.current_tool_menu].model_dump(),
             namespace="/dashboard",
         )
+
+    async def update_dashboard(self):
+        pose_current = {
+            "x": Server._shared_pose_current.x,
+            "y": Server._shared_pose_current.y,
+            "O": Server._shared_pose_current.angle,
+        }
+        await self.sio.emit("pose_current", (self.context.robot_id, pose_current), namespace="/dashboard")
+        obstacles = []
+        obstacles += [
+            {
+                "x": obstacle.center.x,
+                "y": obstacle.center.y,
+                "radius": obstacle.radius,
+                "id": obstacle.id,
+            }
+            for obstacle in Server._shared_circle_obstacles
+        ]
+        obstacles += [
+            {
+                "x": obstacle.center.x,
+                "y": obstacle.center.y,
+                "length_x": obstacle.length_x,
+                "length_y": obstacle.length_y,
+                "id": obstacle.id,
+            }
+            for obstacle in Server._shared_rectangle_obstacles
+        ]
+        await self.sio.emit("obstacles", (self.context.robot_id, obstacles), namespace="/dashboard")

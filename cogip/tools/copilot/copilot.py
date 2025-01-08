@@ -166,7 +166,6 @@ class Copilot:
             self.shared_pose_current.y = pose["y"]
             self.shared_pose_current.angle = pose["O"]
             self.shared_pose_current_lock.finish_writing()
-            await self.sio_events.emit("pose", pose)
 
     @pb_exception_handler
     async def handle_message_state(self, message: bytes | None = None) -> None:
