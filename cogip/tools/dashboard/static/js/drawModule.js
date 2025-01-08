@@ -106,7 +106,6 @@ function setButtonPosition(canvas) {
   const rightPx = Math.max(
     window.innerWidth -
       document.getElementById("menu").offsetWidth -
-      10 -
       canvas.width,
     0
   );
@@ -115,7 +114,7 @@ function setButtonPosition(canvas) {
   const buttonCameraModal = document.getElementById("buttonCameraModal");
   if (buttonCameraModal) {
     buttonCameraModal.style.top = canvas.height - 44 + "px"; // 44 is height of camera image
-    buttonCameraModal.style.right = rightPx - 49 + "px"; // 49 is width of refresh image
+    buttonCameraModal.style.right = rightPx - 59 + "px"; // 49 is width of refresh image
   }
 }
 
@@ -256,56 +255,60 @@ function drawObstacles(color, obstacle, context) {
   context.restore();
 }
 
-// Event handler for hiding tab
-function onHideTab(robot_id) {
-  var iframe = document.getElementById(`robot${robot_id}-iframe`);
-  iframe.removeAttribute("src");
-}
-
-// Event handler for showing tab
-function onShowTab(robot_id) {
-  var iframe = document.getElementById(`robot${robot_id}-iframe`);
-  iframe.src = `http://robot${robot_id}:808${robot_id}`;
-}
-
 export function addNewTab(robot_id) {
+  //Check if nav-tab already exists and remove it
+  const existingNavTab = document.getElementById(`robot${robot_id}-tab`);
+  if (existingNavTab) {
+    existingNavTab.parentElement.remove();
+    const parent = existingNavTab.parentElement;
+    parent.replaceWith(parent.cloneNode(true));
+  }
+
+  //Check if tab-tab already exists and remove it
+  const existingTabPane = document.getElementById(`robot${robot_id}`);
+  if (existingTabPane) {
+    existingTabPane.remove();
+  }
+
   // Create new nav-tab element
   var newNavTab = document.createElement("li");
-  newNavTab.className = "nav-item";
-  newNavTab.innerHTML = `<button class="nav-link" id="robot${robot_id}-tab" data-bs-toggle="tab" data-bs-target="#robot${robot_id}" type="button" role="tab" aria-controls="robot${robot_id}" aria-selected="true">Robot ${robot_id}</button>`;
+  newNavTab.className = "mr-2";
+  newNavTab.innerHTML = `
+  <button 
+    class="inline-block px-4 py-2 text-gray-600 hover:text-red-cogip border-b-2 border-transparent hover:border-red-cogip focus:outline-none" 
+    id="robot${robot_id}-tab" 
+    data-target="#robot${robot_id}" 
+    type="button" 
+    role="tab" 
+    aria-controls="robot${robot_id}" 
+    aria-selected="false">
+    Robot ${robot_id}
+  </button>`;
 
   // Create new tab-pane element
   var newTabPane = document.createElement("div");
-  newTabPane.className = "tab-pane fade";
+  newTabPane.className = "hidden";
   newTabPane.id = `robot${robot_id}`;
-  var navTabHeight = getFullHeight("nav-tabs", true);
-  newTabPane.innerHTML = `<iframe id="robot${robot_id}-iframe" style="position: absolute; top: ${navTabHeight}px; bottom: 0; left: 0; right: 0; width: 100%; height: ${
-    window.innerHeight - navTabHeight
-  }px;" frameborder="0"></iframe>`;
+  newTabPane.setAttribute("role", "tabpanel");
 
-  // Append new nav-tab to the nav-tabs container
-  var navTabsContainer = document.querySelector(".nav-tabs");
+  var navTabHeight = getFullHeight("flex-wrap", true);
+  newTabPane.innerHTML = `
+  <iframe 
+    id="robot${robot_id}-iframe" 
+    style="position: absolute; top: ${navTabHeight}px; bottom: 0; left: 0; right: 0; width: 100%; height: ${
+    window.innerHeight - navTabHeight
+  }px;" 
+    class="w-full h-full" 
+    frameborder="0">
+  </iframe>`;
+
+  // Append new nav-tab to the flex-wrap container
+  var navTabsContainer = document.querySelector(".flex-wrap");
   navTabsContainer.appendChild(newNavTab);
 
   // Append new tab-pane to the tab-content container
   var tabContentContainer = document.querySelector(".tab-content");
   tabContentContainer.appendChild(newTabPane);
-
-  document
-    .getElementById(`robot${robot_id}-tab`)
-    .addEventListener("shown.bs.tab", function (e) {
-      var robot_id = e.target.getAttribute("id").match(/robot(\d+)-tab/)[1];
-      onShowTab(robot_id);
-    });
-
-  // Add event listener to newly created tab to unload the iframe when user leaves the tab
-  document
-    .getElementById(`robot${robot_id}-tab`)
-    .addEventListener("hide.bs.tab", function (e) {
-      // Get the ID of the unselected robot from the href attribute
-      var robotId = e.target.getAttribute("id").match(/robot(\d+)-tab/)[1];
-      onHideTab(robotId);
-    });
 }
 
 export function deleteTab(robot_id) {
@@ -323,12 +326,8 @@ export function deleteTab(robot_id) {
 
   // Check if the elements exist before attempting to remove them
   if (navTab && tabPane) {
-    // Remove the event listeners for the deleted tab
-    navTab.removeEventListener("hide.bs.tab", onHideTab);
-    navTab.removeEventListener("shown.bs.tab", onShowTab);
-
     // Remove the new nav-tab from the nav-tabs container
-    var navTabsContainer = document.querySelector(".nav-tabs");
+    var navTabsContainer = document.querySelector(".flex-wrap");
     navTabsContainer.removeChild(navTab);
 
     // Remove the new tab-pane from the tab-content container

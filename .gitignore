@@ -14,3 +14,4 @@ raspios/cogip-tools-*.tar.gz
 raspios/overlay-kernel
 cogip/tools/camera/cameras/*/*/images
 build
+node_modules
