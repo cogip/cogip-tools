@@ -76,14 +76,14 @@ void ObstacleCircle::update_bounding_box_()
 {
     if (radius_ <= 0) return;
 
-    double adjusted_radius = radius_ * (1 + bounding_box_margin_);
+    double circumscribed_radius = (radius_ / cos(M_PI / bounding_box_points_number_)) + bounding_box_margin_;
     bounding_box_.clear();
 
     for (uint8_t i = 0; i < bounding_box_points_number_; ++i) {
         double angle = (static_cast<double>(i) * 2 * M_PI) / bounding_box_points_number_;
         bounding_box_.emplace_back(
-            center_.x() + adjusted_radius * cos(angle),
-            center_.y() + adjusted_radius * sin(angle)
+            center_.x() + circumscribed_radius * cos(angle),
+            center_.y() + circumscribed_radius * sin(angle)
         );
     }
 }

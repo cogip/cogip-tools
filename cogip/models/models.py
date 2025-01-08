@@ -175,7 +175,7 @@ class DynRoundObstacle(BaseModel):
     angle: float = Field(default=0.0)
     radius: float
     bb_points_number: int = 20
-    bb_margin: float = 0.2
+    bb_margin: float = 20
 
     _cython_obj: 'CppObstacleCircle' = None  # Reference to the Cython object
 
