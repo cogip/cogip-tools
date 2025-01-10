@@ -42,7 +42,7 @@ class GameContext(metaclass=Singleton):
         self.camp = Camp()
         self.strategy = actions.Strategy.GameSolarFirst
         self._table = TableEnum.Game
-        self.avoidance_strategy = AvoidanceStrategy.VisibilityRoadMapQuadPid
+        self.avoidance_strategy = AvoidanceStrategy.AvoidanceCpp
         self.reset()
 
     @property

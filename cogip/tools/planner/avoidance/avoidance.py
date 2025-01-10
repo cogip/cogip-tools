@@ -1,9 +1,15 @@
+import math
 from enum import IntEnum
 from multiprocessing.managers import DictProxy
 
 from cogip import models
+from cogip.cpp.libraries.avoidance import Avoidance as CppAvoidance
+from cogip.cpp.libraries.models import Coords as SharedCoord
+from cogip.cpp.libraries.models import CoordsList as SharedCoordList
 from cogip.cpp.libraries.obstacles import ObstacleCircle as SharedObstacleCircle
+from cogip.cpp.libraries.obstacles import ObstaclePolygon as SharedObstaclePolygon
 from cogip.cpp.libraries.obstacles import ObstacleRectangle as SharedObstacleRectangle
+from .. import logger
 from ..table import Table
 from .visibility_road_map import visibility_road_map
 
@@ -18,6 +24,7 @@ class AvoidanceStrategy(IntEnum):
     VisibilityRoadMapQuadPid = 1
     VisibilityRoadMapLinearPoseDisabled = 2
     StopAndGo = 3
+    AvoidanceCpp = 4
 
 
 class Avoidance:
@@ -26,6 +33,24 @@ class Avoidance:
         self.visibility_road_map = VisibilityRoadMapWrapper(table, shared_properties)
         self.last_robot_width: int = -1
         self.last_expand: int = -1
+        border_coords = SharedCoordList()
+        border_coords.append(table.x_min, table.y_min)
+        border_coords.append(table.x_max, table.y_min)
+        border_coords.append(table.x_max, table.y_max)
+        border_coords.append(table.x_min, table.y_max)
+        border_obstacle = SharedObstaclePolygon(border_coords, bounding_box_margin=0, bounding_box_points_number=0)
+        self.cpp_avoidance = CppAvoidance(border_obstacle)
+
+    def check_recompute(self, pose_current: models.PathPose, goal: models.PathPose) -> bool:
+        strategy = AvoidanceStrategy(self.shared_properties["avoidance_strategy"])
+        match strategy:
+            case AvoidanceStrategy.AvoidanceCpp:
+                return self.cpp_avoidance.check_recompute(
+                    SharedCoord(x=pose_current.x, y=pose_current.y),
+                    SharedCoord(x=goal.x, y=goal.y),
+                )
+            case _:
+                return True
 
     def get_path(
         self,
@@ -38,6 +63,30 @@ class Avoidance:
         match strategy:
             case AvoidanceStrategy.Disabled:
                 path = [models.PathPose(**pose_current.model_dump()), goal.model_copy()]
+            case AvoidanceStrategy.AvoidanceCpp:
+                path = [models.PathPose(**pose_current.model_dump())]
+                self.cpp_avoidance.clear_dynamic_obstacles()
+                for obstacle in obstacles:
+                    self.cpp_avoidance.add_dynamic_obstacle(obstacle)
+                res = self.cpp_avoidance.avoidance(
+                    SharedCoord(pose_current.x, pose_current.y),
+                    SharedCoord(goal.x, goal.y),
+                )
+                logger.debug(f"Avoidance: build graph success = {res}")
+                if res:
+                    for i in range(self.cpp_avoidance.get_path_size()):
+                        shared_pose = self.cpp_avoidance.get_path_pose(i)
+                        pose = models.PathPose(
+                            x=shared_pose.x,
+                            y=shared_pose.y,
+                        )
+                        pose.bypass_final_orientation = True
+                        path.append(pose)
+                    while len(path) > 1 and math.dist((path[1].x, path[1].y), (pose_current.x, pose_current.y)) < 10:
+                        del path[1]
+                    path.append(goal.model_copy())
+                else:
+                    path = []
             case _:
                 expand = int(robot_width / 2 * self.shared_properties["obstacle_bb_margin"])
                 if self.last_robot_width != robot_width or self.last_expand != expand:

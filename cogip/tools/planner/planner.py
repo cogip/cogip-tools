@@ -363,7 +363,11 @@ class Planner:
                         else:
                             # Intermediate pose
                             match self.game_context.avoidance_strategy:
-                                case AvoidanceStrategy.Disabled | AvoidanceStrategy.VisibilityRoadMapQuadPid:
+                                case (
+                                    AvoidanceStrategy.Disabled
+                                    | AvoidanceStrategy.VisibilityRoadMapQuadPid
+                                    | AvoidanceStrategy.AvoidanceCpp
+                                ):
                                     new_controller = ControllerEnum.QUADPID
                                 case AvoidanceStrategy.VisibilityRoadMapLinearPoseDisabled:
                                     new_controller = ControllerEnum.LINEAR_POSE_DISABLED

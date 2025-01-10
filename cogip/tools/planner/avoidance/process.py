@@ -104,22 +104,25 @@ def avoidance_process(
                 dyn_obstacles.append(SharedObstacleRectangle(obstacle, deep_copy=True))
             shared_obstacles_lock.finish_reading()
 
-        if any([obstacle.is_point_inside(pose_current.x, pose_current.y) for obstacle in dyn_obstacles]):
-            logger.debug("Avoidance: pose current in obstacle")
-            path = []
-        elif any([obstacle.is_point_inside(pose_order.x, pose_order.y) for obstacle in dyn_obstacles]):
-            logger.debug("Avoidance: pose order in obstacle")
-            path = []
+        if shared_properties["avoidance_strategy"] == AvoidanceStrategy.AvoidanceCpp:
+            path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
         else:
-            shared_properties["last_avoidance_pose_current"] = (pose_current.x, pose_current.y)
-
-            if pose_current.x == pose_order.x and pose_current.y == pose_order.y:
-                # If the pose order is just a rotation from the pose current, the avoidance will not find any path,
-                # so set the path manually
-                logger.debug("Avoidance: rotation only")
-                path = [pose_current, pose_order]
+            if any([obstacle.is_point_inside(pose_current.x, pose_current.y) for obstacle in dyn_obstacles]):
+                logger.debug("Avoidance: pose current in obstacle")
+                path = []
+            elif any([obstacle.is_point_inside(pose_order.x, pose_order.y) for obstacle in dyn_obstacles]):
+                logger.debug("Avoidance: pose order in obstacle")
+                path = []
             else:
-                path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
+                shared_properties["last_avoidance_pose_current"] = (pose_current.x, pose_current.y)
+
+                if pose_current.x == pose_order.x and pose_current.y == pose_order.y:
+                    # If the pose order is just a rotation from the pose current, the avoidance will not find any path,
+                    # so set the path manually
+                    logger.debug("Avoidance: rotation only")
+                    path = [pose_current, pose_order]
+                else:
+                    path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
 
         if len(path) == 0:
             logger.debug("Avoidance: No path found")
