@@ -85,9 +85,9 @@ class Properties(metaclass=Singleton):
     path_refresh_interval: Annotated[
         float,
         Field(
-            ge=0.1,
+            ge=0.001,
             le=2.0,
-            multiple_of=0.05,
+            multiple_of=0.001,
             title="Path Refresh Interval",
             description="Interval between each update of robot paths (seconds)",
         ),
