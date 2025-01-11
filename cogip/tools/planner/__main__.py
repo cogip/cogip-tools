@@ -12,7 +12,7 @@ from .planner import Planner
 
 
 def changes_callback(changes):
-    logger.info("Changes detected:", changes)
+    logger.info(f"Changes detected: {changes}")
 
 
 def run(*args, **kwargs) -> None:
@@ -167,12 +167,6 @@ def main_opt(
 ):
     if debug:
         logger.setLevel(logging.DEBUG)
-
-    # The reload option is not working since multiprocessing is used to compute avoidance.
-    # It will be debugged later.
-    if reload:
-        reload = False
-        logger.warning("-r/--reload option currently not active")
 
     if not server_url:
         server_url = f"http://localhost:809{id}"
