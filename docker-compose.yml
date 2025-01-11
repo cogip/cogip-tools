@@ -222,6 +222,7 @@ services:
     hostname: beacon
     network_mode: "host"
     environment:
+      ROBOT_ID: 0
       SERVER_BEACON_MAX_ROBOTS: 4
       SERVER_BEACON_RELOAD:
       SERVER_BEACON_DEBUG:
@@ -237,11 +238,12 @@ services:
       - -x
       - -c
       - |
-        uv run cogip-server-beacon &
-        uv run cogip-dashboard &
+        gosu $${UID}:$${GID} uv run cogip-server-beacon &
+        gosu $${UID}:$${GID} uv run cogip-dashboard &
         sleep infinity
     profiles:
       - beacon
+    stop_signal: SIGKILL
 
 
   socat2:
