@@ -2,7 +2,7 @@ from PySide6 import QtCore
 
 from cogip.entities.dynobstacle import DynCircleObstacleEntity, DynRectObstacleEntity
 from cogip.entities.robot import RobotEntity
-from cogip.models import Pose
+from cogip.models import Pose, Vertex
 from cogip.tools.monitor.mainwindow import MainWindow
 
 
@@ -165,6 +165,15 @@ class RobotManager(QtCore.QObject):
 
         self._rect_obstacles_pool = current_rect_obstacles
         self._round_obstacles_pool = current_round_obstacles
+
+    def update_shared_obstacles(self, obstacles: list[Vertex]):
+        for robot_id in self._robots:
+            robot = self._robots.get(robot_id)
+            robot.shared_monitor_obstacles_lock.start_writing()
+            robot.shared_monitor_obstacles.clear()
+            for obstacle in obstacles:
+                robot.shared_monitor_obstacles.append(obstacle.x, obstacle.y)
+            robot.shared_monitor_obstacles_lock.finish_writing()
 
     def disable_robots(self):
         """Disable all enabled robots."""

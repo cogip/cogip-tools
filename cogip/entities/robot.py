@@ -9,6 +9,7 @@ from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
 from PySide6.QtCore import Slot as qtSlot
 
+from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
@@ -53,6 +54,8 @@ class RobotEntity(AssetEntity):
         self.shared_lidar_data_lock: WritePriorityLock | None = None
         self.shared_circle_obstacles: SharedObstacleCircleList | None = None
         self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
+        self.shared_monitor_obstacles: SharedCoordsList | None = None
+        self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
 
         if robot_id == 1:
             self.beacon_entity = Qt3DCore.QEntity(self)
@@ -83,6 +86,8 @@ class RobotEntity(AssetEntity):
             self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
             self.shared_circle_obstacles = self.shared_memory.get_circle_obstacles()
             self.shared_rectangle_obstacles = self.shared_memory.get_rectangle_obstacles()
+            self.shared_monitor_obstacles = self.shared_memory.get_monitor_obstacles()
+            self.shared_monitor_obstacles_lock = self.shared_memory.get_lock(LockName.MonitorObstacles)
             for i in range(360):
                 self.shared_lidar_data[i][1] = 255
             for self.sensor in self.sensors:
@@ -92,6 +97,8 @@ class RobotEntity(AssetEntity):
             for self.sensor in self.sensors:
                 self.sensor.shared_sensor_data = None
             self.update_pose_current_timer.stop()
+            self.shared_monitor_obstacles_lock = None
+            self.shared_monitor_obstacles = None
             self.shared_rectangle_obstacles = None
             self.shared_circle_obstacles = None
             self.shared_lidar_data_lock = None

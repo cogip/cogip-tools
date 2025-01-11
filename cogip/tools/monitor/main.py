@@ -91,6 +91,9 @@ def main_opt(
     win.signal_load_obstacles.connect(win.game_view.load_obstacles)
     win.signal_save_obstacles.connect(win.game_view.save_obstacles)
 
+    # Connect GameView signals to robot manager slots
+    win.game_view.signal_update_shared_obstacles.connect(robot_manager.update_shared_obstacles)
+
     # Connect Controller signals to robot manager
     controller.signal_new_robot_pose_order.connect(robot_manager.new_robot_pose_order)
     controller.signal_add_robot.connect(robot_manager.add_robot)
