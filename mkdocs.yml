@@ -28,7 +28,6 @@ nav:
     - usage/camera.md
     - usage/cansend.md
     - usage/replay.md
-    - usage/lidarusb.md
   - Raspberry Pi OS: raspios.md
   - Developer's Doc:
     - Introduction: developers/developers.md

@@ -37,7 +37,7 @@ git submodule update --init
 ### Debian packages
 
 ```bash
-sudo apt install libxcb-xinerama0 socat protobuf-compiler build-essential swig cmake pkg-config
+sudo apt install libxcb-xinerama0 socat protobuf-compiler build-essential swig cmake pkg-config libserial-dev
 ```
 
 ### Build mcu-firmware
@@ -75,30 +75,6 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 !!! note "Read carefully advices to make uv accessible on your PATH."
 
-* Install the required Python version:
-
-```bash
-uv python install
-```
-
-* Create a new virtual environment (it will be automatically used by `uv` commands, no need to source it):
-
-```bash
-uv venv
-```
-
-* Patch Python installation:
-
-!!! note "Note on uv-managed Python installation"
-    This Python version is compiled using clang
-    so uv will use clang by default to build wheels with C/C++ extensions. Some packages are not compatible
-    with clang. `sysconfigpatcher` will revert sysconfig variables to the default values
-    of a Python system installation to use gcc to build wheels."
-
-```bash
-uvx --isolated --from "git+https://github.com/bluss/sysconfigpatcher" sysconfigpatcher $(dirname $(dirname $(readlink .venv/bin/python)))
-```
-
 * Install the package in dev/editable mode (default mode for uv):
 
 ```bash
@@ -132,12 +108,12 @@ A Docker Compose service is provided to build a binary distribution package for 
 docker compose up --build build_wheel
 ```
 
-This will produce `dist/cogip_tools-1.0.0-cp312-cp312-linux_aarch64.whl`.
+This will produce `dist/cogip_tools-1.0.0-cp312-abi3-linux_aarch64.whl`.
 
 This package can be copied to the Raspberry Pi and installed to deploy the Python tools:
 
 ```bash
-uv pip install cogip_tools-1.0.0-cp312-cp312-linux_aarch64.whl
+uv pip install cogip_tools-1.0.0-cp312-abi3-linux_aarch64.whl
 ```
 
 !!! warning "Docker image for linux/arm64"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cogip.cpp.cython_example import PyCythonExample
+from cogip.cpp.examples.cython_example import PyCythonExample
 
 
 def main():

@@ -36,12 +36,24 @@ x-watch-cpp: &watch-cpp
   action: sync+restart
   target: /src/cogip
 
+x-watch-cmake-root: &watch-cmake-root
+  path: ./CMakeLists.txt
+  action: sync+restart
+  target: /src/CMakeLists.txt
+
+x-watch-cmake-cogip: &watch-cmake-cogip
+  path: ./cogip/CMakeLists.txt
+  action: sync+restart
+  target: /src/cogip/CMakeLists.txt
+
 x-watch-all: &watch-all
   develop:
     watch:
       - *watch-pyproject
-      - *watch-python
       - *watch-cpp
+      - *watch-cmake-root
+      - *watch-cmake-cogip
+      - *watch-python
 
 x-build-console: &build-console
   build:
@@ -94,6 +106,7 @@ x-firmware: &firmware
     - -x
     - -c
     - applications/$${FIRMWARE_APP}/bin/$${FIRMWARE_BOARD}/$${FIRMWARE_APP}.elf $${FIRMWARE_OPTIONS}
+  stop_signal: SIGKILL
 
 x-robot: &robot
   <<: [*build-console, *volumes-common, *extra-hosts-common, *watch-all]
@@ -201,15 +214,13 @@ x-monitor: &monitor
     - "/tmp/.X11-unix/:/tmp/.X11-unix/"
     - "/dev/dri/:/dev/dri/"
     - "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR"
+  stop_signal: SIGKILL
 
 services:
   beacon:
     <<: [*build-console, *extra-hosts-common]
     hostname: beacon
     network_mode: "host"
-    ports:
-      - "8080:8080"
-      - "8090:8090"
     environment:
       SERVER_BEACON_MAX_ROBOTS: 4
       SERVER_BEACON_RELOAD:
@@ -395,9 +406,6 @@ services:
   robot1:
     << : *robot
     hostname: robot1
-    ports:
-      - "8081:8081"
-      - "8091:8091"
     environment:
       << : *env-robot
       ROBOT_ID: 1
@@ -407,9 +415,6 @@ services:
   robot2:
     << : *pami
     hostname: robot2
-    ports:
-      - "8082:8082"
-      - "8092:8092"
     environment:
       << : *env-pami
       ROBOT_ID: 2
@@ -421,9 +426,6 @@ services:
   robot3:
     << : *pami
     hostname: robot3
-    ports:
-      - "8083:8083"
-      - "8093:8093"
     environment:
       << : *env-pami
       ROBOT_ID: 3
@@ -435,9 +437,6 @@ services:
   robot4:
     << : *pami
     hostname: robot4
-    ports:
-      - "8084:8084"
-      - "8094:8094"
     environment:
       << : *env-pami
       ROBOT_ID: 4
@@ -514,6 +513,7 @@ services:
       - "./cogip:/src/cogip"
       - "./.python-version:/src/.python-version"
       - "./pyproject.toml:/src/pyproject.toml"
+      - "./CMakeLists.txt:/src/CMakeLists.txt"
       - "./uv.lock:/src/uv.lock"
       - "./dist:/src/dist"
       - "./LICENSE:/src/LICENSE"
