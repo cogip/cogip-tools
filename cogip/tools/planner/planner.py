@@ -59,6 +59,7 @@ class Planner:
         starter_pin: int | None,
         oled_bus: int | None,
         oled_address: int | None,
+        bypass_detector: bool,
         debug: bool,
     ):
         """
@@ -79,6 +80,7 @@ class Planner:
             starter_pin: GPIO pin connected to the starter
             oled_bus: PAMI OLED display i2c bus
             oled_address: PAMI OLED display i2c address
+            bypass_detector: Use perfect obstacles from monitor instead of detected obstacles by Lidar
             debug: enable debug messages
         """
         self.robot_id = robot_id
@@ -92,6 +94,8 @@ class Planner:
         self.pose_current: SharedPose | None = None
         self.shared_detector_obstacles: SharedCoordsList | None = None
         self.shared_detector_obstacles_lock: WritePriorityLock | None = None
+        self.shared_monitor_obstacles: SharedCoordsList | None = None
+        self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
         self.shared_circle_obstacles: SharedObstacleCircleList | None = None
         self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
         self.shared_obstacles_lock: WritePriorityLock | None = None
@@ -112,6 +116,7 @@ class Planner:
             obstacle_updater_interval=obstacle_updater_interval,
             path_refresh_interval=path_refresh_interval,
             plot=plot,
+            bypass_detector=bypass_detector,
         )
         self.virtual = platform.machine() != "aarch64"
         self.retry_connection = True
@@ -198,6 +203,8 @@ class Planner:
             self.pose_current = self.shared_memory.get_pose_current()
             self.shared_detector_obstacles = self.shared_memory.get_detector_obstacles()
             self.shared_detector_obstacles_lock = self.shared_memory.get_lock(LockName.DetectorObstacles)
+            self.shared_monitor_obstacles = self.shared_memory.get_monitor_obstacles()
+            self.shared_monitor_obstacles_lock = self.shared_memory.get_lock(LockName.MonitorObstacles)
             self.shared_circle_obstacles = self.shared_memory.get_circle_obstacles()
             self.shared_rectangle_obstacles = self.shared_memory.get_rectangle_obstacles()
             self.shared_obstacles_lock = self.shared_memory.get_lock(LockName.Obstacles)
@@ -207,6 +214,8 @@ class Planner:
             self.shared_obstacles_lock = None
             self.shared_rectangle_obstacles = None
             self.shared_circle_obstacles = None
+            self.shared_monitor_obstacles_lock = None
+            self.shared_monitor_obstacles = None
             self.shared_detector_obstacles_lock: WritePriorityLock | None = None
             self.shared_detector_obstacles: SharedCoordsList | None = None
             self.pose_current = None
@@ -591,11 +600,17 @@ class Planner:
             margin = 0
             radius = 10
         try:
-            self.shared_detector_obstacles_lock.start_reading()
+            if self.properties.bypass_detector:
+                shared_obstacles = self.shared_monitor_obstacles
+                shared_lock = self.shared_monitor_obstacles_lock
+            else:
+                shared_obstacles = self.shared_detector_obstacles
+                shared_lock = self.shared_detector_obstacles_lock
+            shared_lock.start_reading()
             self.shared_obstacles_lock.start_writing()
             self.shared_circle_obstacles.clear()
             self.shared_rectangle_obstacles.clear()
-            for detector_obstacle in self.shared_detector_obstacles:
+            for detector_obstacle in shared_obstacles:
                 if not table.contains(detector_obstacle, margin):
                     continue
                 self.shared_circle_obstacles.append(
@@ -606,7 +621,7 @@ class Planner:
                     bounding_box_margin=margin,
                     bounding_box_points_number=self.properties.obstacle_bb_vertices,
                 )
-            self.shared_detector_obstacles_lock.finish_reading()
+            shared_lock.finish_reading()
 
             # Add artifact obstacles
             for plant_supply in self.game_context.plant_supplies.values():

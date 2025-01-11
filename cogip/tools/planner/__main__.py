@@ -146,6 +146,15 @@ def main_opt(
             envvar="PLANNER_OLED_ADDRESS",
         ),
     ] = None,
+    bypass_detector: Annotated[
+        bool,
+        typer.Option(
+            "-bd",
+            "--bypass-detector",
+            help="Use perfect obstacles from monitor instead of detected obstacles by Lidar",
+            envvar=["PLANNER_BYPASS_DETECTOR"],
+        ),
+    ] = False,
     reload: Annotated[
         bool,
         typer.Option(
@@ -186,6 +195,7 @@ def main_opt(
         starter_pin,
         oled_bus,
         oled_address,
+        bypass_detector,
         debug,
     )
 

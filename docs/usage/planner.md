@@ -54,6 +54,10 @@ Options:
                                   env var: PLANNER_PATH_REFRESH_INTERVAL
                                   default: 0.2
 
+  -bd, --bypass-detector          Use perfect obstacles from monitor instead of detected obstacles by Lidar
+                                  env var: PLANNER_BYPASS_DETECTOR
+                                  default: False
+
   -r, --reload                    Reload app on source file changes
                                   env var: COGIP_RELOAD, PLANNER_RELOAD
 

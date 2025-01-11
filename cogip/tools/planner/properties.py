@@ -99,3 +99,10 @@ class Properties(metaclass=Singleton):
             description="Display avoidance graph in realtime",
         ),
     ]
+    bypass_detector: Annotated[
+        bool,
+        Field(
+            title="Bypass Detector",
+            description="Use perfect obstacles from monitor instead of detected obstacles by Lidar",
+        ),
+    ]
