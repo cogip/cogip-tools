@@ -22,6 +22,7 @@ dtparam=i2c1=on
 dtoverlay=spi1-1cs,cs0_pin=16
 dtoverlay=mcp251xfd,spi1-0,oscillator=20000000,interrupt=4
 dtoverlay=VC4_V3D_DRIVER
+dtoverlay=i2c-rtc,pcf8523
 
 hdmi_drive=1
 hdmi_group=2
