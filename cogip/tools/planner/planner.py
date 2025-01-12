@@ -369,7 +369,17 @@ class Planner:
                                     new_controller = ControllerEnum.LINEAR_POSE_DISABLED
                         await self.set_controller(new_controller)
                         if self.sio.connected:
-                            await self.sio_ns.emit(name, value)
+                            await self.sio_ns.emit(
+                                name,
+                                [
+                                    {
+                                        "x": self.pose_current.x,
+                                        "y": self.pose_current.y,
+                                        "O": self.pose_current.angle,
+                                    }
+                                ]
+                                + value,
+                            )
                     case "pose_order":
                         self.blocked_counter = 0
                         if self.sio.connected:
