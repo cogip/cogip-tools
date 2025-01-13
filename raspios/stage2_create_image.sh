@@ -37,12 +37,12 @@ case ${ROBOT_ID} in
     1) # Robot
         DOCKER_TAG=robot
         ROBOT_WIDTH=${ROBOT_WIDTH}
-        ROBOT_LENTH=${ROBOT_LENTH}
+        ROBOT_LENGTH=${ROBOT_LENGTH}
         ;;
     [2-9]) # PAMIs
         DOCKER_TAG=pami
         ROBOT_WIDTH=${PAMI_WIDTH}
-        ROBOT_LENTH=${PAMI_LENTH}
+        ROBOT_LENGTH=${PAMI_LENGTH}
         ;;
 esac
 
