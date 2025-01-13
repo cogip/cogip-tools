@@ -132,16 +132,16 @@ See [Docker installation instructions](https://docs.docker.com/engine/install/).
 
 ### Virtual CAN Interface Setup
 
-`Firmware` communicates with `Copilot` using a CAN interface. In emulation mode, a virtual CAN interface (`vcan0`)
-must be configured on host before running the Compose stack.
+`Firmware` communicates with `Copilot` using a CAN interface. In emulation mode, a virtual CAN interface (`vcan`)
+must be configured on host for each robot before running the Compose stack.
 
-Configure `vcan0` using the two following files:
+Configure `vcan1` using the two following files:
 
 - `/etc/systemd/network/80-vcan.network`
 
 ```ini
 [Match]
-Name=vcan0
+Name=vcan*
 
 [CAN]
 BitRate=500000
@@ -150,28 +150,35 @@ SamplePoint=87.5%
 FDMode=yes
 ```
 
-- `/etc/systemd/network/vcan0.netdev`
+- `/etc/systemd/network/vcan1.netdev`
 
 ```ini
 [NetDev]
-Name=vcan0
+Name=vcan1
 Kind=vcan
 MTUBytes=72
-Description=Virtual CAN0 network interface
+Description=Virtual CAN1 network interface
 ```
+
+Up to 5 robots are supported, so 5 vcan interfaces are required. Create a `vcanX.netdev` for each interfaces
+from `vcan1` to `vcan5`.
 
 Restart systemd-networkd service to setup:
 ```bash
 sudo systemctl restart systemd-networkd
 ```
 
-Check `vcan0` is up:
+Check `vcan` interfaces are up:
 
 ```bash
-$ networkctl | grep vcan0
-  3 vcan0           can      carrier     configured```
+$ networkctl | grep vcan
+  3 vcan1           can      carrier     configured
+  3 vcan2           can      carrier     configured
+  3 vcan3           can      carrier     configured
+  3 vcan4           can      carrier     configured
+  3 vcan5           can      carrier     configured
 
-$ ip address show dev vcan0
+$ ip address show dev vcan1
 3: vcan0: <NOARP,UP,LOWER_UP> mtu 72 qdisc noqueue state UNKNOWN group default qlen 1000
     link/can
 ```
