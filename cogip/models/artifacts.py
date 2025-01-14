@@ -1,6 +1,8 @@
 from enum import IntEnum, auto
 
-from .models import DynRoundObstacle, Pose, Vertex
+from pydantic import BaseModel
+
+from .models import Pose, Vertex
 
 
 class PlantSupplyID(IntEnum):
@@ -16,8 +18,11 @@ class PlantSupplyID(IntEnum):
     OppositeBottom = auto()
 
 
-class PlantSupply(DynRoundObstacle):
+class PlantSupply(BaseModel):
     id: PlantSupplyID
+    x: float
+    y: float
+    radius: float
     enabled: bool = True
 
 
@@ -34,10 +39,13 @@ class PotSupplyID(IntEnum):
     OppositeBottom = auto()
 
 
-class PotSupply(DynRoundObstacle):
+class PotSupply(BaseModel):
     id: PotSupplyID
-    enabled: bool = True
+    x: float
+    y: float
+    radius: float
     angle: float
+    enabled: bool = True
     count: int = 5
 
 

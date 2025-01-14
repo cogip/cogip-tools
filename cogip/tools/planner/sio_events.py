@@ -5,7 +5,6 @@ import polling2
 import socketio
 from pydantic import TypeAdapter, ValidationError
 
-from cogip import models
 from cogip.models.actuators import ActuatorState
 from . import context, logger
 from .menu import (
@@ -103,12 +102,6 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         await self.planner.reset()
 
-    async def on_pose_current(self, pose: dict[str, Any]):
-        """
-        Callback on pose current message.
-        """
-        self.planner.set_pose_current(models.Pose.model_validate(pose))
-
     async def on_pose_reached(self):
         """
         Callback on pose reached message.
@@ -126,12 +119,6 @@ class SioEvents(socketio.AsyncClientNamespace):
         Callback on config update from dashboard.
         """
         self.planner.update_config(config)
-
-    async def on_obstacles(self, obstacles: dict[str, Any]):
-        """
-        Callback on obstacles message.
-        """
-        self.planner.set_obstacles(TypeAdapter(list[models.Vertex]).validate_python(obstacles))
 
     async def on_wizard(self, message: dict[str, Any]):
         """

@@ -7,13 +7,8 @@ from typing import Annotated
 
 import typer
 import uvicorn
-from watchfiles import PythonFilter, run_process
 
 from . import logger
-
-
-def changes_callback(changes):
-    logger.info(f"Changes detected: {changes}")
 
 
 def main_opt(
@@ -57,30 +52,17 @@ def main_opt(
     os.environ["SERVER_BEACON_MAX_ROBOTS"] = str(max_robots)
     os.environ["SERVER_BEACON_RECORD_DIR"] = str(record_dir)
 
-    uvicorn_args = ("cogip.tools.server_beacon.app:app",)
-    uvicorn_kwargs = {
-        "host": "0.0.0.0",
-        "port": 8090,
-        "workers": 1,
-        "log_level": "info" if debug else "warning",
-    }
-
-    if reload:
-        watch_dir = Path(__file__).parent.parent.parent
-        run_process(
-            watch_dir,
-            target=uvicorn.run,
-            args=uvicorn_args,
-            kwargs=uvicorn_kwargs,
-            callback=changes_callback,
-            watch_filter=PythonFilter(),
-            debug=False,
+    try:
+        uvicorn.run(
+            "cogip.tools.server_beacon.app:app",
+            host="0.0.0.0",
+            port=8090,
+            workers=1,
+            log_level="info" if debug else "warning",
+            reload=reload,
         )
-    else:
-        try:
-            uvicorn.run(*uvicorn_args, **uvicorn_kwargs)
-        except asyncio.CancelledError:
-            pass
+    except asyncio.CancelledError:
+        pass
 
 
 def main():

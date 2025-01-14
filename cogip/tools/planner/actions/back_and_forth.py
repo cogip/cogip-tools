@@ -22,7 +22,7 @@ class BackAndForthAction(Action):
     async def compute_poses(self) -> None:
         x = self.planner.pose_current.x
         y = self.game_context.table.y_min + self.game_context.table.y_max - self.planner.pose_current.y
-        angle = -self.planner.pose_current.O
+        angle = -self.planner.pose_current.angle
         pose1 = Pose(
             x=x,
             y=y,
@@ -30,7 +30,7 @@ class BackAndForthAction(Action):
             max_speed_linear=66,
             max_speed_angular=66,
         )
-        pose2 = Pose(**self.planner.pose_current.model_dump())
+        pose2 = Pose(x=self.planner.pose_current.x, y=self.planner.pose_current.y, O=self.planner.pose_current.angle)
         pose1.after_pose_func = partial(self.append_pose, pose1)
         pose2.after_pose_func = partial(self.append_pose, pose2)
         self.poses.append(pose1)

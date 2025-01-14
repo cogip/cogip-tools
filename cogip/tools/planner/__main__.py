@@ -12,7 +12,7 @@ from .planner import Planner
 
 
 def changes_callback(changes):
-    logger.info("Changes detected:", changes)
+    logger.info(f"Changes detected: {changes}")
 
 
 def run(*args, **kwargs) -> None:
@@ -93,13 +93,13 @@ def main_opt(
             envvar=["COGIP_MAX_DISTANCE", "PLANNER_MAX_DISTANCE"],
         ),
     ] = 2500,
-    obstacle_sender_interval: Annotated[
+    obstacle_updater_interval: Annotated[
         float,
         typer.Option(
-            min=0.1,
+            min=0.05,
             max=2.0,
-            help="Interval between each send of obstacles to dashboards (in seconds)",
-            envvar="PLANNER_OBSTACLE_SENDER_INTERVAL",
+            help="Interval between each obstacles list update (seconds)",
+            envvar="PLANNER_OBSTACLE_UPDATER_INTERVAL",
         ),
     ] = 0.2,
     path_refresh_interval: Annotated[
@@ -146,6 +146,15 @@ def main_opt(
             envvar="PLANNER_OLED_ADDRESS",
         ),
     ] = None,
+    bypass_detector: Annotated[
+        bool,
+        typer.Option(
+            "-bd",
+            "--bypass-detector",
+            help="Use perfect obstacles from monitor instead of detected obstacles by Lidar",
+            envvar=["PLANNER_BYPASS_DETECTOR"],
+        ),
+    ] = False,
     reload: Annotated[
         bool,
         typer.Option(
@@ -168,12 +177,6 @@ def main_opt(
     if debug:
         logger.setLevel(logging.DEBUG)
 
-    # The reload option is not working since multiprocessing is used to compute avoidance.
-    # It will be debugged later.
-    if reload:
-        reload = False
-        logger.warning("-r/--reload option currently not active")
-
     if not server_url:
         server_url = f"http://localhost:809{id}"
 
@@ -186,12 +189,13 @@ def main_opt(
         obstacle_bb_margin,
         obstacle_bb_vertices,
         max_distance,
-        obstacle_sender_interval,
+        obstacle_updater_interval,
         path_refresh_interval,
         plot,
         starter_pin,
         oled_bus,
         oled_address,
+        bypass_detector,
         debug,
     )
 

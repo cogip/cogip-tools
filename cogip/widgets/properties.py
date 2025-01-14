@@ -141,6 +141,49 @@ class NumberProperty(QtCore.QObject):
             self._slider.blockSignals(False)
 
 
+class BoolProperty(QtCore.QObject):
+    """
+    BoolProperty class.
+
+    Build a widget to configure a bool property.
+    """
+
+    value_updated: qtSignal = qtSignal(str, int)
+
+    def __init__(self, name: str, props: dict[str, Any], layout: QtWidgets.QGridLayout):
+        """
+        Class constructor.
+
+        Arguments:
+            name: property name
+            props: properties of the bool property
+            layout: The parent layout
+        """
+        super().__init__()
+        self._name = name
+
+        row = layout.rowCount()
+        help = props.get("description")
+
+        label = QtWidgets.QLabel(props["title"])
+        label.setToolTip(help)
+        layout.addWidget(label, row, 0)
+
+        self._value = QtWidgets.QCheckBox()
+        self._value.setToolTip(help)
+        self._value.stateChanged.connect(self.value_changed)
+        self._value.setChecked(props["value"])
+        layout.addWidget(self._value, row, 1)
+
+    def value_changed(self, value):
+        self.value_updated.emit(self._name, value)
+
+    def update_value(self, value):
+        self._value.blockSignals(True)
+        self._value.setChecked(value)
+        self._value.blockSignals(False)
+
+
 class PropertiesDialog(QtWidgets.QDialog):
     """
     PropertiesDialog class
@@ -194,6 +237,9 @@ class PropertiesDialog(QtWidgets.QDialog):
                     self._properties[name].value_updated.connect(self.value_updated)
                 case "number":
                     self._properties[name] = NumberProperty(name, props, layout)
+                    self._properties[name].value_updated.connect(self.value_updated)
+                case "boolean":
+                    self._properties[name] = BoolProperty(name, props, layout)
                     self._properties[name].value_updated.connect(self.value_updated)
                 case "array":
                     values = props["value"]

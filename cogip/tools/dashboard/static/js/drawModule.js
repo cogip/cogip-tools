@@ -181,9 +181,6 @@ function drawPathsAndObstacles(color, robot_id, context) {
   const pose = pose_current[robot_id];
 
   if (pose) {
-    if (path_robot.length > 0) {
-      drawPath(color, pose, path_robot[0], context);
-    }
     for (let i = 0; i < path_robot.length - 1; i++) {
       drawPath(color, path_robot[i], path_robot[i + 1], context);
     }

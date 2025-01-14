@@ -2,14 +2,20 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
+from numpy.typing import NDArray
 from PySide6 import QtCore, QtGui
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
-from PySide6.QtCore import Signal as qtSignal
 from PySide6.QtCore import Slot as qtSlot
 
+from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
+from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
+from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
+from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models import Pose
+from cogip.tools.monitor.mainwindow import MainWindow
 from .asset import AssetEntity
 from .robot_order import RobotOrderEntity
 from .sensor import LidarSensor, Sensor, ToFSensor
@@ -20,30 +26,36 @@ class RobotEntity(AssetEntity):
     The robot entity displayed on the table.
 
     Attributes:
-        sensors_update_interval: Interval in milliseconds between each sensors update
-        sensors_emit_interval: Interval in milliseconds between each sensors data emission
-        sensors_emit_data_signal: Qt Signal emitting sensors data
+        update_pose_current_interval: Interval in milliseconds between each current pose update
         order_robot:: Entity that represents the robot next destination
     """
 
-    sensors_update_interval: int = 5
-    sensors_emit_interval: int = 20
-    sensors_emit_data_signal: qtSignal = qtSignal(int, list)
+    update_pose_current_interval: int = 100
     order_robot: RobotOrderEntity = None
 
-    def __init__(self, robot_id: int, parent: Qt3DCore.QEntity | None = None):
+    def __init__(self, robot_id: int, win: MainWindow, parent: Qt3DCore.QEntity | None = None):
         """
         Class constructor.
 
         Inherits [AssetEntity][cogip.entities.asset.AssetEntity].
         """
+        self.win = win
         asset_path = Path(f"assets/{'robot' if robot_id == 1 else 'pami'}2024.dae")
         super().__init__(asset_path, parent=parent)
         self.robot_id = robot_id
-        self.sensors = []
+        self.sensors: list[Sensor] = []
         self.rect_obstacles_pool = []
         self.round_obstacles_pool = []
         self.beacon_entity: Qt3DCore.QEntity | None = None
+
+        self.shared_memory: SharedMemory | None = None
+        self.shared_pose_current: SharedPose | None = None
+        self.shared_lidar_data: NDArray | None = None
+        self.shared_lidar_data_lock: WritePriorityLock | None = None
+        self.shared_circle_obstacles: SharedObstacleCircleList | None = None
+        self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
+        self.shared_monitor_obstacles: SharedCoordsList | None = None
+        self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
 
         if robot_id == 1:
             self.beacon_entity = Qt3DCore.QEntity(self)
@@ -63,11 +75,37 @@ class RobotEntity(AssetEntity):
             self.beacon_entity.layer.setEnabled(True)
             self.beacon_entity.addComponent(self.beacon_entity.layer)
 
-        # Use a timer to trigger sensors update
-        self.sensors_update_timer = QtCore.QTimer()
+        self.update_pose_current_timer = QtCore.QTimer()
+        self.update_pose_current_timer.timeout.connect(self.update_pose_current)
 
-        self.sensors_emit_timer = QtCore.QTimer()
-        self.sensors_emit_timer.timeout.connect(self.emit_sensors_data)
+    def setEnabled(self, isEnabled):
+        if isEnabled:
+            self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
+            self.shared_pose_current = self.shared_memory.get_pose_current()
+            self.shared_lidar_data = self.shared_memory.get_lidar_data()
+            self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
+            self.shared_circle_obstacles = self.shared_memory.get_circle_obstacles()
+            self.shared_rectangle_obstacles = self.shared_memory.get_rectangle_obstacles()
+            self.shared_monitor_obstacles = self.shared_memory.get_monitor_obstacles()
+            self.shared_monitor_obstacles_lock = self.shared_memory.get_lock(LockName.MonitorObstacles)
+            for i in range(360):
+                self.shared_lidar_data[i][1] = 255
+            for self.sensor in self.sensors:
+                self.sensor.shared_sensor_data = self.shared_lidar_data
+            self.update_pose_current_timer.start(RobotEntity.update_pose_current_interval)
+        else:
+            for self.sensor in self.sensors:
+                self.sensor.shared_sensor_data = None
+            self.update_pose_current_timer.stop()
+            self.shared_monitor_obstacles_lock = None
+            self.shared_monitor_obstacles = None
+            self.shared_rectangle_obstacles = None
+            self.shared_circle_obstacles = None
+            self.shared_lidar_data_lock = None
+            self.shared_lidar_data = None
+            self.shared_pose_current = None
+            self.shared_memory = None
+        return super().setEnabled(isEnabled)
 
     def post_init(self):
         """
@@ -95,46 +133,48 @@ class RobotEntity(AssetEntity):
 
         radius = 65.0 / 2
 
-        sensors_properties = []
-
         for i in range(0, 360):
             angle = (360 - i) % 360
             origin_x = radius * math.sin(math.radians(90 - angle))
             origin_y = radius * math.cos(math.radians(90 - angle))
-            sensors_properties.append(
-                {
-                    "name": f"Lidar {angle}",
-                    "origin_x": origin_x,
-                    "origin_y": origin_y,
-                    "direction_x": origin_x,
-                    "direction_y": origin_y,
-                }
+            sensor = LidarSensor(
+                asset_entity=self,
+                name=f"Lidar {angle}",
+                angle=i,
+                origin_x=origin_x,
+                origin_y=origin_y,
+                direction_x=origin_x,
+                direction_y=origin_y,
             )
-
-        # Add sensors
-        for prop in sensors_properties:
-            sensor = LidarSensor(asset_entity=self, **prop)
-            self.sensors_update_timer.timeout.connect(sensor.update_hit)
+            sensor.shared_sensor_data = self.shared_lidar_data
             self.sensors.append(sensor)
 
     def add_tof_sensor(self):
         """
         Add a ToF sensor in front of the robot entity.
         """
-        sensor = ToFSensor(asset_entity=self, name="ToF", origin_x=106, origin_y=0)
-        self.sensors_update_timer.timeout.connect(sensor.update_hit)
+        sensor = ToFSensor(
+            asset_entity=self,
+            name="ToF",
+            angle=0,
+            origin_x=106,
+            origin_y=0,
+        )
+        sensor.shared_sensor_data = self.shared_lidar_data
         self.sensors.append(sensor)
 
-    @qtSlot(Pose)
-    def new_robot_pose_current(self, new_pose: Pose) -> None:
+    def update_pose_current(self) -> None:
         """
-        Qt slot called to set the robot's new pose current.
-
-        Arguments:
-            new_pose: new robot pose
+        Update pose current from shared memory.
         """
-        self.transform_component.setTranslation(QtGui.QVector3D(new_pose.x, new_pose.y, 0))
-        self.transform_component.setRotationZ(new_pose.O)
+        self.transform_component.setTranslation(
+            QtGui.QVector3D(self.shared_pose_current.x, self.shared_pose_current.y, 0)
+        )
+        self.transform_component.setRotationZ(self.shared_pose_current.angle)
+        self.win.new_robot_pose(
+            self.robot_id,
+            Pose(x=self.shared_pose_current.x, y=self.shared_pose_current.y, O=self.shared_pose_current.angle),
+        )
 
     @qtSlot(Pose)
     def new_robot_pose_order(self, new_pose: Pose) -> None:
@@ -152,25 +192,12 @@ class RobotEntity(AssetEntity):
         """
         Start timers triggering sensors update and Lidar data emission.
         """
-        self.sensors_update_timer.start(RobotEntity.sensors_update_interval)
-        self.sensors_emit_timer.start(RobotEntity.sensors_emit_interval)
+        for sensor in self.sensors:
+            sensor.ray_caster.setEnabled(True)
 
     def stop_sensors_emulation(self) -> None:
         """
         Stop timers triggering sensors update and sensors data emission.
         """
-        self.sensors_update_timer.stop()
-        self.sensors_emit_timer.stop()
-
-    def sensors_data(self) -> list[int]:
-        """
-        Return a list of distances for each 360 Lidar angles or ToF distance.
-        """
-        return [sensor.distance for sensor in self.sensors]
-
-    @qtSlot()
-    def emit_sensors_data(self) -> None:
-        """
-        Qt Slot called to emit sensors data.
-        """
-        self.sensors_emit_data_signal.emit(self.robot_id, self.sensors_data())
+        for sensor in self.sensors:
+            sensor.ray_caster.setEnabled(False)

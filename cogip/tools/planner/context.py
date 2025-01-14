@@ -162,8 +162,6 @@ class GameContext(metaclass=Singleton):
         self.planters: dict[PlanterID, Planter] = {}
         self.solar_panels: dict[SolarPanelsID, SolarPanels] = {}
 
-        bb_radius = 125 + self.properties.robot_width / 2
-
         # Plant supplies
         plant_supply_positions = {
             PlantSupplyID.CenterTop: AdaptedPose(x=500, y=0),
@@ -182,9 +180,6 @@ class GameContext(metaclass=Singleton):
         self.plant_supplies[PlantSupplyID.OppositeBottom].enabled = False
         self.plant_supplies[PlantSupplyID.CenterTop].enabled = False
 
-        for plant_supply in self.plant_supplies.values():
-            plant_supply.create_bounding_box(bb_radius, self.properties.obstacle_bb_vertices)
-
         # Pot supplies
         pot_supply_positions = {
             PotSupplyID.LocalTop: AdaptedPose(x=450 / 2 + 325 / 2, y=-1500 + 35, O=-90),
@@ -202,9 +197,6 @@ class GameContext(metaclass=Singleton):
         self.pot_supplies[PotSupplyID.OppositeTop].enabled = False
         self.pot_supplies[PotSupplyID.OppositeMiddle].enabled = False
         self.pot_supplies[PotSupplyID.OppositeBottom].enabled = False
-
-        for pot_supply in self.pot_supplies.values():
-            pot_supply.create_bounding_box(bb_radius, self.properties.obstacle_bb_vertices)
 
         # Drop-off zones
         dropoff_zone_positions = {
@@ -242,9 +234,6 @@ class GameContext(metaclass=Singleton):
 
         pose = AdaptedPose(x=1000 - 75, y=225)
         self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=150, length_y=450)]
-
-        for obstacle in self.fixed_obstacles:
-            obstacle.create_bounding_box(self.properties.robot_width / 2)
 
     def create_actuators_states(self):
         self.servo_states: dict[ServoEnum, Servo] = {}

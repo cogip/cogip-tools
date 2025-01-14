@@ -16,6 +16,10 @@ x-volumes-common: &volumes-common
     - *vol-pts
     - *vol-vscode
     - "build_cache:/src/build"
+    - "./assets:/src/assets"
+    - "/tmp/.X11-unix/:/tmp/.X11-unix/"
+    - "/dev/dri/:/dev/dri/"
+    - "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR"
 
 x-extra-hosts-common: &extra-hosts-common
   extra_hosts:
@@ -58,12 +62,10 @@ x-watch-all: &watch-all
 x-build-console: &build-console
   build:
     context: .
+    args:
+      UID: ${UID:-1000}
+      GID: ${GID:-1000}
     target: cogip-console
-
-x-build-gui: &build-gui
-  build:
-    context: .
-    target: cogip-gui
 
 x-build-firmware: &build-firmware
   build:
@@ -111,11 +113,17 @@ x-firmware: &firmware
 x-robot: &robot
   <<: [*build-console, *volumes-common, *extra-hosts-common, *watch-all]
   network_mode: "host"
+  ipc: host
   cap_add:
     - SYS_PTRACE
   environment: &env-robot
+    UID: ${UID:-1000}
+    GID: ${GID:-1000}
+    DISPLAY:
+    XDG_RUNTIME_DIR:
     SERVER_DEBUG:
     SERVER_RELOAD:
+    SERVER_DASHBOARD_UPDATE_INTERVAL:
     PLANNER_DEBUG:
     PLANNER_RELOAD:
     PLANNER_ROBOT_WIDTH:
@@ -123,8 +131,10 @@ x-robot: &robot
     PLANNER_OBSTACLE_RADIUS:
     PLANNER_OBSTACLE_BB_MARGIN:
     PLANNER_OBSTACLE_BB_VERTICES:
-    PLANNER_OBSTACLE_SENDER_INTERVAL:
+    PLANNER_OBSTACLE_UPDATER_INTERVAL:
     PLANNER_PATH_REFRESH_INTERVAL:
+    PLANNER_PLOT:
+    PLANNER_BYPASS_DETECTOR:
     COPILOT_RELOAD:
     COPILOT_DEBUG:
     DETECTOR_RELOAD:
@@ -142,23 +152,29 @@ x-robot: &robot
     - -c
     - |
       uv sync --frozen --reinstall-package cogip-tools -C build-dir=/src/build/$${ROBOT_ID}
-      uv run cogip-server &
+      gosu $${UID}:$${GID} uv run cogip-server &
       wait-for-it -t 0 localhost:809$${ROBOT_ID}
-      uv run cogip-planner &
-      uv run cogip-copilot --can-channel vcan0 -b 500000 -B 1000000 &
-      uv run cogip-detector &
-      uv run cogip-dashboard &
+      gosu $${UID}:$${GID} uv run cogip-planner &
+      gosu $${UID}:$${GID} uv run cogip-copilot --can-channel vcan0 -b 500000 -B 1000000 &
+      gosu $${UID}:$${GID} uv run cogip-detector &
+      gosu $${UID}:$${GID} uv run cogip-dashboard &
       sleep infinity
   stop_signal: SIGKILL
 
 x-pami: &pami
   <<: [*build-console, *volumes-common, *extra-hosts-common, *watch-all]
   network_mode: "host"
+  ipc: host
   cap_add:
     - SYS_PTRACE
   environment: &env-pami
+    UID: ${UID:-1000}
+    GID: ${GID:-1000}
+    DISPLAY:
+    XDG_RUNTIME_DIR:
     SERVER_DEBUG:
     SERVER_RELOAD:
+    SERVER_DASHBOARD_UPDATE_INTERVAL:
     PLANNER_DEBUG:
     PLANNER_RELOAD:
     PLANNER_ROBOT_LENGTH: 212
@@ -166,8 +182,10 @@ x-pami: &pami
     PLANNER_OBSTACLE_RADIUS:
     PLANNER_OBSTACLE_BB_MARGIN:
     PLANNER_OBSTACLE_BB_VERTICES: 6
-    PLANNER_OBSTACLE_SENDER_INTERVAL:
+    PLANNER_OBSTACLE_UPDATER_INTERVAL:
     PLANNER_PATH_REFRESH_INTERVAL:
+    PLANNER_PLOT:
+    PLANNER_BYPASS_DETECTOR:
     COPILOT_PAMI_RELOAD:
     COPILOT_PAMI_DEBUG:
     DETECTOR_PAMI_TOF_BUS:
@@ -183,18 +201,21 @@ x-pami: &pami
     - -c
     - |
       uv sync --frozen --reinstall-package cogip-tools -C build-dir=/src/build/$${ROBOT_ID}
-      uv run cogip-server &
+      gosu $${UID}:$${GID} uv run cogip-server &
       wait-for-it -t 0 localhost:809$${ROBOT_ID}
-      uv run cogip-planner &
-      uv run cogip-copilot-pami --serial-port /var/run/cogip/ptyRPI-$${ROBOT_ID} &
-      uv run cogip-detector-pami &
-      uv run cogip-dashboard &
+      gosu $${UID}:$${GID} uv run cogip-planner &
+      gosu $${UID}:$${GID} uv run cogip-copilot-pami --serial-port /var/run/cogip/ptyRPI-$${ROBOT_ID} &
+      gosu $${UID}:$${GID} uv run cogip-detector-pami &
+      gosu $${UID}:$${GID} uv run cogip-dashboard &
       sleep infinity
 
 x-monitor: &monitor
-  << : [*build-gui, *extra-hosts-common]
+  << : [*build-console, *volumes-common, *extra-hosts-common]
   network_mode: "host"
+  ipc: host
   environment: &env-monitor
+    UID: ${UID:-1000}
+    GID: ${GID:-1000}
     DISPLAY:
     QTWEBENGINE_DISABLE_SANDBOX: 1
     XDG_RUNTIME_DIR:
@@ -204,16 +225,9 @@ x-monitor: &monitor
     - -c
     - |
       wait-for-it -t 0 $${COGIP_SOCKETIO_SERVER_HOST}:$${COGIP_SOCKETIO_SERVER_PORT}
-      uv run cogip-monitor http://$${COGIP_SOCKETIO_SERVER_HOST}:$${COGIP_SOCKETIO_SERVER_PORT} &
+      gosu $${UID}:$${GID} uv run cogip-monitor http://$${COGIP_SOCKETIO_SERVER_HOST}:$${COGIP_SOCKETIO_SERVER_PORT} &
       sleep infinity
   working_dir: /src
-  volumes:
-    - *vol-cogip
-    - *vol-vscode
-    - "./assets:/src/assets"
-    - "/tmp/.X11-unix/:/tmp/.X11-unix/"
-    - "/dev/dri/:/dev/dri/"
-    - "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR"
   stop_signal: SIGKILL
 
 services:
@@ -221,7 +235,9 @@ services:
     <<: [*build-console, *extra-hosts-common]
     hostname: beacon
     network_mode: "host"
+    ipc: host
     environment:
+      ROBOT_ID: 0
       SERVER_BEACON_MAX_ROBOTS: 4
       SERVER_BEACON_RELOAD:
       SERVER_BEACON_DEBUG:
@@ -237,11 +253,12 @@ services:
       - -x
       - -c
       - |
-        uv run cogip-server-beacon &
-        uv run cogip-dashboard &
+        gosu $${UID}:$${GID} uv run cogip-server-beacon &
+        gosu $${UID}:$${GID} uv run cogip-dashboard &
         sleep infinity
     profiles:
       - beacon
+    stop_signal: SIGKILL
 
 
   socat2:

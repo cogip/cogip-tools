@@ -43,16 +43,6 @@ class DetectorNamespace(socketio.AsyncNamespace):
         """
         await self.cogip_server.register_menu("detector", data)
 
-    async def on_obstacles(self, sid, obstacles: list[dict[str, Any]]):
-        """
-        Callback on obstacles message.
-
-        Receive a list of obstacles, computed from sensors data by the Detector.
-        These obstacles are sent to planner to compute avoidance path.
-        """
-        await self.emit("obstacles", obstacles, namespace="/planner")
-        await self.recorder.async_record({"obstacles": obstacles})
-
     async def on_config(self, sid, config: dict[str, Any]):
         """
         Callback on config message.

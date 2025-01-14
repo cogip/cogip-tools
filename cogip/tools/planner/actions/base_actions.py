@@ -30,7 +30,11 @@ class AlignAction(Action):
         self.planner.shared_properties["avoidance_strategy"] = new_strategy
 
     async def init_poses(self):
-        self.start_pose = self.planner.pose_current.model_copy()
+        self.start_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
         self.start_avoidance = self.game_context.avoidance_strategy
 
         await asyncio.gather(
@@ -69,7 +73,11 @@ class AlignAction(Action):
 
     async def after_pose1(self):
         self.set_avoidance(self.start_avoidance)
-        current_pose = self.planner.pose_current.model_copy()
+        current_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
         current_pose.y = Camp().adapt_y(-1500 + self.game_context.properties.robot_length / 2)
         current_pose.O = Camp().adapt_angle(90)
         await self.planner.sio_ns.emit("pose_start", current_pose.model_dump())
@@ -108,7 +116,11 @@ class AlignAction(Action):
 
     async def after_pose3(self):
         self.set_avoidance(self.start_avoidance)
-        current_pose = self.planner.pose_current.model_copy()
+        current_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
         if current_pose.x > 0:
             current_pose.x = 1000 - self.game_context.properties.robot_length / 2
         else:
@@ -158,7 +170,11 @@ class GripAction(Action):
     async def before_action(self):
         # Compute first pose to get plants using bottom grips
         self.plant_supply.enabled = False
-        self.start_pose = self.planner.pose_current.model_copy()
+        self.start_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
         dist_x = self.plant_supply.x - self.planner.pose_current.x
         dist_y = self.plant_supply.y - self.planner.pose_current.y
         dist = math.hypot(dist_x, dist_y)
@@ -213,8 +229,8 @@ class GripAction(Action):
 
         # Step back
         back_dist = 100
-        diff_x = back_dist * math.cos(math.radians(self.planner.pose_current.O))
-        diff_y = back_dist * math.sin(math.radians(self.planner.pose_current.O))
+        diff_x = back_dist * math.cos(math.radians(self.planner.pose_current.angle))
+        diff_y = back_dist * math.sin(math.radians(self.planner.pose_current.angle))
 
         pose = Pose(
             x=self.planner.pose_current.x - diff_x,
@@ -234,8 +250,8 @@ class GripAction(Action):
 
         # Compute pose to get plants using bottom grips
         forward_dist = 220
-        diff_x = forward_dist * math.cos(math.radians(self.planner.pose_current.O))
-        diff_y = forward_dist * math.sin(math.radians(self.planner.pose_current.O))
+        diff_x = forward_dist * math.cos(math.radians(self.planner.pose_current.angle))
+        diff_y = forward_dist * math.sin(math.radians(self.planner.pose_current.angle))
 
         pose = Pose(
             x=self.planner.pose_current.x + diff_x,
@@ -266,8 +282,8 @@ class GripAction(Action):
 
         # Step back
         back_dist = 250
-        diff_x = back_dist * math.cos(math.radians(self.planner.pose_current.O))
-        diff_y = back_dist * math.sin(math.radians(self.planner.pose_current.O))
+        diff_x = back_dist * math.cos(math.radians(self.planner.pose_current.angle))
+        diff_y = back_dist * math.sin(math.radians(self.planner.pose_current.angle))
 
         pose = Pose(
             x=self.planner.pose_current.x - diff_x,
@@ -333,7 +349,11 @@ class PotCaptureAction(Action):
         self.recycled = True
 
     async def before_action(self):
-        self.start_pose = self.planner.pose_current.model_copy()
+        self.start_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
 
         pose = Pose(
             x=self.approach_x,
@@ -434,7 +454,11 @@ class SolarPanelsAction(Action):
         self.recycled = True
 
     async def before_action(self):
-        self.start_pose = self.planner.pose_current.model_copy()
+        self.start_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
         if self.game_context.camp.color == Camp.Colors.blue:
             self.shift_y = -self.shift_y
 
@@ -763,7 +787,11 @@ class DropInPlanterAction(Action):
         self.planner.shared_properties["avoidance_strategy"] = new_strategy
 
     async def before_pose1(self):
-        self.start_pose = self.planner.pose_current.model_copy()
+        self.start_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
         self.start_avoidance = self.game_context.avoidance_strategy
         match self.planter.id:
             case artifacts.PlanterID.LocalSide:
@@ -796,7 +824,11 @@ class DropInPlanterAction(Action):
         await actuators.bottom_grip_open(self.planner)
 
         if self.planner.virtual:
-            current_pose = self.planner.pose_current.model_copy()
+            current_pose = models.Pose(
+                x=self.planner.pose_current.x,
+                y=self.planner.pose_current.y,
+                O=self.planner.pose_current.angle,
+            )
             if self.game_context.camp.color == Camp.Colors.yellow:
                 match self.planter.id:
                     case artifacts.PlanterID.Top:

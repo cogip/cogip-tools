@@ -2,6 +2,7 @@ from PySide6 import QtCore, QtGui
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
 
+from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
 from cogip.models import models
 from .path import PathEntity
 
@@ -19,7 +20,7 @@ class DynBaseObstacleEntity(Qt3DCore.QEntity):
         """
         super().__init__(parent)
         self.parent = parent
-        self.points = []
+        self.points: list[models.Vertex] = []
 
         self.material = Qt3DExtras.QDiffuseSpecularMaterial(self)
         self.material.setDiffuse(QtGui.QColor.fromRgb(255, 0, 0, 100))
@@ -34,17 +35,14 @@ class DynBaseObstacleEntity(Qt3DCore.QEntity):
 
         self.bb = PathEntity(QtCore.Qt.darkRed, self.parent)
 
-    def set_bounding_box(self, points: list[models.Vertex]) -> None:
-        if self.points == points:
+    def set_bounding_box(self, points: SharedCoordsList) -> None:
+        new_points = [models.Vertex(x=point.x, y=point.y, z=5) for point in points]
+
+        if self.points == new_points:
             return
 
-        self.points = points
-        bb_points = []
-        if points:
-            for point in points:
-                bb_points.append(models.Vertex(x=point.x, y=point.y, z=5))
-            bb_points.append(models.Vertex(x=points[0].x, y=points[0].y, z=5))
-        self.bb.set_points(bb_points)
+        self.points = new_points
+        self.bb.set_points(new_points)
 
     def setEnabled(self, isEnabled: bool) -> None:
         super().setEnabled(isEnabled)

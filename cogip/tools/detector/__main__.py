@@ -76,7 +76,7 @@ def main_opt(
     refresh_interval: Annotated[
         float,
         typer.Option(
-            min=0.1,
+            min=0.05,
             max=2.0,
             help="Interval between each update of the obstacle list (in seconds)",
             envvar="DETECTOR_REFRESH_INTERVAL",
@@ -108,6 +108,7 @@ def main_opt(
         server_url = f"http://localhost:809{id}"
 
     args = (
+        id,
         server_url,
         lidar_port,
         min_distance,

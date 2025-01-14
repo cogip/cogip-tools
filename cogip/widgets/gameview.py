@@ -133,6 +133,7 @@ class GameView(QtWidgets.QWidget):
         mouse_enabled: True to authorize translation and rotation of the scene using the mouse,
             False when an other object (obstacle, manual robot, ...) is picked.
         new_move_delta: signal emitted to movable entities when a mouse drag is detected
+        signal_update_shared_obstacles: signal emitted with new obstacle positions
     """
 
     ground_image: Path = Path("assets/table2024.png")
@@ -140,6 +141,7 @@ class GameView(QtWidgets.QWidget):
     plane_intersection: QtGui.QVector3D = None
     mouse_enabled: bool = True
     new_move_delta: qtSignal = qtSignal(QtGui.QVector3D)
+    signal_update_shared_obstacles: qtSignal = qtSignal(list)
 
     def __init__(self):
         """
@@ -285,8 +287,24 @@ class GameView(QtWidgets.QWidget):
         obstacle_entity.setParent(self.scene_entity)
         self.obstacle_entities.append(obstacle_entity)
         obstacle_entity.enable_controller.connect(self.enable_mouse)
+        obstacle_entity.obstacle_moved.connect(self.update_shared_obstacles)
         self.new_move_delta.connect(obstacle_entity.new_move_delta)
+        self.update_shared_obstacles()
         return obstacle_entity
+
+    def update_shared_obstacles(self):
+        """
+        Emit position of all obstacles.
+        """
+        obstacles: list[models.Vertex] = []
+        for obstacle in self.obstacle_entities:
+            obstacles.append(
+                models.Vertex(
+                    x=obstacle.transform.translation().x(),
+                    y=obstacle.transform.translation().y(),
+                )
+            )
+        self.signal_update_shared_obstacles.emit(obstacles)
 
     def load_obstacles(self, filename: Path):
         """

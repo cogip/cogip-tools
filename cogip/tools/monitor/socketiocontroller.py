@@ -26,16 +26,12 @@ class SocketioController(QtCore.QObject):
             Qt signal emitted to log messages in UI console
         signal_new_menu:
             Qt signal emitted to load a new shell/tool menu
-        signal_new_robot_pose_current:
-            Qt signal emitted on robot pose current update
         signal_new_robot_pose_order:
             Qt signal emitted on robot pose order update
         signal_new_robot_state:
             Qt signal emitted on robot state update
         signal_new_robot_path:
             Qt signal emitted on robot path update
-        signal_new_dyn_obstacles:
-            Qt signal emitted on dynamic obstacles update
         signal_connected:
             Qt signal emitted on server connection state changes
         signal_exit:
@@ -60,11 +56,9 @@ class SocketioController(QtCore.QObject):
 
     signal_new_console_text: qtSignal = qtSignal(str)
     signal_new_menu: qtSignal = qtSignal(str, models.ShellMenu)
-    signal_new_robot_pose_current: qtSignal = qtSignal(int, models.Pose)
     signal_new_robot_pose_order: qtSignal = qtSignal(int, models.Pose)
     signal_new_robot_state: qtSignal = qtSignal(int, models.RobotState)
     signal_new_robot_path: qtSignal = qtSignal(int, list)
-    signal_new_dyn_obstacles: qtSignal = qtSignal(list)
     signal_connected: qtSignal = qtSignal(bool)
     signal_exit: qtSignal = qtSignal()
     signal_add_robot: qtSignal = qtSignal(int, bool)
@@ -267,14 +261,6 @@ class SocketioController(QtCore.QObject):
             except ValidationError as exc:
                 logger.warning(f"Failed to decode ActuatorState: {exc}")
 
-        @self.sio.on("pose_current", namespace="/dashboard")
-        def on_pose_current(robot_id: int, data: dict[str, Any]) -> None:
-            """
-            Callback on robot pose current message.
-            """
-            pose = models.Pose.model_validate(data)
-            self.signal_new_robot_pose_current.emit(robot_id, pose)
-
         @self.sio.on("pose_order", namespace="/dashboard")
         def on_pose_order(robot_id: int, data: dict[str, Any]) -> None:
             """
@@ -298,14 +284,6 @@ class SocketioController(QtCore.QObject):
             """
             path = TypeAdapter(list[models.Vertex]).validate_python(data)
             self.signal_new_robot_path.emit(robot_id, path)
-
-        @self.sio.on("obstacles", namespace="/dashboard")
-        def on_obstacles(robot_id: int, data):
-            """
-            Callback on obstacles message.
-            """
-            obstacles = TypeAdapter(models.DynObstacleList).validate_python(data)
-            self.signal_new_dyn_obstacles.emit(obstacles)
 
         @self.sio.on("add_robot", namespace="/monitor")
         def on_add_robot(robot_id: int, virtual: bool) -> None:
@@ -362,14 +340,3 @@ class SocketioController(QtCore.QObject):
             Change the state of a starter.
             """
             self.signal_starter_changed.emit(robot_id, pushed)
-
-    def emit_sensors_data(self, robot_id: int, data: list[int]) -> None:
-        """
-        Send sensors data to server.
-
-        Arguments:
-            robot_id: ID of the robot
-            data: List of distances for each angle
-        """
-        if self.sio.connected:
-            self.sio.emit("sensors_data", data, namespace="/monitor")

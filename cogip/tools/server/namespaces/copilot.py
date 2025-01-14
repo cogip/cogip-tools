@@ -64,15 +64,6 @@ class CopilotNamespace(socketio.AsyncNamespace):
         self.context.shell_menu = models.ShellMenu.model_validate(menu)
         await self.emit("shell_menu", (self.context.robot_id, menu), namespace="/dashboard")
 
-    async def on_pose(self, sid, pose):
-        """
-        Callback on pose event.
-        """
-        await self.emit("pose_current", pose, namespace="/detector")
-        await self.emit("pose_current", pose, namespace="/planner")
-        await self.emit("pose_current", (self.context.robot_id, pose), namespace="/dashboard")
-        await self.recorder.async_record({"pose_current": pose})
-
     async def on_state(self, sid, state):
         """
         Callback on state event.

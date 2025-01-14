@@ -23,9 +23,11 @@ class ObstacleEntity(Qt3DCore.QEntity):
     Attributes:
         enable_controller: Qt signal used to disable the camera controller
             when moving the obstacle using the mouse
+        obstacle_moved: Qt signal emitted after the obstacle has been moved
     """
 
     enable_controller = qtSignal(bool)
+    obstacle_moved: qtSignal = qtSignal()
 
     def __init__(
         self,
@@ -219,6 +221,7 @@ class ObstacleEntity(Qt3DCore.QEntity):
             self.transform.setTranslation(new_translation)
             self.properties.spin_x.setValue(new_translation.x())
             self.properties.spin_y.setValue(new_translation.y())
+            self.obstacle_moved.emit()
 
 
 class ObstacleProperties(QtWidgets.QDialog):

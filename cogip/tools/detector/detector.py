@@ -4,6 +4,7 @@ import time
 
 import socketio
 from more_itertools import consecutive_groups
+from numpy.typing import NDArray
 
 try:
     import ydlidar
@@ -11,6 +12,9 @@ except:  # noqa
     ydlidar = None
 
 from cogip import models
+from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
+from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.utils import ThreadLoop
 from . import logger
 from .properties import Properties
@@ -31,6 +35,7 @@ class Detector:
 
     def __init__(
         self,
+        robot_id: int,
         server_url: str,
         lidar_port: str | None,
         min_distance: int,
@@ -42,6 +47,7 @@ class Detector:
         Class constructor.
 
         Arguments:
+            robot_id: Robot ID
             server_url: server URL
             lidar_port: Serial port connected to the Lidar
             min_distance: Minimum distance to detect an obstacle
@@ -49,6 +55,7 @@ class Detector:
             beacon_radius: Radius of the opponent beacon support (a cylinder of 70mm diameter to a cube of 100mm width)
             refresh_interval: Interval between each update of the obstacle list (in seconds)
         """
+        self.robot_id = robot_id
         self._server_url = server_url
         self._lidar_port = lidar_port
         self._properties = Properties(
@@ -57,10 +64,17 @@ class Detector:
             beacon_radius=beacon_radius,
             refresh_interval=refresh_interval,
         )
+
+        self.shared_memory: SharedMemory | None = None
+        self.shared_pose_current_lock: WritePriorityLock | None = None
+        self.shared_pose_current: SharedPose | None = None
+        self.shared_lidar_data: NDArray | None = None
+        self.shared_lidar_data_lock: WritePriorityLock | None = None
+        self.shared_detector_obstacles: SharedCoordsList | None = None
+        self.shared_detector_obstacles_lock: WritePriorityLock | None = None
+
         self._lidar_data: list[int] = list()
         self._lidar_data_lock = threading.Lock()
-        self._robot_pose = models.Pose()
-        self._robot_pose_lock = threading.Lock()
 
         self._obstacles_updater_loop = ThreadLoop(
             "Obstacles updater loop",
@@ -73,6 +87,13 @@ class Detector:
             "Lidar reader loop",
             refresh_interval,
             self.read_lidar,
+            logger=True,
+        )
+
+        self._fake_lidar_reader_loop = ThreadLoop(
+            "Fake Lidar reader loop",
+            refresh_interval,
+            self.read_fake_lidar,
             logger=True,
         )
 
@@ -91,7 +112,7 @@ class Detector:
             self._laser.setlidaropt(ydlidar.LidarPropSampleRate, 5)
             self._laser.setlidaropt(ydlidar.LidarPropIntenstiy, True)
             self._laser.setlidaropt(ydlidar.LidarPropScanFrequency, 5.0)
-            self._laser.setlidaropt(ydlidar.LidarPropMaxRange, (max_distance - beacon_radius) / 1000)
+            self._laser.setlidaropt(ydlidar.LidarPropMaxRange, max_distance / 1000)
             self._laser.setlidaropt(ydlidar.LidarPropMinRange, min_distance / 1000)
             self._laser.setlidaropt(ydlidar.LidarPropInverted, False)
 
@@ -99,6 +120,24 @@ class Detector:
 
         self._sio = socketio.Client(logger=False)
         self._sio.register_namespace(SioEvents(self))
+
+    def create_shared_memory(self):
+        self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
+        self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
+        self.shared_pose_current = self.shared_memory.get_pose_current()
+        self.shared_lidar_data = self.shared_memory.get_lidar_data()
+        self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
+        self.shared_detector_obstacles = self.shared_memory.get_detector_obstacles()
+        self.shared_detector_obstacles_lock = self.shared_memory.get_lock(LockName.DetectorObstacles)
+
+    def delete_shared_memory(self):
+        self.shared_detector_obstacles_lock = None
+        self.shared_detector_obstacles = None
+        self.shared_lidar_data_lock = None
+        self.shared_lidar_data = None
+        self.shared_pose_current = None
+        self.shared_pose_current_lock = None
+        self.shared_memory = None
 
     def connect(self):
         """
@@ -114,6 +153,8 @@ class Detector:
         if self._laser:
             self._lidar_reader_loop.start()
             self.start_lidar()
+        else:
+            self._fake_lidar_reader_loop.start()
 
     def stop(self) -> None:
         """
@@ -123,6 +164,8 @@ class Detector:
         if self._laser:
             self._lidar_reader_loop.stop()
             self.stop_lidar()
+        else:
+            self._fake_lidar_reader_loop.stop()
 
     def try_connect(self):
         """
@@ -145,41 +188,20 @@ class Detector:
     def properties(self) -> Properties:
         return self._properties
 
-    @property
-    def robot_pose(self) -> models.Pose:
-        """
-        Last position of the robot.
-        """
-        return self._robot_pose
-
-    @robot_pose.setter
-    def robot_pose(self, new_pose: models.Pose) -> None:
-        with self._robot_pose_lock:
-            self._robot_pose = new_pose
-
     def update_refresh_interval(self) -> None:
         self._obstacles_updater_loop.interval = self._properties.refresh_interval
         self._lidar_reader_loop.interval = self._properties.refresh_interval
-
-    def update_lidar_data(self, lidar_data: list[int]):
-        """
-        Receive Lidar data.
-        """
-        with self._lidar_data_lock:
-            self._lidar_data[:] = lidar_data[:]
 
     def filter_distances(self) -> list[int]:
         """
         Find consecutive obstacles and keep the nearest obstacle at the middle.
         """
-        filtered_distances = [self.properties.max_distance - self.properties.beacon_radius] * 360
-
-        # Find an angle without obstacle
-        angles_without_obstacles = [
-            i
-            for i, d in enumerate(self._lidar_data)
-            if d >= self.properties.max_distance - self.properties.beacon_radius
+        filtered_distances = [self.properties.max_distance] * 360
+        self._lidar_data = [
+            min(distance + self.properties.beacon_radius, self.properties.max_distance) for distance in self._lidar_data
         ]
+        # Find an angle without obstacle
+        angles_without_obstacles = [i for i, d in enumerate(self._lidar_data) if d >= self.properties.max_distance]
 
         # Exit if no obstacle detected
         if len(angles_without_obstacles) == 0:
@@ -193,7 +215,7 @@ class Detector:
             dist_min = self._lidar_data[first % 360]
 
             # Find the next angle with obstacle
-            if dist_min >= self.properties.max_distance - self.properties.beacon_radius:
+            if dist_min >= self.properties.max_distance:
                 first += 1
                 continue
 
@@ -202,9 +224,10 @@ class Detector:
                 dist_current = self._lidar_data[last % 360]
 
                 # Keep the nearest distance of consecutive obstacles
-                if dist_current < (self.properties.max_distance - self.properties.beacon_radius) or self._lidar_data[
-                    (last + 1) % 360
-                ] < (self.properties.max_distance - self.properties.beacon_radius):
+                if (
+                    dist_current < self.properties.max_distance
+                    or self._lidar_data[(last + 1) % 360] < self.properties.max_distance
+                ):
                     dist_min = dist_current if dist_current < dist_min else dist_min
                     continue
 
@@ -212,7 +235,7 @@ class Detector:
                 # angles have no obstacle.
                 continue_loop = False
                 for next in range(last + 1, last + self.NB_ANGLES_WITHOUT_OBSTACLE_TO_IGNORE):
-                    if self._lidar_data[next % 360] < self.properties.max_distance - self.properties.beacon_radius:
+                    if self._lidar_data[next % 360] < self.properties.max_distance:
                         continue_loop = True
                         break
 
@@ -230,25 +253,29 @@ class Detector:
 
         return filtered_distances
 
-    def generate_obstacles(self, robot_pose: models.Pose, distances: list[int]) -> list[models.Vertex]:
+    def generate_obstacles(self, distances: list[int]) -> list[models.Vertex]:
         """
         Update obstacles list from lidar data.
         """
         obstacles: list[models.Vertex] = []
 
         for angle, distance in enumerate(distances):
-            if (
-                distance < self.properties.min_distance
-                or distance >= self.properties.max_distance - self.properties.beacon_radius
-            ):
+            if distance < self.properties.min_distance or distance >= self.properties.max_distance:
                 continue
 
             angle = (360 - angle) % 360
 
+            # Copy the pose before computation to reduce critical section length
+            self.shared_pose_current_lock.start_reading()
+            robot_x = self.shared_pose_current.x
+            robot_y = self.shared_pose_current.y
+            robot_angle = self.shared_pose_current.angle
+            self.shared_pose_current_lock.finish_reading()
+
             # Compute obstacle position
-            obstacle_angle = math.radians((int(robot_pose.O) + angle) % 360)
-            x = robot_pose.x + distance * math.cos(obstacle_angle)
-            y = robot_pose.y + distance * math.sin(obstacle_angle)
+            obstacle_angle = math.radians((int(robot_angle) + angle) % 360)
+            x = robot_x + distance * math.cos(obstacle_angle)
+            y = robot_y + distance * math.sin(obstacle_angle)
 
             obstacles.append(models.Vertex(x=x, y=y))
 
@@ -260,13 +287,14 @@ class Detector:
         """
         with self._lidar_data_lock:
             filtered_distances = self.filter_distances()
-        with self._robot_pose_lock:
-            robot_pose = self.robot_pose.model_copy()
 
-        obstacles = self.generate_obstacles(robot_pose, filtered_distances)
+        obstacles = self.generate_obstacles(filtered_distances)
+        self.shared_detector_obstacles_lock.start_writing()
+        self.shared_detector_obstacles.clear()
+        for obstacle in obstacles:
+            self.shared_detector_obstacles.append(obstacle.x, obstacle.y)
+        self.shared_detector_obstacles_lock.finish_writing()
         logger.debug(f"Generated obstacles: {obstacles}")
-        if self._sio.connected:
-            self._sio.emit("obstacles", [o.model_dump(exclude_defaults=True) for o in obstacles], namespace="/detector")
 
     def start_lidar(self):
         """
@@ -298,13 +326,13 @@ class Detector:
             # Compute mean of points list for each degree.
             empty_angles = []
             for angle, distances in enumerate(tmp_distances):
-                distance = self.properties.max_distance - self.properties.beacon_radius
+                distance = self.properties.max_distance
                 if size := len(distances):
                     distance = round(sum(distances) * 1000 / size)
                 else:
                     empty_angles.append(angle)
 
-                result.append(distance + self.properties.beacon_radius)
+                result.append(distance)
 
             # If a degree has no valid point and is isolated (no other empty angle before and after)
             # it is probably a bad value, so set it to the mean of surrounding degrees.
@@ -316,9 +344,14 @@ class Detector:
                     after = result[(isolated + 1) % 360]
                     result[isolated] = round((before + after) / 2)
 
-            self.update_lidar_data(result)
+            with self._lidar_data_lock:
+                self._lidar_data[:] = result[:]
         else:
             print("Failed to get Lidar Data")
+
+    def read_fake_lidar(self):
+        with self._lidar_data_lock:
+            self._lidar_data[:] = self.shared_lidar_data[:, 0].tolist()
 
     def stop_lidar(self):
         """

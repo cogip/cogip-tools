@@ -191,6 +191,18 @@ The configuration of the tools is done by setting environment variables in the `
 
 All variables supported by the tools are forwarded inside Docker containers.
 
+### User/Group IDs Mapping
+
+The user/group ID used inside Docker containers to run COGIP tools must match those of the host system to ensure
+that shared memory segments created by the tools are owned by the same user/group as on the host.
+
+Default UID/GID is `1000`, change them if needed in the `.env` file:
+
+```shell
+UID=1001
+GID=1001
+```
+
 ### Compose Profiles
 
 Several profiles are defined to select which containers to run:

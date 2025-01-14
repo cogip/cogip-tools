@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from cogip.models import artifacts
+from cogip.models import artifacts, models
 from cogip.tools.planner.actions import base_actions
 from cogip.tools.planner.actions.actions import Action, Actions
 from cogip.tools.planner.pose import Pose
@@ -27,7 +27,11 @@ class DropInDropoffZoneAction(base_actions.DropInDropoffZoneAction):
 
     async def record_start_pose(self):
         global start_pose
-        start_pose = self.planner.pose_current.model_copy()
+        start_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
 
 
 class ParkingAction(Action):

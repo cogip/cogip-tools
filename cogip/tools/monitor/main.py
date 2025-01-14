@@ -75,7 +75,7 @@ def main_opt(
     win.game_view.add_asset(table_entity)
 
     # Create robot entity
-    robot_manager = RobotManager(win.game_view)
+    robot_manager = RobotManager(win)
 
     # Connect UI signals to Controller slots
     win.signal_send_command.connect(controller.new_command)
@@ -91,15 +91,15 @@ def main_opt(
     win.signal_load_obstacles.connect(win.game_view.load_obstacles)
     win.signal_save_obstacles.connect(win.game_view.save_obstacles)
 
+    # Connect GameView signals to robot manager slots
+    win.game_view.signal_update_shared_obstacles.connect(robot_manager.update_shared_obstacles)
+
     # Connect Controller signals to robot manager
-    controller.signal_new_robot_pose_current.connect(robot_manager.new_robot_pose_current)
     controller.signal_new_robot_pose_order.connect(robot_manager.new_robot_pose_order)
-    controller.signal_new_dyn_obstacles.connect(robot_manager.set_dyn_obstacles)
     controller.signal_add_robot.connect(robot_manager.add_robot)
     controller.signal_del_robot.connect(robot_manager.del_robot)
     controller.signal_start_sensors_emulation.connect(robot_manager.start_sensors_emulation)
     controller.signal_stop_sensors_emulation.connect(robot_manager.stop_sensors_emulation)
-    robot_manager.sensors_emit_data_signal.connect(controller.emit_sensors_data)
 
     # Connect Controller signals to UI slots
     controller.signal_new_console_text.connect(win.log_text.append)
@@ -107,7 +107,6 @@ def main_opt(
     controller.signal_add_robot.connect(win.add_robot)
     controller.signal_del_robot.connect(win.del_robot)
     controller.signal_starter_changed.connect(win.starter_changed)
-    controller.signal_new_robot_pose_current.connect(win.new_robot_pose)
     controller.signal_new_robot_state.connect(win.new_robot_state)
     controller.signal_connected.connect(win.connected)
     controller.signal_exit.connect(win.close)
@@ -130,6 +129,7 @@ def main_opt(
     ret = app.exec()
 
     controller.stop()
+    robot_manager.disable_robots()
 
     sys.exit(ret)
 

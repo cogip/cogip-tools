@@ -2,6 +2,8 @@ from enum import IntEnum
 from multiprocessing.managers import DictProxy
 
 from cogip import models
+from cogip.cpp.libraries.obstacles import ObstacleCircle as SharedObstacleCircle
+from cogip.cpp.libraries.obstacles import ObstacleRectangle as SharedObstacleRectangle
 from ..table import Table
 from .visibility_road_map import visibility_road_map
 
@@ -9,9 +11,6 @@ try:
     from .debug import DebugWindow
 except ImportError:
     DebugWindow = bool
-
-
-fixed_obstacles = []
 
 
 class AvoidanceStrategy(IntEnum):
@@ -32,7 +31,7 @@ class Avoidance:
         self,
         pose_current: models.PathPose,
         goal: models.PathPose,
-        obstacles: models.DynObstacleList,
+        obstacles: list[SharedObstacleCircle | SharedObstacleRectangle],
     ) -> list[models.PathPose]:
         strategy = AvoidanceStrategy(self.shared_properties["avoidance_strategy"])
         robot_width = self.shared_properties["robot_width"]
@@ -40,7 +39,7 @@ class Avoidance:
             case AvoidanceStrategy.Disabled:
                 path = [models.PathPose(**pose_current.model_dump()), goal.model_copy()]
             case _:
-                expand = int(robot_width * self.shared_properties["obstacle_bb_margin"])
+                expand = int(robot_width / 2 * self.shared_properties["obstacle_bb_margin"])
                 if self.last_robot_width != robot_width or self.last_expand != expand:
                     self.visibility_road_map.set_properties(robot_width, expand)
                     self.last_robot_width = robot_width
@@ -60,31 +59,16 @@ class VisibilityRoadMapWrapper:
         self.table = table
         self.shared_properties = shared_properties
         self.robot_width: int = 0
-        self.fixed_obstacles: list[visibility_road_map.ObstaclePolygon] = []
 
     def set_properties(self, robot_width: int, expand: int):
         self.robot_width = robot_width
         self.expand = expand
-        self.fixed_obstacles.clear()
-
-        for obstacle in fixed_obstacles:
-            x_list, y_list = list(zip(*[(int(v.x), int(v.y)) for v in obstacle]))
-            x_list = list(x_list)
-            y_list = list(y_list)
-            x_list.append(x_list[0])
-            y_list.append(y_list[0])
-
-            self.fixed_obstacles.append(visibility_road_map.ObstaclePolygon(x_list, y_list, expand))
-
-        if self.win:
-            self.win.fixed_obstacles = self.fixed_obstacles[:]
 
         self.visibility_road_map = visibility_road_map.VisibilityRoadMap(
             x_min=self.table.x_min + robot_width / 2,
             x_max=self.table.x_max - robot_width / 2,
             y_min=self.table.y_min + robot_width / 2,
             y_max=self.table.y_max - robot_width / 2,
-            fixed_obstacles=self.fixed_obstacles,
             win=self.win,
         )
 
@@ -92,7 +76,7 @@ class VisibilityRoadMapWrapper:
         self,
         start: models.PathPose,
         goal: models.PathPose,
-        obstacles: models.DynObstacleList,
+        obstacles: list[SharedObstacleCircle | SharedObstacleRectangle],
     ) -> list[models.PathPose]:
         if self.win:
             self.win.reset()
@@ -102,11 +86,15 @@ class VisibilityRoadMapWrapper:
         converted_obstacles = []
 
         for obstacle in obstacles:
-            x_list, y_list = list(zip(*[(int(v.x), int(v.y)) for v in obstacle.bb]))
-            x_list = list(x_list)
-            y_list = list(y_list)
+            x_list: list[float] = []
+            y_list: list[float] = []
+            for point in obstacle.bounding_box:
+                x_list.append(point.x)
+                y_list.append(point.y)
             x_list.append(x_list[0])
             y_list.append(y_list[0])
+            x_list.reverse()
+            y_list.reverse()
             converted_obstacles.append(
                 visibility_road_map.ObstaclePolygon(
                     x_list,
@@ -143,6 +131,6 @@ class VisibilityRoadMapWrapper:
             # Replace first and last poses with original start and goal
             # to preserve the same properties (like orientation)
             path[-1] = goal.model_copy()
-            path[0] = models.PathPose(**start.model_dump())
+            path[0] = start.model_copy()
 
         return path

@@ -6,13 +6,8 @@ from typing import Annotated
 
 import typer
 import uvicorn
-from watchfiles import PythonFilter, run_process
 
 from . import logger
-
-
-def changes_callback(changes):
-    logger.info(f"Changes detected: {changes}")
 
 
 def main_opt(
@@ -27,6 +22,13 @@ def main_opt(
             envvar=["ROBOT_ID", "SERVER_ID"],
         ),
     ] = 1,
+    dashboard_update_interval: Annotated[
+        float,
+        typer.Option(
+            help="Interval between messages to dashboard (in seconds)",
+            envvar="SERVER_DASHBOARD_UPDATE_INTERVAL",
+        ),
+    ] = 0.2,
     record_dir: Annotated[
         Path,
         typer.Option(
@@ -57,28 +59,16 @@ def main_opt(
         logger.setLevel(logging.DEBUG)
 
     os.environ["SERVER_RECORD_DIR"] = str(record_dir)
+    os.environ["SERVER_DASHBOARD_UPDATE_INTERVAL"] = str(dashboard_update_interval)
 
-    uvicorn_args = ("cogip.tools.server.app:app",)
-    uvicorn_kwargs = {
-        "host": "0.0.0.0",
-        "port": 8090 + id,
-        "workers": 1,
-        "log_level": "warning",
-    }
-
-    if reload:
-        watch_dir = Path(__file__).parent.parent.parent
-        run_process(
-            watch_dir,
-            target=uvicorn.run,
-            args=uvicorn_args,
-            kwargs=uvicorn_kwargs,
-            callback=changes_callback,
-            watch_filter=PythonFilter(),
-            debug=False,
-        )
-    else:
-        uvicorn.run(*uvicorn_args, **uvicorn_kwargs)
+    uvicorn.run(
+        "cogip.tools.server.app:app",
+        host="0.0.0.0",
+        port=8090 + id,
+        workers=1,
+        log_level="warning",
+        reload=reload,
+    )
 
 
 def main():

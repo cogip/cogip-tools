@@ -1,5 +1,6 @@
 import math
 
+from numpy.typing import NDArray
 from PySide6 import QtCore, QtGui
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
@@ -23,17 +24,16 @@ class Sensor(QtCore.QObject):
     Attributes:
         obstacles: Class attribute recording all entities that should be detected
         all_sensors: Class attribute recording all sensors
-        hit: Last hit of this sensor
     """
 
     obstacles: list[Qt3DCore.QEntity] = []
     all_sensors: list["Sensor"] = []
-    hit: Qt3DRender.QRayCasterHit | None = None
 
     def __init__(
         self,
         asset_entity: AssetEntity,
         name: str,
+        angle: int,
         origin_x: int,
         origin_y: int,
         origin_z: int,
@@ -51,6 +51,7 @@ class Sensor(QtCore.QObject):
         Arguments:
             asset_entity: Entity containing the sensor
             name: Name of the sensor
+            angle: Sensor orientation in degrees
             origin_x: X origin of the ray caster
             origin_y: Y origin of the ray caster
             origin_z: Z origin of the ray caster
@@ -63,11 +64,14 @@ class Sensor(QtCore.QObject):
         super().__init__()
 
         Sensor.all_sensors.append(self)
-
         self.origin_x = origin_x
         self.origin_y = origin_y
         self.asset_entity = asset_entity
         self.name = name
+        self.angle = angle
+        self.shared_sensor_data: NDArray | None = None
+        self.hit: Qt3DRender.QRayCasterHit | None = None
+        self.hit_distance = 65535
 
         self.ray_caster = Qt3DRender.QRayCaster()
         self.ray_caster.setEnabled(False)  # Start casting only when the first obstacle is registered
@@ -76,6 +80,7 @@ class Sensor(QtCore.QObject):
         self.ray_caster.setFilterMode(Qt3DRender.QAbstractRayCaster.AcceptAnyMatchingLayers)
         self.ray_caster.setOrigin(QtGui.QVector3D(float(origin_x), float(origin_y), float(origin_z)))
         self.ray_caster.setDirection(QtGui.QVector3D(direction_x, direction_y, direction_z))
+        self.ray_caster.hitsChanged.connect(self.update_hit)
         self.asset_entity.addComponent(self.ray_caster)
 
         # Add layers for obstacles already present
@@ -94,9 +99,15 @@ class Sensor(QtCore.QObject):
         Compute the distance with the closest detected obstacle.
         """
         distances = [hit for hit in self.ray_caster.hits() if hit.distance() != 0.0]
-        self.hit = None
         if len(distances):
             self.hit = min(distances, key=lambda x: x.distance())
+            self.hit_distance = int(self.hit.distance() + math.dist((0, 0), (self.origin_x, self.origin_y)))
+        else:
+            self.hit = None
+            self.hit_distance = 65535
+
+        if self.shared_sensor_data is not None:
+            self.shared_sensor_data[self.angle][0] = self.hit_distance
 
         self.update_impact()
 
@@ -136,17 +147,6 @@ class Sensor(QtCore.QObject):
         # Activate if not already done
         self.ray_caster.trigger()
 
-    @property
-    def distance(self) -> int:
-        """
-        Last sensor hit distance if any.
-        """
-        dist = 65535
-        if self.hit:
-            dist = self.hit.distance()
-            dist += math.dist((0, 0), (self.origin_x, self.origin_y))
-        return int(dist)
-
 
 class ToFSensor(Sensor):
     """
@@ -163,6 +163,7 @@ class ToFSensor(Sensor):
         self,
         asset_entity: AssetEntity,
         name: str,
+        angle: int,
         origin_x: int,
         origin_y: int,
     ):
@@ -172,12 +173,14 @@ class ToFSensor(Sensor):
         Arguments:
             asset_entity: Entity containing the sensor
             name: Name of the sensor
+            angle: Sensor orientation in degrees
             origin_x: X origin of the ray caster
             origin_y: Y origin of the ray caster
         """
         super().__init__(
             asset_entity=asset_entity,
             name=name,
+            angle=angle,
             origin_x=origin_x,
             origin_y=origin_y,
             origin_z=60,
@@ -224,6 +227,7 @@ class LidarSensor(Sensor):
         self,
         asset_entity: AssetEntity,
         name: str,
+        angle: int,
         origin_x: int,
         origin_y: int,
         direction_x: int,
@@ -235,6 +239,7 @@ class LidarSensor(Sensor):
         Arguments:
             asset_entity: Entity containing the sensor
             name: Name of the sensor
+            angle: Sensor orientation in degrees
             origin_x: X origin of the ray caster
             origin_y: Y origin of the ray caster
             direction_x: X direction of the ray caster
@@ -244,6 +249,7 @@ class LidarSensor(Sensor):
         super().__init__(
             asset_entity=asset_entity,
             name=name,
+            angle=angle,
             origin_x=origin_x,
             origin_y=origin_y,
             origin_z=360,

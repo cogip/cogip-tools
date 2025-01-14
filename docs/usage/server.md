@@ -26,6 +26,11 @@ Usage: cogip-server [OPTIONS]
                                   env var: ROBOT_ID, SERVER_ID
                                   default: 0; 0<=x<=9
 
+  --dashboard_update_interval FLOAT RANGE
+                                  Interval between messages to dashboard (in seconds)
+                                  env var: SERVER_DASHBOARD_UPDATE_INTERVAL
+                                  default: 0.2
+
   --record-dir PATH               Directory where games will be recorded
                                   env var: SERVER_RECORD_DIR
                                   default: /var/tmp/cogip

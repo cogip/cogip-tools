@@ -5,13 +5,16 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 
 RUN apt-get update \
  && apt-get -y dist-upgrade --auto-remove --purge \
- && apt-get -y install curl wait-for-it git socat g++ pkg-config libserial-dev \
+ && apt-get -y install curl wait-for-it git socat g++ pkg-config libserial-dev gosu \
  && apt-get -y clean
 
 WORKDIR /src
 
 # Install uv
 RUN curl -LsSf https://astral.sh/uv/0.5.11/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+
+# Install Python in /opt so regular users can use it
+ENV UV_PYTHON_INSTALL_DIR=/opt/python
 
 # Required because mcu-firmware is not compatible with uv
 ENV PATH="/src/.venv/bin:${PATH}"
@@ -31,10 +34,17 @@ RUN apt-get update && \
         cmake \
         swig
 
-ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
+# Create regular user and group if not already present.
+ARG UID=1000
+ARG GID=1000
+RUN group_exists=$(getent group ${GID} || true) && echo $group_exists \
+ && if [ -z "$group_exists" ]; then groupadd -g ${GID} cogip_users; fi \
+ && user_exists=$(getent passwd ${UID} || true) \
+ && if [ -z "$user_exists" ]; then useradd -u ${UID} -g ${GID} -m cogip_user; fi
+
+ ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
 ADD cogip /src/cogip
 RUN uv sync --frozen
-
 
 CMD ["sleep", "infinity"]
 

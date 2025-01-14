@@ -1,6 +1,7 @@
 import asyncio
 from typing import TYPE_CHECKING
 
+from cogip.models import models
 from cogip.models.artifacts import PotSupplyID
 from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.actions import Action, Actions
@@ -17,7 +18,11 @@ class Pami2Action(Action):
         self.before_action_func = self.before_action
 
     async def before_action(self):
-        self.start_pose = self.planner.pose_current.model_copy()
+        self.start_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
         self.game_context.fixed_obstacles.pop()
 
         pose = Pose(
@@ -66,7 +71,11 @@ class Pami3Action(Action):
         self.before_action_func = self.before_action
 
     async def before_action(self):
-        self.start_pose = self.planner.pose_current.model_copy()
+        self.start_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
 
         # Top planter
         pose = AdaptedPose(
@@ -106,7 +115,11 @@ class Pami4Action(Action):
         self.before_action_func = self.before_action
 
     async def before_action(self):
-        self.start_pose = self.planner.pose_current.model_copy()
+        self.start_pose = models.Pose(
+            x=self.planner.pose_current.x,
+            y=self.planner.pose_current.y,
+            O=self.planner.pose_current.angle,
+        )
 
         # Top dropoff
         pose = AdaptedPose(
