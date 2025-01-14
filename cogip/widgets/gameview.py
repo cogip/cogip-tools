@@ -136,7 +136,7 @@ class GameView(QtWidgets.QWidget):
         signal_update_shared_obstacles: signal emitted with new obstacle positions
     """
 
-    ground_image: Path = Path("assets/table2024.png")
+    ground_image: Path = Path("assets/table2025.webp")
     obstacle_entities: list[ObstacleEntity] = []
     plane_intersection: QtGui.QVector3D = None
     mouse_enabled: bool = True
