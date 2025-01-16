@@ -89,15 +89,30 @@ function setButtonPosition(canvas) {
 }
 
 export function displayMsg(robot_id, msg) {
-  const stateHTML = cacheElement(`#state_robot_${robot_id}`);
+  // Do not display state on beacon.
+  if (robot_id == 0) {
+    return;
+  }
+
+  const stateHTML = cacheElement("#state_robot");
   const pose = pose_current[robot_id];
 
-  if (pose && !isNaN(pose.x) && !isNaN(pose.y)) {
-    stateHTML.textContent = `R.${robot_id} Cy.:${
-      msg.cycle
-    } / X:${pose.x.toFixed(2)} / Y:${pose.y.toFixed(2)} / Ang:${pose.O.toFixed(
-      2
-    )}`;
+  if (stateHTML && pose && !isNaN(pose.x) && !isNaN(pose.y)) {
+    let msg = "Current: ";
+    msg += `X:${pose.x.toFixed(2)}`;
+    msg += ` / Y:${pose.y.toFixed(2)}`;
+    msg += ` / Ang:${pose.O.toFixed(2)}`;
+    stateHTML.textContent = msg;
+  }
+
+  const orderHTML = cacheElement("#order_robot");
+  const order = pose_order[robot_id];
+  if (orderHTML && order && !isNaN(order.x) && !isNaN(order.y)) {
+    let msg = "Order: ";
+    msg += `X:${order.x.toFixed(2)}`;
+    msg += ` / Y:${order.y.toFixed(2)}`;
+    msg += ` / Ang:${order.O !== undefined ? order.O.toFixed(2) : "by pass"}`;
+    orderHTML.textContent = msg;
   }
 }
 

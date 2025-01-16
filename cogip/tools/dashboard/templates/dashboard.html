@@ -58,11 +58,12 @@
             <pre
               class="text-grey-color text-sm inline"><img class="mr-5 w-[20px] inline" src="{{ url_for('static', path='img/cross_red_circle.svg') }}" /></pre>
           </span>
+          {% if robot_id != 0 %}
           <span class="text-muted float-right inline" id="state">
-            <pre class="text-grey-color text-sm inline" id="state_robot_1"></pre>
-            <pre class="text-grey-color text-sm inline" id="state_robot_2"></pre>
-            <pre class="text-grey-color text-sm inline" id="state_robot_3"></pre>
-            <pre class="text-grey-color text-sm inline" id="state_robot_4"></pre>
+            <pre id="state_robot"></pre>
+            <pre id="order_robot"></pre>
+          </span>
+          {% endif %}
         </div>
       </footer>
 
