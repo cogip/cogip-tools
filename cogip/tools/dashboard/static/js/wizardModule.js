@@ -6,13 +6,13 @@ export function openWizardModal(msg, send_socket) {
   message = msg;
 
   const wizardName = document.getElementById("wizardName");
-  if (msg.type !== "camp" && msg.type !== "camera") {
+  if (["camp", "camera"].includes(msg.type)) {
+    wizardName.textContent = "";
+    wizardName.style.display = "none";
+  } else {
     // Check if it's not "choose camp"
     wizardName.style.display = "inline";
     wizardName.textContent = msg.name + ": "; // Only update the wizard name if it's not "choose camp"
-  } else {
-    wizardName.textContent = "";
-    wizardName.style.display = "none";
   }
 
   removeElement("checkFocus");
@@ -107,7 +107,7 @@ document.getElementById("btnSendWizard").addEventListener("click", function () {
   let submittedValue = getSubmittedValue(wizardNameText); // Get the submitted value based on wizard type
   message.value = submittedValue; // Set the value to the message
   socket.emit("wizard", message); // Send the message through the socket
-
+  console.log(message)
   hideModal("wizardModal"); // Hide the modal
 });
 
@@ -118,7 +118,11 @@ function getSubmittedValue(wizardNameText) {
       .querySelector("button.camp-button.active")
       .getAttribute("value");
   }
-  if (wizardNameText.includes("choice")) {
+  if (
+    wizardNameText.includes("choose") ||
+    wizardNameText
+      .includes("choice")
+  ) {
     return document.querySelector("input[name=choice]:checked").value;
   }
   if (wizardNameText.includes("select")) {
@@ -334,7 +338,7 @@ function configureCampInput(value) {
   const listCamp = ["blue", "yellow"];
   listCamp.forEach((camp) => {
     const isActive =
-      camp === value ? "active shadow-iner shadow-black outline-none" : "";
+      camp === value ? "active shadow-inner shadow-black outline-none" : "";
     const button = createCampButton(camp, isActive); // Create camp buttons
     campZone.appendChild(button);
   });

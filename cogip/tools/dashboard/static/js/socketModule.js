@@ -1,36 +1,34 @@
 export function onConnection(socket) {
   console.log("Connected to Server.");
-  socket.emit("connected"); // Notify the server of the connection
+  socket.emit("connected");
 
   const connectionDiv = document.getElementById("connection");
-  connectionDiv.innerHTML = ""; // Clear existing content
-
-  const pre = document.createElement("pre"); // Create a <pre> element for formatted text
-  pre.classList.add("text-grey-color", "text-sm", "inline");
-
-  const img = document.createElement("img"); // Create an image element for the checkmark
-  img.classList.add("mr-5", "w-[20px]", "inline");
-  img.src = "static/img/check_green_circle.svg"; // Set the image source
-
-  pre.appendChild(img); // Append the image to the <pre>
-  pre.appendChild(document.createTextNode(window.location.origin)); // Append the current origin
-  connectionDiv.appendChild(pre); // Add the <pre> to the connectionDiv
+  updateConnectionStatus(
+    connectionDiv,
+    "check_green_circle",
+    window.location.origin
+  );
 }
 
 export function onDisconnect() {
   console.log("Disconnected from Server.");
   const connectionDiv = document.getElementById("connection");
-  connectionDiv.innerHTML = ""; // Clear existing content
+  updateConnectionStatus(connectionDiv, "cross_red_circle");
+}
 
-  const pre = document.createElement("pre"); // Create a <pre> for disconnection message
+function updateConnectionStatus(container, icon, text = "") {
+  container.innerHTML = ""; // Clear existing content
+
+  const pre = document.createElement("pre");
   pre.classList.add("text-grey-color", "text-sm", "inline");
 
-  const img = document.createElement("img"); // Create an image for the cross mark
-  img.classList.add("inline");
-  img.src = "static/img/cross_red_circle.svg"; // Set the image source
+  const img = document.createElement("img");
+  img.classList.add("inline", "mr-5", "w-[20px]");
+  img.src = `static/img/${icon}.svg`;
 
-  pre.appendChild(img); // Append the image to the <pre>
-  connectionDiv.appendChild(pre); // Add the <pre> to the connectionDiv
+  pre.appendChild(img);
+  if (text) pre.appendChild(document.createTextNode(text));
+  container.appendChild(pre);
 }
 
 // disconnected websocket
@@ -60,24 +58,22 @@ export function setupTabEventListener(
 
     // Activate the newly selected tab
     document.querySelectorAll('[role="tab"]').forEach((tab) => {
-      tab.classList.remove("text-red-cogip", "border-red-cogip"); // Deactivate other tabs
-      tab.classList.add("text-gray-600", "border-transparent"); // Reset inactive tabs
+      tab.classList.toggle("text-red-cogip", tab === e.target);
+      tab.classList.toggle("border-red-cogip", tab === e.target);
+      tab.classList.toggle("text-gray-600", tab !== e.target);
+      tab.classList.toggle("border-transparent", tab !== e.target);
     });
-    e.target.classList.add("text-red-cogip", "border-red-cogip"); // Highlight the active tab
-    e.target.classList.remove("text-gray-600", "border-transparent");
 
     // Hide all panels and reset their iframes
     document.querySelectorAll('[role="tabpanel"]').forEach((pane) => {
-      if (pane.id.includes("robot")) {
-        const otherPaneId = pane.id.match(/robot(\d+)/)[1];
-        const iframe = document.getElementById(`robot${otherPaneId}-iframe`);
-        iframe.removeAttribute("src"); // Reset the iframe source
+      const otherPaneId = pane.id.match(/robot(\d+)/)?.[1];
+      if (otherPaneId) {
+        document
+          .getElementById(`robot${otherPaneId}-iframe`)
+          ?.removeAttribute("src");
       }
-      pane.classList.add("hidden"); // Hide all panels
+      pane.classList.toggle("hidden", pane.id !== panelId); // Hide all panels
     });
-
-    // Show the active panel
-    document.getElementById(panelId).classList.remove("hidden");
 
     // If an iframe is needed, update its source
     if (iframeUrlCallback && robotId) {
@@ -91,12 +87,11 @@ export function setupTabEventListener(
 }
 
 export function onMenu(menu, type, socket) {
-  const typeNav = document.getElementById("nav-" + type);
+  const typeNav = document.getElementById(`nav-${type}`);
   typeNav.innerHTML = ""; // Clear the content of the container
 
   // Add menu title
-  const title = createTitle(menu.name);
-  typeNav.appendChild(title);
+  typeNav.appendChild(createTitle(menu.name));
 
   // Create the container for the buttons
   const buttonContainer = document.createElement("div");
@@ -126,9 +121,8 @@ export function onMenu(menu, type, socket) {
       if (entry.desc.includes("<")) {
         // Add an input field if required
         const inputContainer = document.createElement("div");
-        const inputParams = createInput("number");
         inputContainer.appendChild(button);
-        inputContainer.appendChild(inputParams);
+        inputContainer.appendChild(createInput("number"));
         buttonContainer.appendChild(inputContainer);
       } else {
         buttonContainer.appendChild(button);
@@ -165,13 +159,8 @@ function createButton(description, cmd, type, socket) {
   button.textContent = description; // Set button text
 
   button.addEventListener("click", () => {
-    // Add click event listener
     console.log(`${type}_cmd`, cmd);
-    if (type === "tool") {
-      socket.emit(`${type}_cmd`, cmd); // Emit command for tools
-    } else {
-      socket.emit(`${type}_cmd`, 1, cmd); // Emit command for other types
-    }
+    socket.emit(`${type}_cmd`, type === "tool" ? cmd : [1, cmd]);
   });
 
   return button; // Return the created button

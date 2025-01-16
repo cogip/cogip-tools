@@ -171,7 +171,6 @@
         })
         .on("state", function (robot_id, msg) {
           drawModule.displayMsg(robot_id, msg); // uses message to display information in bottom page
-          drawModule.drawBoardElement(msg); // move robot
         })
         .on("path", function (robot_id, msg) {
           drawModule.recordPath(robot_id, msg);

@@ -4,7 +4,7 @@ const cameraDom = document.getElementById("cameraModal");
 const urlParams = new URLSearchParams(window.location.search);
 
 window.modalCamera = function () {
-  if (cameraDom.style.display !== "flex") {
+  if (cameraDom.classList.contains("hidden")) {
     // Create the streaming element only if it doesn't exist
     if (!streaming) {
       streaming = document.createElement("img");
