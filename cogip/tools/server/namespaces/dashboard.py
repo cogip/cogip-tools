@@ -26,6 +26,9 @@ class DashboardNamespace(socketio.AsyncNamespace):
         if self.context.shell_menu:
             await self.emit("shell_menu", (self.context.robot_id, self.context.shell_menu.model_dump()), to=sid)
 
+        if self.context.virtual:
+            await self.emit("virtual", (self.context.robot_id, self.context.virtual), to=sid)
+
     def on_disconnect(self, sid):
         logger.info("Dashboard disconnected.")
 
