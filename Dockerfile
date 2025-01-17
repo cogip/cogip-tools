@@ -29,29 +29,10 @@ FROM uv_base AS cogip-console
 
 RUN apt-get update && \
     apt-get install -y \
+        cmake \
+        swig \
         libgl1 \
         libglib2.0-0 \
-        cmake \
-        swig
-
-# Create regular user and group if not already present.
-ARG UID=1000
-ARG GID=1000
-RUN group_exists=$(getent group ${GID} || true) && echo $group_exists \
- && if [ -z "$group_exists" ]; then groupadd -g ${GID} cogip_users; fi \
- && user_exists=$(getent passwd ${UID} || true) \
- && if [ -z "$user_exists" ]; then useradd -u ${UID} -g ${GID} -m cogip_user; fi
-
- ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
-ADD cogip /src/cogip
-RUN uv sync --frozen
-
-CMD ["sleep", "infinity"]
-
-
-FROM cogip-console AS cogip-gui
-
-RUN apt-get install -y \
         libegl1 \
         libxkbcommon0 \
         libdbus-1-3 \
@@ -67,6 +48,20 @@ RUN apt-get install -y \
         libxcb-xkb1 libxcb-image0 libxcb-render-util0 libxcb-render0 libxcb-util1 \
         libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxkbcommon-x11-0 \
         yaru-theme-icon
+
+# Create regular user and group if not already present.
+ARG UID=1000
+ARG GID=1000
+RUN group_exists=$(getent group ${GID} || true) && echo $group_exists \
+ && if [ -z "$group_exists" ]; then groupadd -g ${GID} cogip_users; fi \
+ && user_exists=$(getent passwd ${UID} || true) \
+ && if [ -z "$user_exists" ]; then useradd -u ${UID} -g ${GID} -m cogip_user; fi
+
+ ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
+ADD cogip /src/cogip
+RUN uv sync --frozen
+
+CMD ["sleep", "infinity"]
 
 
 FROM uv_base AS cogip-firmware

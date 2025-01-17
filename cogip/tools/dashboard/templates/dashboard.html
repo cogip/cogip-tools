@@ -4,16 +4,17 @@
 <head>
   <title>COGIP Dashboard</title>
   <link rel="shortcut icon" href="#" />
-  <link rel="stylesheet" href="{{ url_for('static', path='css/purged/bootstrap-5.3.3.min.css') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', path='css/index.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/prod/output.css') }}" />
 </head>
 
-<body class="d-flex flex-column h-100 w-100 bg-dark" data-robot-id="{{ robot_id }}">
+<body class="flex flex-col h-full w-full bg-zinc-900 overflow-hidden" data-robot-id="{{ robot_id }}">
   {% if robot_id == 0 %}
-  <ul class="nav nav-tabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="beacon-tab" data-bs-toggle="tab" data-bs-target="#beacon" type="button"
-        role="tab" aria-controls="beacon" aria-selected="true">Beacon</button>
+  <ul class="flex flex-wrap border-b border-gray-200" role="tablist">
+    <li class="mr-2" role="presentation">
+      <button class="inline-block px-4 py-2 text-red-cogip border-b-2 border-red-cogip active focus:outline-none"
+        id="beacon-tab" data-target="#beacon" type="button" role="tab" aria-controls="beacon" aria-selected="true">
+        Beacon
+      </button>
     </li>
   </ul>
   {% endif %}
@@ -23,42 +24,46 @@
     <div class="tab-pane fade show active" id="beacon" role="tabpanel" aria-labelledby="beacon-tab">
 
       {% endif %}
-      <div class="row">
-        <div class="col-lg-3 col-sm-3" id="menu">
-          <img id="logoCogip" src="static/img/cogip-logo.png" />
+      <div class="flex flex-row">
+        <div class="w-1/4 text-center h-minus-footer pt-2.5 pr-1 pl-2.5 border-r border-grey-color" id="menu">
+          <img src="static/img/cogip-logo.png" class="mx-auto h-10p py-2.5" />
           <div id="nav-tool">
             ...
           </div>
         </div>
 
-        <div class="col-lg-9 col-sm-9">
-          <button class="btn btn-outline-dark float-end" id="buttonRefresh" type="button" onclick="location.reload();">
+        <div class="w-3/4">
+          <button
+            class="relative z-10 mt-3 px-4 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end z-60"
+            id="buttonRefresh" type="button" onclick="location.reload();">
             <img src="{{ url_for('static', path='img/refresh.svg') }}" />
           </button>
-          <canvas id="board"></canvas>
+          <canvas id="board" class="mt-2.5 absolute bg-contain"
+            style="background-image: url(../static/img/ground2024.png)"></canvas>
 
           {% if robot_id != 0 %}
-          <button class="btn btn-outline-dark float-end" id="buttonCameraModal" type="button" onclick="modalCamera()"
-            data-bs-toggle="modal" data-bs-target="#cameraModal">
+          <button
+            class="relative z-10 mt-3 px-4 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end"
+            id="buttonCameraModal" type="button" onclick="modalCamera()" data-bs-toggle="modal"
+            data-bs-target="#cameraModal">
             <img src="{{ url_for('static', path='img/camera.svg') }}" />
           </button>
           {% endif %}
         </div>
       </div>
 
-      <footer class="footer mt-auto bg-dark">
+      <footer class="mt-auto bg-zinc-900 text-grey-color mx-2">
         <div class="container-lg pt-2">
-          <span class="text-muted" style="float: left" id="connection">
-            <pre><img src="{{ url_for('static', path='img/cross_red_circle.svg') }}" /></pre>
+          <span class="text-muted float-left" id="connection">
+            <pre
+              class="text-grey-color text-sm inline"><img class="mr-5 w-[20px] inline" src="{{ url_for('static', path='img/cross_red_circle.svg') }}" /></pre>
           </span>
-          <span class="text-muted" style="float: right" id="state">
-            <pre id="state_beacon"></pre>
-            <!-- TODO: robots number is dynamic, maybe robot state not required here -->
-            <pre id="state_robot_1"></pre>
-            <pre id="state_robot_2"></pre>
-            <pre id="state_robot_3"></pre>
-            <pre id="state_robot_4"></pre>
+          {% if robot_id != 0 %}
+          <span class="text-muted float-right inline" id="state">
+            <pre id="state_robot"></pre>
+            <pre id="order_robot"></pre>
           </span>
+          {% endif %}
         </div>
       </footer>
 
@@ -68,76 +73,70 @@
   {% endif %}
 
   {% if robot_id != 0 %}
-  <div class="modal" tabindex="-1" id="cameraModal" style="display: none" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content bg-dark">
-        <div class="modal-body" id="displayFlux">
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
+  <div id="cameraModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-zinc-900 rounded-lg shadow-lg max-w-4xl w-full">
+      <div class="p-4 m-auto relative" id="displayFlux">
+        <button type="button"
+          class="absolute top-4 right-4 bg-transparent text-grey-color text-2xl leading-none hover:text-gray-400 focus:outline-none"
+          aria-label="Close" onclick="closeModal('cameraModal')">&times;</button>
       </div>
     </div>
   </div>
   {% endif %}
 
-  <div class="modal" tabindex="-1" id="wizardModal" style="display: none" aria-hidden="true" data-bs-backdrop="static"
-    data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content bg-dark">
-        <div class="modal-header">
-          <h5 class="modal-title" id="wizardModalTitle"></h5>
+  <div id="wizardModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div id="wizardModalContent" class="bg-zinc-900 rounded-lg shadow-lg w-full max-w-lg">
+      <div id="modalHeader" class="border-b border-gray-700 p-2">
+        <h5 class="text-lg font-medium text-grey-color" id="wizardModalTitle"></h5>
+      </div>
+      <div id="modalBody" class="m-4 text-center">
+        <span class="block text-lg font-medium text-grey-color" id="wizardName"></span>
+        <input id="wizardInput" type="text" placeholder="" />
+      </div>
+      <div class="border-t border-gray-700 p-4 flex justify-end">
+        <button id="btnSendWizard" type="button"
+          class="bg-red-cogip border-red-cogip text-grey-color font-medium py-2 px-4 rounded-md">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+  {% if robot_id != 0 %}
+  <div class="fixed inset-0 z-50 hidden" id="scoreModal">
+    <div class="flex h-full w-full p-4 text-center">
+      <div class="w-full p-6 mx-auto bg-zinc-900 rounded-lg shadow-lg">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-600">
+          <h5 class="text-lg font-medium text-grey-color">Score</h5>
+          <button type="button" class="text-grey-color text-2xl leading-none hover:text-gray-400" aria-label="Close"
+            onclick="closeModal('scoreModal')">&times;</button>
         </div>
-        <div class="modal-body">
-          <div>
-            <span class="input-group-text" id="wizardName"></span>
-            <input id="wizardInput" type="" class="use-keyboard-input" placeholder="" aria-label="wizardName"
-              aria-describedby="wizardName" />
+        <div class="flex h-full items-center justify-center align-middle">
+          <div class="align-middle text-grey-color text-1500p">
+            <p class="m-auto" id="displayScore"></p>
           </div>
         </div>
-        <div class="modal-footer">
-          <button id="btn-send-wizard" type="button" class="btn btn-primary">
-            Send
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {% if robot_id != 0 %}
-  <div class="modal" tabindex="-1" id="scoreModal" style="display: none" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen">
-      <div class="modal-content bg-dark">
-        <div class="modal-header">
-          <h5 class="modal-title">Score</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div id="displayScore"></div>
-        </div>
       </div>
     </div>
   </div>
   {% endif %}
 
-  <script type="text/javascript" src="{{ url_for('static', path='js/external/bootstrap-5.3.3.min.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('static', path='js/external/socket.io.min.js') }}"></script>
 
   <script type="module">
     import * as socketModule from "../static/js/socketModule.js";
     import * as drawModule from "../static/js/drawModule.js";
+    import * as cameraModule from "../static/js/cameraModule.js";
     import * as wizardModule from "../static/js/wizardModule.js";
+    import * as scoreModule from "../static/js/scoreModule.js";
     import { virtualKeyboard } from "../static/js/keyboardModule.js";
 
     window.addEventListener("resize", drawModule.resizeCanvas, false);
 
-    document.addEventListener("DOMContentLoaded", async function (event) {
+    document.addEventListener("DOMContentLoaded", function (event) {
       const robotId = parseInt(document.getElementsByTagName('body')[0].dataset.robotId);
 
       let cameraModule = null;
       let scoreModule = null;
-
-      if (robotId != 0) {
-        cameraModule = await import("../static/js/cameraModule.js");
-      }
 
       drawModule.resizeCanvas(); // draw background
       virtualKeyboard.init(); // initialize keyboard
@@ -149,7 +148,6 @@
         socketModule.onConnection(this);
       })
         .on("disconnect", function () {
-          if (robotId === 0) { drawModule.deleteTabs(); }
           socketModule.onDisconnect();
         })
         .on("tool_menu", function (menu) {
@@ -174,7 +172,6 @@
         })
         .on("state", function (robot_id, msg) {
           drawModule.displayMsg(robot_id, msg); // uses message to display information in bottom page
-          drawModule.drawBoardElement(msg); // move robot
         })
         .on("path", function (robot_id, msg) {
           drawModule.recordPath(robot_id, msg);
@@ -200,16 +197,31 @@
           console.error("Failed to load scoreModule:", err);
         });
       } else {
+        socketModule.setupTabEventListener(
+            "beacon-tab",
+            "beacon",
+            socket,
+            null // No iframe to update for beacon
+        )
         socket.on("add_robot", function (robot_id) {
           console.log(`Add robot ${robot_id} dashboard on http://robot${robot_id}:808${robot_id}`);
-          drawModule.addNewTab(robot_id);
+          drawModule.addNewTab(robot_id, this);
+          socketModule.setupTabEventListener(
+            `robot${robot_id}-tab`,
+            `robot${robot_id}`,
+            socket,
+            (robotId) => `http://robot${robotId}:808${robotId}`
+          );
         })
+
         socket.on("del_robot", function (robot_id) {
           console.log(`Delete robot ${robot_id} dashboard`);
           drawModule.deleteTab(robot_id);
         })
+
       }
     });
+
   </script>
 </body>
 

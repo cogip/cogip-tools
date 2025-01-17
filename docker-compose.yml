@@ -360,8 +360,6 @@ services:
     depends_on:
       make-firmware-pami:
         condition: service_completed_successfully
-      socat3:
-        condition: service_started
     profiles:
       - robot3
 
@@ -374,8 +372,6 @@ services:
     depends_on:
       make-firmware-pami:
         condition: service_completed_successfully
-      socat4:
-        condition: service_started
     profiles:
       - robot4
 

@@ -1,26 +1,5 @@
-let pose_current = {};
-let pose_order = {};
-let path = {};
-let obstacles = {};
-
-export function updatePoseCurrent(robot_id, new_pose) {
-  pose_current[robot_id] = new_pose;
-}
-
-export function updatePoseOrder(robot_id, new_pose) {
-  pose_order[robot_id] = new_pose;
-}
-
-export function recordPath(robot_id, msg) {
-  path[robot_id] = msg;
-}
-
-export function updateObstacles(robot_id, new_obstacles) {
-  obstacles[robot_id] = new_obstacles;
-}
-
-const robotImages = {};
-const orderImages = {};
+let pose_current = {}, pose_order = {}, path = {}, obstacles = {};
+const robotImages = {}, orderImages = {}, cachedElements = {};
 const robotColors = {
   1: "#F0A30A",
   2: "#3A5431",
@@ -28,61 +7,60 @@ const robotColors = {
   4: "#001DBC",
 };
 
-function loadImages() {
+let ratioX = null, ratioY = null,  coordX = 0, coordY = 0;
+
+// Preload robot and order images
+(function loadImages() {
   for (let i = 1; i <= 4; i++) {
     robotImages[i] = new Image();
     orderImages[i] = new Image();
     robotImages[i].src = `static/img/robot${i}.png`;
     orderImages[i].src = `static/img/robot${i}.png`;
   }
-}
+})();
 
-loadImages();
+// Element caching for performance
+const cacheElement = (selector) => {
+  if (!cachedElements[selector]) {
+    cachedElements[selector] = document.querySelector(selector);
+  }
+  return cachedElements[selector];
+};
 
-function getImage(robot_id, type) {
-  const images = type === "robot" ? robotImages : orderImages;
-  return images[robot_id] || images[0];
-}
+// Pose updates
+export const updatePoseCurrent = (robot_id, new_pose) => (pose_current[robot_id] = new_pose);
+export const updatePoseOrder = (robot_id, new_pose) => (pose_order[robot_id] = new_pose);
+export const recordPath = (robot_id, msg) => (path[robot_id] = msg);
+export const updateObstacles = (robot_id, new_obstacles) => (obstacles[robot_id] = new_obstacles);
 
-let ratioX = null;
-let ratioY = null;
-let coordX = 0;
-let coordY = 0;
+// Retrieve image
+const getImage = (robot_id, type) => (type === "robot" ? robotImages : orderImages)[robot_id] || new Image();
 
-function getFullHeight(className, includeMargin = true) {
-  const element = document.querySelector(`.${className}`);
+// Element height computation
+const getFullHeight = (className, includeMargin = true) => {
+  const element = cacheElement(`.${className}`);
   if (!element) return 0;
-
   const styles = window.getComputedStyle(element);
-  const height = element.offsetHeight;
-  const margin = includeMargin
-    ? parseFloat(styles.marginTop) + parseFloat(styles.marginBottom)
-    : 0;
-
-  return height + margin;
-}
+  const margin = includeMargin ? parseFloat(styles.marginTop) + parseFloat(styles.marginBottom) : 0;
+  return element.offsetHeight + margin;
+};
 
 export function resizeCanvas() {
   const footerHeight = getFullHeight("footer", false);
-  const navHeight = getFullHeight("nav-tabs", true);
-  const menuWidth = document.getElementById("menu").offsetWidth;
+  const navHeight = getFullHeight("flex-wrap", true);
+  const menuWidth = cacheElement("#menu").offsetWidth;
+  const canvas = cacheElement("#board");
+  const menuHeight = cacheElement("#menu").offsetHeight;
 
-  const canvas = document.getElementById("board");
   canvas.height = Math.min(
     window.innerHeight - (footerHeight + navHeight),
-    document.getElementById("menu").offsetHeight
+    menuHeight
   );
   canvas.width = window.innerWidth - menuWidth - 10;
 
-  const background = new Image();
-  background.src = "static/img/ground2024.png";
-
-  const imgWidth = canvas.width;
-  const imgHeight = (imgWidth * 2) / 3;
-
-  const adjustedHeight = imgHeight > canvas.height ? canvas.height : imgHeight;
-  const adjustedWidth =
-    adjustedHeight === canvas.height ? (adjustedHeight * 3) / 2 : imgWidth;
+  const imgRatio = 2/3;
+  const adjustedHeight = Math.min(canvas.height, canvas.width * imgRatio);
+  const adjustedWidth = adjustedHeight * (3 / 2);
 
   const context = canvas.getContext("2d");
   context.canvas.width = adjustedWidth;
@@ -92,116 +70,118 @@ export function resizeCanvas() {
   coordY = canvas.height / 2;
   context.translate(coordX, coordY);
 
-  canvas.addEventListener("click", (event) => {
-    console.log(getMousePos(canvas, event));
-  });
-
   ratioX = adjustedWidth / 3000;
   ratioY = -adjustedHeight / 2000;
-
   setButtonPosition(canvas);
 }
 
 function setButtonPosition(canvas) {
-  const rightPx = Math.max(
-    window.innerWidth -
-      document.getElementById("menu").offsetWidth -
-      10 -
-      canvas.width,
-    0
-  );
-  document.getElementById("buttonRefresh").style.right = `${rightPx}px`;
+  const menuWidth = cacheElement("#menu").offsetWidth;
+  const rightPx = Math.max(window.innerWidth - menuWidth - canvas.width, 0);
+  const buttonRefresh = cacheElement("#buttonRefresh");
+  buttonRefresh.style.right = `${rightPx}px`;
 
-  const buttonCameraModal = document.getElementById("buttonCameraModal");
+  const buttonCameraModal = cacheElement("#buttonCameraModal");
   if (buttonCameraModal) {
-    buttonCameraModal.style.top = canvas.height - 44 + "px"; // 44 is height of camera image
-    buttonCameraModal.style.right = rightPx - 49 + "px"; // 49 is width of refresh image
+    buttonCameraModal.style.top = `${canvas.height - 44}px`; // 44 is the height of the camera image
+    buttonCameraModal.style.right = `${rightPx - 59}px`; // 59 is the width of the refresh image
   }
-}
-
-function getMousePos(canvas, event) {
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: event.clientX - rect.left - coordX,
-    y: -(event.clientY - rect.top - coordY),
-  };
 }
 
 export function displayMsg(robot_id, msg) {
-  const stateHTML = document.getElementById(`state_robot_${robot_id}`);
+  // Do not display state on beacon.
+  if (robot_id == 0) {
+    return;
+  }
+
+  const stateHTML = cacheElement("#state_robot");
   const pose = pose_current[robot_id];
 
-  if (pose && !isNaN(pose.x) && !isNaN(pose.y)) {
-    stateHTML.textContent = `R.${robot_id} Cy.:${
-      msg.cycle
-    } / X:${pose.x.toFixed(2)} / Y:${pose.y.toFixed(2)} / Ang:${pose.O.toFixed(
-      2
-    )}`;
+  if (stateHTML && pose && !isNaN(pose.x) && !isNaN(pose.y)) {
+    let msg = "Current: ";
+    msg += `X:${pose.x.toFixed(2)}`;
+    msg += ` / Y:${pose.y.toFixed(2)}`;
+    msg += ` / Ang:${pose.O.toFixed(2)}`;
+    stateHTML.textContent = msg;
+  }
+
+  const orderHTML = cacheElement("#order_robot");
+  const order = pose_order[robot_id];
+  if (orderHTML && order && !isNaN(order.x) && !isNaN(order.y)) {
+    let msg = "Order: ";
+    msg += `X:${order.x.toFixed(2)}`;
+    msg += ` / Y:${order.y.toFixed(2)}`;
+    msg += ` / Ang:${order.O !== undefined ? order.O.toFixed(2) : "by pass"}`;
+    orderHTML.textContent = msg;
   }
 }
 
-export function drawBoardElement() {
-  const canvas = document.getElementById("board");
+// Main function
+(function drawFrame() {
+  const canvas = cacheElement("#board");
   const context = canvas.getContext("2d");
 
-  function drawFrame() {
-    context.clearRect(coordX, -coordY, canvas.width, canvas.height);
+  // Clear canvas
+  context.clearRect(coordX, -coordY, canvas.width, canvas.height);
 
-    for (const robot_id in pose_current) {
-      const pose = pose_current[robot_id];
-      if (pose && !isNaN(pose.x) && !isNaN(pose.y)) {
-        drawRobot(getImage(robot_id, "robot"), pose.x, pose.y, pose.O, context);
-      }
-
-      const orderPose = pose_order[robot_id];
-      if (orderPose) {
-        context.save();
-        context.filter = "opacity(60%)";
-        drawRobot(
-          getImage(robot_id, "order"),
-          orderPose.x,
-          orderPose.y,
-          orderPose.O,
-          context
-        );
-        context.restore();
-      }
-
-      const color = robotColors[robot_id] || "red";
-      drawPathsAndObstacles(color, robot_id, context);
+  Object.entries(pose_current).forEach(([robot_id, pose]) => {
+    // Check if current position is valid
+    if (pose && !isNaN(pose.x) && !isNaN(pose.y)) {
+      drawRobot(getImage(robot_id, "robot"), pose.x, pose.y, pose.O, context);
     }
-    requestAnimationFrame(drawFrame);
-  }
 
+    // Draw orderPose
+    const orderPose = pose_order[robot_id];
+    if (orderPose) {
+      const previousFilter = context.filter;
+      context.filter = "opacity(60%)";
+      drawRobot(
+        getImage(robot_id, "order"),
+        orderPose.x,
+        orderPose.y,
+        orderPose.O,
+        context
+      );
+      context.filter = previousFilter;
+    }
+
+    drawPathsAndObstacles(robotColors[robot_id] || "red", robot_id, context);
+  });
+
+  // Refresh canvas continuously.
   requestAnimationFrame(drawFrame);
-}
+})();
 
 function drawPathsAndObstacles(color, robot_id, context) {
-  const path_robot = path[robot_id] || [];
+  const pathRobot = path[robot_id] || [];
   const pose = pose_current[robot_id];
 
-  if (pose) {
-    for (let i = 0; i < path_robot.length - 1; i++) {
-      drawPath(color, path_robot[i], path_robot[i + 1], context);
-    }
+  // Draw the path
+  if (pose && pathRobot.length > 1) {
+    pathRobot.reduce((prev, curr) => {
+      drawPath(color, prev, curr, context);
+      return curr;
+    });
   }
 
-  const obstacles_robot = obstacles[robot_id] || [];
-  obstacles_robot.forEach((obstacle) => {
+  // Draw obstacles
+  const obstaclesRobot = obstacles[robot_id] || [];
+  obstaclesRobot.forEach((obstacle) => {
     drawObstacles(color, obstacle, context);
   });
 }
 
-function adaptCoords(x, y, angle) {
-  return { x: 1500 - y, y: x, angle: -angle - 90 };
-}
+const adaptCoords = (x, y, angle) => ({
+  x: 1500 - y,
+  y: x,
+  angle: -angle - 90,
+});
 
 function drawRobot(robot, x, y, angle, context) {
   const { x: newX, y: newY, angle: newAngle } = adaptCoords(x, y, angle);
   const robotWidth = robot.width * ratioX;
   const robotHeight = robot.height * ratioY;
 
-  context.save();
   context.translate(newX * ratioX, newY * ratioY);
   context.rotate((newAngle * Math.PI) / 180);
   context.drawImage(
@@ -211,21 +191,26 @@ function drawRobot(robot, x, y, angle, context) {
     robotWidth,
     robotHeight
   );
-  context.restore();
+
+  context.rotate(-(newAngle * Math.PI) / 180);
+  context.translate(-newX * ratioX, -newY * ratioY);
 }
 
 function drawPath(color, start, end, context) {
   const startCoords = adaptCoords(start.x, start.y, 0);
   const endCoords = adaptCoords(end.x, end.y, 0);
+  const previousStrokeStyle = context.strokeStyle;
+  const previousLineWidth = context.lineWidth;
 
-  context.save();
   context.strokeStyle = color;
   context.lineWidth = 2;
   context.beginPath();
   context.moveTo(startCoords.x * ratioX, startCoords.y * ratioY);
   context.lineTo(endCoords.x * ratioX, endCoords.y * ratioY);
   context.stroke();
-  context.restore();
+
+  context.strokeStyle = previousStrokeStyle;
+  context.lineWidth = previousLineWidth;
 }
 
 function drawObstacles(color, obstacle, context) {
@@ -233,120 +218,115 @@ function drawObstacles(color, obstacle, context) {
   const obstacleX = x * ratioX;
   const obstacleY = y * ratioY;
 
-  context.save();
+  const previousFilter = context.filter;
   context.fillStyle = obstacle.id ? "purple" : color;
   context.filter = "opacity(40%)";
 
   if (obstacle.radius) {
+    const radius = obstacle.radius * ratioX; // Precalculate radius
     context.beginPath();
-    context.arc(obstacleX, obstacleY, obstacle.radius * ratioX, 0, 2 * Math.PI);
+    context.arc(obstacleX, obstacleY, radius, 0, 2 * Math.PI);
     context.fill();
-    context.closePath();
   } else {
+    const lengthX = obstacle.length_x * ratioX;
+    const lengthY = obstacle.length_y * ratioY;
+
     context.translate(obstacleX, obstacleY);
     context.rotate((angle * Math.PI) / 180);
     context.fillRect(
-      (-obstacle.length_x * ratioX) / 2,
-      (-obstacle.length_y * ratioY) / 2,
-      obstacle.length_x * ratioX,
-      obstacle.length_y * ratioY
+      -lengthX / 2,
+      -lengthY / 2,
+      lengthX, lengthY
     );
+    context.rotate(-(angle * Math.PI) / 180);
+    context.translate(-obstacleX, -obstacleY);
   }
 
-  context.restore();
-}
-
-// Event handler for hiding tab
-function onHideTab(robot_id) {
-  var iframe = document.getElementById(`robot${robot_id}-iframe`);
-  iframe.removeAttribute("src");
-}
-
-// Event handler for showing tab
-function onShowTab(robot_id) {
-  var iframe = document.getElementById(`robot${robot_id}-iframe`);
-  iframe.src = `http://robot${robot_id}:808${robot_id}`;
+  context.filter = previousFilter;
 }
 
 export function addNewTab(robot_id) {
+  //Check if nav-tab already exists and remove it
+  const existingNavTab = cacheElement(`#robot${robot_id}-tab`);
+  if (existingNavTab) {
+    existingNavTab.parentElement.remove();
+    const parent = existingNavTab.parentElement;
+    parent.replaceWith(parent.cloneNode(true));
+  }
+
+  //Check if tab-tab already exists and remove it
+  const existingTabPane = cacheElement(`#robot${robot_id}`);
+  if (existingTabPane) {
+    existingTabPane.remove();
+  }
+
   // Create new nav-tab element
   var newNavTab = document.createElement("li");
-  newNavTab.className = "nav-item";
-  newNavTab.innerHTML = `<button class="nav-link" id="robot${robot_id}-tab" data-bs-toggle="tab" data-bs-target="#robot${robot_id}" type="button" role="tab" aria-controls="robot${robot_id}" aria-selected="true">Robot ${robot_id}</button>`;
+  newNavTab.className = "mr-2";
+  newNavTab.innerHTML = `
+  <button
+    class="inline-block px-4 py-2 text-gray-600 hover:text-red-cogip border-b-2 border-transparent hover:border-red-cogip focus:outline-none"
+    id="robot${robot_id}-tab"
+    data-target="#robot${robot_id}"
+    type="button"
+    role="tab"
+    aria-controls="robot${robot_id}"
+    aria-selected="false">
+    Robot ${robot_id}
+  </button>`;
 
   // Create new tab-pane element
   var newTabPane = document.createElement("div");
-  newTabPane.className = "tab-pane fade";
+  newTabPane.className = "hidden";
   newTabPane.id = `robot${robot_id}`;
-  var navTabHeight = getFullHeight("nav-tabs", true);
-  newTabPane.innerHTML = `<iframe id="robot${robot_id}-iframe" style="position: absolute; top: ${navTabHeight}px; bottom: 0; left: 0; right: 0; width: 100%; height: ${
-    window.innerHeight - navTabHeight
-  }px;" frameborder="0"></iframe>`;
+  newTabPane.setAttribute("role", "tabpanel");
 
-  // Append new nav-tab to the nav-tabs container
-  var navTabsContainer = document.querySelector(".nav-tabs");
+  var navTabHeight = getFullHeight("flex-wrap", true);
+  newTabPane.innerHTML = `
+  <iframe
+    id="robot${robot_id}-iframe"
+    style="position: absolute; top: ${navTabHeight}px; bottom: 0; left: 0; right: 0; width: 100%; height: ${
+    window.innerHeight - navTabHeight
+  }px;"
+    class="w-full h-full"
+    frameborder="0">
+  </iframe>`;
+
+  // Append new nav-tab to the flex-wrap container
+  const navTabsContainer = cacheElement(".flex-wrap");
   navTabsContainer.appendChild(newNavTab);
 
   // Append new tab-pane to the tab-content container
-  var tabContentContainer = document.querySelector(".tab-content");
+  const tabContentContainer = cacheElement(".tab-content");
   tabContentContainer.appendChild(newTabPane);
-
-  document
-    .getElementById(`robot${robot_id}-tab`)
-    .addEventListener("shown.bs.tab", function (e) {
-      var robot_id = e.target.getAttribute("id").match(/robot(\d+)-tab/)[1];
-      onShowTab(robot_id);
-    });
-
-  // Add event listener to newly created tab to unload the iframe when user leaves the tab
-  document
-    .getElementById(`robot${robot_id}-tab`)
-    .addEventListener("hide.bs.tab", function (e) {
-      // Get the ID of the unselected robot from the href attribute
-      var robotId = e.target.getAttribute("id").match(/robot(\d+)-tab/)[1];
-      onHideTab(robotId);
-    });
 }
 
 export function deleteTab(robot_id) {
-  // Select the new button element
-  var navButton = document.getElementById(`robot${robot_id}-tab`);
+  // Select the nav-tab and tab-pane elements
+  const navButton = cacheElement(`#robot${robot_id}-tab`);
+  const navTab = navButton?.parentElement;
+  const tabPane = cacheElement(`#robot${robot_id}`);
 
-  // Check if the tab to delete is active
-  const deletedTabIsActive = navButton.classList.contains("active");
-
-  // Select the new nav-item element
-  var navTab = navButton.parentElement;
-
-  // Select the new tab-pane element
-  var tabPane = document.getElementById(`robot${robot_id}`);
-
-  // Check if the elements exist before attempting to remove them
+  // Check if elements exist before attempting removal
   if (navTab && tabPane) {
-    // Remove the event listeners for the deleted tab
-    navTab.removeEventListener("hide.bs.tab", onHideTab);
-    navTab.removeEventListener("shown.bs.tab", onShowTab);
+    const navTabsContainer = cacheElement(".flex-wrap");
+    navTabsContainer?.removeChild(navTab);
 
-    // Remove the new nav-tab from the nav-tabs container
-    var navTabsContainer = document.querySelector(".nav-tabs");
-    navTabsContainer.removeChild(navTab);
+    const tabContentContainer = cacheElement(".tab-content");
+    tabContentContainer?.removeChild(tabPane);
 
-    // Remove the new tab-pane from the tab-content container
-    var tabContentContainer = document.querySelector(".tab-content");
-    tabContentContainer.removeChild(tabPane);
-
-    if (deletedTabIsActive) {
-      // Activate beacon tab if the deleted tab was active
-      var beaconButton = document.getElementById(`beacon-tab`);
-      beaconButton.classList.add("active");
-      var beaconPane = document.getElementById(`beacon`);
-      beaconPane.classList.add("active", "show");
+    // Activate beacon tab if the deleted tab was active
+    if (navButton?.classList.contains("active")) {
+      const beaconButton = cacheElement("#beacon-tab");
+      beaconButton?.classList.add("active");
+      const beaconPane = cacheElement("#beacon");
+      beaconPane?.classList.add("active", "show");
     }
   }
 }
 
 export function deleteTabs() {
-  document.querySelectorAll('[id^="robot"][id$="-tab"]').forEach(function (x) {
+  document.querySelectorAll('[id^="robot"][id$="-tab"]').forEach((x) => {
     const match = x.id.match(/robot(\d+)-tab/);
     if (match) {
       deleteTab(parseInt(match[1], 10));
