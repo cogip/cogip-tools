@@ -21,8 +21,6 @@ from .utils import (
     wrap_to_pi,
 )
 
-# Best distance for plant detection: ~ 65 cm
-
 # Marker axes:
 # - X: red
 # - Y: green
@@ -46,12 +44,6 @@ marker_sizes: dict[int, float] = {
     21: 100.0,  # Back/Right   500/-750
     22: 100.0,  # Front/Left   -500/750
     23: 100.0,  # Front/Right  -500/-750
-    # Resistant (purple) plant marker
-    13: 20.0,
-    # Delicate (white) plant marker
-    36: 20.0,
-    # Solar panel marker
-    47: 37.5,
 }
 
 table_markers_positions = {

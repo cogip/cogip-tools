@@ -155,10 +155,7 @@ class ParkingAction(Action):
         return 9999000.0
 
     async def before_action(self):
-        for _, plant_supply in self.game_context.plant_supplies.items():
-            plant_supply.enabled = False
-        for _, pot_supply in self.game_context.pot_supplies.items():
-            pot_supply.enabled = False
+        pass
 
     async def after_action(self):
         self.game_context.score += 10

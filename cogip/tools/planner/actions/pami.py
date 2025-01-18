@@ -2,7 +2,6 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models import models
-from cogip.models.artifacts import PotSupplyID
 from cogip.tools.planner.actions.actions import Action, Actions
 from cogip.tools.planner.pose import AdaptedPose, Pose
 from cogip.tools.planner.table import TableEnum
@@ -50,11 +49,6 @@ class Pami2Action(Action):
         if self.game_context._table == TableEnum.Training:
             pose.x -= 1000
 
-        for _, plant_supply in self.game_context.plant_supplies.items():
-            plant_supply.enabled = False
-        for _, pot_supply in self.game_context.pot_supplies.items():
-            pot_supply.enabled = False
-
         await asyncio.sleep(90)
 
     async def after_pose(self):
@@ -93,11 +87,6 @@ class Pami3Action(Action):
         if self.game_context._table == TableEnum.Training:
             pose.x -= 1000
 
-        for _, plant_supply in self.game_context.plant_supplies.items():
-            plant_supply.enabled = False
-        for _, pot_supply in self.game_context.pot_supplies.items():
-            pot_supply.enabled = False
-
         await asyncio.sleep(93)
 
     async def after_pose(self):
@@ -135,14 +124,6 @@ class Pami4Action(Action):
 
         if self.game_context._table == TableEnum.Training:
             pose.x -= 1000
-            self.game_context.pot_supplies[PotSupplyID.LocalMiddle].enabled = False
-        else:
-            self.game_context.pot_supplies[PotSupplyID.LocalTop].enabled = False
-
-        for _, plant_supply in self.game_context.plant_supplies.items():
-            plant_supply.enabled = False
-        for _, pot_supply in self.game_context.pot_supplies.items():
-            pot_supply.enabled = False
 
         await asyncio.sleep(92)
 

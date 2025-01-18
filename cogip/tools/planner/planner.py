@@ -637,45 +637,6 @@ class Planner:
                     bounding_box_points_number=self.properties.obstacle_bb_vertices,
                 )
             shared_lock.finish_reading()
-
-            # Add artifact obstacles
-            for plant_supply in self.game_context.plant_supplies.values():
-                if not plant_supply.enabled:
-                    continue
-                self.shared_circle_obstacles.append(
-                    x=plant_supply.x,
-                    y=plant_supply.y,
-                    angle=0,
-                    radius=plant_supply.radius + self.properties.robot_width / 2,
-                    bounding_box_margin=margin,
-                    bounding_box_points_number=self.properties.obstacle_bb_vertices,
-                    id=plant_supply.id.value,
-                )
-            for pot_supply in self.game_context.pot_supplies.values():
-                if not pot_supply.enabled:
-                    continue
-                self.shared_circle_obstacles.append(
-                    x=pot_supply.x,
-                    y=pot_supply.y,
-                    angle=pot_supply.angle,
-                    radius=pot_supply.radius + self.properties.robot_width / 2,
-                    bounding_box_margin=margin,
-                    bounding_box_points_number=self.properties.obstacle_bb_vertices,
-                    id=pot_supply.id.value,
-                )
-
-            # Add fixed obstacles
-            for fixed_obstacle in self.game_context.fixed_obstacles:
-                self.shared_rectangle_obstacles.append(
-                    x=fixed_obstacle.x,
-                    y=fixed_obstacle.y,
-                    angle=fixed_obstacle.angle,
-                    length_x=fixed_obstacle.length_x + self.properties.robot_length / 2,
-                    length_y=fixed_obstacle.length_y + self.properties.robot_length / 2,
-                    bounding_box_margin=margin,
-                    bounding_box_points_number=self.properties.obstacle_bb_vertices,
-                )
-
             self.shared_obstacles_lock.finish_writing()
         except Exception as exc:
             logger.warning(f"Planner: update_obstacles: Unknown exception {exc}")
