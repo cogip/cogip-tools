@@ -239,23 +239,4 @@ class GameContext(metaclass=Singleton):
         self.servo_states: dict[ServoEnum, Servo] = {}
         self.positional_actuator_states: dict[PositionalActuatorEnum, PositionalActuator] = {}
         self.bool_sensor_states: dict[BoolSensorEnum, BoolSensor] = {id: BoolSensor(id=id) for id in BoolSensorEnum}
-        self.emulated_actuator_states: set[ServoEnum | PositionalActuatorEnum] = {
-            ServoEnum.LXSERVO_LEFT_CART,
-            ServoEnum.LXSERVO_RIGHT_CART,
-            ServoEnum.LXSERVO_ARM_PANEL,
-            PositionalActuatorEnum.MOTOR_BOTTOM_LIFT,
-            PositionalActuatorEnum.MOTOR_TOP_LIFT,
-            PositionalActuatorEnum.ANALOGSERVO_BOTTOM_GRIP_LEFT,
-            PositionalActuatorEnum.ANALOGSERVO_BOTTOM_GRIP_RIGHT,
-            PositionalActuatorEnum.ANALOGSERVO_TOP_GRIP_LEFT,
-            PositionalActuatorEnum.ANALOGSERVO_TOP_GRIP_RIGHT,
-            PositionalActuatorEnum.CART_MAGNET_LEFT,
-            PositionalActuatorEnum.CART_MAGNET_RIGHT,
-            PositionalActuatorEnum.ANALOGSERVO_PAMI,
-            BoolSensorEnum.BOTTOM_GRIP_LEFT,
-            BoolSensorEnum.BOTTOM_GRIP_RIGHT,
-            BoolSensorEnum.TOP_GRIP_LEFT,
-            BoolSensorEnum.TOP_GRIP_RIGHT,
-            BoolSensorEnum.MAGNET_LEFT,
-            BoolSensorEnum.MAGNET_RIGHT,
-        }
+        self.emulated_actuator_states: set[ServoEnum | PositionalActuatorEnum] = {}

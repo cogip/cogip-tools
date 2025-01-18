@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 from cogip.models import models
 from cogip.models.artifacts import PotSupplyID
-from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.actions import Action, Actions
 from cogip.tools.planner.pose import AdaptedPose, Pose
 from cogip.tools.planner.table import TableEnum
@@ -102,7 +101,6 @@ class Pami3Action(Action):
         await asyncio.sleep(93)
 
     async def after_pose(self):
-        await actuators.pami_arm_open(self.planner)
         self.actions.clear()
 
     def weight(self) -> float:

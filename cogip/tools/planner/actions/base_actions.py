@@ -1,8 +1,6 @@
-import asyncio
 from typing import TYPE_CHECKING
 
 from cogip import models
-from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.actions import Action, Actions
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.camp import Camp
@@ -32,18 +30,6 @@ class AlignAction(Action):
             O=self.planner.pose_current.angle,
         )
         self.start_avoidance = self.game_context.avoidance_strategy
-
-        await asyncio.gather(
-            actuators.bottom_grip_close(self.planner),
-            actuators.top_grip_close(self.planner),
-            actuators.arm_panel_close(self.planner),
-            actuators.cart_in(self.planner),
-            asyncio.sleep(0.5),
-        )
-        await asyncio.gather(
-            actuators.bottom_lift_up(self.planner),
-            actuators.top_lift_up(self.planner),
-        )
 
         if Camp().adapt_y(self.start_pose.y) > 0:
             # Do not do alignment if the robot is in the opposite start position because it is not in a corner
@@ -169,15 +155,6 @@ class ParkingAction(Action):
         return 9999000.0
 
     async def before_action(self):
-        await actuators.bottom_grip_close(self.planner)
-        await actuators.top_grip_close(self.planner)
-
-        await actuators.cart_in(self.planner)
-        await asyncio.sleep(0.1)
-        await actuators.bottom_lift_down(self.planner)
-        await actuators.top_lift_down(self.planner)
-        await asyncio.sleep(0.5)
-
         for _, plant_supply in self.game_context.plant_supplies.items():
             plant_supply.enabled = False
         for _, pot_supply in self.game_context.pot_supplies.items():
@@ -185,12 +162,6 @@ class ParkingAction(Action):
 
     async def after_action(self):
         self.game_context.score += 10
-
-        await actuators.top_grip_open(self.planner)
-        await asyncio.sleep(0.5)
-        await actuators.bottom_grip_mid_open(self.planner)
-        await asyncio.sleep(0.1)
-        await actuators.bottom_grip_open(self.planner)
 
         await self.planner.sio_ns.emit("score", self.game_context.score)
         await self.planner.sio_ns.emit("robot_end")
