@@ -40,7 +40,7 @@ class GameContext(metaclass=Singleton):
         self.game_duration: int = 90 if self.properties.robot_id == 1 else 100
         self.minimum_score: int = 0
         self.camp = Camp()
-        self.strategy = actions.Strategy.GameSolarFirst
+        self.strategy = actions.Strategy.BackAndForth
         self._table = TableEnum.Game
         self.avoidance_strategy = AvoidanceStrategy.AvoidanceCpp
         self.reset()
@@ -95,7 +95,7 @@ class GameContext(metaclass=Singleton):
                     y=-1285,
                     O=90,
                 )
-                if self.camp.color == Camp.Colors.yellow and self.strategy == actions.Strategy.GameSolarFirst:
+                if self.camp.color == Camp.Colors.yellow and self.strategy == actions.Strategy.BackAndForth:
                     pose.O = 90
                 return pose
             case StartPosition.Opposite:
