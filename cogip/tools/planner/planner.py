@@ -24,6 +24,7 @@ from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCi
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorState
+from cogip.models.artifacts import ConstructionArea
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from cogip.utils.singleton import Singleton
@@ -255,7 +256,6 @@ class Planner:
         self.create_shared_memory()
         self.shared_properties["exiting"] = False
         await self.soft_reset()
-        await self.set_pose_start(self.game_context.get_start_pose(self.start_position).pose)
         await self.set_controller(self.game_context.default_controller, True)
         self.sio_receiver_task = asyncio.create_task(
             self.task_sio_receiver(),
@@ -338,6 +338,9 @@ class Planner:
         """
         self.game_context.reset()
         self.actions = action_classes.get(self.game_context.strategy, actions.Actions)(self)
+        available_start_poses = self.game_context.get_available_start_poses()
+        if available_start_poses and self.start_position not in available_start_poses:
+            self.start_position = available_start_poses[(self.robot_id - 1) % len(available_start_poses)]
         await self.set_pose_start(self.game_context.get_start_pose(self.start_position).pose)
 
     async def task_sio_emitter(self):
@@ -637,6 +640,53 @@ class Planner:
                     bounding_box_points_number=self.properties.obstacle_bb_vertices,
                 )
             shared_lock.finish_reading()
+
+            # Add artifact obstacles
+            construction_areas: list[ConstructionArea] = list(self.game_context.construction_areas.values()) + list(
+                self.game_context.opponent_construction_areas.values()
+            )
+            for construction_area in construction_areas:
+                if not construction_area.enabled:
+                    continue
+                if not table.contains(construction_area, margin):
+                    continue
+                self.shared_rectangle_obstacles.append(
+                    x=construction_area.x,
+                    y=construction_area.y,
+                    angle=construction_area.O,
+                    length_x=construction_area.width + self.properties.robot_width,
+                    length_y=construction_area.length + self.properties.robot_width,
+                    bounding_box_margin=margin,
+                    id=construction_area.id.value,
+                )
+            for tribune in self.game_context.tribunes.values():
+                if not tribune.enabled:
+                    continue
+                if not table.contains(tribune, margin):
+                    continue
+                self.shared_rectangle_obstacles.append(
+                    x=tribune.x,
+                    y=tribune.y,
+                    angle=tribune.O,
+                    length_x=tribune.width + self.properties.robot_width,
+                    length_y=tribune.length + self.properties.robot_width,
+                    bounding_box_margin=margin,
+                    id=tribune.id.value,
+                )
+
+            # Add fixed obstacles
+            for fixed_obstacle in self.game_context.fixed_obstacles:
+                if not table.contains(fixed_obstacle, margin):
+                    continue
+                self.shared_rectangle_obstacles.append(
+                    x=fixed_obstacle.x,
+                    y=fixed_obstacle.y,
+                    angle=fixed_obstacle.angle,
+                    length_x=fixed_obstacle.length_x + self.properties.robot_length,
+                    length_y=fixed_obstacle.length_y + self.properties.robot_length,
+                    bounding_box_margin=margin,
+                )
+
             self.shared_obstacles_lock.finish_writing()
         except Exception as exc:
             logger.warning(f"Planner: update_obstacles: Unknown exception {exc}")
