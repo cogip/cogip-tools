@@ -122,6 +122,7 @@ class Server:
             {
                 "x": obstacle.center.x,
                 "y": obstacle.center.y,
+                "angle": 0,
                 "radius": obstacle.radius,
                 "id": obstacle.id,
             }
@@ -131,6 +132,7 @@ class Server:
             {
                 "x": obstacle.center.x,
                 "y": obstacle.center.y,
+                "angle": obstacle.center.angle,
                 "length_x": obstacle.length_x,
                 "length_y": obstacle.length_y,
                 "id": obstacle.id,
