@@ -6,6 +6,17 @@ from cogip.models.actuators import (
     Servo,
     ServoEnum,
 )
+from cogip.models.artifacts import (
+    ConstructionArea,
+    ConstructionAreaID,
+    ConstructionAreaLarge,
+    ConstructionAreaSmall,
+    Tribune,
+    TribuneID,
+    construction_area_positions,
+    tribune_positions,
+)
+from cogip.models.models import DynObstacleRect
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.singleton import Singleton
 from . import actions
@@ -50,6 +61,7 @@ class GameContext(metaclass=Singleton):
         self.playing = False
         self.score = self.minimum_score
         self.countdown = self.game_duration
+        self.create_start_poses()
         self.create_artifacts()
         self.create_fixed_obstacles()
         self.create_actuators_states()
@@ -69,66 +81,54 @@ class GameContext(metaclass=Singleton):
         Define the possible start positions.
         Default positions for blue camp.
         """
-        match n:
-            case StartPosition.Top:
-                return AdaptedPose(
-                    x=1000 - 450 + self.properties.robot_width / 2,
-                    y=-(1500 - 450 + self.properties.robot_length / 2),
-                    O=90,
-                )
-            case StartPosition.Bottom:
-                pose = AdaptedPose(
-                    x=-785,
-                    y=-1285,
-                    O=90,
-                )
-                if self.camp.color == Camp.Colors.yellow and self.strategy == actions.Strategy.BackAndForth:
-                    pose.O = 90
-                return pose
-            case StartPosition.Opposite:
-                return AdaptedPose(
-                    x=-450 / 2 + self.properties.robot_width / 2,
-                    y=1500 - 450 + self.properties.robot_width / 2,
-                    O=-90,
-                )
-            case StartPosition.PAMI2:
-                return AdaptedPose(
-                    x=1000 - 150 + self.properties.robot_length / 2,
-                    y=-self.properties.robot_width / 2,
-                    O=180,
-                )
-            case StartPosition.PAMI3:
-                return AdaptedPose(
-                    x=1000 - 150 + self.properties.robot_width / 2,
-                    y=-33,
-                    O=-90,
-                )
-            case StartPosition.PAMI4:
-                return AdaptedPose(
-                    x=1000 - 150 + self.properties.robot_width / 2,
-                    y=-(450 - self.properties.robot_length / 2),
-                    O=-90,
-                )
-            case StartPosition.PAMI2_TRAINING:
-                return AdaptedPose(
-                    x=1000 - 150 + self.properties.robot_length / 2 - 1000,
-                    y=-self.properties.robot_width / 2,
-                    O=180,
-                )
-            case StartPosition.PAMI3_TRAINING:
-                return AdaptedPose(
-                    x=1000 - 150 + self.properties.robot_length / 2 - 1000,
-                    y=-450 / 2,
-                    O=180,
-                )
-            case StartPosition.PAMI4_TRAINING:
-                return AdaptedPose(
-                    x=1000 - 150 + self.properties.robot_width / 2 - 1000,
-                    y=-(450 - self.properties.robot_length / 2),
-                    O=-90,
-                )
-            case _:
-                return AdaptedPose()
+        return self.start_poses.get(n, AdaptedPose())
+
+    def create_start_poses(self):
+        self.start_poses = {
+            StartPosition.Top: AdaptedPose(
+                x=550 + self.properties.robot_length / 2,
+                y=-900 - self.properties.robot_width / 2,
+                O=180,
+            ),
+            StartPosition.Bottom: AdaptedPose(
+                x=-550 - self.properties.robot_length / 2,
+                y=-50 - self.properties.robot_width / 2,
+                O=0,
+            ),
+            StartPosition.Opposite: AdaptedPose(
+                x=-350 + self.properties.robot_width / 2,
+                y=1050 + self.properties.robot_length / 2,
+                O=-90,
+            ),
+            StartPosition.PAMI2: AdaptedPose(
+                x=550 + self.properties.robot_width * 0.5,
+                y=-1350 - self.properties.robot_length / 2,
+                O=90,
+            ),
+            StartPosition.PAMI3: AdaptedPose(
+                x=550 + self.properties.robot_width * 1.5,
+                y=-1350 - self.properties.robot_length / 2,
+                O=90,
+            ),
+            StartPosition.PAMI4: AdaptedPose(
+                x=550 + self.properties.robot_width * 2.5,
+                y=-1350 - self.properties.robot_length / 2,
+                O=90,
+            ),
+            StartPosition.PAMI5: AdaptedPose(
+                x=550 + self.properties.robot_width * 3.5,
+                y=-1350 - self.properties.robot_length / 2,
+                O=90,
+            ),
+        }
+
+        # Adapt poses for training table
+        if self._table == TableEnum.Training:
+            self.start_poses[StartPosition.Top].x -= 1000
+            self.start_poses[StartPosition.PAMI2].x -= 1000
+            self.start_poses[StartPosition.PAMI3].x -= 1000
+            self.start_poses[StartPosition.PAMI4].x -= 1000
+            self.start_poses[StartPosition.PAMI5].x -= 1000
 
     def get_available_start_poses(self) -> list[StartPosition]:
         """
@@ -136,6 +136,12 @@ class GameContext(metaclass=Singleton):
         """
         start_pose_indices = []
         for p in StartPosition:
+            if self.properties.robot_id == 1 and p not in [
+                StartPosition.Top,
+                StartPosition.Bottom,
+                StartPosition.Opposite,
+            ]:
+                continue
             pose = self.get_start_pose(p)
             if self.table.contains(pose):
                 start_pose_indices.append(p)
@@ -143,11 +149,55 @@ class GameContext(metaclass=Singleton):
 
     def create_artifacts(self):
         # Positions are related to the default camp blue.
-        pass
+        self.construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
+        self.opponent_construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
+        self.tribunes: dict[TribuneID, Tribune] = {}
+
+        # Construction areas
+        for id, area in construction_area_positions.items():
+            match id:
+                case ConstructionAreaID.LocalBottomSmall | ConstructionAreaID.OppositeBottomSmall:
+                    ConstructionAreaClass = ConstructionAreaSmall
+                case _:
+                    ConstructionAreaClass = ConstructionAreaLarge
+            adapted_pose = AdaptedPose(**area.model_dump())
+            self.construction_areas[id] = ConstructionAreaClass(**adapted_pose.model_dump(), id=id, enabled=False)
+            self.opponent_construction_areas[id] = ConstructionAreaClass(
+                x=adapted_pose.x,
+                y=-adapted_pose.y,
+                O=-adapted_pose.O,
+                id=id,
+            )
+
+        for id, tribune in tribune_positions.items():
+            adapted_pose = AdaptedPose(**tribune.model_dump())
+            self.tribunes[id] = Tribune(**adapted_pose.model_dump(), id=id)
+
+        if self._table == TableEnum.Training:
+            self.opponent_construction_areas[ConstructionAreaID.OppositeCenterLarge].enabled = False
 
     def create_fixed_obstacles(self):
         # Positions are related to the default camp blue.
-        pass
+        self.fixed_obstacles: list[DynObstacleRect] = []
+
+        # Opponent starting area, ramp and scene.
+        pose = AdaptedPose(x=775, y=750)
+        self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=1500)]
+
+        # Ramp and scene except for robot ID 5, the superstar.
+        if self.properties.robot_id != 5:
+            # Ramp
+            pose = AdaptedPose(x=900, y=-650)
+            self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=200, length_y=400)]
+
+            # Scene
+            pose = AdaptedPose(x=825, y=-225)
+            self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=450)]
+
+        # PAMIs starting area for robot ID 1, the main robot.
+        if self.properties.robot_id == 1:
+            pose = AdaptedPose(x=825, y=-1425)
+            self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=150)]
 
     def create_actuators_states(self):
         self.servo_states: dict[ServoEnum, Servo] = {}

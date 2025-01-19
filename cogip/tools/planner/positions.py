@@ -12,7 +12,5 @@ class StartPosition(IntEnum):
     PAMI2 = auto()
     PAMI3 = auto()
     PAMI4 = auto()
-    PAMI2_TRAINING = auto()
-    PAMI3_TRAINING = auto()
-    PAMI4_TRAINING = auto()
+    PAMI5 = auto()
     Center = auto()

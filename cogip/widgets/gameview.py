@@ -12,12 +12,14 @@ from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
 from PySide6.QtCore import Signal as qtSignal
 
+from cogip.entities.artifacts import TribuneEntity
 from cogip.entities.asset import AssetEntity
 from cogip.entities.line import LineEntity
 from cogip.entities.obstacle import ObstacleEntity
 from cogip.entities.path import PathEntity
 from cogip.entities.robot_manual import RobotManualEntity
 from cogip.models import models
+from cogip.models.artifacts import TribuneID, tribune_positions
 
 
 class EventFilter(QtCore.QObject):
@@ -230,6 +232,10 @@ class GameView(QtWidgets.QWidget):
         self.add_ground_image()
 
         self.start_time = timeit.default_timer()
+
+        self.tribunes: dict[TribuneID, TribuneEntity] = {}
+        for id, tribune in tribune_positions.items():
+            self.tribunes[id] = TribuneEntity(self.scene_entity, tribune)
 
     def enable_mouse(self, enable: bool) -> None:
         self.mouse_enabled = enable
