@@ -491,6 +491,13 @@ class Planner:
         self.pose_order = None
         self.pose_reached = True
         self.avoidance_path = []
+
+        # When the firmware receives a pose start, it does not send its updated pose current,
+        # so do it here.
+        self.pose_current.x = pose_start.x
+        self.pose_current.y = pose_start.y
+        self.pose_current.angle = pose_start.O
+
         await self.sio_ns.emit("pose_start", pose_start.model_dump())
 
     @property
