@@ -38,7 +38,7 @@ class GameContext(metaclass=Singleton):
         self.game_duration: int = 90 if self.properties.robot_id == 1 else 100
         self.minimum_score: int = 0
         self.camp = Camp()
-        self.strategy = actions.Strategy.BackAndForth
+        self.strategy = actions.Strategy.VisitStartingAreas
         self._table = TableEnum.Game
         self.avoidance_strategy = AvoidanceStrategy.AvoidanceCpp
         self.reset()
