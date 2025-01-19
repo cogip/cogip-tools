@@ -33,8 +33,10 @@ class PathEntity(Qt3DCore.QEntity):
         """
         self.points = points
 
-        if len(self.points) < 1:
+        if len(self.points) < 2:
             return
+
+        self.points += [self.points[0]]
 
         for line in self.lines:
             line.setEnabled(False)
