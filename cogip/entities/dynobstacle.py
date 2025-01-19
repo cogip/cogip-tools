@@ -1,4 +1,4 @@
-from PySide6 import QtCore, QtGui
+from PySide6 import QtGui
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
 
@@ -23,9 +23,8 @@ class DynBaseObstacleEntity(Qt3DCore.QEntity):
         self.points: list[models.Vertex] = []
 
         self.material = Qt3DExtras.QDiffuseSpecularMaterial(self)
-        self.material.setDiffuse(QtGui.QColor.fromRgb(255, 0, 0, 100))
-        self.material.setDiffuse(QtGui.QColor.fromRgb(255, 0, 0, 100))
-        self.material.setSpecular(QtGui.QColor.fromRgb(255, 0, 0, 100))
+        self.material.setDiffuse(QtGui.QColor.fromRgb(255, 50, 50, 100))
+        self.material.setSpecular(QtGui.QColor.fromRgb(255, 50, 50, 100))
         self.material.setShininess(1.0)
         self.material.setAlphaBlendingEnabled(True)
         self.addComponent(self.material)
@@ -33,7 +32,7 @@ class DynBaseObstacleEntity(Qt3DCore.QEntity):
         self.transform = Qt3DCore.QTransform(self)
         self.addComponent(self.transform)
 
-        self.bb = PathEntity(QtCore.Qt.darkRed, self.parent)
+        self.bb = PathEntity(QtGui.QColor(255, 182, 193), self.parent)
 
     def set_bounding_box(self, points: SharedCoordsList) -> None:
         new_points = [models.Vertex(x=point.x, y=point.y, z=5) for point in points]
