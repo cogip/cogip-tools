@@ -112,9 +112,9 @@ NB_MODULE(obstacles, m) {
 
     // Bind ObstaclePolygon class
     nb::class_<ObstaclePolygon, Obstacle>(m, "ObstaclePolygon")
-        .def(nb::init<const models::CoordsList&, double, uint8_t, obstacle_polygon_t*>(),
+        .def(nb::init<const models::CoordsList&, double, obstacle_polygon_t*>(),
              "Constructor with initial values",
-             "points"_a, "bounding_box_margin"_a, "bounding_box_points_number"_a, "data"_a = nullptr)
+             "points"_a, "bounding_box_margin"_a, "data"_a = nullptr)
         .def(nb::init<const ObstaclePolygon&, bool>(), "Deep copy constructor", "other"_a, "deep_copy"_a = false)
         .def("is_point_inside", nb::overload_cast<double, double>(&ObstaclePolygon::is_point_inside), "Check if a point is inside the circle", "x"_a, "y"_a)
         .def("is_point_inside", nb::overload_cast<const models::Coords&>(&ObstaclePolygon::is_point_inside), "Check if a point is inside the circle", "dest"_a)
@@ -146,8 +146,8 @@ NB_MODULE(obstacles, m) {
         .def("max_size", &ObstaclePolygonList::max_size, "Get the maximum number of coordinates")
         .def("get", &ObstaclePolygonList::get, "Get Coords at index", "index"_a)
         .def("__getitem__", &ObstaclePolygonList::operator[], "Get Coords at index", "index"_a)
-        .def("append", nb::overload_cast<const models::CoordsList&, double, uint8_t, uint32_t>(&ObstaclePolygonList::append), "Append obstacle", "points"_a, "bounding_box_margin"_a, "bounding_box_points_number"_a, "id"_a = 0)
-        .def("set", nb::overload_cast<std::size_t, const models::CoordsList&, double, uint8_t, uint32_t>(&ObstaclePolygonList::set), "Set coordinates at index", "index"_a, "points"_a, "bounding_box_margin"_a, "bounding_box_points_number"_a, "id"_a = 0)
+        .def("append", nb::overload_cast<const models::CoordsList&, double, uint32_t>(&ObstaclePolygonList::append), "Append obstacle", "points"_a, "bounding_box_margin"_a, "id"_a = 0)
+        .def("set", nb::overload_cast<std::size_t, const models::CoordsList&, double, uint32_t>(&ObstaclePolygonList::set), "Set coordinates at index", "index"_a, "points"_a, "bounding_box_margin"_a, "id"_a = 0)
         .def("get_index", &ObstaclePolygonList::getIndex, "Return index of elem or -1 if not found", "elem"_a)
         .def("__len__", &ObstaclePolygonList::size, "Return the length of the list")
         .def("__iter__", [](ObstaclePolygonList& self) { return ObstaclePolygonIterator(self, 0); }, "Return an iterator object")
@@ -160,9 +160,9 @@ NB_MODULE(obstacles, m) {
 
     // Bind ObstacleRectangle class
     nb::class_<ObstacleRectangle, ObstaclePolygon>(m, "ObstacleRectangle")
-        .def(nb::init<double, double, double, double, double, double, uint8_t, obstacle_polygon_t*>(),
+        .def(nb::init<double, double, double, double, double, double, obstacle_polygon_t*>(),
              "Constructor with initial values",
-             "x"_a, "y"_a, "angle"_a, "length_x"_a, "length_y"_a, "bounding_box_margin"_a, "bounding_box_points_number"_a, "data"_a = nullptr)
+             "x"_a, "y"_a, "angle"_a, "length_x"_a, "length_y"_a, "bounding_box_margin"_a, "data"_a = nullptr)
         .def(nb::init<const ObstacleRectangle&, bool>(), "Deep copy constructor", "other"_a, "deep_copy"_a = false)
         .def("is_point_inside", nb::overload_cast<double, double>(&ObstacleRectangle::is_point_inside), "Check if a point is inside the circle", "x"_a, "y"_a)
         .def("is_point_inside", nb::overload_cast<const models::Coords&>(&ObstacleRectangle::is_point_inside), "Check if a point is inside the circle", "dest"_a)
@@ -196,8 +196,8 @@ NB_MODULE(obstacles, m) {
         .def("max_size", &ObstacleRectangleList::max_size, "Get the maximum number of coordinates")
         .def("get", &ObstacleRectangleList::get, "Get Coords at index", "index"_a)
         .def("__getitem__", &ObstacleRectangleList::operator[], "Get Coords at index", "index"_a)
-        .def("append", nb::overload_cast<double, double, double, double, double, double, uint8_t, uint32_t>(&ObstacleRectangleList::append), "Append obstacle", "x"_a, "y"_a, "angle"_a, "length_x"_a, "length_y"_a, "bounding_box_margin"_a, "bounding_box_points_number"_a, "id"_a = 0)
-        .def("set", nb::overload_cast<std::size_t, double, double, double, double, double, double, uint8_t, uint32_t>(&ObstacleRectangleList::set), "Set coordinates at index", "index"_a, "x"_a, "y"_a, "angle"_a, "length_x"_a, "length_y"_a, "bounding_box_margin"_a, "bounding_box_points_number"_a, "id"_a = 0)
+        .def("append", nb::overload_cast<double, double, double, double, double, double, uint32_t>(&ObstacleRectangleList::append), "Append obstacle", "x"_a, "y"_a, "angle"_a, "length_x"_a, "length_y"_a, "bounding_box_margin"_a, "id"_a = 0)
+        .def("set", nb::overload_cast<std::size_t, double, double, double, double, double, double, uint32_t>(&ObstacleRectangleList::set), "Set coordinates at index", "index"_a, "x"_a, "y"_a, "angle"_a, "length_x"_a, "length_y"_a, "bounding_box_margin"_a, "id"_a = 0)
         .def("get_index", &ObstacleRectangleList::getIndex, "Return index of elem or -1 if not found", "elem"_a)
         .def("__len__", &ObstacleRectangleList::size, "Return the length of the list")
         .def("__iter__", [](ObstacleRectangleList& self) { return ObstacleRectangleIterator(self, 0); }, "Return an iterator object")

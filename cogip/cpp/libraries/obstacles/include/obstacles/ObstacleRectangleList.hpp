@@ -30,7 +30,6 @@ public:
         double length_x,                     ///< [in] Length along the X-axis.
         double length_y,                     ///< [in] Length along the Y-axis.
         double bounding_box_margin,          ///< [in] Bounding box margin.
-        uint8_t bounding_box_points_number,  ///< [in] Number of points for the bounding box.
         uint32_t id = 0                      ///< [in] Optional identifier.
     ) {
         if (size() >= max_size()) {
@@ -45,7 +44,6 @@ public:
             length_x,
             length_y,
             bounding_box_margin,
-            bounding_box_points_number,
             id
         );
     };
@@ -58,7 +56,6 @@ public:
         double length_x,                     ///< [in] Length along the X-axis.
         double length_y,                     ///< [in] Length along the Y-axis.
         double bounding_box_margin,          ///< [in] Bounding box margin.
-        uint8_t bounding_box_points_number,  ///< [in] Number of points for the bounding box.
         uint32_t id = 0                      ///< [in] Optional identifier.
     ) {
         if (index >= size()) {
@@ -71,7 +68,6 @@ public:
             length_x,
             length_y,
             bounding_box_margin,
-            bounding_box_points_number,
             &list_->elems[index]
         );
         list_->elems[index].id = id;
