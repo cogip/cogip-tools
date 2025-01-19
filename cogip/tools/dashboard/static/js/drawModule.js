@@ -245,6 +245,20 @@ function drawObstacles(color, obstacle, context) {
 
   context.restore(); // Restore the previous context state
 
+  // Draw bounding box
+  if (obstacle.bounding_box.length > 1) {
+    obstacle.bounding_box.reduce((prev, curr) => {
+      drawPath(obstacle_color, prev, curr, context);
+      return curr;
+    });
+    drawPath(
+      obstacle_color,
+      obstacle.bounding_box[obstacle.bounding_box.length - 1],
+      obstacle.bounding_box[0],
+      context
+    );
+  }
+
   context.filter = previousFilter;
 }
 
