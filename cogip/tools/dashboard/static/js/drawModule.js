@@ -125,10 +125,7 @@ export function displayMsg(robot_id, msg) {
   context.clearRect(coordX, -coordY, canvas.width, canvas.height);
 
   Object.entries(pose_current).forEach(([robot_id, pose]) => {
-    // Check if current position is valid
-    if (pose && !isNaN(pose.x) && !isNaN(pose.y)) {
-      drawRobot(getImage(robot_id, "robot"), pose.x, pose.y, pose.O, context);
-    }
+    drawPathsAndObstacles(robotColors[robot_id] || "red", robot_id, context);
 
     // Draw orderPose
     const orderPose = pose_order[robot_id];
@@ -145,7 +142,10 @@ export function displayMsg(robot_id, msg) {
       context.filter = previousFilter;
     }
 
-    drawPathsAndObstacles(robotColors[robot_id] || "red", robot_id, context);
+    // Check if current position is valid
+    if (pose && !isNaN(pose.x) && !isNaN(pose.y)) {
+      drawRobot(getImage(robot_id, "robot"), pose.x, pose.y, pose.O, context);
+    }
   });
 
   // Refresh canvas continuously.
@@ -221,7 +221,7 @@ function drawObstacles(color, obstacle, context) {
   const previousFilter = context.filter;
   const obstacle_color = obstacle.id ? "#e555e5" : color;
   context.fillStyle = obstacle_color;
-  context.filter = "opacity(40%)";
+  context.filter = "opacity(20%)";
 
   context.save(); // Save the current context state
 
