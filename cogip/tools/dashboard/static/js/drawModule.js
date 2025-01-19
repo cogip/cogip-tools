@@ -214,33 +214,36 @@ function drawPath(color, start, end, context) {
 }
 
 function drawObstacles(color, obstacle, context) {
-  const { x, y, angle } = adaptCoords(obstacle.x, obstacle.y, 0);
+  const { x, y, angle } = adaptCoords(obstacle.x, obstacle.y, obstacle.angle);
   const obstacleX = x * ratioX;
   const obstacleY = y * ratioY;
 
   const previousFilter = context.filter;
-  context.fillStyle = obstacle.id ? "purple" : color;
+  const obstacle_color = obstacle.id ? "#e555e5" : color;
+  context.fillStyle = obstacle_color;
   context.filter = "opacity(40%)";
 
+  context.save(); // Save the current context state
+
+  context.translate(obstacleX, obstacleY);
+  context.rotate((angle * Math.PI) / 180);
   if (obstacle.radius) {
     const radius = obstacle.radius * ratioX; // Precalculate radius
     context.beginPath();
-    context.arc(obstacleX, obstacleY, radius, 0, 2 * Math.PI);
+    context.arc(0, 0, radius, 0, 2 * Math.PI); // Draw the circle at the origin
     context.fill();
   } else {
     const lengthX = obstacle.length_x * ratioX;
     const lengthY = obstacle.length_y * ratioY;
 
-    context.translate(obstacleX, obstacleY);
-    context.rotate((angle * Math.PI) / 180);
     context.fillRect(
       -lengthX / 2,
       -lengthY / 2,
       lengthX, lengthY
     );
-    context.rotate(-(angle * Math.PI) / 180);
-    context.translate(-obstacleX, -obstacleY);
   }
+
+  context.restore(); // Restore the previous context state
 
   context.filter = previousFilter;
 }
