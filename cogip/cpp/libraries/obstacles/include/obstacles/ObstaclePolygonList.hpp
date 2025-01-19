@@ -26,7 +26,6 @@ public:
     void append(
         const models::CoordsList& points,    ///< [in] List of points defining the polygon.
         double bounding_box_margin,          ///< [in] Bounding box margin.
-        uint8_t bounding_box_points_number,  ///< [in] Number of points for the bounding box.
         uint32_t id = 0                      ///< [in] Optional identifier.
     ) {
         if (size() >= max_size()) {
@@ -37,7 +36,6 @@ public:
             size() - 1,
             points,
             bounding_box_margin,
-            bounding_box_points_number,
             id
         );
     };
@@ -46,7 +44,6 @@ public:
         std::size_t index,
         const models::CoordsList& points,    ///< [in] List of points defining the polygon.
         double bounding_box_margin,          ///< [in] Bounding box margin.
-        uint8_t bounding_box_points_number,  ///< [in] Number of points for the bounding box.
         uint32_t id = 0                      ///< [in] Optional identifier.
     ) {
         if (index >= size()) {
@@ -55,7 +52,6 @@ public:
         ObstaclePolygon(
             points,
             bounding_box_margin,
-            bounding_box_points_number,
             &list_->elems[index]
         );
         list_->elems[index].id = id;

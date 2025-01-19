@@ -42,7 +42,6 @@ public:
         double length_x,                     ///< [in] Length along the X-axis.
         double length_y,                     ///< [in] Length along the Y-axis.
         double bounding_box_margin,          ///< [in] Bounding box margin.
-        uint8_t bounding_box_points_number,  ///< [in] Number of points for the bounding box.
         obstacle_polygon_t* data=nullptr     ///< [in] Pointer to an existing data structure
                                              ///<      If nullptr, will allocate one internally
     );

@@ -21,7 +21,6 @@ ObstacleRectangle::ObstacleRectangle(
     double length_x,
     double length_y,
     double bounding_box_margin,
-    uint8_t bounding_box_points_number,
     obstacle_polygon_t* data
 ): ObstaclePolygon(data)
 {
@@ -32,7 +31,7 @@ ObstacleRectangle::ObstacleRectangle(
     data_->length_x = length_x;
     data_->length_y = length_y;
     data_->bounding_box_margin = bounding_box_margin;
-    data_->bounding_box_points_number = bounding_box_points_number;
+    data_->bounding_box_points_number = 4;
 
     // Calculate the radius as half of the rectangle's diagonal.
     data_->radius = std::sqrt(length_x * length_x + length_y * length_y) / 2;
