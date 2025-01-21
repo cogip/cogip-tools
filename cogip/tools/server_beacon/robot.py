@@ -104,11 +104,11 @@ class Robot:
                     strategy: actions.Strategy | None = None
                     match robot_id:
                         case 2:
-                            strategy = actions.Strategy.PAMI2
+                            strategy = actions.Strategy.Pami2
                         case 3:
-                            strategy = actions.Strategy.PAMI3
+                            strategy = actions.Strategy.Pami3
                         case 4:
-                            strategy = actions.Strategy.PAMI4
+                            strategy = actions.Strategy.Pami4
 
                     if strategy:
                         await robot.sio.emit(
