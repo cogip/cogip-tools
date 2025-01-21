@@ -161,7 +161,7 @@ class SocketioController(QtCore.QObject):
 
     @qtSlot(int, bool)
     def starter_changed(self, robot_id, pushed: bool):
-        self.sio.emit("starter_changed", pushed, namespace="/monitor")
+        self.sio.emit("starter_changed", pushed, namespace="/dashboard")
 
     def on_menu(self, menu_name: str, data):
         menu = models.ShellMenu.model_validate(data)
@@ -334,7 +334,7 @@ class SocketioController(QtCore.QObject):
             """
             self.signal_planner_reset.emit()
 
-        @self.sio.on("starter_changed", namespace="/monitor")
+        @self.sio.on("starter_changed", namespace="/dashboard")
         def on_starter_changed(robot_id: int, pushed: bool) -> None:
             """
             Change the state of a starter.

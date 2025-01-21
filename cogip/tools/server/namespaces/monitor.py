@@ -31,9 +31,3 @@ class MonitorNamespace(socketio.AsyncNamespace):
     def on_disconnect(self, sid):
         self.context.monitor_sid = None
         logger.info("Monitor disconnected.")
-
-    async def on_starter_changed(self, sid, pushed: bool):
-        """
-        Callback on starter_changed message.
-        """
-        await self.emit("starter_changed", pushed, namespace="/planner")

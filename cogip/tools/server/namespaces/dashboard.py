@@ -97,3 +97,10 @@ class DashboardNamespace(socketio.AsyncNamespace):
         namespace = data.pop("namespace")
         await self.emit("wizard", data, namespace=namespace)
         await self.emit("close_wizard")
+
+    async def on_starter_changed(self, sid, pushed: bool):
+        """
+        Callback on starter_changed message.
+        """
+        await self.emit("starter_changed", pushed, namespace="/planner")
+        await self.emit("starter_changed", (self.context.robot_id, pushed), namespace="/dashboard", skip_sid=[sid])
