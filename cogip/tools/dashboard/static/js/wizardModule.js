@@ -315,8 +315,8 @@ function createChoiceButton(inputType, choice, value, index) {
     class:
       "w-[15px] h-[15px] me-2 rounded-md inline-block bg-white checked:accent-red-cogip",
     value: choice,
-    checked: isChecked,
   });
+  if (isChecked) button.checked = true
   return button;
 }
 // Helper function to create labels for choice inputs
