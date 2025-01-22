@@ -156,12 +156,52 @@ class ChoiceWizard(QtCore.QObject):
         layout = QtWidgets.QVBoxLayout()
         parent.setLayout(layout)
 
-        self.buttons = QtWidgets.QButtonGroup(layout)
+        # Normalize choice and group by category as dict[category, list[tuple[value, name]]].
+        # Register a dict to convert name to value.
+        choices: dict[str, list[tuple[str, str]]] = dict()
+        self.name_value_dict: dict[str, str] = dict()
         for v in wizard["choices"]:
-            button = QtWidgets.QRadioButton(str(v))
-            self.buttons.addButton(button)
-            button.setChecked(v == wizard["value"])
-            layout.addWidget(button)
+            if not isinstance(v, list):
+                value, category, name = (v, "Other", v)
+            elif isinstance(v, list):
+                if len(v) == 2:
+                    value, category, name = (v[0], v[1], v[0])
+                elif len(v) == 3:
+                    value, category, name = v
+                else:
+                    logger.warning(f"Unknown value for 'choice_str': {v}")
+                    continue
+
+            if category not in choices:
+                choices[category] = list()
+            choices[category].append((str(value), str(name)))
+
+            self.name_value_dict[str(name)] = str(value)
+
+        self.tab_widget = QtWidgets.QTabWidget()
+        self.tab_widget.setTabBarAutoHide(True)
+        self.tab_widget.setSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred)
+        layout.addWidget(self.tab_widget)
+
+        self.button_groups: dict[str, QtWidgets.QButtonGroup] = dict()
+
+        for category, choices in choices.items():
+            if category not in self.button_groups:
+                tab = QtWidgets.QWidget()
+                tab_layout = QtWidgets.QVBoxLayout(tab)
+                tab_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+                tab.setLayout(tab_layout)
+                self.button_groups[category] = QtWidgets.QButtonGroup(tab)
+                self.tab_widget.addTab(tab, category)
+            button_group = self.button_groups[category]
+            for value, name in choices:
+                button = QtWidgets.QRadioButton(str(name), tab)
+                button_group.addButton(button)
+                if value == str(wizard["value"]):
+                    button.setChecked(True)
+                    self.tab_widget.setCurrentWidget(tab)
+                tab_layout.addWidget(button)
+
         send_button = QtWidgets.QPushButton("Send")
         layout.addWidget(send_button)
         send_button.clicked.connect(self.send)
@@ -171,7 +211,14 @@ class ChoiceWizard(QtCore.QObject):
         """
         Send chosen value to parent dialog on Send button click.
         """
-        self.response.emit(self.buttons.checkedButton().text())
+        index = self.tab_widget.currentIndex()
+        category = self.tab_widget.tabText(index)
+        buttons = self.button_groups[category]
+        button = buttons.checkedButton()
+        if button:
+            name = button.text()
+            value = self.name_value_dict[name]
+            self.response.emit(value)
 
 
 class SelectWizard(QtCore.QObject):
