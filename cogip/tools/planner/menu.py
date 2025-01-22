@@ -28,6 +28,7 @@ wizard_test_menu = models.ShellMenu(
         models.MenuEntry(cmd="wizard_choice_integer", desc="Choice Integer"),
         models.MenuEntry(cmd="wizard_choice_floating", desc="Choice Float"),
         models.MenuEntry(cmd="wizard_choice_str", desc="Choice String"),
+        models.MenuEntry(cmd="wizard_choice_str_group", desc="Choice String Group"),
         models.MenuEntry(cmd="wizard_select_integer", desc="Select Integer"),
         models.MenuEntry(cmd="wizard_select_floating", desc="Select Float"),
         models.MenuEntry(cmd="wizard_select_str", desc="Select String"),
