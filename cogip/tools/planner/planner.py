@@ -986,7 +986,18 @@ class Planner:
                 message = {
                     "name": "Wizard Test Choice String",
                     "type": "choice_str",
-                    "choices": ["one", "two", "tree"],
+                    "choices": ["one", "two", "three"],
+                    "value": "two",
+                }
+            case "wizard_choice_str_group":
+                message = {
+                    "name": "Wizard Test Choice String",
+                    "type": "choice_str",
+                    "choices": [
+                        ("one", "Group A", "One"),
+                        ("two", "Group A", "Two"),
+                        ("three", "Group B", "Three"),
+                    ],
                     "value": "two",
                 }
             case "wizard_select_integer":
