@@ -1,5 +1,6 @@
 import asyncio
 import platform
+import re
 import time
 import traceback
 from functools import partial
@@ -809,12 +810,16 @@ class Planner:
         Choose strategy command from the menu.
         Send strategy wizard message.
         """
+        choices: list[tuple[str, str, str]] = []  # list of (category, value, name). Name can be used for display.
+        for strategy in Strategy:
+            split = re.findall(r"[A-Z][a-z]*|[a-z]+|[0-9]+", strategy.name)
+            choices.append((strategy.name, split[0], " ".join(split)))
         await self.sio_ns.emit(
             "wizard",
             {
                 "name": "Choose Strategy",
                 "type": "choice_str",
-                "choices": [e.name for e in Strategy],
+                "choices": choices,
                 "value": self.game_context.strategy.name,
             },
         )
