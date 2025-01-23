@@ -193,7 +193,7 @@
         });
 
       // add event listener on click for starter input
-      document.querySelector("#starter input").addEventListener("click", function () {
+      document.querySelector("#starter input")?.addEventListener("click", function () {
         socket.emit("starter_changed", this.checked);
       });
 
