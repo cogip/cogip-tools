@@ -26,6 +26,9 @@ class DashboardNamespace(socketio.AsyncNamespace):
         if self.context.shell_menu:
             await self.emit("shell_menu", (self.context.robot_id, self.context.shell_menu.model_dump()), to=sid)
 
+        if self.context.virtual:
+            await self.emit("virtual", (self.context.robot_id, self.context.virtual), to=sid)
+
     def on_disconnect(self, sid):
         logger.info("Dashboard disconnected.")
 
@@ -97,3 +100,10 @@ class DashboardNamespace(socketio.AsyncNamespace):
         namespace = data.pop("namespace")
         await self.emit("wizard", data, namespace=namespace)
         await self.emit("close_wizard")
+
+    async def on_starter_changed(self, sid, pushed: bool):
+        """
+        Callback on starter_changed message.
+        """
+        await self.emit("starter_changed", pushed, namespace="/planner")
+        await self.emit("starter_changed", (self.context.robot_id, pushed), namespace="/dashboard", skip_sid=[sid])

@@ -623,7 +623,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def starter_changed(self, robot_id: int, checked: bool):
         if starter_checkbox := self.robot_starters.get(robot_id):
+            enabled = starter_checkbox.isEnabled()
+            starter_checkbox.setEnabled(False)
             starter_checkbox.setChecked(checked)
+            starter_checkbox.setEnabled(enabled)
 
     def closeEvent(self, event: QtGui.QCloseEvent):
         settings = QtCore.QSettings("COGIP", "monitor")

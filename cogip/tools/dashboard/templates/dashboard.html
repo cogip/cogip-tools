@@ -53,15 +53,20 @@
       </div>
 
       <footer class="mt-auto bg-zinc-900 text-grey-color mx-2">
-        <div class="container-lg pt-2">
-          <span class="text-muted float-left" id="connection">
+        <div class="container-lg pt-2 flex items-center justify-between">
+          <span class="text-muted inline" id="connection">
             <pre
-              class="text-grey-color text-sm inline"><img class="mr-5 w-[20px] inline" src="{{ url_for('static', path='img/cross_red_circle.svg') }}" /></pre>
+              class="text-grey-color text-sm"><img class="mr-5 w-[20px]" src="{{ url_for('static', path='img/cross_red_circle.svg') }}" /></pre>
           </span>
           {% if robot_id != 0 %}
-          <span class="text-muted float-right inline" id="state">
+          <span class="text-muted text-sm inline" id="state">
             <pre id="state_robot"></pre>
             <pre id="order_robot"></pre>
+          </span>
+          <span class="text-muted text-sm z-10" id="starter">
+            <label>
+              <input type="checkbox" class="checked:accent-red-cogip checked:border-red-cogip" disabled> Starter
+            </label>
           </span>
           {% endif %}
         </div>
@@ -147,8 +152,12 @@
       socket.on("connect", function () {
         socketModule.onConnection(this);
       })
-        .on("disconnect", function () {
+      .on("disconnect", function () {
           socketModule.onDisconnect();
+        })
+        .on("virtual", function (robot_id, msg) {
+          console.log(!msg)
+          document.querySelector("#starter input").disabled = !msg;
         })
         .on("tool_menu", function (menu) {
           socketModule.onMenu(menu, "tool", this);
@@ -178,7 +187,15 @@
         })
         .on("obstacles", function (robot_id, msg) {
           drawModule.updateObstacles(robot_id, msg);
+        })
+        .on("starter_changed", function(robot_id, pushed) {
+          document.querySelector("#starter input").checked = pushed;
         });
+
+      // add event listener on click for starter input
+      document.querySelector("#starter input").addEventListener("click", function () {
+        socket.emit("starter_changed", this.checked);
+      });
 
       if (robotId !== 0) {
         import("../static/js/scoreModule.js").then((scoreModule) => {
@@ -218,7 +235,6 @@
           console.log(`Delete robot ${robot_id} dashboard`);
           drawModule.deleteTab(robot_id);
         })
-
       }
     });
 
