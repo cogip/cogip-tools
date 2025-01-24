@@ -105,7 +105,20 @@ def avoidance_process(
             shared_obstacles_lock.finish_reading()
 
         if shared_properties["avoidance_strategy"] == AvoidanceStrategy.AvoidanceCpp:
-            path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
+            shared_properties["last_avoidance_pose_current"] = (pose_current.x, pose_current.y)
+
+            # Recreate obstacles list
+            avoidance.cpp_avoidance.clear_dynamic_obstacles()
+            for obstacle in dyn_obstacles:
+                avoidance.cpp_avoidance.add_dynamic_obstacle(obstacle)
+
+            # Path is recomputed only if the pose order is reachable or an obstacle prevents
+            # to reach next path pose.
+            if (not avoidance.check_recompute(pose_current, pose_order) and last_emitted_pose_order != pose_order) \
+                    or last_emitted_pose_order is None \
+                    or avoidance.check_recompute(pose_current, last_emitted_pose_order):
+                logger.info("Avoidance: compute path")
+                path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
         else:
             if any([obstacle.is_point_inside(pose_current.x, pose_current.y) for obstacle in dyn_obstacles]):
                 logger.debug("Avoidance: pose current in obstacle")

@@ -113,14 +113,14 @@ private:
     void build_avoidance_graph();
 
     /// @brief Prints the graph for debugging purposes.
-    void print_graph() const;
+    void print_graph();
 
     /// @brief Prints the computed path for debugging purposes.
-    void print_path() const;
+    void print_path();
 
     /// @brief Prints the parent map used in pathfinding algorithms.
     /// @param parent The map of parent nodes.
-    static void _print_parents(const std::map<int, int>& parent);
+    void print_parents(const std::map<int, int>& parent);
 
     /// @brief Executes Dijkstra's algorithm on the graph to find the shortest path.
     /// @return True if a path was found, false otherwise.

@@ -25,26 +25,27 @@ namespace cogip {
 namespace avoidance {
 
 Avoidance::Avoidance(const cogip::obstacles::ObstaclePolygon& borders)
-    : is_avoidance_computed_(false), borders_(borders), logger_("Avoidance") {
+    : is_avoidance_computed_(false), borders_(borders),
+    logger_("Avoidance", cogip::logger::LogLevel::INFO) {
 }
 
 bool Avoidance::avoidance(const models::Coords& start,
                           const models::Coords& finish) {
-    std::cout << "avoidance: Starting computation" << std::endl;
+    logger_.debug() << "avoidance: Starting computation" << std::endl;
 
     // Initialize start and finish poses
     start_pose_ = start;
     finish_pose_ = finish;
     is_avoidance_computed_ = false;
 
-    std::cout << "start = " << start << std::endl;
-    std::cout << "start_pose_ = " << start_pose_ << std::endl;
-    std::cout << "finish = " << finish << std::endl;
-    std::cout << "finish_pose_ = " << finish_pose_ << std::endl;
+    logger_.debug() << "start = " << start << std::endl;
+    logger_.debug() << "start_pose_ = " << start_pose_ << std::endl;
+    logger_.debug() << "finish = " << finish << std::endl;
+    logger_.debug() << "finish_pose_ = " << finish_pose_ << std::endl;
 
     // Validate that the finish pose is inside borders
     if (!borders_.is_point_inside(finish_pose_)) {
-        std::cerr << "avoidance: Finish pose is outside the borders!" << std::endl;
+        logger_.error() << "avoidance: Finish pose is outside the borders!" << std::endl;
         return false;
     }
 
@@ -52,7 +53,7 @@ bool Avoidance::avoidance(const models::Coords& start,
     for (const auto& obstacle : dynamic_obstacles_) {
         auto& current_obstacle = obstacle.get();
         if (current_obstacle.is_point_inside(finish_pose_)) {
-            std::cerr << "avoidance: Finish pose is inside an obstacle!" << std::endl;
+            logger_.error() << "avoidance: Finish pose is inside an obstacle!" << std::endl;
             return false;
         }
         if (current_obstacle.is_point_inside(start_pose_)) {
@@ -60,22 +61,22 @@ bool Avoidance::avoidance(const models::Coords& start,
         }
     }
 
-    std::cout << "avoidance: Poses validated" << std::endl;
+    logger_.debug() << "avoidance: Poses validated" << std::endl;
 
     // Prepare valid points for pathfinding
     valid_points_ = {start_pose_, finish_pose_};
-    std::cout << "valid_points_[0] = " << valid_points_[0] << std::endl;
-    std::cout << "valid_points_[1] = " << valid_points_[1] << std::endl;
+    logger_.debug() << "valid_points_[0] = " << valid_points_[0] << std::endl;
+    logger_.debug() << "valid_points_[1] = " << valid_points_[1] << std::endl;
 
     // Build avoidance graph and compute path using Dijkstra
-    std::cout << "avoidance: Building graph and computing path" << std::endl;
+    logger_.debug() << "avoidance: Building graph and computing path" << std::endl;
     build_avoidance_graph();
 
     bool ret = dijkstra();
     if (ret) {
-        std::cout << "avoidance: Path successfully computed" << std::endl;
+        logger_.debug() << "avoidance: Path successfully computed" << std::endl;
     } else {
-        std::cerr << "avoidance: Failed to compute path" << std::endl;
+        logger_.error() << "avoidance: Failed to compute path" << std::endl;
     }
 
     return ret;
@@ -125,15 +126,15 @@ void Avoidance::validate_obstacle_points()
         }
     }
 
-    std::cout << "validate_obstacle_points: number of valid points = " << valid_points_.size() << std::endl;
-    // for (const auto& point : valid_points_) {
-    //    std::cout << "{" << point << "}" << std::endl;
-    // }
+    logger_.debug() << "validate_obstacle_points: number of valid points = " << valid_points_.size() << std::endl;
+    for (const auto& point : valid_points_) {
+        logger_.debug() << "{" << point << "}" << std::endl;
+    }
 }
 
 void Avoidance::build_avoidance_graph()
 {
-    std::cout << "build_avoidance_graph: build avoidance graph" << std::endl;
+    logger_.debug() << "build_avoidance_graph: build avoidance graph" << std::endl;
 
     validate_obstacle_points();
     graph_.clear();
@@ -162,13 +163,13 @@ void Avoidance::build_avoidance_graph()
         }
     }
 
-    //print_graph();
+    print_graph();
 }
 
 bool Avoidance::dijkstra()
 {
     constexpr double MAX_DISTANCE = std::numeric_limits<double>::infinity();
-    std::cout << "dijkstra: Compute Dijkstra" << std::endl;
+    logger_.debug() << "dijkstra: Compute Dijkstra" << std::endl;
 
     std::map<int, bool> checked;
     std::map<int, double> distances;
@@ -186,7 +187,7 @@ bool Avoidance::dijkstra()
     distances[start] = 0;
 
     if (graph_.find(start) == graph_.end() || graph_[start].empty()) {
-        std::cerr << "dijkstra: Start pose has no reachable neighbors!" << std::endl;
+        logger_.error() << "dijkstra: Start pose has no reachable neighbors!" << std::endl;
         is_avoidance_computed_ = false;
         return false;
     }
@@ -211,13 +212,13 @@ bool Avoidance::dijkstra()
         }
 
         if (min_distance == MAX_DISTANCE) {
-            std::cerr << "dijkstra: No more points to check!" << std::endl;
+            logger_.error() << "dijkstra: No more points to check!" << std::endl;
             is_avoidance_computed_ = false;
             return false;
         }
     }
 
-    //_print_parents(parents);
+    print_parents(parents);
 
     int current = parents[finish];
     while (current != -1 && current != start) {
@@ -227,7 +228,7 @@ bool Avoidance::dijkstra()
     path_.emplace_front(valid_points_[start]);
 
     is_avoidance_computed_ = true;
-    //print_path();
+    print_path();
     return true;
 }
 
@@ -250,32 +251,32 @@ void Avoidance::clear_dynamic_obstacles() {
     dynamic_obstacles_.clear();
 }
 
-void Avoidance::print_graph() const {
+void Avoidance::print_graph() {
     for (const auto& [node, edges] : graph_) {
-        std::cout << "Point " << node << "("
-                  << valid_points_[node].x() << ", "
-                  << valid_points_[node].y() << ") -> { ";
+        logger_.debug() << "Point " << node << "("
+                        << valid_points_[node].x() << ", "
+                        << valid_points_[node].y() << ") -> { ";
         for (const auto& [neighbor, distance] : edges) {
-            std::cout << "(" << neighbor << ": " << distance << ") ";
+            logger_.debug() << "(" << neighbor << ": " << distance << ") ";
         }
-        std::cout << "}" << std::endl;
+        logger_.debug() << "}" << std::endl;
     }
 }
 
-void Avoidance::print_path() const {
-    std::cout << "Path (size = " << path_.size() << "): ";
+void Avoidance::print_path() {
+    logger_.debug() << "Path (size = " << path_.size() << "): ";
     for (const auto& coords : path_) {
-        std::cout << "(" << coords.get().x() << ", " << coords.get().y() << ") ";
+        logger_.debug() << "(" << coords.get().x() << ", " << coords.get().y() << ") ";
     }
-    std::cout << std::endl;
+    logger_.debug() << std::endl;
 }
 
-void Avoidance::_print_parents(const std::map<int, int>& parents) {
-    std::cout << "Parents: ";
+void Avoidance::print_parents(const std::map<int, int>& parents) {
+    logger_.debug() << "Parents: ";
     for (const auto& [child, parent] : parents) {
-        std::cout << "(" << child << ", " << parent << ") ";
+        logger_.debug() << "(" << child << ", " << parent << ") ";
     }
-    std::cout << std::endl;
+    logger_.debug() << std::endl;
 }
 
 const cogip::obstacles::ObstaclePolygon& Avoidance::borders() const {

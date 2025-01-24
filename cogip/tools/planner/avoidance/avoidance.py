@@ -65,9 +65,6 @@ class Avoidance:
                 path = [models.PathPose(**pose_current.model_dump()), goal.model_copy()]
             case AvoidanceStrategy.AvoidanceCpp:
                 path = [models.PathPose(**pose_current.model_dump())]
-                self.cpp_avoidance.clear_dynamic_obstacles()
-                for obstacle in obstacles:
-                    self.cpp_avoidance.add_dynamic_obstacle(obstacle)
                 res = self.cpp_avoidance.avoidance(
                     SharedCoord(pose_current.x, pose_current.y),
                     SharedCoord(goal.x, goal.y),
@@ -82,8 +79,11 @@ class Avoidance:
                         )
                         pose.bypass_final_orientation = True
                         path.append(pose)
-                    while len(path) > 1 and math.dist((path[1].x, path[1].y), (pose_current.x, pose_current.y)) < 10:
-                        del path[1]
+
+                    # Remove duplicates
+                    path = [p for i, p in enumerate(path) if (p.x, p.y) not in {(p2.x, p2.y) for p2 in path[:i]}]
+
+                    # Append final pose order
                     path.append(goal.model_copy())
                 else:
                     path = []

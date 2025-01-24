@@ -38,7 +38,7 @@ x-watch-python: &watch-python
 x-watch-cpp: &watch-cpp
   path: ./cogip/cpp
   action: sync+restart
-  target: /src/cogip
+  target: /src/cogip/cpp
 
 x-watch-cmake-root: &watch-cmake-root
   path: ./CMakeLists.txt
