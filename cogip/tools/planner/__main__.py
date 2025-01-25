@@ -105,7 +105,7 @@ def main_opt(
     path_refresh_interval: Annotated[
         float,
         typer.Option(
-            min=0.1,
+            min=0.001,
             max=2.0,
             help="Interval between each update of robot paths (in seconds)",
             envvar="PLANNER_PATH_REFRESH_INTERVAL",

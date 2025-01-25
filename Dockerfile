@@ -57,7 +57,7 @@ RUN group_exists=$(getent group ${GID} || true) && echo $group_exists \
  && user_exists=$(getent passwd ${UID} || true) \
  && if [ -z "$user_exists" ]; then useradd -u ${UID} -g ${GID} -m cogip_user; fi
 
- ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
+ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
 ADD cogip /src/cogip
 RUN uv sync --frozen
 
