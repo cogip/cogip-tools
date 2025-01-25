@@ -40,7 +40,7 @@ class RobotEntity(AssetEntity):
         Inherits [AssetEntity][cogip.entities.asset.AssetEntity].
         """
         self.win = win
-        asset_path = Path(f"assets/{'robot' if robot_id == 1 else 'pami'}2024.dae")
+        asset_path = Path(f"assets/{'robot' if robot_id == 1 else 'pami'}2025.dae")
         super().__init__(asset_path, parent=parent)
         self.robot_id = robot_id
         self.sensors: list[Sensor] = []

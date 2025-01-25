@@ -21,7 +21,7 @@ class RobotOrderEntity(Qt3DCore.QEntity):
         super().__init__(parent)
 
         mesh = Qt3DRender.QMesh(self)
-        mesh.setSource(QtCore.QUrl(f"file:assets/{'robot' if robot_id == 1 else 'pami'}2024.stl"))
+        mesh.setSource(QtCore.QUrl(f"file:assets/{'robot' if robot_id == 1 else 'pami'}2025.stl"))
 
         self.transform = Qt3DCore.QTransform(self)
 
