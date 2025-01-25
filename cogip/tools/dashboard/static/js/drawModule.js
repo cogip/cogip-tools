@@ -5,6 +5,7 @@ const robotColors = {
   2: "#3A5431",
   3: "#432D57",
   4: "#001DBC",
+  5: "#6D1F00",
 };
 
 let ratioX = null, ratioY = null,  coordX = 0, coordY = 0;
