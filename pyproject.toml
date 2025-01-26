@@ -15,6 +15,7 @@ dependencies = [
     "cython-cmake~=0.2.1",
     "devtools==0.12.2",
     "fastapi==0.115.2",
+    "getch~=1.0",
     "gpiozero==2.0.1",
     "httpx==0.26.0",
     "Jinja2==3.1.2",
@@ -37,7 +38,7 @@ dependencies = [
     "requests==2.31.0",
     "sentry-sdk==1.39.1",
     "toposort==1.10",
-    "typer[all]==0.9.0",
+    "typer==0.15.1",
     "uvicorn[standard]==0.24.0.post1",
     "v4l2py==3.0.0",
     "VL53L1X==0.0.5",
@@ -83,6 +84,7 @@ cogip-cpp-cython-example = "cogip.tools.cpp_cython_example.__main__:main"
 cogip-cpp-nanobind-example = "cogip.tools.cpp_nanobind_example.__main__:main"
 cogip-lidar-ld19 = "cogip.tools.lidar_ld19.__main__:main"
 cogip-cpp-shm-example = "cogip.tools.cpp_shm_example.__main__:main"
+cogip-scservo = "cogip.tools.scservo.__main__:main"
 
 [tool.uv]
 python-preference = "only-managed"
