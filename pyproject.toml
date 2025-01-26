@@ -137,6 +137,7 @@ exclude = [
     "tests",
     "doc",
     "cogip/protobuf",
+    "cogip/scservo_sdk",
 ]
 select = [
     "E",  # pycodestyle errors
