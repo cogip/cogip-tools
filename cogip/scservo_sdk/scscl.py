@@ -90,6 +90,12 @@ class scscl(protocol_packet_handler):
     def RegAction(self):
         return self.action(BROADCAST_ID)
 
+    def ServoMode(self, scs_id):
+        txpacket = [self.scs_lobyte(20), self.scs_hibyte(20)]
+        self.writeTxRx(scs_id, SCSCL_MIN_ANGLE_LIMIT_L, len(txpacket), txpacket)
+        txpacket = [self.scs_lobyte(1003), self.scs_hibyte(1003)]
+        return self.writeTxRx(scs_id, SCSCL_MAX_ANGLE_LIMIT_L, len(txpacket), txpacket)
+
     def PWMMode(self, scs_id):
         txpacket = [0, 0, 0, 0]
         return self.writeTxRx(scs_id, SCSCL_MIN_ANGLE_LIMIT_L, len(txpacket), txpacket)
