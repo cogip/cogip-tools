@@ -1,12 +1,12 @@
 version = 1
 requires-python = ">=3.12"
 resolution-markers = [
-    "python_full_version < '3.13' and platform_system == 'Darwin'",
-    "python_full_version >= '3.13' and platform_system == 'Darwin'",
-    "python_full_version < '3.13' and platform_machine == 'aarch64' and platform_system == 'Linux'",
-    "python_full_version >= '3.13' and platform_machine == 'aarch64' and platform_system == 'Linux'",
-    "(python_full_version < '3.13' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version < '3.13' and platform_system != 'Darwin' and platform_system != 'Linux')",
-    "(python_full_version >= '3.13' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version >= '3.13' and platform_system != 'Darwin' and platform_system != 'Linux')",
+    "python_full_version < '3.13' and sys_platform == 'darwin'",
+    "python_full_version >= '3.13' and sys_platform == 'darwin'",
+    "python_full_version < '3.13' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version >= '3.13' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "(python_full_version < '3.13' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.13' and sys_platform != 'darwin' and sys_platform != 'linux')",
+    "(python_full_version >= '3.13' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.13' and sys_platform != 'darwin' and sys_platform != 'linux')",
 ]
 
 [[package]]
@@ -231,7 +231,7 @@ name = "click"
 version = "8.1.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "platform_system == 'Windows'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/96/d3/f04c7bfcf5c1862a2a5b845c6b2b360488cf47af55dfa79c98f6a6bf98b5/click-8.1.7.tar.gz", hash = "sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de", size = 336121 }
 wheels = [
@@ -249,6 +249,7 @@ dependencies = [
     { name = "cython-cmake" },
     { name = "devtools" },
     { name = "fastapi" },
+    { name = "getch" },
     { name = "gpiozero" },
     { name = "httpx" },
     { name = "jinja2" },
@@ -271,7 +272,7 @@ dependencies = [
     { name = "requests" },
     { name = "sentry-sdk" },
     { name = "toposort" },
-    { name = "typer", extra = ["all"] },
+    { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "v4l2py" },
     { name = "vl53l1x" },
@@ -303,6 +304,7 @@ requires-dist = [
     { name = "cython-cmake", specifier = "~=0.2.1" },
     { name = "devtools", specifier = "==0.12.2" },
     { name = "fastapi", specifier = "==0.115.2" },
+    { name = "getch", specifier = ">=1.0" },
     { name = "gpiozero", specifier = "==2.0.1" },
     { name = "httpx", specifier = "==0.26.0" },
     { name = "jinja2", specifier = "==3.1.2" },
@@ -325,7 +327,7 @@ requires-dist = [
     { name = "requests", specifier = "==2.31.0" },
     { name = "sentry-sdk", specifier = "==1.39.1" },
     { name = "toposort", specifier = "==1.10" },
-    { name = "typer", extras = ["all"], specifier = "==0.9.0" },
+    { name = "typer", extras = ["all"], specifier = "==0.15.1" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.24.0.post1" },
     { name = "v4l2py", specifier = "==3.0.0" },
     { name = "vl53l1x", specifier = "==0.0.5" },
@@ -577,6 +579,12 @@ wheels = [
 ]
 
 [[package]]
+name = "getch"
+version = "1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/a4/c696c05e0ff9d05b1886cb0210101083db7d330ff964a6d7cd98ad2b2064/getch-1.0.tar.gz", hash = "sha256:a6c22717c10051ce65b8fb7bddb171af705b1175e694a73be956990f6089d8b1", size = 1302 }
+
+[[package]]
 name = "ghp-import"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -759,9 +767,9 @@ dependencies = [
     { name = "cbor2" },
     { name = "pillow" },
     { name = "pyftdi" },
-    { name = "rpi-gpio", marker = "platform_system == 'Linux'" },
+    { name = "rpi-gpio", marker = "sys_platform == 'linux'" },
     { name = "smbus2" },
-    { name = "spidev", marker = "platform_system == 'Linux'" },
+    { name = "spidev", marker = "sys_platform == 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/64/fe/026b50adfedf0d6bef583f8b005ad7e75b6501c973fad77a871d020fb63f/luma.core-2.4.2.tar.gz", hash = "sha256:963c264164d4374f549d57db09599e0ca458cea1bd05e16939897619be4e6dbd", size = 102578 }
 wheels = [
@@ -880,7 +888,7 @@ version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
-    { name = "colorama", marker = "platform_system == 'Windows'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
     { name = "ghp-import" },
     { name = "jinja2" },
     { name = "markdown" },
@@ -1463,9 +1471,9 @@ name = "python-can"
 version = "4.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "msgpack", marker = "platform_system != 'Windows'" },
+    { name = "msgpack", marker = "sys_platform != 'win32'" },
     { name = "packaging" },
-    { name = "pywin32", marker = "platform_python_implementation == 'CPython' and platform_system == 'Windows'" },
+    { name = "pywin32", marker = "platform_python_implementation == 'CPython' and sys_platform == 'win32'" },
     { name = "typing-extensions" },
     { name = "wrapt" },
 ]
@@ -1787,22 +1795,17 @@ wheels = [
 
 [[package]]
 name = "typer"
-version = "0.9.0"
+version = "0.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5b/49/39f10d0f75886439ab3dac889f14f8ad511982a754e382c9b6ca895b29e9/typer-0.9.0.tar.gz", hash = "sha256:50922fd79aea2f4751a8e0408ff10d2662bd0c8bbfa84755a699f3bada2978b2", size = 273985 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/0e/c68adf10adda05f28a6ed7b9f4cd7b8e07f641b44af88ba72d9c89e4de7a/typer-0.9.0-py3-none-any.whl", hash = "sha256:5d96d986a21493606a358cae4461bd8cdf83cbf33a5aa950ae629ca3b51467ee", size = 45861 },
-]
-
-[package.optional-dependencies]
-all = [
-    { name = "colorama" },
     { name = "rich" },
     { name = "shellingham" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cb/ce/dca7b219718afd37a0068f4f2530a727c2b74a8b6e8e0c0080a4c0de4fcd/typer-0.15.1.tar.gz", hash = "sha256:a0588c0a7fa68a1978a069818657778f86abe6ff5ea6abf472f940a08bfe4f0a", size = 99789 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d0/cc/0a838ba5ca64dc832aa43f727bd586309846b0ffb2ce52422543e6075e8a/typer-0.15.1-py3-none-any.whl", hash = "sha256:7994fb7b8155b64d3402518560648446072864beefd44aa2dc36972a5972e847", size = 44908 },
 ]
 
 [[package]]
