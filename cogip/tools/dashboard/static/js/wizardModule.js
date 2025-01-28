@@ -21,7 +21,8 @@ export function openWizardModal(msg, send_socket) {
 
   // Remove existing close button if any
   removeElement("closeButton");
-
+  removeElement("tabContainer"); // Remove any previous input zones
+  removeElement("tabContentDiv"); // Remove any previous input zones
   removeElement("msg-img");
   displayHeaderModal(
     msg.type === "message" || msg.type === "camp" || msg.type === "camera",
@@ -279,28 +280,121 @@ function configureCheckboxInput(wizardInput, value) {
 
 // Function to configure choice-based inputs (radio or checkbox)
 function configureChoiceInput(typeInput, value, choices) {
-  const choiceZone = document.createElement("div");
-  setAttributes(choiceZone, {
-    id: "newZone",
-    class: "max-h-[70vh] overflow-y-auto text-left",
-  });
-
   const inputType = typeInput === "radio" ? "radio" : "checkbox";
 
-  choices.forEach((choice, index) => {
-    const button = createChoiceButton(inputType, choice, value, index); // Create a button for each choice
-    const label = createChoiceLabel(choice, index); // Create a label for each choice
+  // Check if `choices` is a nested array
+  if (Array.isArray(choices[0]) && choices[0].length === 3) {
+    // Group choices by tabs (second element in each sub-array)
+    const tabGroups = choices.reduce((acc, [inputValue, tab, label]) => {
+      if (!acc[tab]) acc[tab] = [];
+      acc[tab].push({ inputValue, label }); // Store both `value` and `label` for each choice
+      return acc;
+    }, {});
 
-    // Add a margin to each choice (e.g., 8px space between each)
-    const choiceWrapper = document.createElement("div");
-    setAttributes(choiceWrapper, { class: "flex items-center mb-2" }); // mb-2 adds 8px margin at the bottom
-    choiceWrapper.appendChild(button);
-    choiceWrapper.appendChild(label);
+    // Create a container for tabs
+    removeElement("tabContainer");
+    const tabContainer = document.createElement("div");
+    setAttributes(tabContainer, { id: "tabContainer", class: "tab-container" });
 
-    choiceZone.appendChild(choiceWrapper); // Append the choice with extra margin
+    removeElement("tabContentDiv");
+    const tabContentDiv = document.createElement("div");
+    setAttributes(tabContentDiv, { id: "tabContentDiv" });
+
+    // Iterate through the tab groups to create tabs and their content
+    Object.entries(tabGroups).forEach(([tab, labels], tabIndex) => {
+      // Create tab button
+      const tabButton = document.createElement("button");
+      setAttributes(tabButton, {
+        class: `tab-button px-4 py-2 text-sm font-semibold border-b-2 ${
+          tabIndex === 0
+            ? "border-red-cogip text-red-cogip"
+            : " text-gray-600 border-transparent"
+        } hover:border-red-cogip hover:text-red-cogip focus:outline-none`,
+      });
+      tabButton.textContent = tab;
+      tabContainer.appendChild(tabButton);
+
+      // Create tab content container
+      const tabContent = document.createElement("div");
+      setAttributes(tabContent, {
+        id: `tab-content-${tab}`,
+        class: `tab-content ${
+          tabIndex === 0 ? "" : "hidden"
+        } max-h-[70vh] overflow-y-auto mt-4`,
+      });
+
+      // Add choices to the tab content
+      labels.forEach(({ inputValue, label }, index) => {
+        const button = createChoiceButton(inputType, inputValue, value, index); // Create a button for each choice
+        const labelElem = createChoiceLabel(label, index); // Create a label for each choice
+
+        // Wrap button and label in a div
+        const choiceWrapper = document.createElement("div");
+        setAttributes(choiceWrapper, { class: "flex items-center mb-2" });
+        choiceWrapper.appendChild(button);
+        choiceWrapper.appendChild(labelElem);
+
+        tabContent.appendChild(choiceWrapper);
+        tabContentDiv.append(tabContent);
+      });
+
+      modalBody.appendChild(tabContentDiv); // Add tab content to modal body
+    });
+
+    // Add the tab container to the modal body
+    modalBody.insertBefore(tabContainer, tabContentDiv);
+
+    // Attach event listeners to tab buttons
+    document.querySelectorAll(".tab-button").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        showTabContent(event.target.textContent);
+      });
+    });
+  } else {
+    // Handle the simpler case where choices is a flat array
+    const choiceZone = document.createElement("div");
+    setAttributes(choiceZone, {
+      id: "newZone",
+      class: "max-h-[70vh] overflow-y-auto text-left",
+    });
+
+    choices.forEach((choice, index) => {
+      const button = createChoiceButton(inputType, choice, value, index); // Create a button for each choice
+      const label = createChoiceLabel(choice, index); // Create a label for each choice
+
+      // Add a margin to each choice (e.g., 8px space between each)
+      const choiceWrapper = document.createElement("div");
+      setAttributes(choiceWrapper, { class: "flex items-center mb-2" }); // mb-2 adds 8px margin at the bottom
+      choiceWrapper.appendChild(button);
+      choiceWrapper.appendChild(label);
+
+      choiceZone.appendChild(choiceWrapper); // Append the choice with extra margin
+    });
+
+    modalBody.appendChild(choiceZone); // Add choice input to modal body
+  }
+}
+
+// Function to show tab content (tab navigation logic)
+function showTabContent(tab) {
+  // Hide all tab contents
+  document.querySelectorAll(".tab-content").forEach(content => {
+    content.classList.add("hidden");
   });
 
-  document.getElementById("modalBody").appendChild(choiceZone); // Add choice input to modal body
+  // Show the selected tab content
+  document.getElementById(`tab-content-${tab}`).classList.remove("hidden");
+
+  // Update active state for tab buttons
+  document.querySelectorAll(".tab-button").forEach(button => {
+    button.classList.remove("border-red-cogip", "border-b-2");
+  });
+  const elements = Array.from(document.querySelectorAll(".tab-button"));
+  const filtered = elements.filter(
+    (el) => el.textContent.trim() === tab
+  );
+  
+  filtered?.[0].classList.add("border-b-2", "border-red-cogip");
 }
 
 // Helper function to create choice buttons (radio or checkbox)
