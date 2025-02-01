@@ -60,6 +60,7 @@ class SioEvents(socketio.ClientNamespace):
             schema = self._detector.properties.model_json_schema()
             # Add namespace in JSON Schema
             schema["namespace"] = "/detector"
+            schema["sio_event"] = "config_updated"
             # Add current values in JSON Schema
             for prop, value in self._detector.properties.model_dump().items():
                 schema["properties"][prop]["value"] = value

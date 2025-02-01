@@ -73,7 +73,8 @@ class DashboardNamespace(socketio.AsyncNamespace):
 
     async def on_config_updated(self, sid, config: dict[str, Any]) -> None:
         namespace = config.pop("namespace")
-        await self.emit("config_updated", config, namespace=namespace)
+        sio_event = config.pop("sio_event")
+        await self.emit(sio_event, config, namespace=namespace)
 
     async def on_actuators_start(self, sid):
         """
