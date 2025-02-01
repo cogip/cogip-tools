@@ -25,14 +25,16 @@
 
       {% endif %}
       <div class="flex flex-row">
-        <div class="w-1/4 text-center h-minus-footer pt-2.5 pr-1 pl-2.5 border-r border-grey-color" id="menu">
+        <div class="w-1/4 text-center pt-2.5 pr-1 pl-2.5 border-r border-grey-color" id="menu" style="height: calc(100vh - 50px); font-size: 16px;">
           <img src="static/img/cogip-logo.png" class="mx-auto h-10p py-2.5" />
           <div id="nav-tool">
             ...
           </div>
         </div>
 
-        <div class="w-3/4">
+        <div id="handle" class="w-2 bg-gray-500 cursor-ew-resize touch-none"></div>
+
+        <div class="w-3/4" id="divCanvas">
           <canvas id="board" class="mt-2.5 absolute bg-contain"
             style="background-image: url(../static/img/ground2024.png)"></canvas>
 
@@ -153,6 +155,7 @@
       const robotId = parseInt(document.getElementsByTagName('body')[0].dataset.robotId);
 
       drawModule.rightSidebar(); // init sidebar
+      drawModule.resizeMenu(); // init resizable menu
       drawModule.resizeCanvas(); // draw background
       virtualKeyboard.init(); // initialize keyboard
 

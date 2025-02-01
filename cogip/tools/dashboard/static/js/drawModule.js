@@ -341,3 +341,45 @@ export function rightSidebar() {
     }
   });
 }
+
+export function resizeMenu() {
+  const divMenu = document.getElementById("menu");
+  const divCanvas = document.getElementById("divCanvas");
+  const handle = document.getElementById("handle");
+
+  handle.addEventListener("mousedown", startResize);
+
+  function startResize(event) {
+    event.preventDefault();
+    document.addEventListener("mousemove", resize);
+    document.addEventListener("mouseup", stopResize);
+  }
+
+  function resize(event) {
+    event.preventDefault();
+    const clientX = event.clientX;
+    const totalWidth = divMenu.parentElement.clientWidth;
+    let newWidth = Math.min(Math.max((clientX / totalWidth) * 100, 10), 90);
+
+    if (newWidth < 15) newWidth = 15;
+    if (newWidth > 85) newWidth = 85;
+
+    divMenu.style.width = `${newWidth}%`;
+    divCanvas.style.width = `${100 - newWidth}%`;
+
+    const menuWidth = divMenu.clientWidth;
+    divMenu.style.fontSize = `${Math.max(menuWidth / 25, 16)}px`; // Min 16px
+
+    requestAnimationFrame(() => {
+      const height = window.innerHeight - 50;
+      divMenu.style.height = `${height}px`;
+      divCanvas.style.height = `${height}px`;
+      resizeCanvas();
+    });
+  }
+
+  function stopResize() {
+    document.removeEventListener("mousemove", resize);
+    document.removeEventListener("mouseup", stopResize);
+  }
+}
