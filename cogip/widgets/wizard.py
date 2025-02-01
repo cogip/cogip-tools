@@ -343,7 +343,7 @@ class CampWizard(QtCore.QObject):
         self.buttons.addButton(self.button_yellow)
         button_layout.addWidget(self.button_yellow)
 
-        if wizard["value"] == "blue":
+        if wizard["value"] == "yellow":
             self.button_blue.setChecked(True)
         else:
             self.button_yellow.setChecked(True)
@@ -353,7 +353,7 @@ class CampWizard(QtCore.QObject):
 
     @qtSlot()
     def send(self, clicked: bool):
-        color = "blue" if self.button_blue.isChecked() else "yellow"
+        color = "yellow" if self.button_blue.isChecked() else "blue"
         self.response.emit(color)
 
 

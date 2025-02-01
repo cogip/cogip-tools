@@ -36,7 +36,7 @@ class Server:
         self.app = socketio.ASGIApp(self.sio)
         self.sio.register_namespace(namespaces.DashboardNamespace(self))
 
-        self.camp = Camp.Colors.yellow
+        self.camp = Camp.Colors.blue
         self.table = TableEnum.Game
 
         for i in range(1, int(os.environ["SERVER_BEACON_MAX_ROBOTS"]) + 1):
