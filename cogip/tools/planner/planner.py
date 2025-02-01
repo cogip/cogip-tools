@@ -174,6 +174,7 @@ class Planner:
         self.sio_emitter_task: asyncio.Task | None = None
         self.countdown_task: asyncio.Task | None = None
         self.scservos = SCServos(self.scservos_port, scservos_baud_rate)
+        self.pami_event = asyncio.Event()
 
         self.shared_properties: DictProxy = self.process_manager.dict(
             {
@@ -398,6 +399,7 @@ class Planner:
         if available_start_poses and self.start_position not in available_start_poses:
             self.start_position = available_start_poses[(self.robot_id - 1) % len(available_start_poses)]
         await self.set_pose_start(self.game_context.get_start_pose(self.start_position).pose)
+        self.pami_event.clear()
 
     async def task_sio_emitter(self):
         logger.info("Planner: Task SIO Emitter started")
@@ -473,12 +475,26 @@ class Planner:
             last_now = time.time()
             last_countdown = self.game_context.countdown
             while True:
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.2)
                 now = time.time()
                 self.game_context.countdown -= now - last_now
-                logger.debug(f"Planner: countdown = {self.game_context.countdown}")
-                if self.game_context.playing and self.game_context.countdown < 15 and last_countdown > 15:
-                    logger.info("Planner: countdown==15: force blocked")
+                if self.game_context.playing:
+                    logger.info(f"Planner: countdown = {self.game_context.countdown: 3.2f}")
+                if (
+                    self.robot_id > 1
+                    and self.game_context.playing
+                    and self.game_context.countdown < 15
+                    and last_countdown > 15
+                ):
+                    logger.info("Planner: countdown==15: start PAMI")
+                    self.pami_event.set()
+                if (
+                    self.robot_id == 1
+                    and self.game_context.playing
+                    and self.game_context.countdown < 7
+                    and last_countdown > 7
+                ):
+                    logger.info("Planner: countdown==7: force blocked")
                     await self.sio_receiver_queue.put(self.blocked())
                 if self.game_context.playing and self.game_context.countdown < 0 and last_countdown > 0:
                     logger.info("Planner: countdown==0: final action")

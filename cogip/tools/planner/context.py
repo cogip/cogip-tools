@@ -34,11 +34,13 @@ class GameContext(metaclass=Singleton):
         from .properties import Properties
 
         self.properties = Properties()
-        self.game_duration: int = 90 if self.properties.robot_id == 1 else 100
+        self.game_duration: int = 100
         self.minimum_score: int = 0
         self.camp = Camp()
         self.avoidance_strategy = AvoidanceStrategy.AvoidanceCpp
         self.reset()
+
+        self.tribunes_in_robot = 0
 
     @property
     def table(self) -> Table:
@@ -54,6 +56,7 @@ class GameContext(metaclass=Singleton):
         self.playing = False
         self.score = self.minimum_score
         self.countdown = self.game_duration
+        self.tribunes_in_robot = 0
         self.create_start_poses()
         self.create_artifacts()
         self.create_fixed_obstacles()
@@ -94,22 +97,22 @@ class GameContext(metaclass=Singleton):
                 O=-90,
             ),
             StartPosition.PAMI2: AdaptedPose(
-                x=550 + self.properties.robot_width * 0.5,
+                x=550 + 100 * 0.5,
                 y=-1350 - self.properties.robot_length / 2,
                 O=90,
             ),
             StartPosition.PAMI3: AdaptedPose(
-                x=550 + self.properties.robot_width * 1.5,
+                x=550 + 100 * 1.5,
                 y=-1350 - self.properties.robot_length / 2,
                 O=90,
             ),
             StartPosition.PAMI4: AdaptedPose(
-                x=550 + self.properties.robot_width * 2.5,
+                x=550 + 100 * 2.5,
                 y=-1350 - self.properties.robot_length / 2,
                 O=90,
             ),
             StartPosition.PAMI5: AdaptedPose(
-                x=550 + self.properties.robot_width * 3.5,
+                x=550 + 100 * 3.5,
                 y=-1350 - self.properties.robot_length / 2,
                 O=90,
             ),
