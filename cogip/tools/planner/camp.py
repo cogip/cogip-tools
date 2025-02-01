@@ -12,7 +12,7 @@ class Camp(metaclass=Singleton):
         blue = 0
         yellow = 1
 
-    def __init__(self, color: Colors = Colors.yellow):
+    def __init__(self, color: Colors = Colors.blue):
         self.color = color
 
     def adapt_y(self, dist: float) -> float:
@@ -21,7 +21,7 @@ class Camp(metaclass=Singleton):
         Given the current table orientation and axes,
         only Y has to be adapted when the camp changes.
         """
-        return dist if self.color == Camp.Colors.yellow else -dist
+        return dist if self.color == Camp.Colors.blue else -dist
 
     def adapt_angle(self, angle: float | None) -> float | None:
         """
@@ -29,4 +29,4 @@ class Camp(metaclass=Singleton):
         """
         if angle is None:
             return None
-        return angle if self.color == Camp.Colors.yellow else -angle
+        return angle if self.color == Camp.Colors.blue else -angle
