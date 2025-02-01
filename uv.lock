@@ -253,6 +253,7 @@ dependencies = [
     { name = "gpiozero" },
     { name = "httpx" },
     { name = "jinja2" },
+    { name = "lgpio" },
     { name = "luma-oled" },
     { name = "matplotlib" },
     { name = "more-itertools" },
@@ -308,6 +309,7 @@ requires-dist = [
     { name = "gpiozero", specifier = "==2.0.1" },
     { name = "httpx", specifier = "==0.26.0" },
     { name = "jinja2", specifier = "==3.1.2" },
+    { name = "lgpio", specifier = "~=0.2.2.0" },
     { name = "luma-oled", specifier = "==3.13.0" },
     { name = "matplotlib", specifier = "~=3.9.3" },
     { name = "more-itertools", specifier = "==10.1.0" },
@@ -748,6 +750,17 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a8/b2/15f7f556df0a6e5b3772a1e076a9d9f6c538ce5f05bd590eca8106508e06/kiwisolver-1.4.7-cp313-cp313-win32.whl", hash = "sha256:f4c9aee212bc89d4e13f58be11a56cc8036cabad119259d12ace14b34476fd07", size = 46364 },
     { url = "https://files.pythonhosted.org/packages/0b/db/32e897e43a330eee8e4770bfd2737a9584b23e33587a0812b8e20aac38f7/kiwisolver-1.4.7-cp313-cp313-win_amd64.whl", hash = "sha256:8a3ec5aa8e38fc4c8af308917ce12c536f1c88452ce554027e55b22cbbfbff76", size = 55887 },
     { url = "https://files.pythonhosted.org/packages/c8/a4/df2bdca5270ca85fd25253049eb6708d4127be2ed0e5c2650217450b59e9/kiwisolver-1.4.7-cp313-cp313-win_arm64.whl", hash = "sha256:76c8094ac20ec259471ac53e774623eb62e6e1f56cd8690c67ce6ce4fcb05650", size = 48530 },
+]
+
+[[package]]
+name = "lgpio"
+version = "0.2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/56/33/26ec2e8049eaa2f077bf23a12dc61ca559fbfa7bea0516bf263d657ae275/lgpio-0.2.2.0.tar.gz", hash = "sha256:11372e653b200f76a0b3ef8a23a0735c85ec678a9f8550b9893151ed0f863fff", size = 90087 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fe/73/e56c9afb845df53492d42bdea01df9895272bccfdd5128f34719c3a07990/lgpio-0.2.2.0-cp312-cp312-linux_armv7l.whl", hash = "sha256:6c65ac42e878764d04a71ed12fe6d46089b36e9e8127722bf29bb2e4bc91de22", size = 383956 },
+    { url = "https://files.pythonhosted.org/packages/3b/1c/becd00f66d2c65feed9a668ff9d91732394cb6baba7bec505d55de0e30c9/lgpio-0.2.2.0-cp312-cp312-manylinux_2_34_aarch64.whl", hash = "sha256:d907db79292c721c605af08187385ddb3b7af09907e1ffca56cf0cd6558ace0a", size = 366058 },
+    { url = "https://files.pythonhosted.org/packages/4c/7a/e3b4e5225c9792c4092b2cc07504746acbe62d0a8e4cb023bdf65f6430cf/lgpio-0.2.2.0-cp312-cp312-manylinux_2_34_x86_64.whl", hash = "sha256:2aadff092f642fcdada8457c158f87259dfda3a89ec19bae0b99ff22b34aac4b", size = 372103 },
 ]
 
 [[package]]
