@@ -83,3 +83,21 @@ RUN apt-get update && \
         unzip
 
 CMD ["sleep", "infinity"]
+
+
+FROM debian:12 AS build_wheel
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+RUN apt-get update \
+ && apt-get -y dist-upgrade --auto-remove --purge \
+ && apt-get -y install curl g++ pkg-config libserial-dev \
+ && apt-get -y clean
+
+WORKDIR /src
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/0.5.11/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+ENV UV_PYTHON_INSTALL_DIR=/opt/python
+ENV PATH="/src/.venv/bin:${PATH}"

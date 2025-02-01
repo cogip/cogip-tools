@@ -121,7 +121,7 @@ uv pip install cogip_tools-1.0.0-cp312-abi3-linux_aarch64.whl
     the `linux/amd64` platform, the `linux/arm64` may not be pulled automatically.
     If the `docker compose` command is failing for this reason, the required image can be pulled manually:
     ```bash
-    docker pull --platform "linux/arm64" ubuntu:24.04
+    docker pull --platform "linux/arm64" debian:12
     ```
 
 ## Docker Method
