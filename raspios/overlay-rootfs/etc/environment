@@ -1,4 +1,5 @@
 # General
+VIRTUAL_ENV=/opt/.venv
 
 COGIP_SOCKETIO_SERVER_URL=http://localhost:809ROBOT_ID
 # COGIP_RELOAD=0
