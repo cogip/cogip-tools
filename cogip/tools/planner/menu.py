@@ -14,6 +14,7 @@ menu = models.ShellMenu(
         models.MenuEntry(cmd="next", desc="Next"),
         models.MenuEntry(cmd="reset", desc="Reset"),
         models.MenuEntry(cmd="config", desc="Configuration"),
+        models.MenuEntry(cmd="scservos", desc="SC Servos"),
     ],
 )
 

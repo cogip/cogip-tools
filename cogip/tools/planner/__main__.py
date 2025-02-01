@@ -155,6 +155,24 @@ def main_opt(
             envvar=["PLANNER_BYPASS_DETECTOR"],
         ),
     ] = False,
+    scservos_port: Annotated[
+        Path | None,
+        typer.Option(
+            "-sp",
+            "--scservos-port",
+            help="SC Servos serial port.",
+            envvar="PLANNER_SCSERVOS_PORT",
+        ),
+    ] = None,
+    scservos_baud_rate: Annotated[
+        int,
+        typer.Option(
+            "-sb",
+            "--scservos-baud-rate",
+            help="SC Servos baud rate (usually 921600 or 1000000).",
+            envvar="PLANNER_SCSERVOS_BAUD_RATE",
+        ),
+    ] = 921600,
     reload: Annotated[
         bool,
         typer.Option(
@@ -196,6 +214,8 @@ def main_opt(
         oled_bus,
         oled_address,
         bypass_detector,
+        scservos_port,
+        scservos_baud_rate,
         debug,
     )
 

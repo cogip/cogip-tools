@@ -156,6 +156,8 @@ case ${ROBOT_ID} in
         ;;
     1) # Robot
         sudo sed -i "s/# PLANNER_STARTER_PIN=/PLANNER_STARTER_PIN=${ROBOT_STARTER_PIN}/" ${MOUNT_DIR}/etc/environment
+        sudo sed -i "s/# PLANNER_SCSERVOS_PORT=/PLANNER_SCSERVOS_PORT=${ROBOT_SCSERVOS_PORT}/" ${MOUNT_DIR}/etc/environment
+        sudo sed -i "s/# PLANNER_SCSERVOS_BAUD_RATE=/PLANNER_SCSERVOS_BAUD_RATE=${ROBOT_SCSERVOS_BAUD_RATE}/" ${MOUNT_DIR}/etc/environment
         ;;
     [2-9]) # PAMIs
         sudo sed -i "s/# PLANNER_OLED_BUS=/PLANNER_OLED_BUS=${PAMI_OLED_BUS}/" ${MOUNT_DIR}/etc/environment
