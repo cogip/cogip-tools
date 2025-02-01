@@ -37,7 +37,6 @@ window.closeModal = function (modalId) {
   modal.classList.add("hidden");
   scoreModal.classList.remove("flex"); // Consider using class manipulation for consistency
 
-
   // Reset streaming only if it exists
   if (streaming) {
     streaming.src = ""; // Reset the source
