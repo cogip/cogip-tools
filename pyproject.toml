@@ -19,6 +19,7 @@ dependencies = [
     "gpiozero==2.0.1",
     "httpx==0.26.0",
     "Jinja2==3.1.2",
+    "lgpio~=0.2.2.0",
     "luma.oled==3.13.0",
     "matplotlib~=3.9.3",
     "more_itertools==10.1.0",
