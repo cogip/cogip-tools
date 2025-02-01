@@ -270,6 +270,7 @@ class PropertiesDialog(QtWidgets.QDialog):
         self.property_updated.emit(
             {
                 "namespace": self._config["namespace"],
+                "sio_event": self._config.get("sio_event", "config"),
                 "name": name,
                 "value": value,
             }

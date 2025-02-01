@@ -234,6 +234,7 @@ class Copilot:
         pid_schema = pid.model_json_schema()
         # Add namespace in JSON Schema
         pid_schema["namespace"] = "/copilot"
+        pid_schema["sio_event"] = "config_updated"
         # Add current values in JSON Schema
         pid_schema["title"] = pid.id.name
         for prop, value in pid.model_dump().items():
