@@ -72,20 +72,6 @@ export function resizeCanvas() {
 
   ratioX = adjustedWidth / 3000;
   ratioY = -adjustedHeight / 2000;
-  setButtonPosition(canvas);
-}
-
-function setButtonPosition(canvas) {
-  const menuWidth = cacheElement("#menu").offsetWidth;
-  const rightPx = Math.max(window.innerWidth - menuWidth - canvas.width, 0);
-  const buttonRefresh = cacheElement("#buttonRefresh");
-  buttonRefresh.style.right = `${rightPx}px`;
-
-  const buttonCameraModal = cacheElement("#buttonCameraModal");
-  if (buttonCameraModal) {
-    buttonCameraModal.style.top = `${canvas.height - 44}px`; // 44 is the height of the camera image
-    buttonCameraModal.style.right = `${rightPx - 59}px`; // 59 is the width of the refresh image
-  }
 }
 
 export function displayMsg(robot_id, msg) {
@@ -330,6 +316,28 @@ export function deleteTabs() {
     const match = x.id.match(/robot(\d+)-tab/);
     if (match) {
       deleteTab(parseInt(match[1], 10));
+    }
+  });
+}
+
+export function rightSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const icon = document.getElementById("toggleIcon");
+
+  document.getElementById("toggleSidebar")?.addEventListener("click", function () {
+    sidebar.classList.toggle("w-20");
+    sidebar.classList.toggle("w-0");
+    sidebarContent.classList.toggle("hidden");
+
+    sidebar.classList.contains("w-0") ? icon.classList.remove("rotate-180") : icon.classList.add("rotate-180");
+  });
+
+  document.addEventListener("click", function (event) {
+    if (!sidebar.contains(event.target) && !document.getElementById("toggleSidebar").contains(event.target)) {
+      sidebar.classList.add("w-0");
+      sidebar.classList.remove("w-20");
+      sidebarContent.classList.add("hidden");
+      icon.classList.remove("rotate-180");
     }
   });
 }
