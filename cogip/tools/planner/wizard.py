@@ -1,3 +1,4 @@
+import re
 from typing import TYPE_CHECKING, Any
 
 from cogip.tools.planner.positions import StartPosition
@@ -116,10 +117,14 @@ class GameWizard:
         await self.planner.set_pose_start(self.game_context.get_start_pose(start_position).pose)
 
     async def request_strategy(self):
+        choices: list[tuple[str, str, str]] = []  # list of (value, category, name). Name can be used for display.
+        for strategy in Strategy:
+            split = re.findall(r"[A-Z][a-z]*|[a-z]+|[0-9]+", strategy.name)
+            choices.append((strategy.name, split[0], " ".join(split)))
         message = {
             "name": "Game Wizard: Choose Strategy",
             "type": "choice_str",
-            "choices": [e.name for e in Strategy],
+            "choices": choices,
             "value": self.game_context.strategy.name,
         }
         await self.planner.sio_ns.emit("wizard", message)
