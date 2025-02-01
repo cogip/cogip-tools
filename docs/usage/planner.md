@@ -58,6 +58,15 @@ Options:
                                   env var: PLANNER_BYPASS_DETECTOR
                                   default: False
 
+  -sp, --scservos-port PATH       SC Servos serial port
+                                  env var: PLANNER_SCSERVOS_PORT
+                                  default: None
+
+  -sb, --scservos-baud-rate INTEGER
+                                  SC Servos baud rate (usually 921600 or 1000000)
+                                  env var: PLANNER_SCSERVOS_BAUD_RATE
+                                  default: 921600
+
   -r, --reload                    Reload app on source file changes
                                   env var: COGIP_RELOAD, PLANNER_RELOAD
 

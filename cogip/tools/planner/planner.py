@@ -6,6 +6,7 @@ import traceback
 from functools import partial
 from multiprocessing import Manager, Process
 from multiprocessing.managers import DictProxy
+from pathlib import Path
 from typing import Any
 
 import socketio
@@ -36,6 +37,7 @@ from .camp import Camp
 from .context import GameContext
 from .positions import StartPosition
 from .properties import Properties
+from .scservos import SCServoEnum, SCServos
 from .table import TableEnum
 from .wizard import GameWizard
 
@@ -62,6 +64,8 @@ class Planner:
         oled_bus: int | None,
         oled_address: int | None,
         bypass_detector: bool,
+        scservos_port: Path | None,
+        scservos_baud_rate: int,
         debug: bool,
     ):
         """
@@ -83,12 +87,16 @@ class Planner:
             oled_bus: PAMI OLED display i2c bus
             oled_address: PAMI OLED display i2c address
             bypass_detector: Use perfect obstacles from monitor instead of detected obstacles by Lidar
+            scservos_port: SC Servos serial port
+            scservos_baud_rate: SC Servos baud rate (usually 921600 or 1000000)
             debug: enable debug messages
         """
         self.robot_id = robot_id
         self.server_url = server_url
         self.oled_bus = oled_bus
         self.oled_address = oled_address
+        self.scservos_port = scservos_port
+        self.scservos_baud_rate = scservos_baud_rate
         self.debug = debug
 
         self.shared_memory: SharedMemory | None = None
@@ -151,6 +159,7 @@ class Planner:
         self.sio_receiver_task: asyncio.Task | None = None
         self.sio_emitter_task: asyncio.Task | None = None
         self.countdown_task: asyncio.Task | None = None
+        self.scservos = SCServos(self.scservos_port, scservos_baud_rate)
 
         self.shared_properties: DictProxy = self.process_manager.dict(
             {
@@ -750,6 +759,12 @@ class Planner:
             await self.sio_ns.emit("config", schema)
             return
 
+        if cmd == "scservos":
+            # Get JSON Schema
+            schema = self.scservos.get_schema()
+            await self.sio_ns.emit("config", schema)
+            return
+
         if cmd == "game_wizard":
             await self.game_wizard.start()
             return
@@ -773,6 +788,12 @@ class Planner:
             case "robot_width" | "obstacle_bb_vertices":
                 self.game_context.create_artifacts()
                 self.game_context.create_fixed_obstacles()
+
+    async def update_scservo(self, servo: dict[str, Any]) -> None:
+        """
+        Update a SC Servo with the value sent by the dashboard.
+        """
+        self.scservos.set(SCServoEnum[servo["name"]], servo["value"])
 
     async def cmd_play(self):
         """
