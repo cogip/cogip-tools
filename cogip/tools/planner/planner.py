@@ -560,7 +560,7 @@ class Planner:
             self.blocked_counter = 0
             self.pose_order = pose_order
 
-            if self.game_context.strategy in [Strategy.LinearSpeedTest, Strategy.AngularSpeedTest]:
+            if self.game_context.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
                 await self.sio_ns.emit("pose_order", self.pose_order.pose.model_dump())
 
     async def next_pose(self):

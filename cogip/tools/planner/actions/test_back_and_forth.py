@@ -43,7 +43,7 @@ class BackAndForthAction(Action):
         return 1000000.0
 
 
-class BackAndForthActions(Actions):
+class TestBackAndForthActions(Actions):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(BackAndForthAction(planner, self))

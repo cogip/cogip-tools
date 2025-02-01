@@ -34,7 +34,7 @@ class VisitStartingAreasAction(Action):
         return 1000000.0
 
 
-class VisitStartingAreasActions(Actions):
+class TestVisitStartingAreasActions(Actions):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(VisitStartingAreasAction(planner, self))

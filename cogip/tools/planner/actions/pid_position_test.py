@@ -52,7 +52,7 @@ class LinearPositionTestAction(Action):
         return 1000000.0
 
 
-class LinearPositionTestActions(Actions):
+class PidLinearPositionTestActions(Actions):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(LinearPositionTestAction(planner, self))
@@ -101,7 +101,7 @@ class AngularPositionTestAction(Action):
         return 1000000.0
 
 
-class AngularPositionTestActions(Actions):
+class PidAngularPositionTestActions(Actions):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(AngularPositionTestAction(planner, self))
