@@ -509,7 +509,7 @@ services:
   build_wheel:
     build:
       context: .
-      target: uv_base
+      target: build_wheel
     platform: "linux/arm64"
     command:
       - /bin/sh
@@ -517,7 +517,7 @@ services:
       - -c
       - |
         uv build --wheel -C build-dir=/src/build/wheel
-        chown ${UID:-1000}:${GID:-1000} dist/*_aarch64.whl
+        chown ${UID:-1000}:${GID:-1000} dist/cogip_tools-1.0.0-cp312-abi3-linux_aarch64.whl
     volumes:
       - "./cogip:/src/cogip"
       - "./.python-version:/src/.python-version"
