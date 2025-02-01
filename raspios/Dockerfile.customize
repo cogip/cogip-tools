@@ -121,7 +121,8 @@ RUN systemctl enable cogip-server-beacon \
 FROM common AS robot-common
 
 # Enable COGIP services
-RUN systemctl enable cogip-server \
+RUN systemctl enable openocd \
+ && systemctl enable cogip-server \
  && systemctl enable cogip-dashboard \
  && systemctl enable cogip-planner \
  && systemctl enable cogip-copilot
@@ -130,13 +131,11 @@ RUN systemctl enable cogip-server \
 FROM robot-common AS robot
 
 # Enable openocd and COGIP services
-RUN systemctl enable openocd \
- && systemctl enable cogip-detector \
+RUN systemctl enable cogip-detector \
  && systemctl enable cogip-robotcam
 
 
 FROM robot-common AS pami
 
 # Enable openocd and COGIP services
-RUN systemctl enable openocd-pami \
- && systemctl enable cogip-detector-pami
+RUN systemctl enable cogip-detector-pami
