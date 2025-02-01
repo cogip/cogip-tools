@@ -26,11 +26,11 @@ class SpeedTestAction(Action):
         self.poses.append(self.pose)
 
 
-class AngularSpeedTest(Actions):
+class PidAngularSpeedTest(Actions):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(SpeedTestAction(planner, self))
 
 
-class LinearSpeedTest(AngularSpeedTest):
+class PidLinearSpeedTest(PidAngularSpeedTest):
     pass
