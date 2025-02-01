@@ -38,7 +38,7 @@ class GameContext(metaclass=Singleton):
         self.game_duration: int = 90 if self.properties.robot_id == 1 else 100
         self.minimum_score: int = 0
         self.camp = Camp()
-        self.strategy = actions.Strategy.VisitStartingAreas
+        self.strategy = actions.Strategy.TestVisitStartingAreas
         self._table = TableEnum.Game
         self.avoidance_strategy = AvoidanceStrategy.AvoidanceCpp
         self.reset()
@@ -69,9 +69,9 @@ class GameContext(metaclass=Singleton):
     @property
     def default_controller(self) -> ControllerEnum:
         match self.strategy:
-            case actions.Strategy.AngularSpeedTest:
+            case actions.Strategy.PidAngularSpeedTest:
                 return ControllerEnum.ANGULAR_SPEED_TEST
-            case actions.Strategy.LinearSpeedTest:
+            case actions.Strategy.PidLinearSpeedTest:
                 return ControllerEnum.LINEAR_SPEED_TEST
             case _:
                 return ControllerEnum.QUADPID

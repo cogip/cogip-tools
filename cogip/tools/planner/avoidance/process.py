@@ -64,7 +64,7 @@ def avoidance_process(
         shared_pose_current_lock.finish_reading()
         pose_order = models.PathPose.model_validate(pose_order)
 
-        if strategy in [Strategy.LinearSpeedTest, Strategy.AngularSpeedTest]:
+        if strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
             logger.debug("Avoidance: Skip path update (speed test)")
             continue
 
@@ -114,9 +114,11 @@ def avoidance_process(
 
             # Path is recomputed only if the pose order is reachable or an obstacle prevents
             # to reach next path pose.
-            if (not avoidance.check_recompute(pose_current, pose_order) and last_emitted_pose_order != pose_order) \
-                    or last_emitted_pose_order is None \
-                    or avoidance.check_recompute(pose_current, last_emitted_pose_order):
+            if (
+                (not avoidance.check_recompute(pose_current, pose_order) and last_emitted_pose_order != pose_order)
+                or last_emitted_pose_order is None
+                or avoidance.check_recompute(pose_current, last_emitted_pose_order)
+            ):
                 logger.info("Avoidance: compute path")
                 path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
         else:
