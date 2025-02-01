@@ -87,11 +87,11 @@ class SCServos:
                 logger.error(f"SCServo {id.name}: failed to read position ({self.packet_handler.getTxRxResult(result)}")
             self.update_property(id, current_position)
 
-    def set(self, id: SCServoEnum, value: int):
+    def set(self, id: SCServoEnum, value: int, speed: int = 2400):
         if not self.port_handler:
             return
 
         self.update_property(id, value)
-        result, error = self.packet_handler.WritePos(id.value, value, 0, 2400)
+        result, error = self.packet_handler.WritePos(id.value, value, 0, speed)
         if result != COMM_SUCCESS:
             logger.error(f"SCServo {id.name}: failed to write position ({self.packet_handler.getTxRxResult(result)}")
