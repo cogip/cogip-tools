@@ -72,20 +72,6 @@ export function resizeCanvas() {
 
   ratioX = adjustedWidth / 3000;
   ratioY = -adjustedHeight / 2000;
-  setButtonPosition(canvas);
-}
-
-function setButtonPosition(canvas) {
-  const menuWidth = cacheElement("#menu").offsetWidth;
-  const rightPx = Math.max(window.innerWidth - menuWidth - canvas.width, 0);
-  const buttonRefresh = cacheElement("#buttonRefresh");
-  buttonRefresh.style.right = `${rightPx}px`;
-
-  const buttonCameraModal = cacheElement("#buttonCameraModal");
-  if (buttonCameraModal) {
-    buttonCameraModal.style.top = `${canvas.height - 44}px`; // 44 is the height of the camera image
-    buttonCameraModal.style.right = `${rightPx - 59}px`; // 59 is the width of the refresh image
-  }
 }
 
 export function displayMsg(robot_id, msg) {
@@ -332,4 +318,68 @@ export function deleteTabs() {
       deleteTab(parseInt(match[1], 10));
     }
   });
+}
+
+export function rightSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const icon = document.getElementById("toggleIcon");
+
+  document.getElementById("toggleSidebar")?.addEventListener("click", function () {
+    sidebar.classList.toggle("w-20");
+    sidebar.classList.toggle("w-0");
+    sidebarContent.classList.toggle("hidden");
+
+    sidebar.classList.contains("w-0") ? icon.classList.remove("rotate-180") : icon.classList.add("rotate-180");
+  });
+
+  document.addEventListener("click", function (event) {
+    if (!sidebar.contains(event.target) && !document.getElementById("toggleSidebar").contains(event.target)) {
+      sidebar.classList.add("w-0");
+      sidebar.classList.remove("w-20");
+      sidebarContent.classList.add("hidden");
+      icon.classList.remove("rotate-180");
+    }
+  });
+}
+
+export function resizeMenu() {
+  const divMenu = document.getElementById("menu");
+  const divCanvas = document.getElementById("divCanvas");
+  const handle = document.getElementById("handle");
+
+  handle.addEventListener("mousedown", startResize);
+
+  function startResize(event) {
+    event.preventDefault();
+    document.addEventListener("mousemove", resize);
+    document.addEventListener("mouseup", stopResize);
+  }
+
+  function resize(event) {
+    event.preventDefault();
+    const clientX = event.clientX;
+    const totalWidth = divMenu.parentElement.clientWidth;
+    let newWidth = Math.min(Math.max((clientX / totalWidth) * 100, 10), 90);
+
+    if (newWidth < 15) newWidth = 15;
+    if (newWidth > 85) newWidth = 85;
+
+    divMenu.style.width = `${newWidth}%`;
+    divCanvas.style.width = `${100 - newWidth}%`;
+
+    const menuWidth = divMenu.clientWidth;
+    divMenu.style.fontSize = `${Math.max(menuWidth / 25, 16)}px`; // Min 16px
+
+    requestAnimationFrame(() => {
+      const height = window.innerHeight - 50;
+      divMenu.style.height = `${height}px`;
+      divCanvas.style.height = `${height}px`;
+      resizeCanvas();
+    });
+  }
+
+  function stopResize() {
+    document.removeEventListener("mousemove", resize);
+    document.removeEventListener("mouseup", stopResize);
+  }
 }

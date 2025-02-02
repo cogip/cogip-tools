@@ -25,30 +25,51 @@
 
       {% endif %}
       <div class="flex flex-row">
-        <div class="w-1/4 text-center h-minus-footer pt-2.5 pr-1 pl-2.5 border-r border-grey-color" id="menu">
+        <div class="w-1/4 text-center pt-2.5 pr-1 pl-2.5 border-r border-grey-color" id="menu" style="height: calc(100vh - 50px); font-size: 16px;">
           <img src="static/img/cogip-logo.png" class="mx-auto h-10p py-2.5" />
           <div id="nav-tool">
             ...
           </div>
         </div>
 
-        <div class="w-3/4">
-          <button
-            class="relative z-10 mt-3 px-4 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end z-60"
-            id="buttonRefresh" type="button" onclick="location.reload();">
-            <img src="{{ url_for('static', path='img/refresh.svg') }}" />
-          </button>
+        <div id="handle" class="w-2 bg-gray-500 cursor-ew-resize touch-none"></div>
+
+        <div class="w-3/4" id="divCanvas">
           <canvas id="board" class="mt-2.5 absolute bg-contain"
             style="background-image: url(../static/img/ground2024.png)"></canvas>
 
-          {% if robot_id != 0 %}
-          <button
-            class="relative z-10 mt-3 px-4 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end"
-            id="buttonCameraModal" type="button" onclick="modalCamera()" data-bs-toggle="modal"
-            data-bs-target="#cameraModal">
-            <img src="{{ url_for('static', path='img/camera.svg') }}" />
-          </button>
-          {% endif %}
+          <div id="sidebar"
+            class="fixed right-0 top-0 h-full bg-zinc-800 text-white shadow-lg transition-all duration-300 w-0 flex flex-col z-20">
+            <button id="toggleSidebar" class="self-end text-red-cogip">
+              <svg id="toggleIcon" height="20px" width="20px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#d01b1e" stroke-width="3" stroke="currentColor" class="w-6 h-6">
+                <path d="M16.73,1.11c-0.44-0.16-0.93-0.02-1.22,0.34L6.47,11.36c-0.32,0.4-0.32,0.97,0,1.37l9.04,11.29c0.22,0.28,0.55,0.42,0.89,0.42
+                  c0.13,0,0.25-0.02,0.37-0.06c0.44-0.16,0.73-0.57,0.73-1.03V2.14C17.5,1.68,17.21,1.27,16.73,1.11z" />
+              </svg>
+            </button>
+            <div id="sidebarContent" class="p-2 flex flex-col space-y-2 hidden">
+              <button
+                class="relative z-20 mt-3 px-5 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end"
+                id="buttonRefresh" type="button" onclick="location.reload();">
+                <img src="{{ url_for('static', path='img/refresh.svg') }}" />
+              </button>
+
+              {% if robot_id != 0 %}
+              <button
+                class="relative z-5 mt-3 px-5 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end"
+                id="buttonCameraModal" type="button" onclick="modalCamera()" data-bs-toggle="modal" data-bs-target="#cameraModal">
+                <img src="{{ url_for('static', path='img/camera.svg') }}" />
+              </button>
+
+              <button
+                class="relative z-5 mt-3 px-4 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end"
+                id="buttonchartModal" type="button" onclick="openChartModal()" data-bs-toggle="modal" data-bs-target="#chartModal">
+                <img src="{{ url_for('static', path='img/graph.svg') }}" />
+              </button>
+              {% endif %}
+
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -125,7 +146,29 @@
   </div>
   {% endif %}
 
+  <!-- Graphic modal -->
+    <div class="fixed inset-0 z-50 hidden" id="chartModal">
+      <div class="flex h-full w-full p-4 text-center">
+        <div class="w-full p-6 mx-auto bg-zinc-900 rounded-lg shadow-lg">
+          <div class="flex items-center justify-between pb-4 border-b border-gray-600">
+            <h5 class="text-lg font-medium text-grey-color">Graphics</h5>
+            <button type="button" class="text-grey-color text-2xl leading-none hover:text-gray-400" aria-label="Close"
+              onclick="closeModal('chartModal')">&times;</button>
+          </div>
+          <div class="flex flex-col gap-6">
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+              <canvas id="distanceChart" width="400" height="80"></canvas>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+              <canvas id="angleChart" width="400" height="80"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   <script type="text/javascript" src="{{ url_for('static', path='js/external/socket.io.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', path='js/external/chart.js') }}"></script>
 
   <script type="module">
     import * as socketModule from "../static/js/socketModule.js";
@@ -133,6 +176,7 @@
     import * as cameraModule from "../static/js/cameraModule.js";
     import * as wizardModule from "../static/js/wizardModule.js";
     import * as scoreModule from "../static/js/scoreModule.js";
+    import * as chartModule from "../static/js/chartModule.js";
     import { virtualKeyboard } from "../static/js/keyboardModule.js";
 
     window.addEventListener("resize", drawModule.resizeCanvas, false);
@@ -140,11 +184,11 @@
     document.addEventListener("DOMContentLoaded", function (event) {
       const robotId = parseInt(document.getElementsByTagName('body')[0].dataset.robotId);
 
-      let cameraModule = null;
-      let scoreModule = null;
-
+      drawModule.rightSidebar(); // init sidebar
+      drawModule.resizeMenu(); // init resizable menu
       drawModule.resizeCanvas(); // draw background
       virtualKeyboard.init(); // initialize keyboard
+      chartModule.drawCharts();
 
       const socketioPort = parseInt(window.location.port) + 10
 
@@ -180,6 +224,7 @@
         })
         .on("state", function (robot_id, msg) {
           drawModule.displayMsg(robot_id, msg); // uses message to display information in bottom page
+          chartModule.updateCharts(msg);
         })
         .on("path", function (robot_id, msg) {
           drawModule.recordPath(robot_id, msg);
