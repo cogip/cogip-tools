@@ -83,11 +83,26 @@ bool ObstacleCircle::is_segment_crossing(const models::Coords& a, const models::
 
 models::Coords ObstacleCircle::nearest_point(const models::Coords& p)
 {
+    // Vector from the circle center to the given point
     models::Coords vect(p.x() - data_->center.x, p.y() - data_->center.y);
     double vect_norm = std::hypot(vect.x(), vect.y());
 
-    double scale = (data_->radius * (1 + data_->bounding_box_margin)) / vect_norm;
+    // Effective radius including the bounding box margin
+    double effective_radius = data_->radius + data_->bounding_box_margin;
 
+    // Special case: if the point is exactly at the center, return a point on the circle
+    // This case should never
+    if (vect_norm == 0) {
+        return models::Coords(
+            data_->center.x + effective_radius,
+            data_->center.y
+        );
+    }
+
+    // Scale the vector to project the point onto the circle perimeter
+    double scale = effective_radius / vect_norm;
+
+    // Return the projected point on the circle
     return models::Coords(
         data_->center.x + vect.x() * scale,
         data_->center.y + vect.y() * scale

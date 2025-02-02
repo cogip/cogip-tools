@@ -19,11 +19,14 @@ ENV UV_PYTHON_INSTALL_DIR=/opt/python
 # Required because mcu-firmware is not compatible with uv
 ENV PATH="/src/.venv/bin:${PATH}"
 
+# Set frozen uv.lock globally
+ENV UV_FROZEN=1
+
 # Pre-install some Python requirements for COGIP tools
 RUN --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=.python-version,target=.python-version \
-    uv sync --no-install-project --frozen
+    uv sync --no-install-project
 
 FROM uv_base AS cogip-console
 
@@ -59,7 +62,7 @@ RUN group_exists=$(getent group ${GID} || true) && echo $group_exists \
 
 ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
 ADD cogip /src/cogip
-RUN uv sync --frozen
+RUN uv sync
 
 CMD ["sleep", "infinity"]
 

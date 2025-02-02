@@ -58,6 +58,7 @@ bool Avoidance::avoidance(const models::Coords& start,
         }
         if (current_obstacle.is_point_inside(start_pose_)) {
             start_pose_ = current_obstacle.nearest_point(start_pose_);
+            logger_.debug() << "start pose inside obstacle, updated: " << start_pose_ << std::endl;
         }
     }
 
