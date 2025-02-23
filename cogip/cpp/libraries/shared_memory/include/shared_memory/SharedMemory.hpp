@@ -5,6 +5,7 @@
 #include "shared_memory/shared_data.hpp"
 #include "shared_memory/WritePriorityLock.hpp"
 
+#include "models/PoseBuffer.hpp"
 #include "obstacles/ObstacleCircleList.hpp"
 #include "obstacles/ObstacleRectangleList.hpp"
 
@@ -46,6 +47,9 @@ public:
     /// Retrieves a pointer to the shared memory data structure.
     shared_data_t* getData() { return data_; }
 
+    /// Retrieves a pointer to the PoseBuffer object wrapping the shared memory pose_current_buffer structure.
+    models::PoseBuffer* getPoseCurrentBuffer() { return pose_current_buffer_; }
+
     /// Retrieves a pointer to the Pose object wrapping the shared memory pose_current structure.
     models::Pose* getPoseCurrent() { return pose_current_; }
 
@@ -73,6 +77,7 @@ private:
     int shm_fd_;           ///< File descriptor for the shared memory.
     shared_data_t* data_;  ///< Pointer to the shared memory data structure.
     std::map<LockName, std::shared_ptr<WritePriorityLock>> locks_;  ///< Map of locks for synchronization.
+    models::PoseBuffer* pose_current_buffer_;  ///< Pointer to the PoseBuffer object wrapping the shared memory pose_current_buffer structure.
     models::Pose* pose_current_;  ///< Pointer to the Pose object wrapping the shared memory pose_current structure.
     models::Pose* pose_order_;    ///< Pointer to the Pose object wrapping the shared memory pose_order structure.
     models::CoordsList* detector_obstacles_;  ///< Pointer to the CoordsList object wrapping the shared memory detector_obstacles structure.

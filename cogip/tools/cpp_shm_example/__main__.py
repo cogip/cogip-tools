@@ -32,6 +32,7 @@ def main():
     writer_lock = writer.get_lock(LockName.PoseCurrent)
     writer_data = writer.get_data()
     writer_pose_current = writer.get_pose_current()
+    writer_pose_current_buffer = writer.get_pose_current_buffer()
 
     writer_lock.start_reading()
     print(" => writer data = ", writer_data)
@@ -46,6 +47,7 @@ def main():
     reader_lock = writer.get_lock(LockName.PoseCurrent)
     reader_data = reader.get_data()
     reader_pose_current = reader.get_pose_current()
+    reader_pose_current_buffer = reader.get_pose_current_buffer()
     reader_lock.start_reading()
     print(" => reader data = ", reader_data)
     print(" => reader pose_current = ", reader_pose_current)
@@ -152,11 +154,26 @@ def main():
     print(" => writer circle_obstacles[0] = ", writer_circle_obstacles[0])
     print(" => copy_list[0] = ", copy_list[0])
 
+    print("\nTest for pose_current_buffer")
+    writer_pose_current_buffer.push(1, 2, 90)
+    print(reader_pose_current_buffer.last)
+    writer_pose_current_buffer.push(1, 3, 90)
+    print(reader_pose_current_buffer.last)
+    print(reader_pose_current_buffer.get(1))
+    try:
+        print(reader_pose_current_buffer.get(2))
+    except Exception as exc:
+        print(exc)
+    for i in range(300):
+        writer_pose_current_buffer.push(1, i, 90)
+    print(reader_pose_current_buffer.last)
+
     # Control order of shared memory object destruction
     writer_rectangle_obstacles = None
     writer_circle_obstacles = None
     writer_detector_obstacles = None
     writer_lock = None
+    writer_pose_current_buffer = None
     writer_pose_current = None
     writer_data = None
     del writer_lock
@@ -166,6 +183,7 @@ def main():
     reader_circle_obstacles = None
     reader_detector_obstacles = None
     reader_lock = None
+    reader_pose_current_buffer = None
     reader_pose_current = None
     reader_data = None
     del reader

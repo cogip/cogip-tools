@@ -6,6 +6,7 @@
 
 #include "models/coords_list.hpp"
 #include "models/pose.hpp"
+#include "models/pose_buffer.hpp"
 #include "obstacles/obstacle_circle_list.hpp"
 #include "obstacles/obstacle_polygon_list.hpp"
 
@@ -21,6 +22,7 @@ constexpr std::size_t NUM_ANGLES = 360;
 
 /// Represents shared data in shared memory.
 typedef struct {
+    models::pose_buffer_t pose_current_buffer;  ///< The last current poses.
     models::pose_t pose_current;  ///< The current pose.
     models::pose_t pose_order;    ///< The target pose.
     uint16_t lidar_data[NUM_ANGLES][2];  ///< The Lidar data.
