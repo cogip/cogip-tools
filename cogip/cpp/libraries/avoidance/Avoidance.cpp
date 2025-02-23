@@ -26,7 +26,7 @@ namespace avoidance {
 
 Avoidance::Avoidance(const cogip::obstacles::ObstaclePolygon& borders)
     : is_avoidance_computed_(false), borders_(borders),
-    logger_("Avoidance", cogip::logger::LogLevel::DEBUG) {
+    logger_("Avoidance", cogip::logger::LogLevel::INFO) {
 }
 
 bool Avoidance::avoidance(const models::Coords& start,
