@@ -7,6 +7,7 @@ add_library(
     CoordsList.cpp
     Polar.cpp
     Pose.cpp
+    PoseBuffer.cpp
 )
 target_include_directories(
     models_cpp
