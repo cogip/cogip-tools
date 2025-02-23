@@ -33,3 +33,14 @@ class Properties(BaseModel):
         title="Refresh Interval",
         description="Interval between each update of the obstacle list (seconds)",
     )
+    sensor_delay: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        multiple_of=1,
+        title="Sensor Delay",
+        description=(
+            "Delay to compensate the delay between sensor data fetch and obstacle positions computation,"
+            "unit is the index of pose current to get in the past"
+        ),
+    )
