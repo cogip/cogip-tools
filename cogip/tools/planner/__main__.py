@@ -173,6 +173,15 @@ def main_opt(
             envvar="PLANNER_SCSERVOS_BAUD_RATE",
         ),
     ] = 921600,
+    disable_fixed_obstacles: Annotated[
+        bool,
+        typer.Option(
+            "-df",
+            "--disable-fixed-obstacles",
+            help="Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance",
+            envvar=["PLANNER_DISABLE_FIXED_OBSTACLES"],
+        ),
+    ] = False,
     reload: Annotated[
         bool,
         typer.Option(
@@ -216,6 +225,7 @@ def main_opt(
         bypass_detector,
         scservos_port,
         scservos_baud_rate,
+        disable_fixed_obstacles,
         debug,
     )
 
