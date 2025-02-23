@@ -67,6 +67,10 @@ Options:
                                   env var: PLANNER_SCSERVOS_BAUD_RATE
                                   default: 921600
 
+  -df, --scservos-baud-rate       Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance.
+                                  env var: PLANNER_DISABLE_FIXED_OBSTACLES
+                                  default: False
+
   -r, --reload                    Reload app on source file changes
                                   env var: COGIP_RELOAD, PLANNER_RELOAD
 

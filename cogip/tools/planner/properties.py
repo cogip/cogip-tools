@@ -106,3 +106,10 @@ class Properties(metaclass=Singleton):
             description="Use perfect obstacles from monitor instead of detected obstacles by Lidar",
         ),
     ]
+    disable_fixed_obstacles: Annotated[
+        bool,
+        Field(
+            title="Disable Fixed Obstacles",
+            description="Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance",
+        ),
+    ]

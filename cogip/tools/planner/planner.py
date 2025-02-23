@@ -66,6 +66,7 @@ class Planner:
         bypass_detector: bool,
         scservos_port: Path | None,
         scservos_baud_rate: int,
+        disable_fixed_obstacles: bool,
         debug: bool,
     ):
         """
@@ -89,6 +90,7 @@ class Planner:
             bypass_detector: Use perfect obstacles from monitor instead of detected obstacles by Lidar
             scservos_port: SC Servos serial port
             scservos_baud_rate: SC Servos baud rate (usually 921600 or 1000000)
+            disable_fixed_obstacles: Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance
             debug: enable debug messages
         """
         self.robot_id = robot_id
@@ -127,6 +129,7 @@ class Planner:
             path_refresh_interval=path_refresh_interval,
             plot=plot,
             bypass_detector=bypass_detector,
+            disable_fixed_obstacles=disable_fixed_obstacles,
         )
         self.virtual = platform.machine() != "aarch64"
         self.retry_connection = True
@@ -657,51 +660,53 @@ class Planner:
                 )
             shared_lock.finish_reading()
 
-            # Add artifact obstacles
-            construction_areas: list[ConstructionArea] = list(self.game_context.construction_areas.values()) + list(
-                self.game_context.opponent_construction_areas.values()
-            )
-            for construction_area in construction_areas:
-                if not construction_area.enabled:
-                    continue
-                if not table.contains(construction_area, margin):
-                    continue
-                self.shared_rectangle_obstacles.append(
-                    x=construction_area.x,
-                    y=construction_area.y,
-                    angle=construction_area.O,
-                    length_x=construction_area.width + self.properties.robot_width,
-                    length_y=construction_area.length + self.properties.robot_width,
-                    bounding_box_margin=margin,
-                    id=construction_area.id.value,
+            if not self.properties.disable_fixed_obstacles:
+                # Add artifact obstacles
+                construction_areas: list[ConstructionArea] = list(self.game_context.construction_areas.values()) + list(
+                    self.game_context.opponent_construction_areas.values()
                 )
-            for tribune in self.game_context.tribunes.values():
-                if not tribune.enabled:
-                    continue
-                if not table.contains(tribune, margin):
-                    continue
-                self.shared_rectangle_obstacles.append(
-                    x=tribune.x,
-                    y=tribune.y,
-                    angle=tribune.O,
-                    length_x=tribune.width + self.properties.robot_width,
-                    length_y=tribune.length + self.properties.robot_width,
-                    bounding_box_margin=margin,
-                    id=tribune.id.value,
-                )
+                for construction_area in construction_areas:
+                    if not construction_area.enabled:
+                        continue
+                    if not table.contains(construction_area, margin):
+                        continue
+                    self.shared_rectangle_obstacles.append(
+                        x=construction_area.x,
+                        y=construction_area.y,
+                        angle=construction_area.O,
+                        length_x=construction_area.width + self.properties.robot_width,
+                        length_y=construction_area.length + self.properties.robot_width,
+                        bounding_box_margin=margin,
+                        id=construction_area.id.value,
+                    )
+                for tribune in self.game_context.tribunes.values():
+                    if not tribune.enabled:
+                        continue
+                    if not table.contains(tribune, margin):
+                        continue
+                    self.shared_rectangle_obstacles.append(
+                        x=tribune.x,
+                        y=tribune.y,
+                        angle=tribune.O,
+                        length_x=tribune.width + self.properties.robot_width,
+                        length_y=tribune.length + self.properties.robot_width,
+                        bounding_box_margin=margin,
+                        id=tribune.id.value,
+                    )
 
-            # Add fixed obstacles
-            for fixed_obstacle in self.game_context.fixed_obstacles:
-                if not table.contains(fixed_obstacle, margin):
-                    continue
-                self.shared_rectangle_obstacles.append(
-                    x=fixed_obstacle.x,
-                    y=fixed_obstacle.y,
-                    angle=fixed_obstacle.angle,
-                    length_x=fixed_obstacle.length_x + self.properties.robot_length,
-                    length_y=fixed_obstacle.length_y + self.properties.robot_length,
-                    bounding_box_margin=margin,
-                )
+                # Add fixed obstacles
+                for fixed_obstacle in self.game_context.fixed_obstacles:
+                    if not table.contains(fixed_obstacle, margin):
+                        continue
+                    self.shared_rectangle_obstacles.append(
+                        x=fixed_obstacle.x,
+                        y=fixed_obstacle.y,
+                        angle=fixed_obstacle.angle,
+                        length_x=fixed_obstacle.length_x + self.properties.robot_length,
+                        length_y=fixed_obstacle.length_y + self.properties.robot_length,
+                        bounding_box_margin=margin,
+                        id=1,
+                    )
 
             self.shared_obstacles_lock.finish_writing()
         except Exception as exc:
