@@ -7,7 +7,7 @@ export function openConfigModal(config, send_socket) {
   document.getElementById("configModalBody").innerHTML = "";
 
   const form = document.createElement("div");
-  form.classList.add("grid", "grid-cols-2", "gap-4", "items-center");
+  form.classList.add("grid", "grid-cols-[30%_67%]", "gap-4", "items-center");
 
   Object.entries(config.properties).forEach(([key, property]) => {
     const label = document.createElement("label");
@@ -84,7 +84,7 @@ export function openConfigModal(config, send_socket) {
           parseFloat(input.value) - (property.multipleOf || 1),
           property.minimum
         );
-        newValue = parseFloat(newValue.toFixed(2));
+        newValue = parseFloat(newValue.toFixed(3));
         input.value = slider.value = newValue;
         sendSocketUpdate(config.sio_event, key, newValue, config.namespace);
       });
@@ -97,7 +97,7 @@ export function openConfigModal(config, send_socket) {
           parseFloat(input.value) + (property.multipleOf || 1),
           property.maximum
         );
-        newValue = parseFloat(newValue.toFixed(2));
+        newValue = parseFloat(newValue.toFixed(3));
         input.value = slider.value = newValue;
         sendSocketUpdate(config.sio_event, key, newValue, config.namespace);
       });
