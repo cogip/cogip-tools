@@ -76,8 +76,8 @@ class Sensor(QtCore.QObject):
         self.ray_caster = Qt3DRender.QRayCaster()
         self.ray_caster.setEnabled(False)  # Start casting only when the first obstacle is registered
         self.ray_caster.setLength(0)  # Infinite
-        self.ray_caster.setRunMode(Qt3DRender.QAbstractRayCaster.Continuous)
-        self.ray_caster.setFilterMode(Qt3DRender.QAbstractRayCaster.AcceptAnyMatchingLayers)
+        self.ray_caster.setRunMode(Qt3DRender.QAbstractRayCaster.RunMode.SingleShot)
+        self.ray_caster.setFilterMode(Qt3DRender.QAbstractRayCaster.FilterMode.AcceptAnyMatchingLayers)
         self.ray_caster.setOrigin(QtGui.QVector3D(float(origin_x), float(origin_y), float(origin_z)))
         self.ray_caster.setDirection(QtGui.QVector3D(direction_x, direction_y, direction_z))
         self.ray_caster.hitsChanged.connect(self.update_hit)

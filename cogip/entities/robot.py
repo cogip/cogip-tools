@@ -78,6 +78,11 @@ class RobotEntity(AssetEntity):
         self.update_pose_current_timer = QtCore.QTimer()
         self.update_pose_current_timer.timeout.connect(self.update_pose_current)
 
+        # Create a timer for consistent hit updates
+        self.update_hit_timer = QtCore.QTimer()
+        self.update_hit_timer.setTimerType(QtCore.Qt.TimerType.PreciseTimer)
+        self.update_hit_timer.start(RobotEntity.update_pose_current_interval)
+
     def setEnabled(self, isEnabled):
         if isEnabled:
             self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
@@ -148,6 +153,7 @@ class RobotEntity(AssetEntity):
             )
             sensor.shared_sensor_data = self.shared_lidar_data
             self.sensors.append(sensor)
+            self.update_hit_timer.timeout.connect(sensor.ray_caster.trigger)
 
     def add_tof_sensor(self):
         """

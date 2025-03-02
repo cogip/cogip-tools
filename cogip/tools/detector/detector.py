@@ -14,6 +14,7 @@ except:  # noqa
 from cogip import models
 from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
 from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.utils import ThreadLoop
 from . import logger
@@ -42,6 +43,7 @@ class Detector:
         max_distance: int,
         beacon_radius: int,
         refresh_interval: float,
+        sensor_delay: int,
     ):
         """
         Class constructor.
@@ -54,6 +56,8 @@ class Detector:
             max_distance: Maximum distance to detect an obstacle
             beacon_radius: Radius of the opponent beacon support (a cylinder of 70mm diameter to a cube of 100mm width)
             refresh_interval: Interval between each update of the obstacle list (in seconds)
+            sensor_delay: Delay to compensate the delay between sensor data fetch and obstacle positions computation,"
+                          unit is the index of pose current to get in the past
         """
         self.robot_id = robot_id
         self._server_url = server_url
@@ -63,11 +67,13 @@ class Detector:
             max_distance=max_distance,
             beacon_radius=beacon_radius,
             refresh_interval=refresh_interval,
+            sensor_delay=sensor_delay,
         )
 
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
         self.shared_pose_current: SharedPose | None = None
+        self.shared_pose_current_buffer: SharedPoseBuffer | None = None
         self.shared_lidar_data: NDArray | None = None
         self.shared_lidar_data_lock: WritePriorityLock | None = None
         self.shared_detector_obstacles: SharedCoordsList | None = None
@@ -125,6 +131,7 @@ class Detector:
         self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
         self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
         self.shared_pose_current = self.shared_memory.get_pose_current()
+        self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
         self.shared_lidar_data = self.shared_memory.get_lidar_data()
         self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
         self.shared_detector_obstacles = self.shared_memory.get_detector_obstacles()
@@ -135,6 +142,7 @@ class Detector:
         self.shared_detector_obstacles = None
         self.shared_lidar_data_lock = None
         self.shared_lidar_data = None
+        self.shared_pose_current_buffer = None
         self.shared_pose_current = None
         self.shared_pose_current_lock = None
         self.shared_memory = None
@@ -259,18 +267,22 @@ class Detector:
         """
         obstacles: list[models.Vertex] = []
 
+        # Copy the pose before computation to reduce critical section length
+        self.shared_pose_current_lock.start_reading()
+        try:
+            pose_current = self.shared_pose_current_buffer.get(self._properties.sensor_delay)
+        except Exception:
+            pose_current = self.shared_pose_current
+        robot_x = pose_current.x
+        robot_y = pose_current.y
+        robot_angle = pose_current.angle
+        self.shared_pose_current_lock.finish_reading()
+
         for angle, distance in enumerate(distances):
             if distance < self.properties.min_distance or distance >= self.properties.max_distance:
                 continue
 
             angle = (360 - angle) % 360
-
-            # Copy the pose before computation to reduce critical section length
-            self.shared_pose_current_lock.start_reading()
-            robot_x = self.shared_pose_current.x
-            robot_y = self.shared_pose_current.y
-            robot_angle = self.shared_pose_current.angle
-            self.shared_pose_current_lock.finish_reading()
 
             # Compute obstacle position
             obstacle_angle = math.radians((int(robot_angle) + angle) % 360)

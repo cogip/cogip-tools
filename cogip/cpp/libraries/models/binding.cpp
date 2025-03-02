@@ -4,6 +4,7 @@
 
 #include "models/CoordsList.hpp"
 #include "models/Pose.hpp"
+#include "models/PoseBuffer.hpp"
 #include "models/binding.hpp"
 
 #include <nanobind/nanobind.h>
@@ -165,6 +166,33 @@ NB_MODULE(models, m) {
             }
         )
     ;
+
+    // Bind pose_buffer_t structure
+    nb::class_<pose_buffer_t>(m, "PoseBufferT")
+        .def_rw("head", &pose_buffer_t::head, "Next write pose")
+        .def_rw("tail", &pose_buffer_t::tail, "Oldest pose")
+        .def("__repr__", [](const pose_buffer_t& buffer) {
+            std::ostringstream oss;
+            oss << buffer;
+            return oss.str();
+        })
+    ;
+
+    // Bind PoseBuffer class
+    nb::class_<PoseBuffer>(m, "PoseBuffer")
+        .def(nb::init<pose_buffer_t*>(), "Constructor", "data"_a = nullptr)
+        .def_prop_ro("head", &PoseBuffer::head, "Next write pose")
+        .def_prop_ro("tail", &PoseBuffer::tail, "Oldest pose")
+        .def("push", &PoseBuffer::push, "Get last pose pushed in the buffer", "x"_a, "y"_a, "angle"_a)
+        .def_prop_ro("last", &PoseBuffer::last, "Get last pose pushed in the buffer")
+        .def("get", &PoseBuffer::get, "Get the N-th position from head (0 is the most recent)", "n"_a)
+        .def("__repr__", [](const PoseBuffer &buffer) {
+            std::ostringstream oss;
+            oss << buffer;
+            return oss.str();
+        })
+    ;
+
 }
 
 } // namespace models

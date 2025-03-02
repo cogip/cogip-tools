@@ -82,6 +82,18 @@ def main_opt(
             envvar="DETECTOR_REFRESH_INTERVAL",
         ),
     ] = 0.2,
+    sensor_delay: Annotated[
+        int,
+        typer.Option(
+            min=0,
+            max=100,
+            help=(
+                "Delay to compensate the delay between sensor data fetch and obstacle positions computation."
+                "Unit is the index of pose current to get in the past"
+            ),
+            envvar="DETECTOR_SENSOR_DELAY",
+        ),
+    ] = 0,
     reload: Annotated[
         bool,
         typer.Option(
@@ -115,6 +127,7 @@ def main_opt(
         max_distance,
         beacon_radius,
         refresh_interval,
+        sensor_delay,
     )
 
     if reload:
