@@ -2,6 +2,7 @@
 
 #include "lidar_ld19/ldlidar_datatype.h"
 #include "lidar_ld19/ldlidar_protocol.h"
+#include "shared_memory/WritePriorityLock.hpp"
 
 #include <libserial/SerialPort.h>
 
@@ -103,6 +104,12 @@ public:
         tmp_lidar_scan_data_vec_.clear();
     }
 
+    /// Set the data write lock.
+    void setDataWriteLock(cogip::shared_memory::WritePriorityLock &lock) {
+        data_write_lock_ = &lock;
+    }
+    }
+
 protected:
     bool is_start_flag_;
     bool is_connect_flag_;
@@ -118,6 +125,7 @@ private:
     uint8_t lidar_error_code_;
     bool is_frame_ready_;
     bool is_noise_filter_;
+    cogip::shared_memory::WritePriorityLock *data_write_lock_;
     uint16_t timestamp_;
     double speed_;
     bool is_poweron_comm_normal_;

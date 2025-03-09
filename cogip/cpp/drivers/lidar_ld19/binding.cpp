@@ -8,10 +8,14 @@
 #include "lidar_ld19/ldlidar_driver.h"
 
 namespace nb = nanobind;
+using namespace nb::literals;
 
 namespace ldlidar {
 
 NB_MODULE(lidar_ld19, m) {
+    auto models_module = nb::module_::import_("cogip.cpp.libraries.models");
+    auto shared_memory_module = nb::module_::import_("cogip.cpp.libraries.shared_memory");
+
     nb::enum_<LibSerial::BaudRate>(m, "BaudRate")
         .value("BAUD_230400", LibSerial::BaudRate::BAUD_230400);
 
@@ -50,7 +54,9 @@ NB_MODULE(lidar_ld19, m) {
                 return nb::ndarray<uint16_t, nb::numpy, nb::shape<NUM_ANGLES, 2>>((void *)points);
             },
             nb::rv_policy::reference_internal
-        );
+        )
+        .def("set_data_write_lock", &LDLidarDriver::setDataWriteLock, "Set the data write lock", "lock"_a)
+    ;
 }
 
 } // namespace ldlidar

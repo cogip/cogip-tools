@@ -53,6 +53,7 @@ void LDLidarDriver::commonInit() {
     lidar_status_ = LidarStatus::NORMAL;
     lidar_error_code_ = LIDAR_NO_ERROR;
     is_frame_ready_ = false;
+    data_write_lock_ = nullptr;
     timestamp_ = 0;
     speed_ = 0;
     is_poweron_comm_normal_ = false;
@@ -356,6 +357,11 @@ void LDLidarDriver::setLaserScanData(Points2D &src) {
     }
 
     // Compute mean of points list for each degree.
+    if (data_write_lock_ != nullptr) {
+        data_write_lock_->startWriting();
+    }
+
+    if (! filter_enabled_) {
     for (size_t angle = 0; angle < NUM_ANGLES; angle++) {
         const auto &distances = tmp_distances[angle];
         const auto &intensities = tmp_intensities[angle];
@@ -368,6 +374,11 @@ void LDLidarDriver::setLaserScanData(Points2D &src) {
             lidar_data_[angle][0] = max_distance;  // Mark as invalid
             lidar_data_[angle][1] = 0;  // Mark as invalid
         }
+    }
+
+    if (data_write_lock_ != nullptr) {
+        data_write_lock_->finishWriting();
+        data_write_lock_->postUpdate();
     }
 }
 
