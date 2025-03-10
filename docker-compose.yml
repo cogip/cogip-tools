@@ -309,6 +309,7 @@ services:
       << : *env-firmware
       ROBOT_ID: 1
       FIRMWARE_APP: robot-motion-control
+      FIRMWARE_OPTIONS: "| nc -u -w0 teleplot.fr 14846"
     depends_on:
       make-firmware-motion-control:
         condition: service_completed_successfully

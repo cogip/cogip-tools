@@ -80,6 +80,7 @@ RUN apt-get update && \
         ncat netcat-openbsd \
         protobuf-compiler \
         quilt \
-        unzip
+        unzip \
+        netcat
 
 CMD ["sleep", "infinity"]
