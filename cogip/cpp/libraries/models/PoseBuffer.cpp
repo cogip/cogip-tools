@@ -32,11 +32,6 @@ PoseBuffer::~PoseBuffer()
     }
 };
 
-double PoseBuffer::full() const
-{
-
-};
-
 std::size_t PoseBuffer::size() const
 {
     if (data_->full) return POSE_BUFFER_SIZE_MAX;

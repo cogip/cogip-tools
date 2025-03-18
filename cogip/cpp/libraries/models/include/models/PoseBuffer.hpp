@@ -40,7 +40,7 @@ public:
     double tail() const { return data_->tail; };
 
     /// Return true if the buffer is full, false otherwise.
-    double full() const;
+    double full() const { return data_->full; };
 
     /// Get the number of stored positions
     std::size_t size() const;
