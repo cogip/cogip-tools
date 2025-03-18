@@ -24,7 +24,7 @@ SharedMemory::SharedMemory(const std::string& name, bool owner):
 {
     int shm_flags = O_RDWR;
     if (owner) {
-        shm_flags |= O_CREAT;
+        shm_flags |= O_CREAT | O_TRUNC;
     }
 
     umask(0000); // Allow full permissions (rw-rw-rw-)
