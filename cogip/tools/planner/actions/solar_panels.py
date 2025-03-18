@@ -60,7 +60,7 @@ class DiscoverSolarPanelsAction(Action):
         await asyncio.sleep(2)
         solar_panels = await get_solar_panels(self.planner)
         for panel_id, angle in solar_panels.items():
-            # Angle are given for yellow camp only
+            # Angles are given for blue camp only
             log_prefix = f"Solar panel {panel_id}: angle={angle}"
             match angle:
                 case angle if -5 <= angle < 20:

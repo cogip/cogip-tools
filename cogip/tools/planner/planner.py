@@ -896,8 +896,8 @@ class Planner:
                 new_camp = Camp.Colors[value]
                 if self.game_context.camp.color == new_camp:
                     return
-                if self.game_context._table == TableEnum.Training and new_camp == Camp.Colors.blue:
-                    logger.warning("Wizard: only yellow camp is authorized on training table")
+                if self.game_context._table == TableEnum.Training and new_camp == Camp.Colors.yellow:
+                    logger.warning("Wizard: only blue camp is authorized on training table")
                     return
                 self.game_context.camp.color = new_camp
                 await self.soft_reset()
@@ -924,14 +924,14 @@ class Planner:
                 new_table = TableEnum[value]
                 if self.game_context.table == new_table:
                     return
-                if self.game_context.camp.color == Camp.Colors.blue and new_table == TableEnum.Training:
-                    logger.warning("Wizard: training table is not supported with blue camp")
+                if self.game_context.camp.color == Camp.Colors.yellow and new_table == TableEnum.Training:
+                    logger.warning("Wizard: training table is not supported with yellow camp")
                     await self.sio_ns.emit(
                         "wizard",
                         {
                             "name": "Error",
                             "type": "message",
-                            "value": "Training table is not supported with blue camp",
+                            "value": "Training table is not supported with yellow camp",
                         },
                     )
                     return
@@ -1035,7 +1035,7 @@ class Planner:
                 message = {
                     "name": "Wizard Test Camp",
                     "type": "camp",
-                    "value": "yellow",
+                    "value": "blue",
                 }
             case "wizard_camera":
                 message = {

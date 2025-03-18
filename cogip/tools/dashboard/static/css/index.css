@@ -1,8 +1,8 @@
 :root {
   --grey-color: #acaeb1;
   --red-cogip: #d01b1e;
-  --color-camp-1: #005CE6; /* blue */
-  --color-camp-2: #FFBF00; /* yellow */
+  --color-camp-1: #FFBF00; /* yellow */
+  --color-camp-2: #005CE6; /* blue */
 }
 
 /* width */
@@ -244,7 +244,7 @@ input[type='checkbox']:checked {
   background-color:var(--red-cogip);
 }
 
-.btn-blue {
+.btn-yellow {
   color: #000;
   background-color: var(--color-camp-1) !important;
   border-color: var(--color-camp-1) !important;
@@ -253,7 +253,7 @@ input[type='checkbox']:checked {
   margin-right: 15px;
 }
 
-.btn-yellow {
+.btn-blue {
   color: #000;
   background-color: var(--color-camp-2) !important;
   border-color: var(--color-camp-2) !important;

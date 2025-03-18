@@ -80,7 +80,7 @@ class GameContext(metaclass=Singleton):
     def get_start_pose(self, n: StartPosition) -> Pose:
         """
         Define the possible start positions.
-        Default positions for yellow camp.
+        Default positions for blue camp.
         """
         match n:
             case StartPosition.Top:
@@ -95,7 +95,7 @@ class GameContext(metaclass=Singleton):
                     y=-1285,
                     O=90,
                 )
-                if self.camp.color == Camp.Colors.blue and self.strategy == actions.Strategy.GameSolarFirst:
+                if self.camp.color == Camp.Colors.yellow and self.strategy == actions.Strategy.GameSolarFirst:
                     pose.O = 90
                 return pose
             case StartPosition.Opposite:
@@ -155,7 +155,7 @@ class GameContext(metaclass=Singleton):
         return start_pose_indices
 
     def create_artifacts(self):
-        # Positions are related to the default camp yellow.
+        # Positions are related to the default camp blue.
         self.plant_supplies: dict[PlantSupplyID, PlantSupply] = {}
         self.pot_supplies: dict[PotSupplyID, PotSupply] = {}
         self.dropoff_zones: dict[DropoffZoneID, DropoffZone] = {}
@@ -226,7 +226,7 @@ class GameContext(metaclass=Singleton):
             self.solar_panels[id] = SolarPanels(id=id, x=pose.x, y=pose.y)
 
     def create_fixed_obstacles(self):
-        # Positions are related to the default camp yellow.
+        # Positions are related to the default camp blue.
         self.fixed_obstacles: list[DynObstacleRect] = []
 
         pose = AdaptedPose(x=1000 - 225, y=1500 - 225)

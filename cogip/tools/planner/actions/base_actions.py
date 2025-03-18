@@ -459,7 +459,7 @@ class SolarPanelsAction(Action):
             y=self.planner.pose_current.y,
             O=self.planner.pose_current.angle,
         )
-        if self.game_context.camp.color == Camp.Colors.blue:
+        if self.game_context.camp.color == Camp.Colors.yellow:
             self.shift_y = -self.shift_y
 
         if self.solar_panels.id == artifacts.SolarPanelsID.Shared:
@@ -715,7 +715,7 @@ class DropInPlanterAction(Action):
         self.approach_delta = 50
         self.half_robot_length = self.game_context.properties.robot_length / 2
 
-        if self.game_context.camp.color == Camp.Colors.yellow:
+        if self.game_context.camp.color == Camp.Colors.blue:
             match planter_id:
                 case artifacts.PlanterID.Top:
                     drop_x = self.planter.x + self.front_excess + self.blocking_extra_move - self.half_robot_length
@@ -829,7 +829,7 @@ class DropInPlanterAction(Action):
                 y=self.planner.pose_current.y,
                 O=self.planner.pose_current.angle,
             )
-            if self.game_context.camp.color == Camp.Colors.yellow:
+            if self.game_context.camp.color == Camp.Colors.blue:
                 match self.planter.id:
                     case artifacts.PlanterID.Top:
                         current_pose.x = self.planter.x - self.half_robot_length
