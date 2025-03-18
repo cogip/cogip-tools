@@ -1,8 +1,42 @@
-@import "custom-scrollbar.css";
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    /* width */
+    ::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    /* Track */
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.25);
+    }
+
+    /* Handle */
+    ::-webkit-scrollbar-thumb {
+        background: var(--grey-color);
+    }
+
+    /* Handle on hover */
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--grey-color);
+    }
+
+    /* For Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--grey-color) rgba(0, 0, 0, 0.25);
+    }
+
+    .thumb-red-cogip::-webkit-slider-thumb {
+        @apply bg-red-cogip w-4 h-4 rounded-full appearance-none cursor-pointer;
+    }
+
+    .thumb-red-cogip::-moz-range-thumb {
+        @apply bg-red-cogip w-4 h-4 rounded-full cursor-pointer;
+    }
+}
 
 :root {
     --grey-color: #acaeb1;
