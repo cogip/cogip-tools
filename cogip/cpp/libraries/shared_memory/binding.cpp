@@ -88,9 +88,9 @@ NB_MODULE(shared_memory, m) {
             "Get the lidar_data structure from shared memory ."
         )
         .def("get_detector_obstacles", &SharedMemory::getDetectorObstacles, nb::rv_policy::reference_internal,
-             "Get CoordsList object wrapping the shared memory detector_obstacles structure.")
+             "Get CircleList object wrapping the shared memory detector_obstacles structure.")
         .def("get_monitor_obstacles", &SharedMemory::getMonitorObstacles, nb::rv_policy::reference_internal,
-             "Get CoordsList object wrapping the shared memory monitor_obstacles structure.")
+             "Get CircleList object wrapping the shared memory monitor_obstacles structure.")
         .def("get_circle_obstacles", &SharedMemory::getCircleObstacles, nb::rv_policy::reference_internal,
              "Get ObstacleCircleList object wrapping the shared memory circle_obstacles structure.")
         .def("get_rectangle_obstacles", &SharedMemory::getRectangleObstacles, nb::rv_policy::reference_internal,

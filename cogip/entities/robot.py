@@ -9,7 +9,7 @@ from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
 from PySide6.QtCore import Slot as qtSlot
 
-from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
+from cogip.cpp.libraries.models import CircleList as SharedCircleList
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
@@ -54,7 +54,7 @@ class RobotEntity(AssetEntity):
         self.shared_lidar_data_lock: WritePriorityLock | None = None
         self.shared_circle_obstacles: SharedObstacleCircleList | None = None
         self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
-        self.shared_monitor_obstacles: SharedCoordsList | None = None
+        self.shared_monitor_obstacles: SharedCircleList | None = None
         self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
 
         if robot_id == 1:

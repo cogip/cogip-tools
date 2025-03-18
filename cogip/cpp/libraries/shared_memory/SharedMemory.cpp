@@ -60,8 +60,8 @@ SharedMemory::SharedMemory(const std::string& name, bool owner):
     pose_current_buffer_ = new models::PoseBuffer(&data_->pose_current_buffer);
     pose_current_ = new models::Pose(&data_->pose_current);
     pose_order_ = new models::Pose(&data_->pose_order);
-    detector_obstacles_ = new models::CoordsList(&data_->detector_obstacles);
-    monitor_obstacles_ = new models::CoordsList(&data_->monitor_obstacles);
+    detector_obstacles_ = new models::CircleList(&data_->detector_obstacles);
+    monitor_obstacles_ = new models::CircleList(&data_->monitor_obstacles);
     circle_obstacles_ = new obstacles::ObstacleCircleList(&data_->circle_obstacles);
     rectangle_obstacles_ = new obstacles::ObstacleRectangleList(&data_->rectangle_obstacles);
 

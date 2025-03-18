@@ -12,7 +12,7 @@ except:  # noqa
     ydlidar = None
 
 from cogip import models
-from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
+from cogip.cpp.libraries.models import CircleList as SharedCircleList
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
@@ -76,7 +76,7 @@ class Detector:
         self.shared_pose_current_buffer: SharedPoseBuffer | None = None
         self.shared_lidar_data: NDArray | None = None
         self.shared_lidar_data_lock: WritePriorityLock | None = None
-        self.shared_detector_obstacles: SharedCoordsList | None = None
+        self.shared_detector_obstacles: SharedCircleList | None = None
         self.shared_detector_obstacles_lock: WritePriorityLock | None = None
 
         self._lidar_data: list[int] = list()

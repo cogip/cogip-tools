@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "models/circle_list.hpp"
 #include "models/coords_list.hpp"
 #include "models/pose.hpp"
 #include "models/pose_buffer.hpp"
@@ -26,8 +27,8 @@ typedef struct {
     models::pose_t pose_current;  ///< The current pose.
     models::pose_t pose_order;    ///< The target pose.
     float lidar_data[MAX_LIDAR_DATA_COUNT][3];  ///< The Lidar data (angle, distance, intensity).
-    models::coords_list_t detector_obstacles;  ///< The obstacles from detector.
-    models::coords_list_t monitor_obstacles;   ///< The obstacles from monitor.
+    models::circle_list_t detector_obstacles;  ///< The obstacles from detector.
+    models::circle_list_t monitor_obstacles;   ///< The obstacles from monitor.
     obstacles::obstacle_circle_list_t circle_obstacles;  ///< The circle obstacles from planner.
     obstacles::obstacle_polygon_list_t rectangle_obstacles;  ///< The rectangle obstacles from planner.
 } shared_data_t;

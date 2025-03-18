@@ -19,7 +19,7 @@ from PIL import ImageFont
 from pydantic import RootModel, TypeAdapter
 
 from cogip import models
-from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
+from cogip.cpp.libraries.models import CircleList as SharedCircleList
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
@@ -104,9 +104,9 @@ class Planner:
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
         self.pose_current: SharedPose | None = None
-        self.shared_detector_obstacles: SharedCoordsList | None = None
+        self.shared_detector_obstacles: SharedCircleList | None = None
         self.shared_detector_obstacles_lock: WritePriorityLock | None = None
-        self.shared_monitor_obstacles: SharedCoordsList | None = None
+        self.shared_monitor_obstacles: SharedCircleList | None = None
         self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
         self.shared_circle_obstacles: SharedObstacleCircleList | None = None
         self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
@@ -230,8 +230,8 @@ class Planner:
             self.shared_circle_obstacles = None
             self.shared_monitor_obstacles_lock = None
             self.shared_monitor_obstacles = None
-            self.shared_detector_obstacles_lock: WritePriorityLock | None = None
-            self.shared_detector_obstacles: SharedCoordsList | None = None
+            self.shared_detector_obstacles_lock = None
+            self.shared_detector_obstacles = None
             self.pose_current = None
             self.shared_pose_current_lock = None
             self.shared_memory = None

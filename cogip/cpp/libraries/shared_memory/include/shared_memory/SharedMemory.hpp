@@ -5,6 +5,7 @@
 #include "shared_memory/shared_data.hpp"
 #include "shared_memory/WritePriorityLock.hpp"
 
+#include "models/CircleList.hpp"
 #include "models/PoseBuffer.hpp"
 #include "obstacles/ObstacleCircleList.hpp"
 #include "obstacles/ObstacleRectangleList.hpp"
@@ -60,10 +61,10 @@ public:
     float (&getLidarData())[MAX_LIDAR_DATA_COUNT][3] { return data_->lidar_data; }
 
     /// Retrieves a pointer to the shared memory detector_obstacles structure.
-    models::CoordsList* getDetectorObstacles() { return detector_obstacles_; }
+    models::CircleList* getDetectorObstacles() { return detector_obstacles_; }
 
     /// Retrieves a pointer to the shared memory monitor_obstacles structure.
-    models::CoordsList* getMonitorObstacles() { return monitor_obstacles_; }
+    models::CircleList* getMonitorObstacles() { return monitor_obstacles_; }
 
     /// Retrieves a pointer to the shared memory circle_obstacles structure.
     obstacles::ObstacleCircleList* getCircleObstacles() { return circle_obstacles_; }
@@ -80,8 +81,8 @@ private:
     models::PoseBuffer* pose_current_buffer_;  ///< Pointer to the PoseBuffer object wrapping the shared memory pose_current_buffer structure.
     models::Pose* pose_current_;  ///< Pointer to the Pose object wrapping the shared memory pose_current structure.
     models::Pose* pose_order_;    ///< Pointer to the Pose object wrapping the shared memory pose_order structure.
-    models::CoordsList* detector_obstacles_;  ///< Pointer to the CoordsList object wrapping the shared memory detector_obstacles structure.
-    models::CoordsList* monitor_obstacles_;  ///< Pointer to the CoordsList object wrapping the shared memory monitor_obstacles structure.
+    models::CircleList* detector_obstacles_;  ///< Pointer to the CircleList object wrapping the shared memory detector_obstacles structure.
+    models::CircleList* monitor_obstacles_;  ///< Pointer to the CircleList object wrapping the shared memory monitor_obstacles structure.
     obstacles::ObstacleCircleList* circle_obstacles_;  ///< Pointer to the ObstacleCircleList object wrapping the shared memory circle_obstacles structure.
     obstacles::ObstacleRectangleList* rectangle_obstacles_;  ///< Pointer to the ObstacleRectangleList object wrapping the shared memory rectangle_obstacles structure.
 };

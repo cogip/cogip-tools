@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from cogip.cpp.libraries.models import Coords
 from cogip.cpp.libraries.obstacles import ObstacleCircle
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory
 
@@ -95,12 +94,12 @@ def main():
     writer_detector_obstacles = reader.get_detector_obstacles()
     print(" => reader detector_obstacles size = ", reader_detector_obstacles.size())
     writer_detector_obstacles.append(1.0, 2.0)
-    writer_detector_obstacles.append(Coords(3.0, 4.0))
+    writer_detector_obstacles.append(3.0, 4.0)
     print(" => reader detector_obstacles size = ", reader_detector_obstacles.size())
     print(" => reader detector_obstacles[0] = ", reader_detector_obstacles.get(0))
     print(" => reader detector_obstacles[1] = ", reader_detector_obstacles.get(1))
     writer_detector_obstacles.set(0, 5.0, 6.0)
-    writer_detector_obstacles[1] = Coords(7.0, 8.0)
+    writer_detector_obstacles.set(1, 7.0, 8.0)
     print(" => reader detector_obstacles[0] = ", reader_detector_obstacles.get(0))
     print(" => reader detector_obstacles[1] = ", reader_detector_obstacles.get(1))
     coords1 = writer_detector_obstacles.get(0)
