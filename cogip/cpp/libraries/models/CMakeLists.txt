@@ -3,6 +3,8 @@
 add_library(
     models_cpp
     SHARED
+    Circle.cpp
+    CircleList.cpp
     Coords.cpp
     CoordsList.cpp
     Polar.cpp
