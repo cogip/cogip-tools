@@ -122,6 +122,9 @@ x-robot: &robot
     PLANNER_PATH_REFRESH_INTERVAL:
     PLANNER_PLOT:
     PLANNER_BYPASS_DETECTOR:
+    PLANNER_SCSERVOS_PORT:
+    PLANNER_SCSERVOS_BAUD_RATE:
+    PLANNER_DISABLE_FIXED_OBSTACLES:
     COPILOT_RELOAD:
     COPILOT_DEBUG:
     DETECTOR_RELOAD:
@@ -165,7 +168,7 @@ x-pami: &pami
     PLANNER_DEBUG:
     PLANNER_RELOAD:
     PLANNER_ROBOT_LENGTH: 212
-    PLANNER_ROBOT_WIDTH: 140
+    PLANNER_ROBOT_WIDTH: 100
     PLANNER_OBSTACLE_RADIUS:
     PLANNER_OBSTACLE_BB_MARGIN:
     PLANNER_OBSTACLE_BB_VERTICES: 6
@@ -173,6 +176,9 @@ x-pami: &pami
     PLANNER_PATH_REFRESH_INTERVAL:
     PLANNER_PLOT:
     PLANNER_BYPASS_DETECTOR:
+    PLANNER_SCSERVOS_PORT:
+    PLANNER_SCSERVOS_BAUD_RATE:
+    PLANNER_DISABLE_FIXED_OBSTACLES:
     COPILOT_RELOAD:
     COPILOT_DEBUG:
     DETECTOR_PAMI_TOF_BUS:
@@ -505,7 +511,7 @@ services:
   build_wheel:
     build:
       context: .
-      target: uv_base
+      target: build_wheel
     platform: "linux/arm64"
     command:
       - /bin/sh
@@ -513,7 +519,7 @@ services:
       - -c
       - |
         uv build --wheel -C build-dir=/src/build/wheel
-        chown ${UID:-1000}:${GID:-1000} dist/*_aarch64.whl
+        chown ${UID:-1000}:${GID:-1000} dist/cogip_tools-1.0.0-cp312-abi3-linux_aarch64.whl
     volumes:
       - "./cogip:/src/cogip"
       - "./.python-version:/src/.python-version"

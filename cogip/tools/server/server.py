@@ -122,7 +122,9 @@ class Server:
             {
                 "x": obstacle.center.x,
                 "y": obstacle.center.y,
+                "angle": 0,
                 "radius": obstacle.radius,
+                "bounding_box": [{"x": p.x, "y": p.y} for p in obstacle.bounding_box],
                 "id": obstacle.id,
             }
             for obstacle in Server._shared_circle_obstacles
@@ -131,8 +133,10 @@ class Server:
             {
                 "x": obstacle.center.x,
                 "y": obstacle.center.y,
+                "angle": obstacle.center.angle,
                 "length_x": obstacle.length_x,
                 "length_y": obstacle.length_y,
+                "bounding_box": [{"x": p.x, "y": p.y} for p in obstacle.bounding_box],
                 "id": obstacle.id,
             }
             for obstacle in Server._shared_rectangle_obstacles

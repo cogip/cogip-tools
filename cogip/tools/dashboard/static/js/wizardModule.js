@@ -429,7 +429,7 @@ function configureCampInput(value) {
   const campZone = document.createElement("div");
   setAttributes(campZone, { id: "newZone" });
 
-  const listCamp = ["blue", "yellow"];
+  const listCamp = ["yellow", "blue"];
   listCamp.forEach((camp) => {
     const isActive =
       camp === value ? "active shadow-inner shadow-black outline-none" : "";

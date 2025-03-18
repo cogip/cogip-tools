@@ -120,6 +120,12 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         self.planner.update_config(config)
 
+    async def on_scservo_updated(self, scservo: dict[str, Any]):
+        """
+        Callback on scservo update from dashboard.
+        """
+        await self.planner.update_scservo(scservo)
+
     async def on_wizard(self, message: dict[str, Any]):
         """
         Callback on wizard message.

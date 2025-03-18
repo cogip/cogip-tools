@@ -37,7 +37,7 @@ class Avoidance:
         border_coords.append(table.x_max, table.y_min)
         border_coords.append(table.x_max, table.y_max)
         border_coords.append(table.x_min, table.y_max)
-        border_obstacle = SharedObstaclePolygon(border_coords, bounding_box_margin=0, bounding_box_points_number=0)
+        border_obstacle = SharedObstaclePolygon(border_coords, bounding_box_margin=0)
         self.cpp_avoidance = CppAvoidance(border_obstacle)
 
     def check_recompute(self, pose_current: models.PathPose, goal: models.PathPose) -> bool:

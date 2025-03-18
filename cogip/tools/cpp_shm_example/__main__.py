@@ -136,10 +136,8 @@ def main():
     reader_rectangle_obstacles = reader.get_rectangle_obstacles()
     writer_rectangle_obstacles = reader.get_rectangle_obstacles()
     print(" => reader rectangle_obstacles size = ", reader_rectangle_obstacles.size())
-    writer_rectangle_obstacles.append(10, 20, 90, 200, 300, 0.2, 4)
-    writer_rectangle_obstacles.append(
-        x=40, y=50, angle=180, length_x=250, length_y=350, bounding_box_margin=0.2, bounding_box_points_number=5
-    )
+    writer_rectangle_obstacles.append(10, 20, 90, 200, 300, 0.2)
+    writer_rectangle_obstacles.append(x=40, y=50, angle=180, length_x=250, length_y=350, bounding_box_margin=0.2)
     print(" => writer rectangle_obstacles size = ", len(writer_rectangle_obstacles))
     for i, obstacle in enumerate(reader_rectangle_obstacles):
         print(f" => reader iterator on writer_rectangle_obstacles: obstacle[{i}] = {obstacle}")

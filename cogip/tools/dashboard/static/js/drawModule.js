@@ -5,6 +5,7 @@ const robotColors = {
   2: "#3A5431",
   3: "#432D57",
   4: "#001DBC",
+  5: "#6D1F00",
 };
 
 let ratioX = null, ratioY = null,  coordX = 0, coordY = 0;
@@ -125,10 +126,7 @@ export function displayMsg(robot_id, msg) {
   context.clearRect(coordX, -coordY, canvas.width, canvas.height);
 
   Object.entries(pose_current).forEach(([robot_id, pose]) => {
-    // Check if current position is valid
-    if (pose && !isNaN(pose.x) && !isNaN(pose.y)) {
-      drawRobot(getImage(robot_id, "robot"), pose.x, pose.y, pose.O, context);
-    }
+    drawPathsAndObstacles(robotColors[robot_id] || "red", robot_id, context);
 
     // Draw orderPose
     const orderPose = pose_order[robot_id];
@@ -145,7 +143,10 @@ export function displayMsg(robot_id, msg) {
       context.filter = previousFilter;
     }
 
-    drawPathsAndObstacles(robotColors[robot_id] || "red", robot_id, context);
+    // Check if current position is valid
+    if (pose && !isNaN(pose.x) && !isNaN(pose.y)) {
+      drawRobot(getImage(robot_id, "robot"), pose.x, pose.y, pose.O, context);
+    }
   });
 
   // Refresh canvas continuously.
@@ -214,32 +215,49 @@ function drawPath(color, start, end, context) {
 }
 
 function drawObstacles(color, obstacle, context) {
-  const { x, y, angle } = adaptCoords(obstacle.x, obstacle.y, 0);
+  const { x, y, angle } = adaptCoords(obstacle.x, obstacle.y, obstacle.angle);
   const obstacleX = x * ratioX;
   const obstacleY = y * ratioY;
 
   const previousFilter = context.filter;
-  context.fillStyle = obstacle.id ? "purple" : color;
-  context.filter = "opacity(40%)";
+  const obstacle_color = obstacle.id ? "#e555e5" : color;
+  context.fillStyle = obstacle_color;
+  context.filter = "opacity(20%)";
 
+  context.save(); // Save the current context state
+
+  context.translate(obstacleX, obstacleY);
+  context.rotate((angle * Math.PI) / 180);
   if (obstacle.radius) {
     const radius = obstacle.radius * ratioX; // Precalculate radius
     context.beginPath();
-    context.arc(obstacleX, obstacleY, radius, 0, 2 * Math.PI);
+    context.arc(0, 0, radius, 0, 2 * Math.PI); // Draw the circle at the origin
     context.fill();
   } else {
     const lengthX = obstacle.length_x * ratioX;
     const lengthY = obstacle.length_y * ratioY;
 
-    context.translate(obstacleX, obstacleY);
-    context.rotate((angle * Math.PI) / 180);
     context.fillRect(
       -lengthX / 2,
       -lengthY / 2,
       lengthX, lengthY
     );
-    context.rotate(-(angle * Math.PI) / 180);
-    context.translate(-obstacleX, -obstacleY);
+  }
+
+  context.restore(); // Restore the previous context state
+
+  // Draw bounding box
+  if (obstacle.bounding_box.length > 1) {
+    obstacle.bounding_box.reduce((prev, curr) => {
+      drawPath(obstacle_color, prev, curr, context);
+      return curr;
+    });
+    drawPath(
+      obstacle_color,
+      obstacle.bounding_box[obstacle.bounding_box.length - 1],
+      obstacle.bounding_box[0],
+      context
+    );
   }
 
   context.filter = previousFilter;

@@ -38,14 +38,14 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
 {
     int shm_flags = O_RDWR;
     if (owner) {
-        shm_flags |= O_CREAT;
+        shm_flags |= O_CREAT | O_TRUNC;
     }
 
     umask(0000); // Allow full permissions (rw-rw-rw-)
 
     // Open or create the mutex semaphore
     if (owner) {
-        sem_mutex_ = sem_open(mutex_name_.c_str(), O_CREAT | O_RDWR, 0666, 1);
+        sem_mutex_ = sem_open(mutex_name_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0666, 1);
     }
     else {
         sem_mutex_ = sem_open(mutex_name_.c_str(), O_RDWR);
@@ -56,7 +56,7 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
 
     // Open or create the write lock semaphore
     if (owner) {
-        sem_write_lock_ = sem_open(write_lock_name_.c_str(), O_CREAT | O_RDWR, 0666, 1);
+        sem_write_lock_ = sem_open(write_lock_name_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0666, 1);
     }
     else {
         sem_write_lock_ = sem_open(write_lock_name_.c_str(), O_RDWR);
@@ -67,7 +67,7 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
 
     // Open or create the update semaphore
     if (owner) {
-        sem_update_ = sem_open(update_name_.c_str(), O_CREAT | O_RDWR, 0666, 1);
+        sem_update_ = sem_open(update_name_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0666, 1);
     }
     else {
         sem_update_ = sem_open(update_name_.c_str(), O_RDWR);
@@ -78,7 +78,7 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
 
     // Open or create the register semaphore
     if (owner) {
-        sem_register_ = sem_open(registration_name_.c_str(), O_CREAT | O_RDWR, 0666, 1);
+        sem_register_ = sem_open(registration_name_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0666, 1);
     }
     else {
         sem_register_ = sem_open(registration_name_.c_str(), O_RDWR);
@@ -186,6 +186,7 @@ WritePriorityLock::~WritePriorityLock() {
         sem_unlink(write_lock_name_.c_str());
         shm_unlink(reader_count_shm_name_.c_str());
         shm_unlink(write_request_shm_name_.c_str());
+        shm_unlink(consumer_count_shm_name_.c_str());
     }
 }
 

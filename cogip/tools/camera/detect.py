@@ -21,8 +21,6 @@ from .utils import (
     wrap_to_pi,
 )
 
-# Best distance for plant detection: ~ 65 cm
-
 # Marker axes:
 # - X: red
 # - Y: green
@@ -46,12 +44,6 @@ marker_sizes: dict[int, float] = {
     21: 100.0,  # Back/Right   500/-750
     22: 100.0,  # Front/Left   -500/750
     23: 100.0,  # Front/Right  -500/-750
-    # Resistant (purple) plant marker
-    13: 20.0,
-    # Delicate (white) plant marker
-    36: 20.0,
-    # Solar panel marker
-    47: 37.5,
 }
 
 table_markers_positions = {
@@ -90,37 +82,37 @@ def get_robot_position(n: int) -> Pose | None:
     Define the possible start positions.
     """
     match n:
-        case 1:  # Back left (blue)
+        case 1:  # Back left (yellow)
             return Pose(
                 x=1000 - 450 + robot_width / 2,
                 y=1500 - 450 + robot_width / 2,
                 O=-90,
             )
-        case 2:  # Front left (blue)
+        case 2:  # Front left (yellow)
             return Pose(
                 x=-(1000 - 450 + robot_width / 2),
                 y=1500 - 450 + robot_width / 2,
                 O=-90,
             )
-        case 3:  # Middle right (blue)
+        case 3:  # Middle right (yellow)
             return Pose(
                 x=robot_width / 2,
                 y=-(1500 - 450 + robot_width / 2),
                 O=90,
             )
-        case 4:  # Back right (yellow)
+        case 4:  # Back right (blue)
             return Pose(
                 x=1000 - 450 + robot_width / 2,
                 y=-(1500 - 450 + robot_width / 2),
                 O=90,
             )
-        case 5:  # Front right (yellow)
+        case 5:  # Front right (blue)
             return Pose(
                 x=-(1000 - 450 + robot_width / 2),
                 y=-(1500 - 450 + robot_width / 2),
                 O=90,
             )
-        case 6:  # Middle left (yellow)
+        case 6:  # Middle left (blue)
             return Pose(
                 x=robot_width / 2,
                 y=-(1500 - 450 + robot_width / 2),

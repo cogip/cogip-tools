@@ -32,9 +32,7 @@ class ActuatorBase(BaseModel):
 class ServoEnum(IntEnum):
     """Enum defining servo IDs"""
 
-    LXSERVO_LEFT_CART = 0
-    LXSERVO_RIGHT_CART = 1
-    LXSERVO_ARM_PANEL = 2
+    LXSERVO_UNDEFINED = 0
 
 
 class ServoCommand(BaseModel):
@@ -103,15 +101,7 @@ class Servo(ActuatorBase, ServoCommand):
 class PositionalActuatorEnum(IntEnum):
     """Enum defining positional actuators IDs"""
 
-    MOTOR_BOTTOM_LIFT = 0
-    MOTOR_TOP_LIFT = 1
-    ANALOGSERVO_BOTTOM_GRIP_LEFT = 2
-    ANALOGSERVO_BOTTOM_GRIP_RIGHT = 3
-    ANALOGSERVO_TOP_GRIP_LEFT = 4
-    ANALOGSERVO_TOP_GRIP_RIGHT = 5
-    CART_MAGNET_LEFT = 6
-    CART_MAGNET_RIGHT = 7
-    ANALOGSERVO_PAMI = 8
+    UNDEFINED = 0
 
 
 class PositionalActuatorCommand(BaseModel):
@@ -170,12 +160,7 @@ class PositionalActuator(ActuatorBase, PositionalActuatorCommand):
 class BoolSensorEnum(IntEnum):
     """Enum defining bool sensors IDs"""
 
-    BOTTOM_GRIP_LEFT = 0
-    BOTTOM_GRIP_RIGHT = 1
-    TOP_GRIP_LEFT = 2
-    TOP_GRIP_RIGHT = 3
-    MAGNET_LEFT = 4
-    MAGNET_RIGHT = 5
+    UNDEFINED = 0
 
 
 class BoolSensor(BaseModel):
@@ -203,17 +188,4 @@ ActuatorCommand = ServoCommand | PositionalActuatorCommand
 
 
 # Actuator limits
-actuator_limits: dict[IntEnum, tuple[int, int]] = {
-    ServoEnum.LXSERVO_LEFT_CART: (400, 950),
-    ServoEnum.LXSERVO_RIGHT_CART: (50, 600),
-    ServoEnum.LXSERVO_ARM_PANEL: (300, 950),
-    PositionalActuatorEnum.MOTOR_BOTTOM_LIFT: (0, 100),
-    PositionalActuatorEnum.MOTOR_TOP_LIFT: (0, 180),
-    PositionalActuatorEnum.ANALOGSERVO_BOTTOM_GRIP_LEFT: (50, 250),
-    PositionalActuatorEnum.ANALOGSERVO_BOTTOM_GRIP_RIGHT: (50, 250),
-    PositionalActuatorEnum.ANALOGSERVO_TOP_GRIP_LEFT: (50, 250),
-    PositionalActuatorEnum.ANALOGSERVO_TOP_GRIP_RIGHT: (50, 250),
-    PositionalActuatorEnum.CART_MAGNET_LEFT: (0, 1),
-    PositionalActuatorEnum.CART_MAGNET_RIGHT: (0, 1),
-    PositionalActuatorEnum.ANALOGSERVO_PAMI: (0, 999),
-}
+actuator_limits: dict[IntEnum, tuple[int, int]] = {}
