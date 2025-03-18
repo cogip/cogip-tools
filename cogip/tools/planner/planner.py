@@ -724,6 +724,7 @@ class Planner:
             schema = TypeAdapter(Properties).json_schema()
             # Add namespace in JSON Schema
             schema["namespace"] = "/planner"
+            schema["sio_event"] = "config_updated"
             # Add current values in JSON Schema
             for prop, value in RootModel[Properties](self.properties).model_dump().items():
                 schema["properties"][prop]["value"] = value
