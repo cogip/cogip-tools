@@ -1,11 +1,11 @@
 let pose_current = {}, pose_order = {}, path = {}, obstacles = {};
 const robotImages = {}, orderImages = {}, cachedElements = {};
 const robotColors = {
-  1: "#F0A30A",
-  2: "#3A5431",
-  3: "#432D57",
-  4: "#001DBC",
-  5: "#6D1F00",
+  1: "#FFA500", // Bright orange
+  2: "#32CD32", // Lime green
+  3: "#FF69B4", // Hot pink
+  4: "#1E90FF", // Dodger blue
+  5: "#FF6347", // Orange red
 };
 
 let ratioX = null, ratioY = null,  coordX = 0, coordY = 0;
