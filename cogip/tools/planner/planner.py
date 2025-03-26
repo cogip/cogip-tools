@@ -15,6 +15,7 @@ from gpiozero.pins.mock import MockFactory
 from luma.core.interface.serial import i2c
 from luma.core.render import canvas
 from luma.oled.device import sh1106
+from numpy.typing import NDArray
 from PIL import ImageFont
 from pydantic import RootModel, TypeAdapter
 
@@ -104,6 +105,7 @@ class Planner:
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
         self.pose_current: SharedPose | None = None
+        self.shared_table_limits: NDArray | None = None
         self.shared_detector_obstacles: SharedCircleList | None = None
         self.shared_detector_obstacles_lock: WritePriorityLock | None = None
         self.shared_monitor_obstacles: SharedCircleList | None = None
@@ -215,6 +217,7 @@ class Planner:
             self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
             self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
             self.pose_current = self.shared_memory.get_pose_current()
+            self.shared_table_limits = self.shared_memory.get_table_limits()
             self.shared_detector_obstacles = self.shared_memory.get_detector_obstacles()
             self.shared_detector_obstacles_lock = self.shared_memory.get_lock(LockName.DetectorObstacles)
             self.shared_monitor_obstacles = self.shared_memory.get_monitor_obstacles()
@@ -232,6 +235,7 @@ class Planner:
             self.shared_monitor_obstacles = None
             self.shared_detector_obstacles_lock = None
             self.shared_detector_obstacles = None
+            self.shared_table_limits = None
             self.pose_current = None
             self.shared_pose_current_lock = None
             self.shared_memory = None
@@ -349,6 +353,10 @@ class Planner:
         Only reset context and actions.
         """
         self.game_context.reset()
+        self.shared_table_limits[0] = self.game_context.table.x_min
+        self.shared_table_limits[1] = self.game_context.table.x_max
+        self.shared_table_limits[2] = self.game_context.table.y_min
+        self.shared_table_limits[3] = self.game_context.table.y_max
         self.actions = action_classes.get(self.game_context.strategy, actions.Actions)(self)
         available_start_poses = self.game_context.get_available_start_poses()
         if available_start_poses and self.start_position not in available_start_poses:
@@ -980,6 +988,10 @@ class Planner:
                     )
                     return
                 self.game_context.table = new_table
+                self.shared_table_limits[0] = self.game_context.table.x_min
+                self.shared_table_limits[1] = self.game_context.table.x_max
+                self.shared_table_limits[2] = self.game_context.table.y_min
+                self.shared_table_limits[3] = self.game_context.table.y_max
                 self.shared_properties["table"] = new_table
                 await self.soft_reset()
                 logger.info(f"Wizard: New table: {self.game_context._table.name}")

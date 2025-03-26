@@ -79,13 +79,21 @@ NB_MODULE(shared_memory, m) {
         .def("get_pose_order", &SharedMemory::getPoseOrder, nb::rv_policy::reference_internal,
              "Get Pose object wrapping the shared memory pose_order structure.")
         .def(
-            "get_lidar_data",
-            [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>> {
-                auto &data = self.getLidarData();
-                return nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>>((void *)data);
+            "get_table_limits",
+            [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<4>> {
+                return nb::ndarray<float, nb::numpy, nb::shape<4>>((void *)self.getTableLimits());
             },
             nb::rv_policy::reference_internal,
-            "Get the lidar_data structure from shared memory ."
+            "Get the table_limits structure from shared memory ."
+        )
+        .def(
+          "get_lidar_data",
+          [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>> {
+              auto &data = self.getLidarData();
+              return nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>>((void *)data);
+          },
+          nb::rv_policy::reference_internal,
+          "Get the lidar_data structure from shared memory ."
         )
         .def("get_detector_obstacles", &SharedMemory::getDetectorObstacles, nb::rv_policy::reference_internal,
              "Get CircleList object wrapping the shared memory detector_obstacles structure.")

@@ -26,11 +26,13 @@ typedef struct {
     models::pose_buffer_t pose_current_buffer;  ///< The last current poses.
     models::pose_t pose_current;  ///< The current pose.
     models::pose_t pose_order;    ///< The target pose.
+    float table_limits[4];  ///< The limits of the table.
     float lidar_data[MAX_LIDAR_DATA_COUNT][3];  ///< The Lidar data (angle, distance, intensity).
     models::circle_list_t detector_obstacles;  ///< The obstacles from detector.
     models::circle_list_t monitor_obstacles;   ///< The obstacles from monitor.
     obstacles::obstacle_circle_list_t circle_obstacles;  ///< The circle obstacles from planner.
     obstacles::obstacle_polygon_list_t rectangle_obstacles;  ///< The rectangle obstacles from planner.
+
 } shared_data_t;
 
 /// Overloads the stream insertion operator for `shared_data_t`.
