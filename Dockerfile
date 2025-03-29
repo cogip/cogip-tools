@@ -101,3 +101,7 @@ WORKDIR /src
 RUN curl -LsSf https://astral.sh/uv/0.5.11/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
 ENV UV_PYTHON_INSTALL_DIR=/opt/python
 ENV PATH="/src/.venv/bin:${PATH}"
+
+# Help CMake to find the correct compilers
+ENV CC="/usr/bin/aarch64-linux-gnu-gcc"
+ENV CXX="/usr/bin/aarch64-linux-gnu-g++"
