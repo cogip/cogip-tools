@@ -49,7 +49,7 @@ public:
     void push(float x, float y, float angle);
 
     /// Get last pose pushed in the buffer.
-    Pose last() const { return get(0); };
+    Pose last() const { return size() ? get(0) : Pose(); };
 
     /// Get the N-th position from head (0 is the most recent).
     Pose get(std::size_t n) const;
