@@ -60,7 +60,10 @@ NB_MODULE(shared_memory, m) {
         .def("post_update", &WritePriorityLock::postUpdate,
              "Signal to registered consumers that data was updated.")
         .def("wait_update", &WritePriorityLock::waitUpdate,
-             "Wait for the updated signal meaning that data was updated.");
+             "Wait for the updated signal meaning that data was updated.")
+        .def("reset", &WritePriorityLock::reset,
+             "Reset counters and semaphores.")
+     ;
 
     nb::class_<SharedMemory>(m, "SharedMemory")
         .def(nb::init<const std::string&, bool>(), "name"_a, "owner"_a = false,

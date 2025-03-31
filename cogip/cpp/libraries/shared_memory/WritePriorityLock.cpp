@@ -101,9 +101,6 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
     if (reader_count_ == MAP_FAILED) {
         throw std::runtime_error("Failed to map shared memory for reader count");
     }
-    if (owner_) {
-        *reader_count_ = 0;
-    }
 
     // Shared memory for write request count
     write_request_shm_fd_ = shm_open(write_request_shm_name_.c_str(), shm_flags, 0666);
@@ -119,10 +116,6 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
     if (write_request_count_ == MAP_FAILED) {
         throw std::runtime_error("Failed to map shared memory for write request count");
     }
-    if (owner_) {
-        *write_request_count_ = 0;
-    }
-
     // Shared memory for consumer count
     consumer_count_shm_fd_ = shm_open(consumer_count_shm_name_.c_str(), shm_flags, 0666);
     if (consumer_count_shm_fd_ < 0) {
@@ -138,7 +131,7 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
         throw std::runtime_error("Failed to map shared memory for consumer count");
     }
     if (owner_) {
-        *consumer_count_ = 0;
+        reset();
     }
 
 }
@@ -244,6 +237,18 @@ void WritePriorityLock::postUpdate() {
 
 void WritePriorityLock::waitUpdate() {
     sem_wait(sem_update_);
+}
+
+void WritePriorityLock::reset() {
+    *reader_count_ = 0;
+    *write_request_count_ = 0;
+    registered_consumer_ = false;
+    *consumer_count_ = 0;
+
+    sem_init(sem_mutex_, 1, 1);
+    sem_init(sem_write_lock_, 1, 1);
+    sem_init(sem_update_, 1, 0);
+    sem_init(sem_register_, 1, 1);
 }
 
 } // namespace shared_memory

@@ -45,6 +45,10 @@ public:
     /// Wait for the updated signal meaning that data was updated.
     void waitUpdate();
 
+    /// Reset counters and semaphores.
+    void reset();
+
+
 private:
     bool owner_;                    ///< Indicates whether this instance owns the resources.
     bool registered_consumer_;      ///< Indicates if the lock is registered as a consumer.
