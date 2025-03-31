@@ -133,7 +133,7 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
             throw std::runtime_error("Failed to truncate shared memory for consumer count");
         }
     }
-    consumer_count_ = static_cast<int*>(mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, write_request_shm_fd_, 0));
+    consumer_count_ = static_cast<int*>(mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, consumer_count_shm_fd_, 0));
     if (consumer_count_ == MAP_FAILED) {
         throw std::runtime_error("Failed to map shared memory for consumer count");
     }
