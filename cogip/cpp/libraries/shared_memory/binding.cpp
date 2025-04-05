@@ -63,6 +63,8 @@ NB_MODULE(shared_memory, m) {
              "Wait for the updated signal meaning that data was updated.")
         .def("reset", &WritePriorityLock::reset,
              "Reset counters and semaphores.")
+        .def("set_debug", &WritePriorityLock::setDebug, "debug"_a,
+             "Set/unset debug mode.")
      ;
 
     nb::class_<SharedMemory>(m, "SharedMemory")
