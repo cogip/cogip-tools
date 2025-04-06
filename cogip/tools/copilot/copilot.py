@@ -5,7 +5,6 @@ import socketio
 from google.protobuf.json_format import MessageToDict
 
 from cogip import models
-from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorsKindEnum
@@ -67,7 +66,6 @@ class Copilot:
 
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_buffer: SharedPoseBuffer | None = None
-        self.shared_pose_current: SharedPose | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
 
         self.sio = socketio.AsyncClient(logger=False)
@@ -89,11 +87,9 @@ class Copilot:
     def create_shared_memory(self):
         self.shared_memory = SharedMemory(f"cogip_{self.id}")
         self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
-        self.shared_pose_current = self.shared_memory.get_pose_current()
         self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
 
     def delete_shared_memory(self):
-        self.shared_pose_current = None
         self.shared_pose_current_buffer = None
         self.shared_pose_current_lock = None
         self.shared_memory = None
@@ -167,9 +163,6 @@ class Copilot:
         if self.sio_events.connected:
             self.shared_pose_current_lock.start_writing()
             self.shared_pose_current_buffer.push(pose["x"], pose["y"], pose["O"])
-            self.shared_pose_current.x = pose["x"]
-            self.shared_pose_current.y = pose["y"]
-            self.shared_pose_current.angle = pose["O"]
             self.shared_pose_current_lock.finish_writing()
 
     @pb_exception_handler

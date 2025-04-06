@@ -51,9 +51,6 @@ public:
     /// Retrieves a pointer to the PoseBuffer object wrapping the shared memory pose_current_buffer structure.
     models::PoseBuffer* getPoseCurrentBuffer() { return pose_current_buffer_; }
 
-    /// Retrieves a pointer to the Pose object wrapping the shared memory pose_current structure.
-    models::Pose* getPoseCurrent() { return pose_current_; }
-
     /// Retrieves a pointer to the Pose object wrapping the shared memory pose_order structure.
     models::Pose* getPoseOrder() { return pose_order_; }
 
@@ -82,7 +79,6 @@ private:
     shared_data_t* data_;  ///< Pointer to the shared memory data structure.
     std::map<LockName, std::shared_ptr<WritePriorityLock>> locks_;  ///< Map of locks for synchronization.
     models::PoseBuffer* pose_current_buffer_;  ///< Pointer to the PoseBuffer object wrapping the shared memory pose_current_buffer structure.
-    models::Pose* pose_current_;  ///< Pointer to the Pose object wrapping the shared memory pose_current structure.
     models::Pose* pose_order_;    ///< Pointer to the Pose object wrapping the shared memory pose_order structure.
     models::CircleList* detector_obstacles_;  ///< Pointer to the CircleList object wrapping the shared memory detector_obstacles structure.
     models::CircleList* monitor_obstacles_;  ///< Pointer to the CircleList object wrapping the shared memory monitor_obstacles structure.

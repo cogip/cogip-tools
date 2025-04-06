@@ -30,7 +30,6 @@ def main():
     writer = SharedMemory(name)
     writer_lock = writer.get_lock(LockName.PoseCurrent)
     writer_data = writer.get_data()
-    writer_pose_current = writer.get_pose_current()
     writer_pose_current_buffer = writer.get_pose_current_buffer()
 
     writer_lock.start_reading()
@@ -45,28 +44,8 @@ def main():
     reader = SharedMemory(name)
     reader_lock = writer.get_lock(LockName.PoseCurrent)
     reader_data = reader.get_data()
-    reader_pose_current = reader.get_pose_current()
     reader_pose_current_buffer = reader.get_pose_current_buffer()
     reader_lock.start_reading()
-    print(" => reader data = ", reader_data)
-    print(" => reader pose_current = ", reader_pose_current)
-    reader_lock.finish_reading()
-
-    # ==> WRITER process
-    print("Set pose_current")
-    writer_lock.start_writing()
-    writer_pose_current.x = 1.0
-    writer_pose_current.y = 2.0
-    writer_pose_current.angle = 90.0
-    writer_lock.finish_writing()
-    writer_lock.start_reading()
-    print(" => writer pose_current = ", writer_pose_current)
-    print(" => writer data = ", writer_data)
-    writer_lock.finish_reading()
-
-    # ==> READER process
-    reader_lock.start_reading()
-    print(" => reader pose_current = ", reader_pose_current)
     print(" => reader data = ", reader_data)
     reader_lock.finish_reading()
 
@@ -85,8 +64,6 @@ def main():
     reader_lock.start_reading()
     print(" => reader data = ", reader_data)
     reader_lock.finish_reading()
-
-    print(f" => pose_current - pose_order = {writer.get_pose_current() - writer.get_pose_order()}")
 
     # Test for detector_obstacles
     print("\nTest for detector_obstacles")
@@ -171,7 +148,6 @@ def main():
     writer_detector_obstacles = None
     writer_lock = None
     writer_pose_current_buffer = None
-    writer_pose_current = None
     writer_data = None
     del writer_lock
     del writer
@@ -181,7 +157,6 @@ def main():
     reader_detector_obstacles = None
     reader_lock = None
     reader_pose_current_buffer = None
-    reader_pose_current = None
     reader_data = None
     del reader
 

@@ -24,7 +24,6 @@ constexpr std::size_t MAX_LIDAR_DATA_COUNT = 1024;
 /// Represents shared data in shared memory.
 typedef struct {
     models::pose_buffer_t pose_current_buffer;  ///< The last current poses.
-    models::pose_t pose_current;  ///< The current pose.
     models::pose_t pose_order;    ///< The target pose.
     float table_limits[4];  ///< The limits of the table.
     float lidar_data[MAX_LIDAR_DATA_COUNT][3];  ///< The Lidar data (angle, distance, intensity).

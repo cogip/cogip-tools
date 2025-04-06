@@ -10,7 +10,7 @@ from PySide6.Qt3DRender import Qt3DRender
 from PySide6.QtCore import Slot as qtSlot
 
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
-from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
@@ -49,7 +49,7 @@ class RobotEntity(AssetEntity):
         self.beacon_entity: Qt3DCore.QEntity | None = None
 
         self.shared_memory: SharedMemory | None = None
-        self.shared_pose_current: SharedPose | None = None
+        self.shared_pose_current_buffer: SharedPoseBuffer | None = None
         self.shared_lidar_data: NDArray | None = None
         self.shared_lidar_data_lock: WritePriorityLock | None = None
         self.shared_circle_obstacles: SharedObstacleCircleList | None = None
@@ -86,7 +86,7 @@ class RobotEntity(AssetEntity):
     def setEnabled(self, isEnabled):
         if isEnabled:
             self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
-            self.shared_pose_current = self.shared_memory.get_pose_current()
+            self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
             self.shared_lidar_data = self.shared_memory.get_lidar_data()
             self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
             self.shared_circle_obstacles = self.shared_memory.get_circle_obstacles()
@@ -110,7 +110,7 @@ class RobotEntity(AssetEntity):
             self.shared_circle_obstacles = None
             self.shared_lidar_data_lock = None
             self.shared_lidar_data = None
-            self.shared_pose_current = None
+            self.shared_pose_current_buffer = None
             self.shared_memory = None
         return super().setEnabled(isEnabled)
 
@@ -175,13 +175,12 @@ class RobotEntity(AssetEntity):
         """
         Update pose current from shared memory.
         """
-        self.transform_component.setTranslation(
-            QtGui.QVector3D(self.shared_pose_current.x, self.shared_pose_current.y, 0)
-        )
-        self.transform_component.setRotationZ(self.shared_pose_current.angle)
+        pose_current = self.shared_pose_current_buffer.last
+        self.transform_component.setTranslation(QtGui.QVector3D(pose_current.x, pose_current.y, 0))
+        self.transform_component.setRotationZ(pose_current.angle)
         self.win.new_robot_pose(
             self.robot_id,
-            Pose(x=self.shared_pose_current.x, y=self.shared_pose_current.y, O=self.shared_pose_current.angle),
+            Pose(x=pose_current.x, y=pose_current.y, O=pose_current.angle),
         )
 
     @qtSlot(Pose)

@@ -26,7 +26,6 @@ NB_MODULE(shared_memory, m) {
     nb::class_<shared_data_t>(m, "SharedData")
         .def(nb::init<>())
         .def_rw("pose_current_buffer", &shared_data_t::pose_current_buffer)
-        .def_rw("pose_current", &shared_data_t::pose_current)
         .def_rw("pose_order", &shared_data_t::pose_order)
         .def("__repr__", [](const shared_data_t &s) {
             std::ostringstream oss;
@@ -76,8 +75,6 @@ NB_MODULE(shared_memory, m) {
              "Get the shared data.")
         .def("get_pose_current_buffer", &SharedMemory::getPoseCurrentBuffer, nb::rv_policy::reference_internal,
              "Get PoseBuffer object wrapping the shared memory pose_current_buffer structure.")
-        .def("get_pose_current", &SharedMemory::getPoseCurrent, nb::rv_policy::reference_internal,
-             "Get Pose object wrapping the shared memory pose_current structure.")
         .def("get_pose_order", &SharedMemory::getPoseOrder, nb::rv_policy::reference_internal,
              "Get Pose object wrapping the shared memory pose_order structure.")
         .def(

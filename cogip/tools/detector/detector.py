@@ -130,7 +130,6 @@ class Detector:
     def create_shared_memory(self):
         self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
         self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
-        self.shared_pose_current = self.shared_memory.get_pose_current()
         self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
         self.shared_lidar_data = self.shared_memory.get_lidar_data()
         self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
@@ -143,7 +142,6 @@ class Detector:
         self.shared_lidar_data_lock = None
         self.shared_lidar_data = None
         self.shared_pose_current_buffer = None
-        self.shared_pose_current = None
         self.shared_pose_current_lock = None
         self.shared_memory = None
 
@@ -276,10 +274,7 @@ class Detector:
 
         # Copy the pose before computation to reduce critical section length
         self.shared_pose_current_lock.start_reading()
-        try:
-            pose_current = self.shared_pose_current_buffer.get(self._properties.sensor_delay)
-        except Exception:
-            pose_current = self.shared_pose_current
+        pose_current = self.shared_pose_current_buffer.get(self._properties.sensor_delay)
         robot_x = pose_current.x
         robot_y = pose_current.y
         robot_angle = pose_current.angle

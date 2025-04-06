@@ -21,7 +21,7 @@ from pydantic import RootModel, TypeAdapter
 
 from cogip import models
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
-from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
@@ -104,7 +104,7 @@ class Planner:
 
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
-        self.pose_current: SharedPose | None = None
+        self.shared_pose_current_buffer: SharedPoseBuffer | None = None
         self.shared_table_limits: NDArray | None = None
         self.shared_detector_obstacles: SharedCircleList | None = None
         self.shared_detector_obstacles_lock: WritePriorityLock | None = None
@@ -150,7 +150,6 @@ class Planner:
             self.update_obstacles,
             logger=self.debug,
         )
-        self._pose_current: models.Pose | None = None
         self._pose_order: pose.Pose | None = None
         self.pose_reached: bool = True
         self.avoidance_path: list[pose.Pose] = []
@@ -216,7 +215,7 @@ class Planner:
         if self.shared_memory is None:
             self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
             self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
-            self.pose_current = self.shared_memory.get_pose_current()
+            self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
             self.shared_table_limits = self.shared_memory.get_table_limits()
             self.shared_detector_obstacles = self.shared_memory.get_detector_obstacles()
             self.shared_detector_obstacles_lock = self.shared_memory.get_lock(LockName.DetectorObstacles)
@@ -236,7 +235,7 @@ class Planner:
             self.shared_detector_obstacles_lock = None
             self.shared_detector_obstacles = None
             self.shared_table_limits = None
-            self.pose_current = None
+            self.shared_pose_current_buffer = None
             self.shared_pose_current_lock = None
             self.shared_memory = None
 
@@ -263,6 +262,14 @@ class Planner:
                 time.sleep(2)
                 continue
             break
+
+    @property
+    def pose_current(self) -> models.Pose:
+        """
+        Get the current pose of the robot.
+        """
+        pose = self.shared_pose_current_buffer.last
+        return models.Pose(x=pose.x, y=pose.y, O=pose.angle)
 
     async def start(self):
         """
@@ -397,13 +404,14 @@ class Planner:
                                     new_controller = ControllerEnum.LINEAR_POSE_DISABLED
                         await self.set_controller(new_controller)
                         if self.sio.connected:
+                            pose_current = self.pose_current
                             await self.sio_ns.emit(
                                 name,
                                 [
                                     {
-                                        "x": self.pose_current.x,
-                                        "y": self.pose_current.y,
-                                        "O": self.pose_current.angle,
+                                        "x": pose_current.x,
+                                        "y": pose_current.y,
+                                        "O": pose_current.O,
                                     }
                                 ]
                                 + value,
@@ -514,10 +522,7 @@ class Planner:
 
         # When the firmware receives a pose start, it does not send its updated pose current,
         # so do it here.
-        self.pose_current.x = pose_start.x
-        self.pose_current.y = pose_start.y
-        self.pose_current.angle = pose_start.O
-
+        self.shared_pose_current_buffer.push(pose_start.x, pose_start.y, pose_start.O)
         await self.sio_ns.emit("pose_start", pose_start.model_dump())
 
     @property
@@ -723,12 +728,13 @@ class Planner:
 
     async def update_oled_display(self):
         try:
+            pose_current = self.pose_current
             text = (
                 f"{'Connected' if self.sio.connected else 'Not connected': <20}"
                 f"{'▶' if self.game_context.playing else '◼'}\n"
                 f"Camp: {self.game_context.camp.color.name}\n"
                 f"Strategy: {self.game_context.strategy.name}\n"
-                f"Pose: {self.pose_current.x},{self.pose_current.y},{self.pose_current.angle}\n"
+                f"Pose: {pose_current.x},{pose_current.y},{pose_current.O}\n"
                 f"Countdown: {self.game_context.countdown:.2f}"
             )
             with self.oled_image as draw:

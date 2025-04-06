@@ -21,7 +21,7 @@ def avoidance_process(
 ):
     logger.info("Avoidance: process started")
     shared_memory = SharedMemory(f"cogip_{shared_properties["robot_id"]}")
-    shared_data = shared_memory.get_data()
+    shared_pose_current_buffer = shared_memory.get_pose_current_buffer()
     shared_pose_current_lock = shared_memory.get_lock(LockName.PoseCurrent)
     shared_circle_obstacles = shared_memory.get_circle_obstacles()
     shared_rectangle_obstacles = shared_memory.get_rectangle_obstacles()
@@ -56,10 +56,11 @@ def avoidance_process(
             last_emitted_pose_order = None
 
         shared_pose_current_lock.start_reading()
+        shared_pose_current = shared_pose_current_buffer.last
         pose_current = models.PathPose(
-            x=shared_data.pose_current.x,
-            y=shared_data.pose_current.y,
-            O=shared_data.pose_current.angle,
+            x=shared_pose_current.x,
+            y=shared_pose_current.y,
+            O=shared_pose_current.angle,
         )
         shared_pose_current_lock.finish_reading()
         pose_order = models.PathPose.model_validate(pose_order)
@@ -191,8 +192,8 @@ def avoidance_process(
         queue_sio.put(("pose_order", new_pose_order.model_dump(exclude_defaults=True)))
 
     # Remove reference to shared memory data to trigger garbage collection
-    shared_data = None
     shared_pose_current_lock = None
+    shared_pose_current_buffer = None
     shared_memory = None
 
     logger.info("Avoidance: process exited")
