@@ -28,6 +28,8 @@ class ThreadLoop:
         Arguments:
             name: Name to identify the thread in the logs
             interval: time between each iteration of the loop, in seconds
+                      if 0, the function is supposed to have its own sleep time.
+                      if < 0, like 0 but always display a loop duration
             func: function to execute in the loop
             logger: an optional custom logger
             args: arguments of the function
@@ -69,11 +71,14 @@ class ThreadLoop:
             self._func(*self._args, **self._kwargs)
             now = time.time()
             duration = now - start
-            if duration > self._interval:
-                self._logger.warning(f"Function too long: {duration} > {self._interval}")
-            else:
-                wait = self._interval - duration
-                time.sleep(wait)
+            if self._interval > 0:
+                if duration > self._interval:
+                    self._logger.warning(f"Function too long: {duration} > {self._interval}")
+                else:
+                    wait = self._interval - duration
+                    time.sleep(wait)
+            elif self._interval < 0:
+                self._logger.info(f"Function duration: {duration}")
 
     def start(self) -> None:
         """
