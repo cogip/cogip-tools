@@ -28,7 +28,7 @@ def start_web(lidar_points: NDArray, port: int):
             if point[0] == -1:
                 break
             filtered_data.append(point)
-        return JSONResponse(content=data)
+        return JSONResponse(content=filtered_data)
 
     try:
         asgi_server.run()

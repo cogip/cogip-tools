@@ -75,7 +75,8 @@
                         console.error("Invalid data:", angle, distance, intensity);
                         return null;
                     }
-                    const radians = (angle + 90) * (Math.PI / 180); // convert degrees to radians
+                    // Invert rotation and convert degrees to radians
+                    const radians = ((360 - angle) + 90) * (Math.PI / 180);
                     const x = -Math.cos(radians) * distance;
                     const y = Math.sin(radians) * distance;
 
