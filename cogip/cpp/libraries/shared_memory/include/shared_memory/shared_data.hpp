@@ -18,14 +18,14 @@ namespace cogip {
 
 namespace shared_memory {
 
-constexpr std::size_t NUM_ANGLES = 360;
+constexpr std::size_t MAX_LIDAR_DATA_COUNT = 1024;
 
 /// Represents shared data in shared memory.
 typedef struct {
     models::pose_buffer_t pose_current_buffer;  ///< The last current poses.
     models::pose_t pose_current;  ///< The current pose.
     models::pose_t pose_order;    ///< The target pose.
-    uint16_t lidar_data[NUM_ANGLES][2];  ///< The Lidar data.
+    float lidar_data[MAX_LIDAR_DATA_COUNT][3];  ///< The Lidar data (angle, distance, intensity).
     models::coords_list_t detector_obstacles;  ///< The obstacles from detector.
     models::coords_list_t monitor_obstacles;   ///< The obstacles from monitor.
     obstacles::obstacle_circle_list_t circle_obstacles;  ///< The circle obstacles from planner.

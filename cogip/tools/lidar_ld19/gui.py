@@ -6,9 +6,6 @@ from numpy.typing import NDArray
 def start_gui(lidar_points: NDArray):
     print("Starting plot GUI")
 
-    # Generate angles from 0 to 359 degrees
-    angles = np.radians(np.arange(360))
-
     # Create a polar plot
     fig, ax = pyplot.subplots(figsize=(8, 8), subplot_kw={"projection": "polar"})
     fig.patch.set_facecolor("black")  # Set figure background to black
@@ -22,9 +19,10 @@ def start_gui(lidar_points: NDArray):
     ax.set_title("Real-Time Lidar Data", va="bottom", color="white")
 
     # Initialize scatter plot with dummy data
+    initial_angles = np.radians(np.arange(360))
     initial_distances = np.zeros(360)
     initial_colors = np.zeros(360)
-    scatter = ax.scatter(angles, initial_distances, c=initial_colors, cmap="RdYlGn", s=5, vmin=0, vmax=255)
+    scatter = ax.scatter(initial_angles, initial_distances, c=initial_colors, cmap="RdYlGn", s=5, vmin=0, vmax=255)
     cbar = pyplot.colorbar(scatter, label="Intensity (0 = red, 255 = green)")
     cbar.ax.yaxis.label.set_color("white")
     cbar.ax.tick_params(colors="white")
@@ -50,9 +48,14 @@ def start_gui(lidar_points: NDArray):
 
     # Animation update function
     def update(frame):
-        # Extract distances and intensities safely
-        distances = lidar_points[:, 0]
-        intensities = lidar_points[:, 1]
+        last = np.where(lidar_points[:, 0] == -1)[0]
+        if len(last) > 0:
+            last = last[0]
+        else:
+            last = len(lidar_points)
+        angles = np.radians(lidar_points[:last, 0])
+        distances = lidar_points[:last, 1]
+        intensities = lidar_points[:last, 2]
 
         # Update scatter plot
         scatter.set_offsets(np.column_stack((angles, distances)))

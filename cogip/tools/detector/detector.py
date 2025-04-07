@@ -159,6 +159,13 @@ class Detector:
         """
         self._obstacles_updater_loop.start()
         if self._laser:
+            for i in range(360):
+                self._lidar_data[i][0] = i
+                self._lidar_data[i][2] = 255
+            self._lidar_data[360][0] = -1
+            self._lidar_data[360][1] = -1
+            self._lidar_data[360][2] = -1
+
             self._lidar_reader_loop.start()
             self.start_lidar()
         else:
@@ -357,13 +364,14 @@ class Detector:
                     result[isolated] = round((before + after) / 2)
 
             with self._lidar_data_lock:
-                self._lidar_data[:] = result[:]
+                for i, distance in enumerate(result):
+                    self._lidar_data[i][1] = distance
         else:
             print("Failed to get Lidar Data")
 
     def read_fake_lidar(self):
         with self._lidar_data_lock:
-            self._lidar_data[:] = self.shared_lidar_data[:, 0].tolist()
+            self._lidar_data[:] = self.shared_lidar_data[:360, 1].tolist()
 
     def stop_lidar(self):
         """

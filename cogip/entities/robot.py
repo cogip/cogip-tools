@@ -94,7 +94,9 @@ class RobotEntity(AssetEntity):
             self.shared_monitor_obstacles = self.shared_memory.get_monitor_obstacles()
             self.shared_monitor_obstacles_lock = self.shared_memory.get_lock(LockName.MonitorObstacles)
             for i in range(360):
-                self.shared_lidar_data[i][1] = 255
+                self.shared_lidar_data[i][0] = i
+                self.shared_lidar_data[i][2] = 255
+            self.shared_lidar_data[360][0] = -1
             for self.sensor in self.sensors:
                 self.sensor.shared_sensor_data = self.shared_lidar_data
             self.update_pose_current_timer.start(RobotEntity.update_pose_current_interval)

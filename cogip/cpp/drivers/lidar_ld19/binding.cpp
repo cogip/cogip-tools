@@ -28,10 +28,9 @@ NB_MODULE(lidar_ld19, m) {
 
     nb::class_<LDLidarDriver>(m, "LDLidarDriver")
         .def(nb::init<>(), "Constructor that internally manages memory")
-        .def(
-            nb::init<nb::ndarray<uint16_t, nb::numpy, nb::shape<ldlidar::NUM_ANGLES, 2>>>(),
-            "Constructor with external NumPy array",
-            nb::arg("external_lidar_points")
+        .def(nb::init<nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>>>(),
+             "Constructor accepting nanobind::ndarray",
+             "external_lidar_data"_a
         )
         .def("connect", &LDLidarDriver::connect)
         .def("disconnect", &LDLidarDriver::disconnect)
@@ -49,13 +48,17 @@ NB_MODULE(lidar_ld19, m) {
         )
         .def(
             "get_lidar_data",
-            [](const LDLidarDriver &self) -> nb::ndarray<uint16_t, nb::numpy, nb::shape<NUM_ANGLES, 2>> {
+            [](const LDLidarDriver &self) -> nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> {
                 const auto &points = self.getLidarData();
-                return nb::ndarray<uint16_t, nb::numpy, nb::shape<NUM_ANGLES, 2>>((void *)points);
+                return nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>>((void *)points);
             },
             nb::rv_policy::reference_internal
         )
         .def("set_data_write_lock", &LDLidarDriver::setDataWriteLock, "Set the data write lock", "lock"_a)
+        .def("set_min_intensity", &LDLidarDriver::setMinIntensity, "Set the minimum intensity value to validate data", "min_intensity"_a)
+        .def("set_min_distance", &LDLidarDriver::setMinDistance, "Set the minimum distance to validate data", "min_distance"_a)
+        .def("set_max_distance", &LDLidarDriver::setMaxDistance, "Set the maximum distance to validate data", "max_distance"_a)
+        .def("set_invalid_angle_range", &LDLidarDriver::setInvalidAngleRange, "Set the invalid angle range", "min_angle"_a, "max_angle"_a)
     ;
 }
 

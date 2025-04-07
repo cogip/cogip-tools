@@ -11,8 +11,7 @@
 
 namespace ldlidar {
 
-constexpr uint16_t max_distance = 3000;
-constexpr uint8_t min_intensity = 150;
+constexpr size_t FILTERED_DATA_COUNT = 360;
 
 uint64_t getSystemTimeStamp() {
     std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> tp =
@@ -23,20 +22,20 @@ uint64_t getSystemTimeStamp() {
 
 bool LDLidarDriver::is_ok_ = false;
 
-LDLidarDriver::LDLidarDriver(uint16_t (*external_lidar_data)[2]):
+LDLidarDriver::LDLidarDriver(float (*external_lidar_data)[3]):
     lidar_data_(external_lidar_data),
     external_data_(external_lidar_data != nullptr)
 {
     if (!external_data_) {
         // Allocate memory if external pointer is not provided
-        lidar_data_ = new uint16_t[NUM_ANGLES][2]();
+        lidar_data_ = new float[MAX_DATA_COUNT][3]();
     }
 
     commonInit();
 }
 
-LDLidarDriver::LDLidarDriver(nb::ndarray<uint16_t, nb::numpy, nb::shape<NUM_ANGLES, 2>> external_lidar_points):
-    lidar_data_(reinterpret_cast<uint16_t(*)[2]>(external_lidar_points.data())),
+LDLidarDriver::LDLidarDriver(nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_raw_points):
+    lidar_data_(reinterpret_cast<float(*)[3]>(external_lidar_raw_points.data())),
     external_data_(true)
 {
     if (!lidar_data_) {
@@ -54,6 +53,11 @@ void LDLidarDriver::commonInit() {
     lidar_error_code_ = LIDAR_NO_ERROR;
     is_frame_ready_ = false;
     data_write_lock_ = nullptr;
+    min_intensity_ = 0;
+    min_distance_ = 0;
+    max_distance_ = std::numeric_limits<uint16_t>::max();
+    min_angle_ = 0;
+    max_angle_ = 360;
     timestamp_ = 0;
     speed_ = 0;
     is_poweron_comm_normal_ = false;
@@ -341,40 +345,45 @@ void LDLidarDriver::setFrameReady() {
 
 void LDLidarDriver::setLaserScanData(Points2D &src) {
     std::lock_guard<std::mutex> lg(mutex_lock2_);
-    std::array<uint16_t, NUM_ANGLES> result_distances;
-    std::array<uint8_t, NUM_ANGLES> result_intensities;
-    std::array<std::vector<uint16_t>, NUM_ANGLES> tmp_distances;
-    std::array<std::vector<uint8_t>, NUM_ANGLES> tmp_intensities;
+    std::array<std::vector<uint16_t>, FILTERED_DATA_COUNT> tmp_distances;
+    std::array<std::vector<uint8_t>, FILTERED_DATA_COUNT> tmp_intensities;
 
     // Build a list of points for each integer degree
-    for (const auto &point: src) {
-        if (point.intensity < min_intensity) {
-            continue;
-        }
-        size_t angle = (static_cast<size_t>(point.angle) + NUM_ANGLES) % NUM_ANGLES;
-        tmp_distances[angle].push_back(point.distance);
-        tmp_intensities[angle].push_back(point.intensity);
-    }
+    std::size_t count = 0;
 
     // Compute mean of points list for each degree.
     if (data_write_lock_ != nullptr) {
         data_write_lock_->startWriting();
     }
 
-    if (! filter_enabled_) {
-    for (size_t angle = 0; angle < NUM_ANGLES; angle++) {
-        const auto &distances = tmp_distances[angle];
-        const auto &intensities = tmp_intensities[angle];
-        size_t size = distances.size();
-        if (size > 0) {
-            lidar_data_[angle][0] = std::accumulate(distances.begin(), distances.end(), 0) / size;
-            lidar_data_[angle][1] = std::accumulate(intensities.begin(), intensities.end(), 0) / size;
+    for (const auto &point: src) {
+        if (point.intensity < min_intensity_) {
+            continue;
         }
-        else {
-            lidar_data_[angle][0] = max_distance;  // Mark as invalid
-            lidar_data_[angle][1] = 0;  // Mark as invalid
+        if (point.distance < min_distance_) {
+            continue;
         }
+        if (point.distance > max_distance_) {
+            continue;
+        }
+
+        double angle = 360 - point.angle; // Lidar angle is inverted
+
+        // Skip excluded angles
+        if (angle > min_angle_ && angle < max_angle_) {
+            continue;
+        }
+
+        lidar_data_[count][0] = angle;
+        lidar_data_[count][1] = point.distance;
+        lidar_data_[count][2] = point.intensity;
+        count++;
     }
+
+    // Mark as end of data
+    lidar_data_[count][0] = -1.0;
+    lidar_data_[count][1] = -1.0;
+    lidar_data_[count][2] = -1.0;
 
     if (data_write_lock_ != nullptr) {
         data_write_lock_->finishWriting();

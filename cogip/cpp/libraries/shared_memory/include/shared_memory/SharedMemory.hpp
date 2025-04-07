@@ -57,7 +57,7 @@ public:
     models::Pose* getPoseOrder() { return pose_order_; }
 
     /// Retrieves a pointer to the shared memory lidar_data structure.
-    uint16_t (&getLidarData())[NUM_ANGLES][2] { return data_->lidar_data; }
+    float (&getLidarData())[MAX_LIDAR_DATA_COUNT][3] { return data_->lidar_data; }
 
     /// Retrieves a pointer to the shared memory detector_obstacles structure.
     models::CoordsList* getDetectorObstacles() { return detector_obstacles_; }

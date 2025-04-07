@@ -69,10 +69,10 @@
 
             // Process data to extract points
             const getPoints = (lidarData) => {
-                return lidarData.map(([distance, intensity], angle) => {
-                    // Ensure we have valid numbers for distance and intensity
-                    if (typeof distance !== "number" || typeof intensity !== "number") {
-                        console.error("Invalid data at index", angle, ":", distance, intensity);
+                return lidarData.map(([angle, distance, intensity]) => {
+                    // Ensure we have valid numbers for angle, distance, and intensity
+                    if (typeof angle !== "number" || typeof distance !== "number" || typeof intensity !== "number") {
+                        console.error("Invalid data:", angle, distance, intensity);
                         return null;
                     }
                     const radians = (angle + 90) * (Math.PI / 180); // convert degrees to radians

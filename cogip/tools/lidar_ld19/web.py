@@ -23,6 +23,11 @@ def start_web(lidar_points: NDArray, port: int):
     @asgi_app.get("/data", response_class=JSONResponse)
     def get_data():
         data = lidar_points.tolist()
+        filtered_data = []
+        for point in data:
+            if point[0] == -1:
+                break
+            filtered_data.append(point)
         return JSONResponse(content=data)
 
     try:

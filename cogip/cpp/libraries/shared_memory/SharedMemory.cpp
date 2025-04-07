@@ -47,9 +47,10 @@ SharedMemory::SharedMemory(const std::string& name, bool owner):
 
     if (owner_) {
         std::memset(data_, 0, sizeof(shared_data_t));
-        for (std::size_t i{0}; i < NUM_ANGLES; ++i) {
-            data_->lidar_data[i][0] = 65535;
-            data_->lidar_data[i][1] = 0;
+        for (std::size_t i{0}; i < MAX_LIDAR_DATA_COUNT; ++i) {
+            data_->lidar_data[i][0] = -1;
+            data_->lidar_data[i][1] = -1;
+            data_->lidar_data[i][2] = -1;
         }
     }
 

@@ -107,7 +107,7 @@ class Sensor(QtCore.QObject):
             self.hit_distance = 65535
 
         if self.shared_sensor_data is not None:
-            self.shared_sensor_data[self.angle][0] = self.hit_distance
+            self.shared_sensor_data[self.angle][1] = self.hit_distance
 
         self.update_impact()
 

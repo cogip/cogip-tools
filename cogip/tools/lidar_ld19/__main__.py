@@ -5,11 +5,11 @@ from pathlib import Path
 from time import sleep
 from typing import Annotated
 
-import numpy as np
 import typer
 from numpy.typing import NDArray
 
 from cogip.cpp.drivers.lidar_ld19 import BaudRate, LDLidarDriver
+from cogip.cpp.libraries.shared_memory import SharedMemory
 from .gui import start_gui
 from .web import start_web, stop_web
 
@@ -19,7 +19,9 @@ stop_event = threading.Event()
 def start_console(lidar_data: NDArray):
     print("Starting console thread.")
     while not stop_event.is_set():
-        print(f"angle 0: distance={lidar_data[0, 0]: 4d}mm - intensity={lidar_data[0, 1]: 3d}")
+        print(
+            f"angle {lidar_data[0, 0]}: distance={int(lidar_data[0, 1]): 4d}mm - intensity={int(lidar_data[0, 2]): 3d}"
+        )
         sleep(0.1)
     print("Exiting console thread.")
 
@@ -33,14 +35,6 @@ def main_opt(
             help="Serial port.",
         ),
     ] = "/dev/ttyUSB0",
-    external: Annotated[
-        bool,
-        typer.Option(
-            "-e",
-            "--external",
-            help="Use external NDArray to store lidar points instead of internally allocated memory.",
-        ),
-    ] = False,
     gui: Annotated[
         bool,
         typer.Option(
@@ -66,11 +60,10 @@ def main_opt(
         ),
     ] = 8000,
 ):
-    if external:
-        lidar_data = np.zeros((360, 2), dtype=np.uint16)
-        lidar = LDLidarDriver(lidar_data)
-    else:
-        lidar = LDLidarDriver()
+    shared_memory = SharedMemory("lidar_ld19", owner=True)
+    lidar_data: NDArray = shared_memory.get_lidar_data()
+
+    lidar = LDLidarDriver(lidar_data)
 
     res = lidar.connect(str(port), BaudRate.BAUD_230400)
     if not res:
@@ -78,7 +71,7 @@ def main_opt(
         return
     print("Lidar connected.")
 
-    res = lidar.wait_lidar_comm(3500)
+    res = lidar.wait_lidar_comm(1000)
     if not res:
         print("Error: Lidar not ready.")
         return
@@ -89,9 +82,6 @@ def main_opt(
         print("Error: Lidar not started.")
         return
     print("Lidar started.")
-
-    if not external:
-        lidar_data = lidar.get_lidar_data()
 
     console_thread = threading.Thread(target=start_console, args=(lidar_data,), name="Console thread")
     console_thread.start()

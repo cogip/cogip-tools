@@ -80,9 +80,9 @@ NB_MODULE(shared_memory, m) {
              "Get Pose object wrapping the shared memory pose_order structure.")
         .def(
             "get_lidar_data",
-            [](SharedMemory &self) -> nb::ndarray<uint16_t, nb::numpy, nb::shape<NUM_ANGLES, 2>> {
+            [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>> {
                 auto &data = self.getLidarData();
-                return nb::ndarray<uint16_t, nb::numpy, nb::shape<NUM_ANGLES, 2>>((void *)data);
+                return nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>>((void *)data);
             },
             nb::rv_policy::reference_internal,
             "Get the lidar_data structure from shared memory ."
