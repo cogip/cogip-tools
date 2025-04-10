@@ -17,90 +17,61 @@ class RobotManager(QtCore.QObject):
         super().__init__()
         self._win = win
         self._game_view = win.game_view
-        self._robots: dict[int, RobotEntity] = dict()
-        self._available_robots: dict[int, RobotEntity] = dict()
         self._rect_obstacles_pool: list[DynRectObstacleEntity] = []
         self._round_obstacles_pool: list[DynCircleObstacleEntity] = []
-        self._sensors_emulation: dict[int, bool] = {}
         self._update_obstacles = QtCore.QTimer()
         self._update_obstacles.timeout.connect(self.update_obstacles)
-        self._update_obstacles_interval = 50
+        self._update_obstacles_interval = 100
+        self.virtual_planner = False
+        self.virtual_detector = False
 
-    def add_robot(self, robot_id: int, virtual: bool = False) -> None:
+    def add_robot(self, robot_id: int, virtual_planner: bool, virtual_detector: bool) -> None:
         """
-        Add a new robot.
+        Add the robot.
 
         Parameters:
-            robot_id: ID of the new robot
-            virtual: whether the robot is virtual or not
+            robot_id: ID of the robot
+            virtual_planner: whether the planner is virtual or not,
+                if planner is virtual, use shared memory to get the robot current, pose order and obstacles.
+            virtual_detector: whether the detector is virtual or not,
+                if detector is virtual, detect virtual obstacles and write them in shared memory.
         """
-        if robot_id in self._robots:
-            return
+        self.virtual_planner = virtual_planner
+        self.virtual_detector = virtual_detector
+        self.robot = RobotEntity(
+            robot_id,
+            self._win,
+            self._game_view.scene_entity,
+            virtual_planner=virtual_planner,
+            virtual_detector=virtual_detector,
+        )
+        self._game_view.add_asset(self.robot)
 
-        if self._available_robots.get(robot_id) is None:
-            robot = RobotEntity(robot_id, self._win, self._game_view.scene_entity)
-            self._game_view.add_asset(robot)
-            robot.setEnabled(False)
-            self._available_robots[robot_id] = robot
-
-        robot = self._available_robots.pop(robot_id)
-        robot.setEnabled(True)
-        self._robots[robot_id] = robot
-        if self._sensors_emulation.get(robot_id, False):
-            robot.start_sensors_emulation()
-
-        if len(self._robots) == 1:
+        if virtual_planner:
             self._update_obstacles.start(self._update_obstacles_interval)
 
-    def del_robot(self, robot_id: int) -> None:
+    def del_robot(self, robot_id: int = 0) -> None:
         """
         Remove a robot.
 
         Parameters:
             robot_id: ID of the robot to remove
         """
-        robot = self._robots.pop(robot_id)
-        robot.stop_sensors_emulation()
-        robot.setEnabled(False)
-        self._available_robots[robot_id] = robot
-        if len(self._robots) == 0:
+        if self.virtual_planner:
             self._update_obstacles.stop()
+        self.robot.setParent(None)
+        self.robot.delete_shared_memory()
+        self.robot = None
 
-    def new_robot_pose_order(self, robot_id: int, new_pose: Pose) -> None:
+    def new_robot_pose_order(self, new_pose: Pose) -> None:
         """
         Set the robot's new pose order.
 
         Arguments:
-            robot_id: ID of the robot
             new_pose: new robot pose
         """
-        robot = self._robots.get(robot_id)
-        if robot:
-            robot.new_robot_pose_order(new_pose)
-
-    def start_sensors_emulation(self, robot_id: int) -> None:
-        """
-        Start timers triggering sensors update and sensors data emission.
-
-        Arguments:
-            robot_id: ID of the robot
-        """
-        self._sensors_emulation[robot_id] = True
-        robot = self._robots.get(robot_id)
-        if robot:
-            robot.start_sensors_emulation()
-
-    def stop_sensors_emulation(self, robot_id: int) -> None:
-        """
-        Stop timers triggering sensors update and sensors data emission.
-
-        Arguments:
-            robot_id: ID of the robot
-        """
-        self._sensors_emulation[robot_id] = False
-        robot = self._robots.get(robot_id)
-        if robot:
-            robot.stop_sensors_emulation()
+        if self.robot:
+            self.robot.new_robot_pose_order(new_pose)
 
     def update_obstacles(self) -> None:
         """
@@ -115,10 +86,10 @@ class RobotManager(QtCore.QObject):
         current_rect_obstacles = []
         current_round_obstacles = []
 
-        for robot_id in self._robots:
-            robot = self._robots.get(robot_id)
-            if robot.shared_circle_obstacles is not None:
-                for circle_obstacle in robot.shared_circle_obstacles:
+        if self.robot:
+            if self.robot.shared_circle_obstacles is not None:
+                self.robot.shared_obstacles_lock.start_reading()
+                for circle_obstacle in self.robot.shared_circle_obstacles:
                     if len(self._round_obstacles_pool):
                         obstacle = self._round_obstacles_pool.pop(0)
                         obstacle.setEnabled(True)
@@ -133,9 +104,10 @@ class RobotManager(QtCore.QObject):
                     obstacle.set_bounding_box(circle_obstacle.bounding_box)
 
                     current_round_obstacles.append(obstacle)
+                self.robot.shared_obstacles_lock.finish_reading()
 
-            if robot.shared_rectangle_obstacles is not None:
-                for rectangle_obstacle in robot.shared_rectangle_obstacles:
+            if self.robot.shared_rectangle_obstacles is not None:
+                for rectangle_obstacle in self.robot.shared_rectangle_obstacles:
                     if len(self._rect_obstacles_pool):
                         obstacle = self._rect_obstacles_pool.pop(0)
                         obstacle.setEnabled(True)
@@ -167,16 +139,9 @@ class RobotManager(QtCore.QObject):
         self._round_obstacles_pool = current_round_obstacles
 
     def update_shared_obstacles(self, obstacles: list[Vertex]):
-        for robot_id in self._robots:
-            robot = self._robots.get(robot_id)
-            robot.shared_monitor_obstacles_lock.start_writing()
-            robot.shared_monitor_obstacles.clear()
+        if self.robot:
+            self.robot.shared_monitor_obstacles_lock.start_writing()
+            self.robot.shared_monitor_obstacles.clear()
             for obstacle in obstacles:
-                robot.shared_monitor_obstacles.append(obstacle.x, obstacle.y)
-            robot.shared_monitor_obstacles_lock.finish_writing()
-
-    def disable_robots(self):
-        """Disable all enabled robots."""
-        for robot in self._robots.values():
-            if robot.isEnabled():
-                robot.setEnabled(False)
+                self.robot.shared_monitor_obstacles.append(obstacle.x, obstacle.y)
+            self.robot.shared_monitor_obstacles_lock.finish_writing()

@@ -56,12 +56,12 @@ class SocketioController(QtCore.QObject):
 
     signal_new_console_text: qtSignal = qtSignal(str)
     signal_new_menu: qtSignal = qtSignal(str, models.ShellMenu)
-    signal_new_robot_pose_order: qtSignal = qtSignal(int, models.Pose)
+    signal_new_robot_pose_order: qtSignal = qtSignal(models.Pose)
     signal_new_robot_state: qtSignal = qtSignal(int, models.RobotState)
     signal_new_robot_path: qtSignal = qtSignal(int, list)
     signal_connected: qtSignal = qtSignal(bool)
     signal_exit: qtSignal = qtSignal()
-    signal_add_robot: qtSignal = qtSignal(int, bool)
+    signal_add_robot: qtSignal = qtSignal(int, bool, bool)
     signal_del_robot: qtSignal = qtSignal(int)
     signal_wizard_request: qtSignal = qtSignal(dict)
     signal_close_wizard: qtSignal = qtSignal()
@@ -267,7 +267,7 @@ class SocketioController(QtCore.QObject):
             Callback on robot pose order message.
             """
             pose = models.Pose.model_validate(data)
-            self.signal_new_robot_pose_order.emit(robot_id, pose)
+            self.signal_new_robot_pose_order.emit(pose)
 
         @self.sio.on("state", namespace="/dashboard")
         def on_state(robot_id: int, data: dict[str, Any]) -> None:
@@ -286,11 +286,11 @@ class SocketioController(QtCore.QObject):
             self.signal_new_robot_path.emit(robot_id, path)
 
         @self.sio.on("add_robot", namespace="/monitor")
-        def on_add_robot(robot_id: int, virtual: bool) -> None:
+        def on_add_robot(robot_id: int, virtual_planner: bool, virtual_detector) -> None:
             """
             Add a new robot.
             """
-            self.signal_add_robot.emit(int(robot_id), virtual)
+            self.signal_add_robot.emit(int(robot_id), virtual_planner, virtual_detector)
 
         @self.sio.on("del_robot", namespace="/monitor")
         def on_del_robot(robot_id: int) -> None:
@@ -312,20 +312,6 @@ class SocketioController(QtCore.QObject):
             Close wizard.
             """
             self.signal_close_wizard.emit()
-
-        @self.sio.on("start_sensors_emulation", namespace="/monitor")
-        def on_start_sensors_emulation(robot_id: int) -> None:
-            """
-            Start sensors emulation.
-            """
-            self.signal_start_sensors_emulation.emit(robot_id)
-
-        @self.sio.on("stop_sensors_emulation", namespace="/monitor")
-        def on_stop_sensors_emulation(robot_id: int) -> None:
-            """
-            Stop sensors emulation.
-            """
-            self.signal_stop_sensors_emulation.emit(robot_id)
 
         @self.sio.on("cmd_reset", namespace="/monitor")
         def on_cmd_reset() -> None:

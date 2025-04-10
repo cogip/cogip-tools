@@ -29,12 +29,8 @@ class DetectorNamespace(socketio.AsyncNamespace):
     async def on_connected(self, sid, virtual: bool):
         logger.info(f"Detector connected (virtual={virtual}).")
         self.context.virtual_detector = virtual
-        if self.context.virtual:
-            await self.emit("start_sensors_emulation", self.context.robot_id, namespace="/monitor")
 
     async def on_disconnect(self, sid):
-        if self.context.virtual:
-            await self.emit("stop_sensors_emulation", self.context.robot_id, namespace="/monitor")
         self.context.detector_sid = None
         logger.info("Detector disconnected.")
 

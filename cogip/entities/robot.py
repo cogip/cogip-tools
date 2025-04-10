@@ -33,7 +33,14 @@ class RobotEntity(AssetEntity):
     update_pose_current_interval: int = 100
     order_robot: RobotOrderEntity = None
 
-    def __init__(self, robot_id: int, win: MainWindow, parent: Qt3DCore.QEntity | None = None):
+    def __init__(
+        self,
+        robot_id: int,
+        win: MainWindow,
+        parent: Qt3DCore.QEntity | None = None,
+        virtual_planner: bool = False,
+        virtual_detector: bool = False,
+    ):
         """
         Class constructor.
 
@@ -43,6 +50,8 @@ class RobotEntity(AssetEntity):
         asset_path = Path(f"assets/{'robot' if robot_id == 1 else 'pami'}2025.dae")
         super().__init__(asset_path, parent=parent)
         self.robot_id = robot_id
+        self.virtual_planner = virtual_planner
+        self.virtual_detector = virtual_detector
         self.sensors: list[Sensor] = []
         self.rect_obstacles_pool = []
         self.round_obstacles_pool = []
@@ -54,6 +63,7 @@ class RobotEntity(AssetEntity):
         self.shared_lidar_data_lock: WritePriorityLock | None = None
         self.shared_circle_obstacles: SharedObstacleCircleList | None = None
         self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
+        self.shared_obstacles_lock: WritePriorityLock | None = None
         self.shared_monitor_obstacles: SharedCircleList | None = None
         self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
 
@@ -69,50 +79,74 @@ class RobotEntity(AssetEntity):
             self.beacon_transform.setRotationX(90)
             self.beacon_entity.addComponent(self.beacon_transform)
 
-            # Create a layer used by sensors to activate detection on the beacon
-            self.beacon_entity.layer = Qt3DRender.QLayer(self.beacon_entity)
-            self.beacon_entity.layer.setRecursive(True)
-            self.beacon_entity.layer.setEnabled(True)
-            self.beacon_entity.addComponent(self.beacon_entity.layer)
+            if virtual_detector:
+                # Create a layer used by sensors to activate detection on the beacon
+                self.beacon_entity.layer = Qt3DRender.QLayer(self.beacon_entity)
+                self.beacon_entity.layer.setRecursive(True)
+                self.beacon_entity.layer.setEnabled(True)
+                self.beacon_entity.addComponent(self.beacon_entity.layer)
+
+                Sensor.add_obstacle(self.beacon_entity)
+        elif virtual_detector:
+            # Create a layer used by sensors to activate detection on the robot parts
+            self.layer = Qt3DRender.QLayer(self)
+            self.layer.setRecursive(True)
+            self.layer.setEnabled(True)
+            self.addComponent(self.layer)
+
+            Sensor.add_obstacle(self)
 
         self.update_pose_current_timer = QtCore.QTimer()
         self.update_pose_current_timer.timeout.connect(self.update_pose_current)
+        if self.virtual_planner:
+            self.update_pose_current_timer.start(RobotEntity.update_pose_current_interval)
 
         # Create a timer for consistent hit updates
         self.update_hit_timer = QtCore.QTimer()
         self.update_hit_timer.setTimerType(QtCore.Qt.TimerType.PreciseTimer)
-        self.update_hit_timer.start(RobotEntity.update_pose_current_interval)
+        if virtual_detector:
+            self.update_hit_timer.start(RobotEntity.update_pose_current_interval)
 
-    def setEnabled(self, isEnabled):
-        if isEnabled:
+        if virtual_planner or virtual_detector:
             self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
+        if virtual_planner:
             self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
-            self.shared_lidar_data = self.shared_memory.get_lidar_data()
-            self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
             self.shared_circle_obstacles = self.shared_memory.get_circle_obstacles()
             self.shared_rectangle_obstacles = self.shared_memory.get_rectangle_obstacles()
+            self.shared_obstacles_lock = self.shared_memory.get_lock(LockName.Obstacles)
+            self.shared_obstacles_lock.register_consumer()
+        if virtual_detector:
+            self.shared_lidar_data = self.shared_memory.get_lidar_data()
+            self.shared_lidar_data_lock = self.shared_memory.get_lock(LockName.LidarData)
             self.shared_monitor_obstacles = self.shared_memory.get_monitor_obstacles()
             self.shared_monitor_obstacles_lock = self.shared_memory.get_lock(LockName.MonitorObstacles)
+
+        if self.virtual_detector:
             for i in range(360):
                 self.shared_lidar_data[i][0] = i
                 self.shared_lidar_data[i][2] = 255
+            if self.robot_id > 1:
+                for i in range(90, 270):
+                    self.shared_lidar_data[i][1] = 65535
             self.shared_lidar_data[360][0] = -1
             for self.sensor in self.sensors:
                 self.sensor.shared_sensor_data = self.shared_lidar_data
-            self.update_pose_current_timer.start(RobotEntity.update_pose_current_interval)
-        else:
-            for self.sensor in self.sensors:
-                self.sensor.shared_sensor_data = None
-            self.update_pose_current_timer.stop()
-            self.shared_monitor_obstacles_lock = None
-            self.shared_monitor_obstacles = None
-            self.shared_rectangle_obstacles = None
-            self.shared_circle_obstacles = None
-            self.shared_lidar_data_lock = None
-            self.shared_lidar_data = None
-            self.shared_pose_current_buffer = None
-            self.shared_memory = None
-        return super().setEnabled(isEnabled)
+                self.sensor.shared_sensor_data_lock = self.shared_lidar_data_lock
+
+    def delete_shared_memory(self):
+        for self.sensor in self.sensors:
+            self.sensor.shared_sensor_data = None
+            self.sensor.shared_sensor_data_lock = None
+        self.update_pose_current_timer.stop()
+        self.shared_monitor_obstacles_lock = None
+        self.shared_monitor_obstacles = None
+        self.shared_obstacles_lock = None
+        self.shared_rectangle_obstacles = None
+        self.shared_circle_obstacles = None
+        self.shared_lidar_data_lock = None
+        self.shared_lidar_data = None
+        self.shared_pose_current_buffer = None
+        self.shared_memory = None
 
     def post_init(self):
         """
@@ -122,15 +156,10 @@ class RobotEntity(AssetEntity):
         """
         super().post_init()
 
-        if self.robot_id == 1:
+        if self.virtual_detector:
             self.add_lidar_sensors()
-        else:
-            self.add_tof_sensor()
 
         self.order_robot = RobotOrderEntity(self.parent(), self.robot_id)
-
-        if self.beacon_entity:
-            Sensor.add_obstacle(self.beacon_entity)
 
     def add_lidar_sensors(self):
         """
@@ -138,22 +167,34 @@ class RobotEntity(AssetEntity):
         one by degree around the top of the robot.
         """
 
-        radius = 65.0 / 2
+        if self.robot_id == 1:
+            radius = 65.0 / 2
+            shift_x = 0.0
+            shift_y = 0.0
+            shift_z = 360.0
+        else:
+            radius = 35.29 / 2
+            shift_x = 75.5
+            shift_y = 0.0
+            shift_z = 60.8
 
-        for i in range(0, 360):
-            angle = (360 - i) % 360
+        for angle in range(0, 360):
+            if self.robot_id > 1 and (90 < angle < 270):
+                continue
             origin_x = radius * math.sin(math.radians(90 - angle))
             origin_y = radius * math.cos(math.radians(90 - angle))
             sensor = LidarSensor(
                 asset_entity=self,
                 name=f"Lidar {angle}",
-                angle=i,
-                origin_x=origin_x,
-                origin_y=origin_y,
+                angle=angle,
+                origin_x=shift_x,
+                origin_y=shift_y,
+                origin_z=shift_z + 5,
                 direction_x=origin_x,
                 direction_y=origin_y,
             )
             sensor.shared_sensor_data = self.shared_lidar_data
+            sensor.shared_sensor_data_lock = self.shared_lidar_data_lock
             self.sensors.append(sensor)
             self.update_hit_timer.timeout.connect(sensor.ray_caster.trigger)
 
@@ -169,6 +210,7 @@ class RobotEntity(AssetEntity):
             origin_y=0,
         )
         sensor.shared_sensor_data = self.shared_lidar_data
+        sensor.shared_sensor_data_lock = self.shared_lidar_data_lock
         self.sensors.append(sensor)
 
     def update_pose_current(self) -> None:
@@ -189,22 +231,9 @@ class RobotEntity(AssetEntity):
         Qt slot called to set the robot's new pose order.
 
         Arguments:
+            robot_id: ID of the robot
             new_pose: new robot pose
         """
         if self.order_robot:
             self.order_robot.transform.setTranslation(QtGui.QVector3D(new_pose.x, new_pose.y, 0))
             self.order_robot.transform.setRotationZ(new_pose.O)
-
-    def start_sensors_emulation(self) -> None:
-        """
-        Start timers triggering sensors update and Lidar data emission.
-        """
-        for sensor in self.sensors:
-            sensor.ray_caster.setEnabled(True)
-
-    def stop_sensors_emulation(self) -> None:
-        """
-        Stop timers triggering sensors update and sensors data emission.
-        """
-        for sensor in self.sensors:
-            sensor.ray_caster.setEnabled(False)

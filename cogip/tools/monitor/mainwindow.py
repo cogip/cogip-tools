@@ -236,16 +236,17 @@ class MainWindow(QtWidgets.QMainWindow):
                     action.setChecked(True)
                 view.closed.connect(partial(action.setChecked, False))
 
-    def add_robot(self, robot_id: int, virtual: bool) -> None:
+    def add_robot(self, robot_id: int, virtual_planner: bool, virtual_detector: bool) -> None:
         """
         Add a new robot status bar.
 
         Parameters:
             robot_id: ID of the new robot
-            virtual: whether the robot is virtual or not
+            virtual_planner: whether the planner is virtual or not,
+                if planner is virtual, use shared memory to get the robot current, pose order and obstacles.
+            virtual_detector: whether the detector is virtual or not,
+                if detector is virtual, detect virtual obstacles and write them in shared memory.
         """
-        self.game_view.add_robot(robot_id)
-
         # Status bar
         if robot_id in self.robot_status_row:
             return
@@ -278,7 +279,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.robot_starters[robot_id] = (starter_checkbox := QtWidgets.QCheckBox())
         self.status_layout.addWidget(starter_checkbox, row, 5)
-        starter_checkbox.setEnabled(virtual)
+        starter_checkbox.setEnabled(virtual_planner)
         starter_checkbox.toggled.connect(partial(self.starter_toggled, robot_id))
 
         # Chart view
@@ -304,8 +305,6 @@ class MainWindow(QtWidgets.QMainWindow):
         Parameters:
             robot_id: ID of the robot to remove
         """
-        self.game_view.del_robot(robot_id)
-
         # Status bar
         row = self.robot_status_row.pop(robot_id)
         if not row:

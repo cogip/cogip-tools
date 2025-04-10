@@ -98,8 +98,6 @@ def main_opt(
     controller.signal_new_robot_pose_order.connect(robot_manager.new_robot_pose_order)
     controller.signal_add_robot.connect(robot_manager.add_robot)
     controller.signal_del_robot.connect(robot_manager.del_robot)
-    controller.signal_start_sensors_emulation.connect(robot_manager.start_sensors_emulation)
-    controller.signal_stop_sensors_emulation.connect(robot_manager.stop_sensors_emulation)
 
     # Connect Controller signals to UI slots
     controller.signal_new_console_text.connect(win.log_text.append)
@@ -129,7 +127,7 @@ def main_opt(
     ret = app.exec()
 
     controller.stop()
-    robot_manager.disable_robots()
+    robot_manager.del_robot()
 
     sys.exit(ret)
 
