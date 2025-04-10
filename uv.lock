@@ -278,7 +278,6 @@ dependencies = [
     { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "v4l2py" },
-    { name = "vl53l1x" },
     { name = "watchfiles" },
     { name = "websocket-client" },
     { name = "ydlidar", marker = "platform_machine == 'aarch64'" },
@@ -335,7 +334,6 @@ requires-dist = [
     { name = "typer", specifier = "==0.15.1" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.24.0.post1" },
     { name = "v4l2py", specifier = "==3.0.0" },
-    { name = "vl53l1x", specifier = "==0.0.5" },
     { name = "watchfiles", specifier = "==0.24.0" },
     { name = "websocket-client", specifier = "==1.7.0" },
     { name = "ydlidar", marker = "platform_machine == 'aarch64'", specifier = "==1.1.3", index = "https://github.com/cogip/YDLidar-SDK/releases/expanded_assets/wheels" },
@@ -1995,15 +1993,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/8c/b3/7b6a79c5c8cf6d90e
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ae/92/78324ff89391e00c8f4cf6b8526c41c6ef36b4ea2d2c132250b1a6fc2b8d/virtualenv-20.27.1-py3-none-any.whl", hash = "sha256:f11f1b8a29525562925f745563bfd48b189450f61fb34c4f9cc79dd5aa32a1f4", size = 3117838 },
 ]
-
-[[package]]
-name = "vl53l1x"
-version = "0.0.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "smbus2" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/75/96/1cf8e9de743c8d8393ce7654ebde00171f1090844e5324d52a59ad140770/VL53L1X-0.0.5.tar.gz", hash = "sha256:5f05a1197769c98c36d762a90b66d50a2a9c50e83a265343435eb3d3b0874ef4", size = 182313 }
 
 [[package]]
 name = "watchdog"

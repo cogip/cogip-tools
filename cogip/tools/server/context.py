@@ -23,6 +23,7 @@ class Context(metaclass=Singleton):
         shell_menu:         last received shell menu
         virtual:            Whether robot is virtual or not
         virtual_planner:    Whether planner is virtual or not
+        virtual_detector:   Whether detector is virtual or not
     """
 
     robot_id: int | None = None
@@ -37,3 +38,4 @@ class Context(metaclass=Singleton):
     shell_menu: models.ShellMenu | None = None
     virtual = platform.machine() != "aarch64"
     virtual_planner = False
+    virtual_detector = False

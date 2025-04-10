@@ -42,7 +42,6 @@ dependencies = [
     "typer==0.15.1",
     "uvicorn[standard]==0.24.0.post1",
     "v4l2py==3.0.0",
-    "VL53L1X==0.0.5",
     "scikit-learn~=1.6.1",
     "watchfiles==0.24.0",
     "websocket-client==1.7.0",

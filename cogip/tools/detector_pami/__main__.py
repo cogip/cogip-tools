@@ -20,6 +20,16 @@ def run(*args, **kwargs) -> None:
 
 
 def main_opt(
+    robot_id: Annotated[
+        int,
+        typer.Option(
+            "-i",
+            "--robot-id",
+            min=1,
+            help="Robot ID.",
+            envvar=["ROBOT_ID", "DETECTOR_PAMI_ID"],
+        ),
+    ] = 2,
     server_url: Annotated[
         Optional[str],  # noqa
         typer.Option(
@@ -27,33 +37,13 @@ def main_opt(
             envvar="COGIP_SOCKETIO_SERVER_URL",
         ),
     ] = None,
-    id: Annotated[
-        int,
+    lidar_port: Annotated[
+        Optional[Path],  # noqa
         typer.Option(
-            "-i",
-            "--id",
-            min=1,
-            help="Robot ID.",
-            envvar=["ROBOT_ID", "DETECTOR_PAMI_ID"],
-        ),
-    ] = 1,
-    tof_bus: Annotated[
-        Optional[int],  # noqa
-        typer.Option(
-            "-tp",
-            "--tof-bus",
-            help="ToF i2c bus (integer, ex: 1)",
-            envvar="DETECTOR_PAMI_TOF_BUS",
-        ),
-    ] = None,
-    tof_address: Annotated[
-        Optional[int],  # noqa
-        typer.Option(
-            "-ta",
-            "--tof-address",
-            parser=lambda value: int(value, 16),
-            help="ToF i2c address (hex, ex: 0x29)",
-            envvar="DETECTOR_PAMI_TOF_ADDRESS",
+            "-p",
+            "--lidar-port",
+            help="Serial port connected to the Lidar",
+            envvar="DETECTOR_PAMI_LIDAR_PORT",
         ),
     ] = None,
     min_distance: Annotated[
@@ -64,7 +54,7 @@ def main_opt(
             help="Minimum distance to detect an obstacle (mm)",
             envvar="DETECTOR_PAMI_MIN_DISTANCE",
         ),
-    ] = 150,
+    ] = 30,
     max_distance: Annotated[
         int,
         typer.Option(
@@ -73,16 +63,73 @@ def main_opt(
             help="Maximum distance to detect an obstacle (mm)",
             envvar=["DETECTOR_PAMI_MAX_DISTANCE"],
         ),
-    ] = 2500,
+    ] = 1000,
+    min_intensity: Annotated[
+        int,
+        typer.Option(
+            min=0,
+            max=255,
+            help="Minimum intensity to detect an obstacle",
+            envvar="DETECTOR_PAMI_MIN_INTENSITY",
+        ),
+    ] = 100,
     refresh_interval: Annotated[
         float,
         typer.Option(
-            min=0.1,
+            min=-1.0,
             max=2.0,
             help="Interval between each update of the obstacle list (in seconds)",
             envvar="DETECTOR_PAMI_REFRESH_INTERVAL",
         ),
-    ] = 0.2,
+    ] = 0.0,
+    sensor_delay: Annotated[
+        int,
+        typer.Option(
+            min=0,
+            max=100,
+            help=(
+                "Delay to compensate the delay between sensor data fetch and obstacle positions computation."
+                "Unit is the index of pose current to get in the past"
+            ),
+            envvar="DETECTOR_PAMI_SENSOR_DELAY",
+        ),
+    ] = 0,
+    cluster_min_samples: Annotated[
+        int,
+        typer.Option(
+            min=1,
+            max=20,
+            help="Minimum number of samples to form a cluster",
+            envvar="DETECTOR_PAMI_CLUSTER_MIN_SAMPLES",
+        ),
+    ] = 4,
+    cluster_eps: Annotated[
+        float,
+        typer.Option(
+            min=1.0,
+            max=100.0,
+            help="Maximum distance between two samples to form a cluster (mm)",
+            envvar="DETECTOR_PAMI_CLUSTER_EPS",
+        ),
+    ] = 40.0,
+    gui: Annotated[
+        bool,
+        typer.Option(
+            "-g",
+            "--gui",
+            help="Launch the GUI.",
+            envvar=["DETECTOR_PAMI_GUI"],
+        ),
+    ] = False,
+    web: Annotated[
+        bool,
+        typer.Option(
+            "-w",
+            "--web",
+            help="Launch the web server.",
+            envvar=["DETECTOR_PAMI_WEB"],
+        ),
+    ] = False,
     reload: Annotated[
         bool,
         typer.Option(
@@ -106,15 +153,21 @@ def main_opt(
         logger.setLevel(logging.DEBUG)
 
     if not server_url:
-        server_url = f"http://localhost:809{id}"
+        server_url = f"http://localhost:809{robot_id}"
 
     args = (
+        robot_id,
         server_url,
-        tof_bus,
-        tof_address,
+        lidar_port,
         min_distance,
         max_distance,
+        min_intensity,
         refresh_interval,
+        sensor_delay,
+        cluster_min_samples,
+        cluster_eps,
+        gui,
+        web,
     )
 
     if reload:

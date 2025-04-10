@@ -192,6 +192,9 @@ def avoidance_process(
         queue_sio.put(("pose_order", new_pose_order.model_dump(exclude_defaults=True)))
 
     # Remove reference to shared memory data to trigger garbage collection
+    shared_circle_obstacles = None
+    shared_rectangle_obstacles = None
+    shared_obstacles_lock = None
     shared_pose_current_lock = None
     shared_pose_current_buffer = None
     shared_memory = None

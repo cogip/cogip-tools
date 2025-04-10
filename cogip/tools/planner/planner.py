@@ -641,15 +641,8 @@ class Planner:
 
     async def update_obstacles(self):
         table = self.game_context.table
-
-        # Add dynamic obstacles
-        if self.robot_id == 1:
-            margin = self.properties.obstacle_bb_margin * self.properties.robot_length / 2
-            radius = self.properties.obstacle_radius + self.properties.robot_length / 2
-        else:
-            margin = 0
-            radius = 10
         try:
+            margin = self.properties.obstacle_bb_margin * self.properties.robot_length / 2
             if self.properties.bypass_detector:
                 shared_obstacles = self.shared_monitor_obstacles
                 shared_lock = self.shared_monitor_obstacles_lock
@@ -660,9 +653,16 @@ class Planner:
             self.shared_obstacles_lock.start_writing()
             self.shared_circle_obstacles.clear()
             self.shared_rectangle_obstacles.clear()
+
+            # Add dynamic obstacles
             for detector_obstacle in shared_obstacles:
                 if not table.contains(detector_obstacle, margin):
                     continue
+                if self.robot_id == 1:
+                    radius = self.properties.obstacle_radius
+                else:
+                    radius = detector_obstacle.radius
+                radius += self.properties.robot_length / 2
                 self.shared_circle_obstacles.append(
                     x=detector_obstacle.x,
                     y=detector_obstacle.y,
@@ -674,38 +674,39 @@ class Planner:
             shared_lock.finish_reading()
 
             if not self.properties.disable_fixed_obstacles:
-                # Add artifact obstacles
-                construction_areas: list[ConstructionArea] = list(self.game_context.construction_areas.values()) + list(
-                    self.game_context.opponent_construction_areas.values()
-                )
-                for construction_area in construction_areas:
-                    if not construction_area.enabled:
-                        continue
-                    if not table.contains(construction_area, margin):
-                        continue
-                    self.shared_rectangle_obstacles.append(
-                        x=construction_area.x,
-                        y=construction_area.y,
-                        angle=construction_area.O,
-                        length_x=construction_area.width + self.properties.robot_width,
-                        length_y=construction_area.length + self.properties.robot_width,
-                        bounding_box_margin=margin,
-                        id=construction_area.id.value,
-                    )
-                for tribune in self.game_context.tribunes.values():
-                    if not tribune.enabled:
-                        continue
-                    if not table.contains(tribune, margin):
-                        continue
-                    self.shared_rectangle_obstacles.append(
-                        x=tribune.x,
-                        y=tribune.y,
-                        angle=tribune.O,
-                        length_x=tribune.width + self.properties.robot_width,
-                        length_y=tribune.length + self.properties.robot_width,
-                        bounding_box_margin=margin,
-                        id=tribune.id.value,
-                    )
+                if self.robot_id == 1:
+                    # Add artifact obstacles
+                    construction_areas: list[ConstructionArea] = list(
+                        self.game_context.construction_areas.values()
+                    ) + list(self.game_context.opponent_construction_areas.values())
+                    for construction_area in construction_areas:
+                        if not construction_area.enabled:
+                            continue
+                        if not table.contains(construction_area, margin):
+                            continue
+                        self.shared_rectangle_obstacles.append(
+                            x=construction_area.x,
+                            y=construction_area.y,
+                            angle=construction_area.O,
+                            length_x=construction_area.width + self.properties.robot_width,
+                            length_y=construction_area.length + self.properties.robot_width,
+                            bounding_box_margin=margin,
+                            id=construction_area.id.value,
+                        )
+                    for tribune in self.game_context.tribunes.values():
+                        if not tribune.enabled:
+                            continue
+                        if not table.contains(tribune, margin):
+                            continue
+                        self.shared_rectangle_obstacles.append(
+                            x=tribune.x,
+                            y=tribune.y,
+                            angle=tribune.O,
+                            length_x=tribune.width + self.properties.robot_width,
+                            length_y=tribune.length + self.properties.robot_width,
+                            bounding_box_margin=margin,
+                            id=tribune.id.value,
+                        )
 
                 # Add fixed obstacles
                 for fixed_obstacle in self.game_context.fixed_obstacles:
@@ -722,6 +723,7 @@ class Planner:
                     )
 
             self.shared_obstacles_lock.finish_writing()
+            self.shared_obstacles_lock.post_update()
         except Exception as exc:
             logger.warning(f"Planner: update_obstacles: Unknown exception {exc}")
             traceback.print_exc()

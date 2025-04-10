@@ -14,7 +14,7 @@ class SioEvents(socketio.ClientNamespace):
 
     def __init__(self, detector: "detector.Detector"):
         super().__init__("/detector")
-        self._detector = detector
+        self.detector = detector
 
     def on_connect(self):
         """
@@ -22,18 +22,17 @@ class SioEvents(socketio.ClientNamespace):
         """
         polling2.poll(lambda: self.client.connected is True, step=0.2, poll_forever=True)
         logger.info("Connected to cogip-server")
-        self.emit("connected")
+        self.emit("connected", self.detector.lidar_port is None)
         self.emit("register_menu", {"name": "detector", "menu": menu.model_dump()})
-        self._detector.create_shared_memory()
-        self._detector.start()
+        self.detector.start()
 
     def on_disconnect(self) -> None:
         """
         On disconnection from cogip-server, stop detector threads.
         """
         logger.info("Disconnected from cogip-server")
-        self._detector.stop()
-        self._detector.delete_shared_memory()
+        self.detector.stop()
+        self.detector.delete_shared_memory()
 
     def on_connect_error(self, data: dict[str, Any]) -> None:
         """
@@ -48,7 +47,7 @@ class SioEvents(socketio.ClientNamespace):
             and message == "A detector is already connected"
         ):
             logger.error(message)
-            self._detector.retry_connection = False
+            self.detector.retry_connection = False
             return
 
     def on_command(self, cmd: str) -> None:
@@ -57,12 +56,12 @@ class SioEvents(socketio.ClientNamespace):
         """
         if cmd == "config":
             # Get JSON Schema
-            schema = self._detector.properties.model_json_schema()
+            schema = self.detector.properties.model_json_schema()
             # Add namespace in JSON Schema
             schema["namespace"] = "/detector"
             schema["sio_event"] = "config_updated"
             # Add current values in JSON Schema
-            for prop, value in self._detector.properties.model_dump().items():
+            for prop, value in self.detector.properties.model_dump().items():
                 schema["properties"][prop]["value"] = value
             # Send config
             self.emit("config", schema)
@@ -70,6 +69,11 @@ class SioEvents(socketio.ClientNamespace):
             logger.warning(f"Unknown command: {cmd}")
 
     def on_config_updated(self, config: dict[str, Any]) -> None:
-        self._detector.properties.__setattr__(name := config["name"], config["value"])
-        if name == "refresh_interval":
-            self._detector.update_refresh_interval()
+        value = config["value"]
+        self.detector.properties.__setattr__(name := config["name"], value)
+        match name:
+            case "refresh_interval":
+                self.detector.obstacles_updater_loop.interval = value
+                self.detector.lidar_reader_loop.interval = value
+            case "sensor_delay":
+                self.detector.lidar_data_converter.set_pose_current_index(value)
