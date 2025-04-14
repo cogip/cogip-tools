@@ -8,7 +8,9 @@ import typer
 from watchfiles import PythonFilter, run_process
 
 from . import logger
+from .actions import Strategy
 from .planner import Planner
+from .table import TableEnum
 
 
 def changes_callback(changes):
@@ -164,6 +166,24 @@ def main_opt(
             envvar=["PLANNER_DISABLE_FIXED_OBSTACLES"],
         ),
     ] = False,
+    table: Annotated[
+        TableEnum,
+        typer.Option(
+            "-t",
+            "--table",
+            help="Default table on startup",
+            envvar="PLANNER_TABLE",
+        ),
+    ] = TableEnum.Game.name,
+    strategy: Annotated[
+        Strategy,
+        typer.Option(
+            "-s",
+            "--strategy",
+            help="Default strategy on startup",
+            envvar="PLANNER_STRATEGY",
+        ),
+    ] = Strategy.TestVisitStartingAreas.name,
     reload: Annotated[
         bool,
         typer.Option(
@@ -206,6 +226,8 @@ def main_opt(
         scservos_port,
         scservos_baud_rate,
         disable_fixed_obstacles,
+        table,
+        strategy,
         debug,
     )
 

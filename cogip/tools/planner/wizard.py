@@ -17,7 +17,7 @@ class GameWizard:
         self.planner = planner
         self.game_context = GameContext()
         self.step = 0
-        self.game_strategy = self.game_context.strategy
+        self.game_strategy = self.planner.properties.strategy
         self.waiting_starter_pressed_loop = AsyncLoop(
             "Waiting starter pressed thread",
             0.1,
@@ -50,7 +50,7 @@ class GameWizard:
 
     async def start(self):
         self.step = 0
-        self.game_strategy = self.game_context.strategy
+        self.game_strategy = self.planner.properties.strategy
         await self.waiting_starter_pressed_loop.stop()
         await self.waiting_calibration_loop.stop()
         await self.waiting_start_loop.stop()
@@ -74,14 +74,14 @@ class GameWizard:
             "name": "Game Wizard: Choose Table",
             "type": "choice_str",
             "choices": [e.name for e in TableEnum],
-            "value": self.game_context._table.name,
+            "value": self.planner.properties.table.name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_table(self, message: dict[str, Any]):
         value = message["value"]
         new_table = TableEnum[value]
-        self.game_context.table = new_table
+        self.properties.table = new_table
         self.planner.shared_properties["table"] = new_table
         await self.planner.soft_reset()
         await self.planner.sio_ns.emit("pami_table", value)
@@ -125,14 +125,14 @@ class GameWizard:
             "name": "Game Wizard: Choose Strategy",
             "type": "choice_str",
             "choices": choices,
-            "value": self.game_context.strategy.name,
+            "value": self.planner.properties.strategy.name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_strategy(self, message: dict[str, Any]):
         value = message["value"]
         self.game_strategy = Strategy[value]
-        self.game_context.strategy = Strategy.TestAlign
+        self.planner.properties.strategy = Strategy.TestAlign
         await self.planner.soft_reset()
 
     async def request_starter_for_calibration(self):
@@ -226,7 +226,7 @@ class GameWizard:
         self.waiting_start_loop.exit = True
         await self.waiting_start_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
-        self.game_context.strategy = self.game_strategy
+        self.planner.properties.strategy = self.game_strategy
         self.game_context.playing = False
         await self.planner.soft_reset()
         await self.planner.sio_ns.emit("game_start")

@@ -4,6 +4,8 @@ from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from cogip.utils.singleton import Singleton
+from .actions import Strategy
+from .table import TableEnum
 
 
 @dataclass(config=ConfigDict(title="Planner Properties"))
@@ -96,5 +98,19 @@ class Properties(metaclass=Singleton):
         Field(
             title="Disable Fixed Obstacles",
             description="Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance",
+        ),
+    ]
+    table: Annotated[
+        TableEnum,
+        Field(
+            title="Table",
+            exclude=True,
+        ),
+    ]
+    strategy: Annotated[
+        Strategy,
+        Field(
+            title="Strategy",
+            exclude=True,
         ),
     ]

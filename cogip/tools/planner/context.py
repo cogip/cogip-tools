@@ -24,7 +24,6 @@ from .avoidance.avoidance import AvoidanceStrategy
 from .camp import Camp
 from .pose import AdaptedPose, Pose
 from .positions import StartPosition
-from .properties import Properties
 from .table import Table, TableEnum, tables
 
 
@@ -34,12 +33,12 @@ class GameContext(metaclass=Singleton):
     """
 
     def __init__(self):
+        from .properties import Properties
+
         self.properties = Properties()
         self.game_duration: int = 90 if self.properties.robot_id == 1 else 100
         self.minimum_score: int = 0
         self.camp = Camp()
-        self.strategy = actions.Strategy.TestVisitStartingAreas
-        self._table = TableEnum.Game
         self.avoidance_strategy = AvoidanceStrategy.AvoidanceCpp
         self.reset()
 
@@ -48,11 +47,7 @@ class GameContext(metaclass=Singleton):
         """
         Selected table.
         """
-        return tables[self._table]
-
-    @table.setter
-    def table(self, new_table: TableEnum):
-        self._table = new_table
+        return tables[self.properties.table]
 
     def reset(self):
         """
@@ -68,7 +63,7 @@ class GameContext(metaclass=Singleton):
 
     @property
     def default_controller(self) -> ControllerEnum:
-        match self.strategy:
+        match self.properties.strategy:
             case actions.Strategy.PidAngularSpeedTest:
                 return ControllerEnum.ANGULAR_SPEED_TEST
             case actions.Strategy.PidLinearSpeedTest:
@@ -123,7 +118,7 @@ class GameContext(metaclass=Singleton):
         }
 
         # Adapt poses for training table
-        if self._table == TableEnum.Training:
+        if self.properties.table == TableEnum.Training:
             self.start_poses[StartPosition.Top].x -= 1000
             self.start_poses[StartPosition.PAMI2].x -= 1000
             self.start_poses[StartPosition.PAMI3].x -= 1000
@@ -173,7 +168,7 @@ class GameContext(metaclass=Singleton):
             adapted_pose = AdaptedPose(**tribune.model_dump())
             self.tribunes[id] = Tribune(**adapted_pose.model_dump(), id=id)
 
-        if self._table == TableEnum.Training:
+        if self.properties.table == TableEnum.Training:
             self.opponent_construction_areas[ConstructionAreaID.OppositeCenterLarge].enabled = False
 
     def create_fixed_obstacles(self):

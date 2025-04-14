@@ -66,6 +66,8 @@ class Planner:
         scservos_port: Path | None,
         scservos_baud_rate: int,
         disable_fixed_obstacles: bool,
+        table: TableEnum,
+        strategy: Strategy,
         debug: bool,
     ):
         """
@@ -88,6 +90,8 @@ class Planner:
             scservos_port: SC Servos serial port
             scservos_baud_rate: SC Servos baud rate (usually 921600 or 1000000)
             disable_fixed_obstacles: Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance
+            table: Default table on startup
+            strategy: Default strategy on startup
             debug: enable debug messages
         """
         self.robot_id = robot_id
@@ -126,6 +130,8 @@ class Planner:
             path_refresh_interval=path_refresh_interval,
             bypass_detector=bypass_detector,
             disable_fixed_obstacles=disable_fixed_obstacles,
+            table=table,
+            strategy=strategy,
         )
         self.virtual = platform.machine() != "aarch64"
         self.retry_connection = True
@@ -137,7 +143,7 @@ class Planner:
         self.sio_receiver_queue = asyncio.Queue()
         self.sio_emitter_queue = self.process_manager.Queue()
         self.action: actions.Action | None = None
-        self.actions = action_classes.get(self.game_context.strategy, actions.Actions)(self)
+        self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
         self.obstacles_updater_loop = AsyncLoop(
             "Obstacles updater loop",
             obstacle_updater_interval,
@@ -290,7 +296,7 @@ class Planner:
         self.avoidance_process = Process(
             target=avoidance_process,
             args=(
-                self.game_context.strategy,
+                self.properties.strategy,
                 self.game_context.table,
                 self.shared_properties,
                 self.sio_emitter_queue,
@@ -356,7 +362,7 @@ class Planner:
         self.shared_table_limits[1] = self.game_context.table.x_max
         self.shared_table_limits[2] = self.game_context.table.y_min
         self.shared_table_limits[3] = self.game_context.table.y_max
-        self.actions = action_classes.get(self.game_context.strategy, actions.Actions)(self)
+        self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
         available_start_poses = self.game_context.get_available_start_poses()
         if available_start_poses and self.start_position not in available_start_poses:
             self.start_position = available_start_poses[(self.robot_id - 1) % len(available_start_poses)]
@@ -562,7 +568,7 @@ class Planner:
             self.blocked_counter = 0
             self.pose_order = pose_order
 
-            if self.game_context.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
+            if self.properties.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
                 await self.sio_ns.emit("pose_order", self.pose_order.pose.model_dump())
 
     async def next_pose(self):
@@ -721,7 +727,7 @@ class Planner:
                 f"{'Connected' if self.sio.connected else 'Not connected': <20}"
                 f"{'▶' if self.game_context.playing else '◼'}\n"
                 f"Camp: {self.game_context.camp.color.name}\n"
-                f"Strategy: {self.game_context.strategy.name}\n"
+                f"Strategy: {self.properties.strategy.name}\n"
                 f"Pose: {pose_current.x},{pose_current.y},{pose_current.O}\n"
                 f"Countdown: {self.game_context.countdown:.2f}"
             )
@@ -871,7 +877,7 @@ class Planner:
                 "name": "Choose Strategy",
                 "type": "choice_str",
                 "choices": choices,
-                "value": self.game_context.strategy.name,
+                "value": self.properties.strategy.name,
             },
         )
 
@@ -926,7 +932,7 @@ class Planner:
                 "name": "Choose Table",
                 "type": "choice_str",
                 "choices": [e.name for e in TableEnum],
-                "value": self.game_context._table.name,
+                "value": self.properties.table.name,
             },
         )
 
@@ -942,7 +948,7 @@ class Planner:
                 new_camp = Camp.Colors[value]
                 if self.game_context.camp.color == new_camp:
                     return
-                if self.game_context._table == TableEnum.Training and new_camp == Camp.Colors.yellow:
+                if self.properties.table == TableEnum.Training and new_camp == Camp.Colors.yellow:
                     logger.warning("Wizard: only blue camp is authorized on training table")
                     return
                 self.game_context.camp.color = new_camp
@@ -950,11 +956,11 @@ class Planner:
                 logger.info(f"Wizard: New camp: {self.game_context.camp.color.name}")
             case "Choose Strategy":
                 new_strategy = Strategy[value]
-                if self.game_context.strategy == new_strategy:
+                if self.properties.strategy == new_strategy:
                     return
-                self.game_context.strategy = new_strategy
+                self.properties.strategy = new_strategy
                 await self.soft_reset()
-                logger.info(f"Wizard: New strategy: {self.game_context.strategy.name}")
+                logger.info(f"Wizard: New strategy: {self.properties.strategy.name}")
             case "Choose Avoidance":
                 new_strategy = AvoidanceStrategy[value]
                 if self.game_context.avoidance_strategy == new_strategy:
@@ -981,14 +987,14 @@ class Planner:
                         },
                     )
                     return
-                self.game_context.table = new_table
+                self.properties.table = new_table
                 self.shared_table_limits[0] = self.game_context.table.x_min
                 self.shared_table_limits[1] = self.game_context.table.x_max
                 self.shared_table_limits[2] = self.game_context.table.y_min
                 self.shared_table_limits[3] = self.game_context.table.y_max
                 self.shared_properties["table"] = new_table
                 await self.soft_reset()
-                logger.info(f"Wizard: New table: {self.game_context._table.name}")
+                logger.info(f"Wizard: New table: {self.properties.table.name}")
             case game_wizard_response if game_wizard_response.startswith("Game Wizard"):
                 await self.game_wizard.response(message)
             case wizard_test_response if wizard_test_response.startswith("Wizard Test"):

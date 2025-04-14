@@ -46,7 +46,7 @@ class Pami2Action(Action):
         )
         self.poses.append(pose)
 
-        if self.game_context._table == TableEnum.Training:
+        if self.planner.properties.table == TableEnum.Training:
             pose.x -= 1000
 
         await asyncio.sleep(90)
@@ -84,7 +84,7 @@ class Pami3Action(Action):
         )
         self.poses.append(pose)
 
-        if self.game_context._table == TableEnum.Training:
+        if self.planner.properties.table == TableEnum.Training:
             pose.x -= 1000
 
         await asyncio.sleep(93)
@@ -122,7 +122,7 @@ class Pami4Action(Action):
         )
         self.poses.append(pose)
 
-        if self.game_context._table == TableEnum.Training:
+        if self.planner.properties.table == TableEnum.Training:
             pose.x -= 1000
 
         await asyncio.sleep(92)

@@ -1,11 +1,10 @@
-from enum import IntEnum
-
 from pydantic import BaseModel
 
 from cogip.models.models import Vertex
+from cogip.utils.argenum import ArgEnum
 
 
-class TableEnum(IntEnum):
+class TableEnum(ArgEnum):
     """
     Enum for available tables.
     """
