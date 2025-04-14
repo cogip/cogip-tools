@@ -212,32 +212,6 @@ services:
     profiles:
       - robot1
 
-  make-firmware-actuators:
-    <<: *build-firmware
-    environment:
-      << : *env-firmware
-      FIRMWARE_APP: cup2024-robot-actuators
-    command:
-      - /bin/sh
-      - -x
-      - -c
-      - make -C applications/$${FIRMWARE_APP} -j$$(nproc) BOARD=$${FIRMWARE_BOARD}
-    profiles:
-      - robot1
-
-  make-firmware-motors:
-    <<: *build-firmware
-    environment:
-      << : *env-firmware
-      FIRMWARE_APP: cup2024-robot-motors
-    command:
-      - /bin/sh
-      - -x
-      - -c
-      - make -C applications/$${FIRMWARE_APP} -j$$(nproc) BOARD=$${FIRMWARE_BOARD}
-    profiles:
-      - robot1
-
   make-firmware-pami:
     <<: *build-firmware
     environment: &env-firmware-pami
@@ -266,30 +240,6 @@ services:
         condition: service_completed_successfully
     profiles:
       - robot1
-
-  # firmware1-actuators:
-  #   << : *firmware
-  #   hostname: firmware1-actuators
-  #   environment:
-  #     << : *env-firmware
-  #     FIRMWARE_APP: cup2024-robot-actuators
-  #   depends_on:
-  #     make-firmware-actuators:
-  #       condition: service_completed_successfully
-  #   profiles:
-  #     - robot1
-
-  # firmware1-motors:
-  #   << : *firmware
-  #   hostname: firmware1-motors
-  #   environment:
-  #     << : *env-firmware
-  #     FIRMWARE_APP: cup2024-robot-motors
-  #   depends_on:
-  #     make-firmware-motors:
-  #       condition: service_completed_successfully
-  #   profiles:
-  #     - robot1
 
   firmware2:
     << : *firmware
