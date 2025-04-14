@@ -15,6 +15,7 @@ class Properties(metaclass=Singleton):
             le=9,
             title="Robot ID",
             description="Robot ID",
+            exclude=True,
         ),
     ]
     robot_width: Annotated[

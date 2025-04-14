@@ -760,7 +760,7 @@ class Planner:
             schema["namespace"] = "/planner"
             schema["sio_event"] = "config_updated"
             # Add current values in JSON Schema
-            for prop, value in RootModel[Properties](self.properties).model_dump().items():
+            for prop, value in RootModel[Properties](self.properties).model_dump(mode="json").items():
                 schema["properties"][prop]["value"] = value
             # Send config
             await self.sio_ns.emit("config", schema)

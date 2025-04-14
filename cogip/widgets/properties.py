@@ -229,6 +229,9 @@ class PropertiesDialog(QtWidgets.QDialog):
             parent: parent property name if any
         """
         for name, props in props.items():
+            if props.get("value") is None:
+                # Value is not set for properties with excluded=True
+                continue
             if parent:
                 name = f"{parent}/{name}"
             match type := props["type"]:
