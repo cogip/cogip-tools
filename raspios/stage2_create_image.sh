@@ -149,6 +149,9 @@ sudo sed -i "s/HOSTNAME/${HOSTNAME}/" ${MOUNT_DIR}/etc/ssh/sshd_config
 sudo sed -i "s/IP_ADDRESS_BEACON/${IP_ADDRESS_BEACON_ETH0}/" ${MOUNT_DIR}/etc/hosts
 sudo sed -i "s/IP_ADDRESS_ROBOT1/${IP_ADDRESS_ROBOT1_WLAN0}/" ${MOUNT_DIR}/etc/hosts
 sudo sed -i "s/IP_ADDRESS_ROBOT2/${IP_ADDRESS_ROBOT2_WLAN0}/" ${MOUNT_DIR}/etc/hosts
+sudo sed -i "s/IP_ADDRESS_ROBOT3/${IP_ADDRESS_ROBOT3_WLAN0}/" ${MOUNT_DIR}/etc/hosts
+sudo sed -i "s/IP_ADDRESS_ROBOT4/${IP_ADDRESS_ROBOT4_WLAN0}/" ${MOUNT_DIR}/etc/hosts
+sudo sed -i "s/IP_ADDRESS_ROBOT5/${IP_ADDRESS_ROBOT5_WLAN0}/" ${MOUNT_DIR}/etc/hosts
 sudo sed -i "s/ROBOT_ID/${ROBOT_ID}/" ${MOUNT_DIR}/root/.xinitrc
 sudo sed -i "s/SCREEN_WIDTH/${SCREEN_WIDTH}/" ${MOUNT_DIR}/root/.xinitrc
 sudo sed -i "s/SCREEN_HEIGHT/${SCREEN_HEIGHT}/" ${MOUNT_DIR}/root/.xinitrc
