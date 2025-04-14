@@ -63,15 +63,6 @@ class Properties(metaclass=Singleton):
             description="Number of obstacle bounding box vertices",
         ),
     ]
-    max_distance: Annotated[
-        int,
-        Field(
-            ge=0,
-            le=4000,
-            title="Max Distance",
-            description="Maximum distance to take avoidance points into account (mm)",
-        ),
-    ]
     obstacle_updater_interval: Annotated[
         float,
         Field(
@@ -90,13 +81,6 @@ class Properties(metaclass=Singleton):
             multiple_of=0.001,
             title="Path Refresh Interval",
             description="Interval between each update of robot paths (seconds)",
-        ),
-    ]
-    plot: Annotated[
-        bool,
-        Field(
-            title="Debug Plot",
-            description="Display avoidance graph in realtime",
         ),
     ]
     bypass_detector: Annotated[

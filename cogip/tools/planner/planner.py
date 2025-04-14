@@ -57,10 +57,8 @@ class Planner:
         obstacle_radius: int,
         obstacle_bb_margin: float,
         obstacle_bb_vertices: int,
-        max_distance: int,
         obstacle_updater_interval: float,
         path_refresh_interval: float,
-        plot: bool,
         starter_pin: int | None,
         oled_bus: int | None,
         oled_address: int | None,
@@ -81,10 +79,8 @@ class Planner:
             obstacle_radius: Radius of a dynamic obstacle (in mm)
             obstacle_bb_margin: Obstacle bounding box margin in percent of the radius
             obstacle_bb_vertices: Number of obstacle bounding box vertices
-            max_distance: Maximum distance to take avoidance points into account (mm)
             obstacle_updater_interval: Interval between each send of obstacles to dashboards (in seconds)
             path_refresh_interval: Interval between each update of robot paths (in seconds)
-            plot: Display avoidance graph in realtime
             starter_pin: GPIO pin connected to the starter
             oled_bus: PAMI OLED display i2c bus
             oled_address: PAMI OLED display i2c address
@@ -126,10 +122,8 @@ class Planner:
             obstacle_radius=obstacle_radius,
             obstacle_bb_margin=obstacle_bb_margin,
             obstacle_bb_vertices=obstacle_bb_vertices,
-            max_distance=max_distance,
             obstacle_updater_interval=obstacle_updater_interval,
             path_refresh_interval=path_refresh_interval,
-            plot=plot,
             bypass_detector=bypass_detector,
             disable_fixed_obstacles=disable_fixed_obstacles,
         )
@@ -177,8 +171,6 @@ class Planner:
                 "obstacle_radius": obstacle_radius,
                 "obstacle_bb_vertices": obstacle_bb_vertices,
                 "obstacle_bb_margin": obstacle_bb_margin,
-                "max_distance": max_distance,
-                "plot": plot,
             }
         )
         self.avoidance_process: Process | None = None
@@ -394,14 +386,8 @@ class Planner:
                         else:
                             # Intermediate pose
                             match self.game_context.avoidance_strategy:
-                                case (
-                                    AvoidanceStrategy.Disabled
-                                    | AvoidanceStrategy.VisibilityRoadMapQuadPid
-                                    | AvoidanceStrategy.AvoidanceCpp
-                                ):
+                                case AvoidanceStrategy.Disabled | AvoidanceStrategy.AvoidanceCpp:
                                     new_controller = ControllerEnum.QUADPID
-                                case AvoidanceStrategy.VisibilityRoadMapLinearPoseDisabled:
-                                    new_controller = ControllerEnum.LINEAR_POSE_DISABLED
                         await self.set_controller(new_controller)
                         if self.sio.connected:
                             pose_current = self.pose_current

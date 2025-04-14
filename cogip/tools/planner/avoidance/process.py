@@ -121,7 +121,7 @@ def avoidance_process(
                 or avoidance.check_recompute(pose_current, last_emitted_pose_order)
             ):
                 logger.info("Avoidance: compute path")
-                path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
+                path = avoidance.get_path(pose_current, pose_order)
         else:
             if any([obstacle.is_point_inside(pose_current.x, pose_current.y) for obstacle in dyn_obstacles]):
                 logger.debug("Avoidance: pose current in obstacle")
@@ -138,7 +138,7 @@ def avoidance_process(
                     logger.debug("Avoidance: rotation only")
                     path = [pose_current, pose_order]
                 else:
-                    path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
+                    path = avoidance.get_path(pose_current, pose_order)
 
         if len(path) == 0:
             logger.debug("Avoidance: No path found")

@@ -84,15 +84,6 @@ def main_opt(
             envvar="PLANNER_OBSTACLE_BB_VERTICES",
         ),
     ] = 6,
-    max_distance: Annotated[
-        int,
-        typer.Option(
-            min=0,
-            max=4000,
-            help="Maximum distance to take avoidance points into account (mm)",
-            envvar=["COGIP_MAX_DISTANCE", "PLANNER_MAX_DISTANCE"],
-        ),
-    ] = 2500,
     obstacle_updater_interval: Annotated[
         float,
         typer.Option(
@@ -111,15 +102,6 @@ def main_opt(
             envvar="PLANNER_PATH_REFRESH_INTERVAL",
         ),
     ] = 0.2,
-    plot: Annotated[
-        bool,
-        typer.Option(
-            "-p",
-            "--plot",
-            help="Display avoidance graph in realtime",
-            envvar=["PLANNER_PLOT"],
-        ),
-    ] = False,
     starter_pin: Annotated[
         Optional[int],  # noqa
         typer.Option(
@@ -215,10 +197,8 @@ def main_opt(
         obstacle_radius,
         obstacle_bb_margin,
         obstacle_bb_vertices,
-        max_distance,
         obstacle_updater_interval,
         path_refresh_interval,
-        plot,
         starter_pin,
         oled_bus,
         oled_address,
