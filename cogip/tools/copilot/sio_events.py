@@ -138,6 +138,14 @@ class SioEvents(socketio.AsyncClientNamespace):
             command.pb_copy(pb_command.positional_actuator)
         await self.copilot.pbcom.send_can_message(copilot.actuator_command_uuid, pb_command)
 
+    async def on_actuator_init(self):
+        """
+        Callback on actuator_init (from dashboard).
+        Forward to mcu-firmware.
+        """
+        logger.info("[SIO] Actuator init")
+        await self.copilot.pbcom.send_can_message(copilot.actuator_init_uuid, None)
+
     async def on_config_updated(self, config: dict[str, Any]) -> None:
         """
         Callback on config_updated from dashboard.

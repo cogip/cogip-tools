@@ -52,9 +52,9 @@ class ConstructionAreaLarge(ConstructionArea):
 # Default positions for blue camp
 construction_area_positions: dict[ConstructionAreaID, Pose] = {
     ConstructionAreaID.LocalBottomSmall: Pose(x=-925, y=-725, O=0),
-    ConstructionAreaID.LocalBottomLarge1: Pose(x=-925, y=-275, O=0),
-    ConstructionAreaID.LocalBottomLarge2: Pose(x=-775, y=-275, O=0),
-    ConstructionAreaID.LocalBottomLarge3: Pose(x=-625, y=-275, O=0),
+    ConstructionAreaID.LocalBottomLarge1: Pose(x=-925, y=-265, O=0),
+    ConstructionAreaID.LocalBottomLarge2: Pose(x=-775, y=-265, O=0),
+    ConstructionAreaID.LocalBottomLarge3: Pose(x=-625, y=-265, O=0),
     ConstructionAreaID.OppositeBottomSmall: Pose(x=-925, y=1275, O=0),
     ConstructionAreaID.OppositeSideLarge1: Pose(x=-125, y=1425, O=-90),
     ConstructionAreaID.OppositeSideLarge2: Pose(x=-125, y=1275, O=-90),

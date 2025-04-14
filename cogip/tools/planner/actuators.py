@@ -11,6 +11,28 @@ if TYPE_CHECKING:
     from cogip.tools.planner.planner import Planner
 
 
+async def actuators_init(planner: "Planner"):
+    """
+    Send actuators initialization command to the firmware.
+    """
+    await arm_right_front(planner)
+    await arm_left_front(planner)
+    await magnet_side_right_in(planner)
+    await magnet_center_right_in(planner)
+    await magnet_center_left_in(planner)
+    await magnet_side_left_in(planner)
+    await arms_close(planner)
+
+    # Right arm first
+    await arm_grip_right_close(planner)
+    await asyncio.sleep(0.2)
+
+    # Left arm
+    await arm_grip_left_close(planner)
+
+    await planner.sio_ns.emit("actuator_init")
+
+
 # Positional Motors
 async def positional_motor_command(
     planner: "Planner",
@@ -60,7 +82,7 @@ async def magnet_side_right_in(planner: "Planner"):
 
 
 async def magnet_side_right_center(planner: "Planner"):
-    planner.scservos.set(SCServoEnum.MAGNET_SIDE_RIGHT, 695)
+    planner.scservos.set(SCServoEnum.MAGNET_SIDE_RIGHT, 726)
 
 
 async def magnet_side_right_out(planner: "Planner", speed: int = 2400):
@@ -73,7 +95,7 @@ async def arm_right_front(planner: "Planner"):
 
 
 async def arm_right_center(planner: "Planner"):
-    planner.scservos.set(SCServoEnum.ARM_RIGHT, 390)
+    planner.scservos.set(SCServoEnum.ARM_RIGHT, 385)
 
 
 async def arm_right_side(planner: "Planner", speed: int = 2400):
@@ -82,7 +104,7 @@ async def arm_right_side(planner: "Planner", speed: int = 2400):
 
 # MAGNET_CENTER_RIGHT
 async def magnet_center_right_out(planner: "Planner"):
-    planner.scservos.set(SCServoEnum.MAGNET_CENTER_RIGHT, 255)
+    planner.scservos.set(SCServoEnum.MAGNET_CENTER_RIGHT, 259)
 
 
 async def magnet_center_right_center(planner: "Planner"):
@@ -95,7 +117,7 @@ async def magnet_center_right_in(planner: "Planner"):
 
 # MAGNET_CENTER_LEFT
 async def magnet_center_left_out(planner: "Planner"):
-    planner.scservos.set(SCServoEnum.MAGNET_CENTER_LEFT, 809)
+    planner.scservos.set(SCServoEnum.MAGNET_CENTER_LEFT, 811)
 
 
 async def magnet_center_left_center(planner: "Planner"):
@@ -112,7 +134,7 @@ async def arm_left_front(planner: "Planner"):
 
 
 async def arm_left_center(planner: "Planner"):
-    planner.scservos.set(SCServoEnum.ARM_LEFT, 617)
+    planner.scservos.set(SCServoEnum.ARM_LEFT, 576)
 
 
 async def arm_left_side(planner: "Planner", speed: int = 2400):
@@ -125,7 +147,7 @@ async def magnet_side_left_in(planner: "Planner"):
 
 
 async def magnet_side_left_center(planner: "Planner"):
-    planner.scservos.set(SCServoEnum.MAGNET_SIDE_LEFT, 446)
+    planner.scservos.set(SCServoEnum.MAGNET_SIDE_LEFT, 462)
 
 
 async def magnet_side_left_out(planner: "Planner", speed: int = 2400):
@@ -137,7 +159,7 @@ async def arm_grip_left_open(planner: "Planner"):
     planner.scservos.set(SCServoEnum.ARM_GRIP_LEFT, 356)
 
 
-async def arm_grip_left_close2(planner: "Planner"):
+async def arm_grip_left_close(planner: "Planner"):
     planner.scservos.set(SCServoEnum.ARM_GRIP_LEFT, 765)
 
 
@@ -150,7 +172,7 @@ async def arm_grip_right_open(planner: "Planner"):
     planner.scservos.set(SCServoEnum.ARM_GRIP_RIGHT, 882)
 
 
-async def arm_grip_right_close2(planner: "Planner"):
+async def arm_grip_right_close(planner: "Planner"):
     planner.scservos.set(SCServoEnum.ARM_GRIP_RIGHT, 470)
 
 
@@ -239,9 +261,9 @@ async def arms_close(planner: "Planner"):
     await asyncio.sleep(0.2)
 
     # Right arm first
-    await arm_grip_right_close2(planner)
+    await arm_grip_right_close(planner)
 
     await asyncio.sleep(0.2)
 
     # Left arm
-    await arm_grip_left_close2(planner)
+    await arm_grip_left_close(planner)

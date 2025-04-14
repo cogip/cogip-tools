@@ -151,6 +151,13 @@ class PlannerNamespace(socketio.AsyncNamespace):
         logger.info(f"[planner => copilot] Actuator command: {data}")
         await self.emit("actuator_command", data, namespace="/copilot")
 
+    async def on_actuator_init(self, sid):
+        """
+        Callback on actuator_init message.
+        """
+        logger.info("[planner => copilot] Actuator init.")
+        await self.emit("actuator_init", namespace="/copilot")
+
     async def on_start_video_record(self, sid):
         """
         Callback on start_video_record message.

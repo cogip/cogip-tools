@@ -48,6 +48,7 @@ cameras_menu = models.ShellMenu(
 )
 
 robot_actuators_commands = [
+    "actuators_init",
     "lift_0",
     "lift_5",
     "lift_125",
