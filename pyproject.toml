@@ -68,7 +68,6 @@ Repository = "https://github.com/cogip/cogip-tools.git"
 
 [project.scripts]
 cogip-monitor = "cogip.tools.monitor.main:main"
-cogip-replay = "cogip.tools.replay.main:main"
 cogip-copilot = "cogip.tools.copilot.__main__:main"
 cogip-detector = "cogip.tools.detector.__main__:main"
 cogip-planner = "cogip.tools.planner.__main__:main"
