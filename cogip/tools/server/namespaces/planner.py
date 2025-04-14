@@ -141,6 +141,12 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         await self.emit("actuator_command", data, namespace="/copilot")
 
+    async def on_actuator_init(self, sid):
+        """
+        Callback on actuator_init message.
+        """
+        await self.emit("actuator_init", namespace="/copilot")
+
     async def on_start_video_record(self, sid):
         """
         Callback on start_video_record message.

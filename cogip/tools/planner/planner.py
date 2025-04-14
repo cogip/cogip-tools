@@ -306,6 +306,8 @@ class Planner:
         )
         self.avoidance_process.start()
 
+        await actuators.actuators_init(self)
+
     async def stop(self):
         """
         Stop running tasks.
