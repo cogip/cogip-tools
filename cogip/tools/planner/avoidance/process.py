@@ -9,13 +9,11 @@ from cogip.cpp.libraries.obstacles import ObstacleRectangle as SharedObstacleRec
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory
 from .. import logger
 from ..actions import Strategy
-from ..table import Table
 from .avoidance import Avoidance, AvoidanceStrategy
 
 
 def avoidance_process(
     strategy: Strategy,
-    table: Table,
     shared_properties: DictProxy,
     queue_sio: Queue,
 ):
@@ -26,8 +24,9 @@ def avoidance_process(
     shared_circle_obstacles = shared_memory.get_circle_obstacles()
     shared_rectangle_obstacles = shared_memory.get_rectangle_obstacles()
     shared_obstacles_lock = shared_memory.get_lock(LockName.Obstacles)
+    shared_table_limits = shared_memory.get_table_limits()
 
-    avoidance = Avoidance(table, shared_properties)
+    avoidance = Avoidance(shared_table_limits, shared_properties)
     avoidance_path: list[models.PathPose] = []
     last_emitted_pose_order: models.PathPose | None = None
     start = time.time() - shared_properties["path_refresh_interval"] + 0.01
@@ -192,6 +191,7 @@ def avoidance_process(
         queue_sio.put(("pose_order", new_pose_order.model_dump(exclude_defaults=True)))
 
     # Remove reference to shared memory data to trigger garbage collection
+    shared_table_limits = None
     shared_circle_obstacles = None
     shared_rectangle_obstacles = None
     shared_obstacles_lock = None

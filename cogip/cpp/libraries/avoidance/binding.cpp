@@ -23,14 +23,12 @@ NB_MODULE(avoidance, m) {
 
     // Bind Avoidance class
     nb::class_<Avoidance>(m, "Avoidance")
-        .def(nb::init<const obstacles::ObstaclePolygon&>(), "Constructor initializing the avoidance system with obstacle borders", "borders"_a)
+        .def(nb::init<nb::ndarray<float, nb::numpy, nb::shape<4>>, float>(), "Constructor initializing the avoidance system with table limits", "table_limits"_a, "table_margin"_a)
         .def("is_point_in_obstacles", &Avoidance::is_point_in_obstacles, "Checks if a point is inside any obstacle", "point"_a, "filter"_a = nullptr)
         .def("get_path_size", &Avoidance::get_path_size, "Retrieves the size of the computed avoidance path")
         .def("get_path_pose", &Avoidance::get_path_pose, "Retrieves the pose at a specific index in the computed path", "index"_a)
         .def("avoidance", &Avoidance::avoidance, "Builds the avoidance graph between the start and finish positions", "start"_a, "finish"_a)
         .def("check_recompute", &Avoidance::check_recompute, "Checks whether recomputation of the path is necessary", "start"_a, "stop"_a)
-        .def("borders", &Avoidance::borders, nb::rv_policy::reference_internal, "Retrieves the current obstacle borders")
-        .def("set_borders", &Avoidance::set_borders, "Updates the obstacle borders with a new polygon", "new_borders"_a)
         .def("add_dynamic_obstacle", &Avoidance::add_dynamic_obstacle, "Adds a dynamic obstacle to the list of obstacles", "obstacle"_a)
         .def("clear_dynamic_obstacles", &Avoidance::clear_dynamic_obstacles, "Clears all dynamic obstacles")
     ;

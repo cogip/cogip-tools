@@ -1,13 +1,12 @@
 from enum import IntEnum
 from multiprocessing.managers import DictProxy
 
+from numpy.typing import NDArray
+
 from cogip import models
 from cogip.cpp.libraries.avoidance import Avoidance as CppAvoidance
 from cogip.cpp.libraries.models import Coords as SharedCoord
-from cogip.cpp.libraries.models import CoordsList as SharedCoordList
-from cogip.cpp.libraries.obstacles import ObstaclePolygon as SharedObstaclePolygon
 from .. import logger
-from ..table import Table
 
 
 class AvoidanceStrategy(IntEnum):
@@ -17,15 +16,9 @@ class AvoidanceStrategy(IntEnum):
 
 
 class Avoidance:
-    def __init__(self, table: Table, shared_properties: DictProxy):
+    def __init__(self, table_limits: NDArray, shared_properties: DictProxy):
         self.shared_properties = shared_properties
-        border_coords = SharedCoordList()
-        border_coords.append(table.x_min, table.y_min)
-        border_coords.append(table.x_max, table.y_min)
-        border_coords.append(table.x_max, table.y_max)
-        border_coords.append(table.x_min, table.y_max)
-        border_obstacle = SharedObstaclePolygon(border_coords, bounding_box_margin=0)
-        self.cpp_avoidance = CppAvoidance(border_obstacle)
+        self.cpp_avoidance = CppAvoidance(table_limits, self.shared_properties["table_margin"])
 
     def check_recompute(self, pose_current: models.PathPose, goal: models.PathPose) -> bool:
         strategy = AvoidanceStrategy(self.shared_properties["avoidance_strategy"])

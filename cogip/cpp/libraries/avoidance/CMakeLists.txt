@@ -1,13 +1,12 @@
-# Generate library with only C++ source files.
-# This library will be used by the binding library and dependent libraries.
-add_library(
-    avoidance_cpp
-    SHARED
+# Generate library with source code and binding.
+nanobind_add_module(
+    avoidance
+    NB_SHARED STABLE_ABI LTO
+    binding.cpp
     Avoidance.cpp
 )
-set_target_properties(avoidance_cpp PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
 target_include_directories(
-    avoidance_cpp
+    avoidance
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/cogip/cpp/libraries/logger/include
@@ -16,24 +15,16 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/cogip/cpp/libraries/utils/include
 )
 target_link_libraries(
-    avoidance_cpp
+    avoidance
     PUBLIC
     models_cpp
     obstacles_cpp
 )
-
-# Generate library with source code and binding.
-nanobind_add_module(
-    avoidance
-    NB_SHARED STABLE_ABI LTO
-    binding.cpp
-)
-target_link_libraries(avoidance PUBLIC avoidance_cpp)
 set_target_properties(avoidance PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
 
 # Install the library.
 install(
-    TARGETS avoidance_cpp avoidance
+    TARGETS avoidance
     LIBRARY DESTINATION cogip/cpp/libraries
 )
 

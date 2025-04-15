@@ -177,6 +177,9 @@ class Planner:
                 "obstacle_radius": obstacle_radius,
                 "obstacle_bb_vertices": obstacle_bb_vertices,
                 "obstacle_bb_margin": obstacle_bb_margin,
+                # table_margin is the half of the max robot size,
+                # increase of 20% to not touch the borders during rotations.
+                "table_margin": max(self.properties.robot_length, self.properties.robot_width) / 1.8,
             }
         )
         self.avoidance_process: Process | None = None
@@ -297,7 +300,6 @@ class Planner:
             target=avoidance_process,
             args=(
                 self.properties.strategy,
-                self.game_context.table,
                 self.shared_properties,
                 self.sio_emitter_queue,
             ),
