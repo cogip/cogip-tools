@@ -205,7 +205,7 @@ services:
     <<: *build-firmware
     environment:
       << : *env-firmware
-      FIRMWARE_APP: cup2024-robot-motion-control
+      FIRMWARE_APP: robot-motion-control
     command:
       - /bin/sh
       - -x
@@ -218,7 +218,7 @@ services:
     <<: *build-firmware
     environment: &env-firmware-pami
       << : *env-firmware
-      FIRMWARE_APP: cup2024-robot-motion-control # Use robot1 firmware until PAMI firmware is updated to use CAN
+      FIRMWARE_APP: robot-motion-control # Use robot firmware until PAMI firmware is available
     command:
       - /bin/sh
       - -x
@@ -236,7 +236,7 @@ services:
     environment:
       << : *env-firmware
       ROBOT_ID: 1
-      FIRMWARE_APP: cup2024-robot-motion-control
+      FIRMWARE_APP: robot-motion-control
     depends_on:
       make-firmware-motion-control:
         condition: service_completed_successfully
