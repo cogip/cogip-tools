@@ -123,10 +123,10 @@ def avoidance_process(
                 path = avoidance.get_path(pose_current, pose_order)
         else:
             if any([obstacle.is_point_inside(pose_current.x, pose_current.y) for obstacle in dyn_obstacles]):
-                logger.debug("Avoidance: pose current in obstacle")
+                logger.info("Avoidance: pose current in obstacle")
                 path = []
             elif any([obstacle.is_point_inside(pose_order.x, pose_order.y) for obstacle in dyn_obstacles]):
-                logger.debug("Avoidance: pose order in obstacle")
+                logger.info("Avoidance: pose order in obstacle")
                 path = []
             else:
                 shared_properties["last_avoidance_pose_current"] = (pose_current.x, pose_current.y)
@@ -186,7 +186,7 @@ def avoidance_process(
 
         last_emitted_pose_order = new_pose_order.model_copy()
 
-        logger.debug("Avoidance: Update path")
+        logger.info("Avoidance: Update path")
         queue_sio.put(("path", [pose.pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
         queue_sio.put(("pose_order", new_pose_order.model_dump(exclude_defaults=True)))
 

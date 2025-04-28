@@ -398,6 +398,7 @@ class Planner:
                                     new_controller = ControllerEnum.QUADPID
                         await self.set_controller(new_controller)
                         if self.sio.connected:
+                            logger.info(f"Send pose order: {value[0]}")
                             pose_current = self.pose_current
                             await self.sio_ns.emit(
                                 name,
@@ -454,10 +455,10 @@ class Planner:
                 self.game_context.countdown -= now - last_now
                 logger.debug(f"Planner: countdown = {self.game_context.countdown}")
                 if self.game_context.playing and self.game_context.countdown < 15 and last_countdown > 15:
-                    logger.debug("Planner: countdown==15: force blocked")
+                    logger.info("Planner: countdown==15: force blocked")
                     await self.sio_receiver_queue.put(self.blocked())
                 if self.game_context.playing and self.game_context.countdown < 0 and last_countdown > 0:
-                    logger.debug("Planner: countdown==0: final action")
+                    logger.info("Planner: countdown==0: final action")
                     await self.final_action()
                 if self.game_context.countdown < -5 and last_countdown > -5:
                     await self.sio_ns.emit("stop_video_record")
@@ -536,7 +537,7 @@ class Planner:
         """
         Set pose reached for a robot.
         """
-        logger.debug("Planner: set_pose_reached()")
+        logger.info("Planner: set_pose_reached()")
 
         self.shared_properties["last_avoidance_pose_current"] = None
 
@@ -577,7 +578,7 @@ class Planner:
         """
         Select the next pose for a robot.
         """
-        logger.debug("Planner: next_pose()")
+        logger.info("Planner: next_pose()")
         try:
             # Get and set new pose
             self.pose_reached = False
@@ -614,7 +615,7 @@ class Planner:
         """
         Set current action.
         """
-        logger.debug(f"Planner: set action '{action.name}'")
+        logger.info(f"Planner: set action '{action.name}'")
         self.pose_order = None
         self.action = action
         await self.action.act_before_action()
@@ -625,7 +626,7 @@ class Planner:
         Function called when a robot cannot find a path to go to the current pose of the current action
         """
         if (current_action := self.action) and current_action.interruptable:
-            logger.debug("Planner: blocked")
+            logger.info("Planner: blocked")
             if new_action := self.get_action():
                 await self.set_action(new_action)
             await current_action.recycle()
