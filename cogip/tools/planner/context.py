@@ -80,15 +80,15 @@ class GameContext(metaclass=Singleton):
 
     def create_start_poses(self):
         self.start_poses = {
+            StartPosition.Bottom: AdaptedPose(
+                x=-550 - self.properties.robot_length / 2,
+                y=-100 - self.properties.robot_width / 2,
+                O=0,
+            ),
             StartPosition.Top: AdaptedPose(
                 x=550 + self.properties.robot_length / 2,
                 y=-900 - self.properties.robot_width / 2,
                 O=180,
-            ),
-            StartPosition.Bottom: AdaptedPose(
-                x=-550 - self.properties.robot_length / 2,
-                y=-50 - self.properties.robot_width / 2,
-                O=0,
             ),
             StartPosition.Opposite: AdaptedPose(
                 x=-350 + self.properties.robot_width / 2,
