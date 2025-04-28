@@ -21,6 +21,26 @@ async def positional_motor_command(
     return 0
 
 
+async def lift_0(planner: "Planner") -> float:
+    await positional_motor_command(planner, PositionalActuatorEnum.MOTOR_LIFT, 0)
+    return 0
+
+
+async def lift_5(planner: "Planner") -> float:
+    await positional_motor_command(planner, PositionalActuatorEnum.MOTOR_LIFT, 5)
+    return 0
+
+
+async def lift_125(planner: "Planner") -> float:
+    await positional_motor_command(planner, PositionalActuatorEnum.MOTOR_LIFT, 125)
+    return 0
+
+
+async def lift_140(planner: "Planner") -> float:
+    await positional_motor_command(planner, PositionalActuatorEnum.MOTOR_LIFT, 140)
+    return 0
+
+
 ## SC Servos
 
 
