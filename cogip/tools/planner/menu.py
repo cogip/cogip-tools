@@ -48,6 +48,10 @@ cameras_menu = models.ShellMenu(
 )
 
 robot_actuators_commands = [
+    "lift_0",
+    "lift_5",
+    "lift_125",
+    "lift_140",
     "magnet_side_right_in",
     "magnet_side_right_center",
     "magnet_side_right_out",
@@ -95,6 +99,10 @@ robot_actuators_multi_commands = [
     "arms_hold2",
     "arms_release",
     "arms_close",
+    "lift_0",
+    "lift_5",
+    "lift_125",
+    "lift_140",
 ]
 
 robot_actuators_multi_menu = models.ShellMenu(
