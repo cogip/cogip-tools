@@ -7,14 +7,14 @@ from cogip.models.actuators import (
 from cogip.models.artifacts import (
     ConstructionArea,
     ConstructionAreaID,
-    ConstructionAreaLarge,
     ConstructionAreaSmall,
+    FixedObstacle,
+    FixedObstacleID,
     Tribune,
     TribuneID,
     construction_area_positions,
     tribune_positions,
 )
-from cogip.models.models import DynObstacleRect
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.singleton import Singleton
 from . import actions
@@ -148,49 +148,96 @@ class GameContext(metaclass=Singleton):
 
         # Construction areas
         for id, area in construction_area_positions.items():
-            match id:
-                case ConstructionAreaID.LocalBottomSmall | ConstructionAreaID.OppositeBottomSmall:
-                    ConstructionAreaClass = ConstructionAreaSmall
-                case _:
-                    ConstructionAreaClass = ConstructionAreaLarge
             adapted_pose = AdaptedPose(**area.model_dump())
-            self.construction_areas[id] = ConstructionAreaClass(**adapted_pose.model_dump(), id=id, enabled=False)
-            self.opponent_construction_areas[id] = ConstructionAreaClass(
+            self.construction_areas[id] = ConstructionAreaSmall(**adapted_pose.model_dump(), id=id, enabled=False)
+            self.opponent_construction_areas[id] = ConstructionAreaSmall(
                 x=adapted_pose.x,
                 y=-adapted_pose.y,
                 O=-adapted_pose.O,
                 id=id,
             )
 
+        self.opponent_construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled = False
+        self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
+        if self.properties.table == TableEnum.Training:
+            self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge1].enabled = False
+            self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge2].enabled = False
+            self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
+
+        # Tribunes
         for id, tribune in tribune_positions.items():
             adapted_pose = AdaptedPose(**tribune.model_dump())
             self.tribunes[id] = Tribune(**adapted_pose.model_dump(), id=id)
 
         if self.properties.table == TableEnum.Training:
-            self.opponent_construction_areas[ConstructionAreaID.OppositeCenterLarge].enabled = False
+            self.tribunes[TribuneID.LocalTop] = self.tribunes[TribuneID.LocalTopTraining].model_copy(
+                update={"id": TribuneID.LocalTop}
+            )
+            self.tribunes[TribuneID.LocalTop].x -= 73.0 / 2
+            self.tribunes[TribuneID.LocalCenter].x -= 73.0 / 2
+        del self.tribunes[TribuneID.LocalTopTraining]
 
     def create_fixed_obstacles(self):
         # Positions are related to the default camp blue.
-        self.fixed_obstacles: list[DynObstacleRect] = []
+        self.fixed_obstacles: dict[FixedObstacleID, FixedObstacle] = {}
 
-        # Opponent starting area, ramp and scene.
-        pose = AdaptedPose(x=775, y=750)
-        self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=1500)]
-
-        # Ramp and scene except for robot ID 5, the superstar.
-        if self.properties.robot_id != 5:
+        if self.properties.robot_id < 5:
             # Ramp
-            pose = AdaptedPose(x=900, y=-650)
-            self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=200, length_y=400)]
+            self.fixed_obstacles[FixedObstacleID.Ramp] = FixedObstacle(
+                **AdaptedPose(x=900, y=-650).model_dump(),
+                length=200,
+                width=400,
+                id=FixedObstacleID.Ramp,
+            )
 
             # Scene
-            pose = AdaptedPose(x=825, y=-225)
-            self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=450)]
+            self.fixed_obstacles[FixedObstacleID.Scene] = FixedObstacle(
+                **AdaptedPose(x=825, y=-225).model_dump(),
+                length=450,
+                width=450,
+                id=FixedObstacleID.Scene,
+            )
+
+        # Opponent ramp
+        self.fixed_obstacles[FixedObstacleID.OpponentRamp] = FixedObstacle(
+            **AdaptedPose(x=900, y=650).model_dump(),
+            length=200,
+            width=400,
+            id=FixedObstacleID.OpponentRamp,
+        )
+
+        # Opponent scene
+        self.fixed_obstacles[FixedObstacleID.OpponentScene] = FixedObstacle(
+            **AdaptedPose(x=825, y=225).model_dump(),
+            length=450,
+            width=450,
+            id=FixedObstacleID.OpponentScene,
+        )
 
         # PAMIs starting area for robot ID 1, the main robot.
         if self.properties.robot_id == 1:
-            pose = AdaptedPose(x=825, y=-1425)
-            self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=150)]
+            self.fixed_obstacles[FixedObstacleID.PamiStartArea] = FixedObstacle(
+                **AdaptedPose(x=825, y=-1425).model_dump(),
+                length=450,
+                width=150,
+                id=FixedObstacleID.PamiStartArea,
+            )
+
+            self.fixed_obstacles[FixedObstacleID.PitArea] = FixedObstacle(
+                **AdaptedPose(x=375, y=-350).model_dump(),
+                length=700,
+                width=350,
+                enabled=False,
+                id=FixedObstacleID.PitArea,
+            )
+
+            self.fixed_obstacles[FixedObstacleID.OpponentPitArea] = FixedObstacle(
+                **AdaptedPose(x=375, y=350).model_dump(),
+                length=700,
+                width=350,
+                enabled=False,
+                id=FixedObstacleID.OpponentPitArea,
+            )
 
     def create_actuators_states(self):
         self.positional_actuator_states: dict[PositionalActuatorEnum, PositionalActuator] = {}
