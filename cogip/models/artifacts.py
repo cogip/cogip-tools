@@ -9,9 +9,13 @@ class ConstructionAreaID(IntEnum):
     """
 
     LocalBottomSmall = auto()
-    LocalBottomLarge = auto()
+    LocalBottomLarge1 = auto()
+    LocalBottomLarge2 = auto()
+    LocalBottomLarge3 = auto()
     OppositeBottomSmall = auto()
-    OppositeCenterLarge = auto()
+    OppositeSideLarge1 = auto()
+    OppositeSideLarge2 = auto()
+    OppositeSideLarge3 = auto()
 
 
 class ConstructionArea(Pose):
@@ -21,9 +25,9 @@ class ConstructionArea(Pose):
     """
 
     id: ConstructionAreaID
-    length: float = 450
-    width: float
-    free_slots: float
+    length: float
+    width: float = 450
+    tribune_level: int = 0
     enabled: bool = True
 
 
@@ -33,8 +37,7 @@ class ConstructionAreaSmall(ConstructionArea):
     Coordinates indicate the center of the tribune.
     """
 
-    width: float = 150
-    free_slots: int = 1
+    length: float = 150
 
 
 class ConstructionAreaLarge(ConstructionArea):
@@ -43,16 +46,19 @@ class ConstructionAreaLarge(ConstructionArea):
     Coordinates indicate the center of the tribune.
     """
 
-    width: float = 450
-    free_slots: int = 3
+    length: float = 450
 
 
 # Default positions for blue camp
 construction_area_positions: dict[ConstructionAreaID, Pose] = {
-    ConstructionAreaID.LocalBottomSmall: Pose(x=-925, y=-725, O=180),
-    ConstructionAreaID.LocalBottomLarge: Pose(x=-755, y=-275, O=180),
-    ConstructionAreaID.OppositeBottomSmall: Pose(x=-925, y=1275, O=180),
-    ConstructionAreaID.OppositeCenterLarge: Pose(x=-125, y=1275, O=90),
+    ConstructionAreaID.LocalBottomSmall: Pose(x=-925, y=-725, O=0),
+    ConstructionAreaID.LocalBottomLarge1: Pose(x=-925, y=-275, O=0),
+    ConstructionAreaID.LocalBottomLarge2: Pose(x=-775, y=-275, O=0),
+    ConstructionAreaID.LocalBottomLarge3: Pose(x=-625, y=-275, O=0),
+    ConstructionAreaID.OppositeBottomSmall: Pose(x=-925, y=1275, O=0),
+    ConstructionAreaID.OppositeSideLarge1: Pose(x=-125, y=1425, O=-90),
+    ConstructionAreaID.OppositeSideLarge2: Pose(x=-125, y=1275, O=-90),
+    ConstructionAreaID.OppositeSideLarge3: Pose(x=-125, y=1155, O=-90),
 }
 
 
@@ -92,14 +98,14 @@ class Tribune(Pose):
 
 # Default positions for blue camp
 tribune_positions: dict[TribuneID, Pose] = {
-    TribuneID.LocalCenter: Pose(x=-50, y=-400, O=0),
-    TribuneID.LocalTop: Pose(x=725, y=-675, O=0),
-    TribuneID.LocalTopSide: Pose(x=325, y=-1425, O=-90),
-    TribuneID.LocalBottomSide: Pose(x=-600, y=-1425, O=-90),
-    TribuneID.LocalBottom: Pose(x=-750, y=-725, O=180),
-    TribuneID.OppositeCenter: Pose(x=-50, y=400, O=0),
-    # TribuneID.OppositeTop: Pose(x=725, y=675, O=0),  # Included in a fixed obstacle
-    TribuneID.OppositeTopSide: Pose(x=325, y=1425, O=90),
-    TribuneID.OppositeBottomSide: Pose(x=-600, y=1425, O=90),
-    TribuneID.OppositeBottom: Pose(x=-750, y=725, O=180),
+    TribuneID.LocalCenter: Pose(x=-50, y=-400, O=180),
+    TribuneID.LocalTop: Pose(x=725, y=-675, O=180),
+    TribuneID.LocalTopSide: Pose(x=325, y=-1425, O=90),
+    TribuneID.LocalBottomSide: Pose(x=-600, y=-1425, O=90),
+    TribuneID.LocalBottom: Pose(x=-750, y=-725, O=0),
+    TribuneID.OppositeCenter: Pose(x=-50, y=400, O=180),
+    # TribuneID.OppositeTop: Pose(x=725, y=675, O=180),  # Included in a fixed obstacle
+    TribuneID.OppositeTopSide: Pose(x=325, y=1425, O=-90),
+    TribuneID.OppositeBottomSide: Pose(x=-600, y=1425, O=-90),
+    TribuneID.OppositeBottom: Pose(x=-750, y=725, O=0),
 }

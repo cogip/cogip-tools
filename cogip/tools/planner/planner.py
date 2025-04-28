@@ -675,8 +675,8 @@ class Planner:
                             x=construction_area.x,
                             y=construction_area.y,
                             angle=construction_area.O,
-                            length_x=construction_area.width + self.properties.robot_width,
-                            length_y=construction_area.length + self.properties.robot_width,
+                            length_x=construction_area.length + self.properties.robot_width,
+                            length_y=construction_area.width + self.properties.robot_width,
                             bounding_box_margin=margin,
                             id=construction_area.id.value,
                         )

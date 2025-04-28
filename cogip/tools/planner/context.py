@@ -7,7 +7,6 @@ from cogip.models.actuators import (
 from cogip.models.artifacts import (
     ConstructionArea,
     ConstructionAreaID,
-    ConstructionAreaLarge,
     ConstructionAreaSmall,
     Tribune,
     TribuneID,
@@ -148,14 +147,9 @@ class GameContext(metaclass=Singleton):
 
         # Construction areas
         for id, area in construction_area_positions.items():
-            match id:
-                case ConstructionAreaID.LocalBottomSmall | ConstructionAreaID.OppositeBottomSmall:
-                    ConstructionAreaClass = ConstructionAreaSmall
-                case _:
-                    ConstructionAreaClass = ConstructionAreaLarge
             adapted_pose = AdaptedPose(**area.model_dump())
-            self.construction_areas[id] = ConstructionAreaClass(**adapted_pose.model_dump(), id=id, enabled=False)
-            self.opponent_construction_areas[id] = ConstructionAreaClass(
+            self.construction_areas[id] = ConstructionAreaSmall(**adapted_pose.model_dump(), id=id, enabled=False)
+            self.opponent_construction_areas[id] = ConstructionAreaSmall(
                 x=adapted_pose.x,
                 y=-adapted_pose.y,
                 O=-adapted_pose.O,
@@ -166,8 +160,11 @@ class GameContext(metaclass=Singleton):
             adapted_pose = AdaptedPose(**tribune.model_dump())
             self.tribunes[id] = Tribune(**adapted_pose.model_dump(), id=id)
 
+        self.opponent_construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled = False
+        self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
         if self.properties.table == TableEnum.Training:
-            self.opponent_construction_areas[ConstructionAreaID.OppositeCenterLarge].enabled = False
+            self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge1].enabled = False
+            self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge2].enabled = False
 
     def create_fixed_obstacles(self):
         # Positions are related to the default camp blue.
