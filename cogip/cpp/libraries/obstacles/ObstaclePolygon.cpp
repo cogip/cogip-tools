@@ -71,7 +71,6 @@ ObstaclePolygon::ObstaclePolygon(const ObstaclePolygon& other, bool deep_copy):
 ObstaclePolygon::ObstaclePolygon(
     const models::CoordsList& points,
     double bounding_box_margin,
-    uint8_t bounding_box_points_number,
     obstacle_polygon_t* data
 ):
     data_(data == nullptr ? new obstacle_polygon_t() : data),
@@ -81,7 +80,7 @@ ObstaclePolygon::ObstaclePolygon(
     bounding_box_(models::CoordsList(&data_->bounding_box))
 {
     data_->bounding_box_margin = bounding_box_margin;
-    data_->bounding_box_points_number = bounding_box_points_number;
+    data_->bounding_box_points_number = points_.size();
     for (const auto& point : points) {
         points_.append(point);
     }

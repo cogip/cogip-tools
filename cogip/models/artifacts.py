@@ -1,92 +1,105 @@
 from enum import IntEnum, auto
 
-from pydantic import BaseModel
-
-from .models import Pose, Vertex
+from .models import Pose
 
 
-class PlantSupplyID(IntEnum):
+class ConstructionAreaID(IntEnum):
     """
-    Enum to identify plant supplies.
+    Enum to identify construction areas.
     """
 
-    CenterTop = auto()
-    CenterBottom = auto()
-    LocalTop = auto()
-    LocalBottom = auto()
-    OppositeTop = auto()
-    OppositeBottom = auto()
+    LocalBottomSmall = auto()
+    LocalBottomLarge = auto()
+    OppositeBottomSmall = auto()
+    OppositeCenterLarge = auto()
 
 
-class PlantSupply(BaseModel):
-    id: PlantSupplyID
-    x: float
-    y: float
-    radius: float
+class ConstructionArea(Pose):
+    """
+    Model for construction area.
+    Coordinates indicate the center of the tribune.
+    """
+
+    id: ConstructionAreaID
+    length: float = 450
+    width: float
+    free_slots: float
     enabled: bool = True
 
 
-class PotSupplyID(IntEnum):
+class ConstructionAreaSmall(ConstructionArea):
     """
-    Enum to identify pot supplies.
-    """
-
-    LocalTop = auto()
-    LocalMiddle = auto()
-    LocalBottom = auto()
-    OppositeTop = auto()
-    OppositeMiddle = auto()
-    OppositeBottom = auto()
-
-
-class PotSupply(BaseModel):
-    id: PotSupplyID
-    x: float
-    y: float
-    radius: float
-    angle: float
-    enabled: bool = True
-    count: int = 5
-
-
-class DropoffZoneID(IntEnum):
-    """
-    Enum to identify drop-off zones.
+    Model for small construction area.
+    Coordinates indicate the center of the tribune.
     """
 
-    Top = auto()
-    Bottom = auto()
-    Opposite = auto()
+    width: float = 150
+    free_slots: int = 1
 
 
-class DropoffZone(Vertex):
-    id: DropoffZoneID
+class ConstructionAreaLarge(ConstructionArea):
+    """
+    Model for large construction area.
+    Coordinates indicate the center of the tribune.
+    """
+
+    width: float = 450
     free_slots: int = 3
 
 
-class PlanterID(IntEnum):
+# Default positions for blue camp
+construction_area_positions: dict[ConstructionAreaID, Pose] = {
+    ConstructionAreaID.LocalBottomSmall: Pose(x=-925, y=-725, O=180),
+    ConstructionAreaID.LocalBottomLarge: Pose(x=-755, y=-275, O=180),
+    ConstructionAreaID.OppositeBottomSmall: Pose(x=-925, y=1275, O=180),
+    ConstructionAreaID.OppositeCenterLarge: Pose(x=-125, y=1275, O=90),
+}
+
+
+class TribuneID(IntEnum):
     """
-    Enum to identify planters.
-    """
-
-    Top = auto()
-    LocalSide = auto()
-    OppositeSide = auto()
-    Test = auto()  # To use on the training table only
-
-
-class Planter(Pose):
-    id: PlanterID
-
-
-class SolarPanelsID(IntEnum):
-    """
-    Enum to identify solar panels.
+    Enum to identify raw material stock.
     """
 
-    Local = auto()
-    Shared = auto()
+    LocalCenter = auto()
+    LocalTop = auto()
+    LocalBottom = auto()
+    LocalTopSide = auto()
+    LocalBottomSide = auto()
+    OppositeCenter = auto()
+    OppositeTop = auto()
+    OppositeBottom = auto()
+    OppositeTopSide = auto()
+    OppositeBottomSide = auto()
 
 
-class SolarPanels(Vertex):
-    id: SolarPanelsID
+class Tribune(Pose):
+    """
+    Model for raw material stock.
+    Coordinates indicate the center of the tribune.
+    """
+
+    id: TribuneID
+    length: float = 400.0
+    width: float = 100.0
+    column_count: int = 4
+    platform_count: int = 2
+    levels: int = 0
+    construction_area: ConstructionAreaID | None = None
+    private: bool = False
+    enabled: bool = True
+
+
+# Default positions for blue camp
+tribune_positions: dict[TribuneID, Pose] = {
+    TribuneID.LocalCenter: Pose(x=-50, y=-400, O=0),
+    TribuneID.LocalTop: Pose(x=725, y=-675, O=0),
+    TribuneID.LocalTopSide: Pose(x=325, y=-1425, O=-90),
+    TribuneID.LocalBottomSide: Pose(x=-600, y=-1425, O=-90),
+    TribuneID.LocalBottom: Pose(x=-750, y=-725, O=180),
+    TribuneID.OppositeCenter: Pose(x=-50, y=400, O=0),
+    # TribuneID.OppositeTop: Pose(x=725, y=675, O=0),  # Included in a fixed obstacle
+    TribuneID.OppositeTopSide: Pose(x=325, y=1425, O=90),
+    TribuneID.OppositeBottomSide: Pose(x=-600, y=1425, O=90),
+    TribuneID.OppositeBottom: Pose(x=-750, y=725, O=180),
+}

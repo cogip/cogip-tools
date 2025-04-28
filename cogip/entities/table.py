@@ -13,7 +13,7 @@ class TableEntity(AssetEntity):
         asset_path: Path of the asset file
     """
 
-    asset_path: Path = Path("assets/table2024.dae")
+    asset_path: Path = Path("assets/table2025.dae")
 
     def __init__(self, parent: Qt3DCore.QEntity | None = None):
         """

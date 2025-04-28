@@ -155,6 +155,33 @@ def main_opt(
             envvar=["PLANNER_BYPASS_DETECTOR"],
         ),
     ] = False,
+    scservos_port: Annotated[
+        Path | None,
+        typer.Option(
+            "-sp",
+            "--scservos-port",
+            help="SC Servos serial port.",
+            envvar="PLANNER_SCSERVOS_PORT",
+        ),
+    ] = None,
+    scservos_baud_rate: Annotated[
+        int,
+        typer.Option(
+            "-sb",
+            "--scservos-baud-rate",
+            help="SC Servos baud rate (usually 921600 or 1000000).",
+            envvar="PLANNER_SCSERVOS_BAUD_RATE",
+        ),
+    ] = 921600,
+    disable_fixed_obstacles: Annotated[
+        bool,
+        typer.Option(
+            "-df",
+            "--disable-fixed-obstacles",
+            help="Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance",
+            envvar=["PLANNER_DISABLE_FIXED_OBSTACLES"],
+        ),
+    ] = False,
     reload: Annotated[
         bool,
         typer.Option(
@@ -196,6 +223,9 @@ def main_opt(
         oled_bus,
         oled_address,
         bypass_detector,
+        scservos_port,
+        scservos_baud_rate,
+        disable_fixed_obstacles,
         debug,
     )
 

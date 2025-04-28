@@ -11,7 +11,7 @@ RUN apt-get update \
 WORKDIR /src
 
 # Install uv
-RUN curl -LsSf https://astral.sh/uv/0.5.11/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+RUN curl -LsSf https://astral.sh/uv/0.6.6/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
 
 # Install Python in /opt so regular users can use it
 ENV UV_PYTHON_INSTALL_DIR=/opt/python
@@ -83,3 +83,25 @@ RUN apt-get update && \
         unzip
 
 CMD ["sleep", "infinity"]
+
+
+FROM debian:12 AS build_wheel
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+RUN apt-get update \
+ && apt-get -y dist-upgrade --auto-remove --purge \
+ && apt-get -y install curl g++ pkg-config libserial-dev \
+ && apt-get -y clean
+
+WORKDIR /src
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/0.6.6/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+ENV UV_PYTHON_INSTALL_DIR=/opt/python
+ENV PATH="/src/.venv/bin:${PATH}"
+
+# Help CMake to find the correct compilers
+ENV CC="/usr/bin/aarch64-linux-gnu-gcc"
+ENV CXX="/usr/bin/aarch64-linux-gnu-g++"

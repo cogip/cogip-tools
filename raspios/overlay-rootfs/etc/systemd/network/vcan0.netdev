@@ -1,0 +1,5 @@
+[NetDev]
+Name=vcan0
+Kind=vcan
+MTUBytes=72
+Description=Virtual CAN0 network interface

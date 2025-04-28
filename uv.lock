@@ -253,6 +253,7 @@ dependencies = [
     { name = "gpiozero" },
     { name = "httpx" },
     { name = "jinja2" },
+    { name = "lgpio" },
     { name = "luma-oled" },
     { name = "matplotlib" },
     { name = "more-itertools" },
@@ -304,14 +305,15 @@ requires-dist = [
     { name = "cython-cmake", specifier = "~=0.2.1" },
     { name = "devtools", specifier = "==0.12.2" },
     { name = "fastapi", specifier = "==0.115.2" },
-    { name = "getch", specifier = ">=1.0" },
+    { name = "getch", specifier = "~=1.0" },
     { name = "gpiozero", specifier = "==2.0.1" },
     { name = "httpx", specifier = "==0.26.0" },
     { name = "jinja2", specifier = "==3.1.2" },
+    { name = "lgpio", specifier = "~=0.2.2.0" },
     { name = "luma-oled", specifier = "==3.13.0" },
     { name = "matplotlib", specifier = "~=3.9.3" },
     { name = "more-itertools", specifier = "==10.1.0" },
-    { name = "nanobind", specifier = "~=2.4.0" },
+    { name = "nanobind", specifier = "~=2.5.0" },
     { name = "numpy", specifier = "<2" },
     { name = "opencv-contrib-python", specifier = "==4.10.0.84" },
     { name = "polling2", specifier = "==0.5.0" },
@@ -327,7 +329,7 @@ requires-dist = [
     { name = "requests", specifier = "==2.31.0" },
     { name = "sentry-sdk", specifier = "==1.39.1" },
     { name = "toposort", specifier = "==1.10" },
-    { name = "typer", extras = ["all"], specifier = "==0.15.1" },
+    { name = "typer", specifier = "==0.15.1" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.24.0.post1" },
     { name = "v4l2py", specifier = "==3.0.0" },
     { name = "vl53l1x", specifier = "==0.0.5" },
@@ -751,6 +753,17 @@ wheels = [
 ]
 
 [[package]]
+name = "lgpio"
+version = "0.2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/56/33/26ec2e8049eaa2f077bf23a12dc61ca559fbfa7bea0516bf263d657ae275/lgpio-0.2.2.0.tar.gz", hash = "sha256:11372e653b200f76a0b3ef8a23a0735c85ec678a9f8550b9893151ed0f863fff", size = 90087 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fe/73/e56c9afb845df53492d42bdea01df9895272bccfdd5128f34719c3a07990/lgpio-0.2.2.0-cp312-cp312-linux_armv7l.whl", hash = "sha256:6c65ac42e878764d04a71ed12fe6d46089b36e9e8127722bf29bb2e4bc91de22", size = 383956 },
+    { url = "https://files.pythonhosted.org/packages/3b/1c/becd00f66d2c65feed9a668ff9d91732394cb6baba7bec505d55de0e30c9/lgpio-0.2.2.0-cp312-cp312-manylinux_2_34_aarch64.whl", hash = "sha256:d907db79292c721c605af08187385ddb3b7af09907e1ffca56cf0cd6558ace0a", size = 366058 },
+    { url = "https://files.pythonhosted.org/packages/4c/7a/e3b4e5225c9792c4092b2cc07504746acbe62d0a8e4cb023bdf65f6430cf/lgpio-0.2.2.0-cp312-cp312-manylinux_2_34_x86_64.whl", hash = "sha256:2aadff092f642fcdada8457c158f87259dfda3a89ec19bae0b99ff22b34aac4b", size = 372103 },
+]
+
+[[package]]
 name = "linuxpy"
 version = "0.20.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1094,11 +1107,11 @@ wheels = [
 
 [[package]]
 name = "nanobind"
-version = "2.4.0"
+version = "2.5.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1e/01/a28722f6626e5c8a606dee71cb40c0b2ab9f7715b96bd34a9553c79dbf42/nanobind-2.4.0.tar.gz", hash = "sha256:a0392dee5f58881085b2ac8bfe8e53f74285aa4868b1472bfaf76cfb414e1c96", size = 953467 }
+sdist = { url = "https://files.pythonhosted.org/packages/20/fa/8e5930837f9b08202c4e566cf529480b0c3266e88f39723388baf8c69700/nanobind-2.5.0.tar.gz", hash = "sha256:cc8412e94acffa20a369191382bcdbb6fbfb302e475e87cacff9516d51023a15", size = 962802 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7a/07/abff41fcade3613349eac71dacb166352babef515efd960a751e3175c262/nanobind-2.4.0-py3-none-any.whl", hash = "sha256:8cf27b04fbadeb9deb4a73f02bd838bf9f7e3e5a8ce44c50c93142b5728da58a", size = 232882 },
+    { url = "https://files.pythonhosted.org/packages/8e/9e/dadc3831f40e22c1b3925f07894646ada7906ef5b48db5c5eb2b03ca9faa/nanobind-2.5.0-py3-none-any.whl", hash = "sha256:e1e5c816e5d10f0b252d82ba7f769f0f6679f5e043cf406aec3d9e184bf2a60d", size = 236912 },
 ]
 
 [[package]]

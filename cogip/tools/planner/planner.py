@@ -6,6 +6,7 @@ import traceback
 from functools import partial
 from multiprocessing import Manager, Process
 from multiprocessing.managers import DictProxy
+from pathlib import Path
 from typing import Any
 
 import socketio
@@ -24,6 +25,7 @@ from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCi
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorState
+from cogip.models.artifacts import ConstructionArea
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from cogip.utils.singleton import Singleton
@@ -35,6 +37,7 @@ from .camp import Camp
 from .context import GameContext
 from .positions import StartPosition
 from .properties import Properties
+from .scservos import SCServoEnum, SCServos
 from .table import TableEnum
 from .wizard import GameWizard
 
@@ -61,6 +64,9 @@ class Planner:
         oled_bus: int | None,
         oled_address: int | None,
         bypass_detector: bool,
+        scservos_port: Path | None,
+        scservos_baud_rate: int,
+        disable_fixed_obstacles: bool,
         debug: bool,
     ):
         """
@@ -82,12 +88,17 @@ class Planner:
             oled_bus: PAMI OLED display i2c bus
             oled_address: PAMI OLED display i2c address
             bypass_detector: Use perfect obstacles from monitor instead of detected obstacles by Lidar
+            scservos_port: SC Servos serial port
+            scservos_baud_rate: SC Servos baud rate (usually 921600 or 1000000)
+            disable_fixed_obstacles: Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance
             debug: enable debug messages
         """
         self.robot_id = robot_id
         self.server_url = server_url
         self.oled_bus = oled_bus
         self.oled_address = oled_address
+        self.scservos_port = scservos_port
+        self.scservos_baud_rate = scservos_baud_rate
         self.debug = debug
 
         self.shared_memory: SharedMemory | None = None
@@ -118,6 +129,7 @@ class Planner:
             path_refresh_interval=path_refresh_interval,
             plot=plot,
             bypass_detector=bypass_detector,
+            disable_fixed_obstacles=disable_fixed_obstacles,
         )
         self.virtual = platform.machine() != "aarch64"
         self.retry_connection = True
@@ -150,6 +162,7 @@ class Planner:
         self.sio_receiver_task: asyncio.Task | None = None
         self.sio_emitter_task: asyncio.Task | None = None
         self.countdown_task: asyncio.Task | None = None
+        self.scservos = SCServos(self.scservos_port, scservos_baud_rate)
 
         self.shared_properties: DictProxy = self.process_manager.dict(
             {
@@ -255,7 +268,6 @@ class Planner:
         self.create_shared_memory()
         self.shared_properties["exiting"] = False
         await self.soft_reset()
-        await self.set_pose_start(self.game_context.get_start_pose(self.start_position).pose)
         await self.set_controller(self.game_context.default_controller, True)
         self.sio_receiver_task = asyncio.create_task(
             self.task_sio_receiver(),
@@ -338,6 +350,9 @@ class Planner:
         """
         self.game_context.reset()
         self.actions = action_classes.get(self.game_context.strategy, actions.Actions)(self)
+        available_start_poses = self.game_context.get_available_start_poses()
+        if available_start_poses and self.start_position not in available_start_poses:
+            self.start_position = available_start_poses[(self.robot_id - 1) % len(available_start_poses)]
         await self.set_pose_start(self.game_context.get_start_pose(self.start_position).pose)
 
     async def task_sio_emitter(self):
@@ -488,6 +503,13 @@ class Planner:
         self.pose_order = None
         self.pose_reached = True
         self.avoidance_path = []
+
+        # When the firmware receives a pose start, it does not send its updated pose current,
+        # so do it here.
+        self.pose_current.x = pose_start.x
+        self.pose_current.y = pose_start.y
+        self.pose_current.angle = pose_start.O
+
         await self.sio_ns.emit("pose_start", pose_start.model_dump())
 
     @property
@@ -541,7 +563,7 @@ class Planner:
             self.blocked_counter = 0
             self.pose_order = pose_order
 
-            if self.game_context.strategy in [Strategy.LinearSpeedTest, Strategy.AngularSpeedTest]:
+            if self.game_context.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
                 await self.sio_ns.emit("pose_order", self.pose_order.pose.model_dump())
 
     async def next_pose(self):
@@ -638,43 +660,53 @@ class Planner:
                 )
             shared_lock.finish_reading()
 
-            # Add artifact obstacles
-            for plant_supply in self.game_context.plant_supplies.values():
-                if not plant_supply.enabled:
-                    continue
-                self.shared_circle_obstacles.append(
-                    x=plant_supply.x,
-                    y=plant_supply.y,
-                    angle=0,
-                    radius=plant_supply.radius + self.properties.robot_width / 2,
-                    bounding_box_margin=margin,
-                    bounding_box_points_number=self.properties.obstacle_bb_vertices,
-                    id=plant_supply.id.value,
+            if not self.properties.disable_fixed_obstacles:
+                # Add artifact obstacles
+                construction_areas: list[ConstructionArea] = list(self.game_context.construction_areas.values()) + list(
+                    self.game_context.opponent_construction_areas.values()
                 )
-            for pot_supply in self.game_context.pot_supplies.values():
-                if not pot_supply.enabled:
-                    continue
-                self.shared_circle_obstacles.append(
-                    x=pot_supply.x,
-                    y=pot_supply.y,
-                    angle=pot_supply.angle,
-                    radius=pot_supply.radius + self.properties.robot_width / 2,
-                    bounding_box_margin=margin,
-                    bounding_box_points_number=self.properties.obstacle_bb_vertices,
-                    id=pot_supply.id.value,
-                )
+                for construction_area in construction_areas:
+                    if not construction_area.enabled:
+                        continue
+                    if not table.contains(construction_area, margin):
+                        continue
+                    self.shared_rectangle_obstacles.append(
+                        x=construction_area.x,
+                        y=construction_area.y,
+                        angle=construction_area.O,
+                        length_x=construction_area.width + self.properties.robot_width,
+                        length_y=construction_area.length + self.properties.robot_width,
+                        bounding_box_margin=margin,
+                        id=construction_area.id.value,
+                    )
+                for tribune in self.game_context.tribunes.values():
+                    if not tribune.enabled:
+                        continue
+                    if not table.contains(tribune, margin):
+                        continue
+                    self.shared_rectangle_obstacles.append(
+                        x=tribune.x,
+                        y=tribune.y,
+                        angle=tribune.O,
+                        length_x=tribune.width + self.properties.robot_width,
+                        length_y=tribune.length + self.properties.robot_width,
+                        bounding_box_margin=margin,
+                        id=tribune.id.value,
+                    )
 
-            # Add fixed obstacles
-            for fixed_obstacle in self.game_context.fixed_obstacles:
-                self.shared_rectangle_obstacles.append(
-                    x=fixed_obstacle.x,
-                    y=fixed_obstacle.y,
-                    angle=fixed_obstacle.angle,
-                    length_x=fixed_obstacle.length_x + self.properties.robot_length / 2,
-                    length_y=fixed_obstacle.length_y + self.properties.robot_length / 2,
-                    bounding_box_margin=margin,
-                    bounding_box_points_number=self.properties.obstacle_bb_vertices,
-                )
+                # Add fixed obstacles
+                for fixed_obstacle in self.game_context.fixed_obstacles:
+                    if not table.contains(fixed_obstacle, margin):
+                        continue
+                    self.shared_rectangle_obstacles.append(
+                        x=fixed_obstacle.x,
+                        y=fixed_obstacle.y,
+                        angle=fixed_obstacle.angle,
+                        length_x=fixed_obstacle.length_x + self.properties.robot_length,
+                        length_y=fixed_obstacle.length_y + self.properties.robot_length,
+                        bounding_box_margin=margin,
+                        id=1,
+                    )
 
             self.shared_obstacles_lock.finish_writing()
         except Exception as exc:
@@ -732,6 +764,12 @@ class Planner:
             await self.sio_ns.emit("config", schema)
             return
 
+        if cmd == "scservos":
+            # Get JSON Schema
+            schema = self.scservos.get_schema()
+            await self.sio_ns.emit("config", schema)
+            return
+
         if cmd == "game_wizard":
             await self.game_wizard.start()
             return
@@ -755,6 +793,12 @@ class Planner:
             case "robot_width" | "obstacle_bb_vertices":
                 self.game_context.create_artifacts()
                 self.game_context.create_fixed_obstacles()
+
+    async def update_scservo(self, servo: dict[str, Any]) -> None:
+        """
+        Update a SC Servo with the value sent by the dashboard.
+        """
+        self.scservos.set(SCServoEnum[servo["name"]], servo["value"])
 
     async def cmd_play(self):
         """
@@ -896,8 +940,8 @@ class Planner:
                 new_camp = Camp.Colors[value]
                 if self.game_context.camp.color == new_camp:
                     return
-                if self.game_context._table == TableEnum.Training and new_camp == Camp.Colors.blue:
-                    logger.warning("Wizard: only yellow camp is authorized on training table")
+                if self.game_context._table == TableEnum.Training and new_camp == Camp.Colors.yellow:
+                    logger.warning("Wizard: only blue camp is authorized on training table")
                     return
                 self.game_context.camp.color = new_camp
                 await self.soft_reset()
@@ -924,14 +968,14 @@ class Planner:
                 new_table = TableEnum[value]
                 if self.game_context.table == new_table:
                     return
-                if self.game_context.camp.color == Camp.Colors.blue and new_table == TableEnum.Training:
-                    logger.warning("Wizard: training table is not supported with blue camp")
+                if self.game_context.camp.color == Camp.Colors.yellow and new_table == TableEnum.Training:
+                    logger.warning("Wizard: training table is not supported with yellow camp")
                     await self.sio_ns.emit(
                         "wizard",
                         {
                             "name": "Error",
                             "type": "message",
-                            "value": "Training table is not supported with blue camp",
+                            "value": "Training table is not supported with yellow camp",
                         },
                     )
                     return
@@ -1035,7 +1079,7 @@ class Planner:
                 message = {
                     "name": "Wizard Test Camp",
                     "type": "camp",
-                    "value": "yellow",
+                    "value": "blue",
                 }
             case "wizard_camera":
                 message = {

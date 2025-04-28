@@ -40,7 +40,6 @@ public:
     ObstaclePolygon(
         const models::CoordsList& points,    ///< [in] List of points defining the polygon.
         double bounding_box_margin,          ///< [in] Bounding box margin.
-        uint8_t bounding_box_points_number,  ///< [in] Number of points for the bounding box.
         obstacle_polygon_t* data=nullptr     ///< [in] Pointer to an existing data structure
                                              ///<      If nullptr, will allocate one internally
     );
