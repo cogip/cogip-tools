@@ -680,8 +680,8 @@ class Planner:
                             x=construction_area.x,
                             y=construction_area.y,
                             angle=construction_area.O,
-                            length_x=construction_area.width + self.properties.robot_width,
-                            length_y=construction_area.length + self.properties.robot_width,
+                            length_x=construction_area.length + self.properties.robot_width,
+                            length_y=construction_area.width + self.properties.robot_width,
                             bounding_box_margin=margin,
                             id=construction_area.id.value,
                         )
@@ -701,17 +701,19 @@ class Planner:
                         )
 
                 # Add fixed obstacles
-                for fixed_obstacle in self.game_context.fixed_obstacles:
+                for fixed_obstacle in self.game_context.fixed_obstacles.values():
+                    if not fixed_obstacle.enabled:
+                        continue
                     if not table.contains(fixed_obstacle, margin):
                         continue
                     self.shared_rectangle_obstacles.append(
                         x=fixed_obstacle.x,
                         y=fixed_obstacle.y,
-                        angle=fixed_obstacle.angle,
-                        length_x=fixed_obstacle.length_x + self.properties.robot_length,
-                        length_y=fixed_obstacle.length_y + self.properties.robot_length,
+                        angle=0,
+                        length_x=fixed_obstacle.width + self.properties.robot_width,
+                        length_y=fixed_obstacle.length + self.properties.robot_width,
                         bounding_box_margin=margin,
-                        id=1,
+                        id=fixed_obstacle.id.value,
                     )
 
             self.shared_obstacles_lock.finish_writing()
