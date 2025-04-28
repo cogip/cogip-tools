@@ -32,7 +32,7 @@ class ActuatorBase(BaseModel):
 class PositionalActuatorEnum(IntEnum):
     """Enum defining positional actuators IDs"""
 
-    UNDEFINED = 0
+    MOTOR_LIFT = 0
 
 
 class PositionalActuatorCommand(BaseModel):
@@ -46,6 +46,20 @@ class PositionalActuatorCommand(BaseModel):
         le=999,
         title="Position Command",
         description="Current positional actuator position command",
+    )
+    speed: int = Field(
+        100,
+        ge=1,
+        le=100,
+        title="Speed",
+        description="Speed",
+    )
+    timeout: int = Field(
+        2000,
+        ge=100,
+        le=5000,
+        title="Timeout",
+        description="Timeout",
     )
 
     @field_validator("kind", mode="before")
@@ -77,6 +91,8 @@ class PositionalActuatorCommand(BaseModel):
         """Copy values to Protobuf message"""
         message.id = self.id
         message.command = self.command
+        message.speed = self.speed
+        message.timeout = self.timeout
 
 
 class PositionalActuator(ActuatorBase, PositionalActuatorCommand):
@@ -119,4 +135,6 @@ ActuatorCommand = PositionalActuatorCommand
 
 
 # Actuator limits
-actuator_limits: dict[IntEnum, tuple[int, int]] = {}
+actuator_limits: dict[IntEnum, tuple[int, int]] = {
+    PositionalActuatorEnum.MOTOR_LIFT: (0, 150),
+}
