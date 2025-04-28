@@ -31,10 +31,11 @@ def avoidance_process(
     last_emitted_pose_order: models.PathPose | None = None
     start = time.time() - shared_properties["path_refresh_interval"] + 0.01
 
-    while not shared_properties["exiting"]:
-        queue_sio.put(("avoidance_path", [pose.pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
-        path_refresh_interval = shared_properties["path_refresh_interval"]
+    # Sometimes the first message sent is not received, so send a dummy message.
+    queue_sio.put(("nop", None))
 
+    while not shared_properties["exiting"]:
+        path_refresh_interval = shared_properties["path_refresh_interval"]
         now = time.time()
         duration = now - start
         if duration > path_refresh_interval:
@@ -148,6 +149,9 @@ def avoidance_process(
 
         for p in path:
             p.allow_reverse = pose_order.allow_reverse
+            p.timeout_ms = pose_order.timeout_ms
+            p.max_speed_linear = pose_order.max_speed_linear
+            p.max_speed_angular = pose_order.max_speed_angular
 
         if len(path) == 1:
             # Only one pose in path means the pose order is reached and robot is waiting next order,
@@ -175,7 +179,6 @@ def avoidance_process(
             next_delta_y = path[2].y - path[1].y
 
             path[1].O = math.degrees(math.atan2(next_delta_y, next_delta_x))  # noqa
-            path[1].allow_reverse = True
 
         avoidance_path = path[1:]
         new_pose_order = path[1]
@@ -187,8 +190,7 @@ def avoidance_process(
         last_emitted_pose_order = new_pose_order.model_copy()
 
         logger.info("Avoidance: Update path")
-        queue_sio.put(("path", [pose.pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
-        queue_sio.put(("pose_order", new_pose_order.model_dump(exclude_defaults=True)))
+        queue_sio.put(("path", [pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
 
     # Remove reference to shared memory data to trigger garbage collection
     shared_table_limits = None

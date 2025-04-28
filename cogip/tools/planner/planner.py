@@ -376,8 +376,8 @@ class Planner:
             while True:
                 name, value = await asyncio.to_thread(self.sio_emitter_queue.get)
                 match name:
-                    case "avoidance_path":
-                        self.avoidance_path = [pose.Pose.model_validate(m) for m in value]
+                    case "nop":
+                        pass
                     case "blocked":
                         if self.sio.connected:
                             await self.sio_ns.emit("brake")
@@ -386,6 +386,8 @@ class Planner:
                             self.blocked_counter = 0
                             await self.blocked()
                     case "path":
+                        self.blocked_counter = 0
+                        self.avoidance_path = [pose.PathPose.model_validate(m) for m in value]
                         if self.pose_order:
                             await self.pose_order.act_intermediate_pose()
                         if len(value) == 1:
@@ -399,22 +401,12 @@ class Planner:
                         await self.set_controller(new_controller)
                         if self.sio.connected:
                             logger.info(f"Send pose order: {value[0]}")
+                            await self.sio_ns.emit("pose_order", value[0])
                             pose_current = self.pose_current
                             await self.sio_ns.emit(
-                                name,
-                                [
-                                    {
-                                        "x": pose_current.x,
-                                        "y": pose_current.y,
-                                        "O": pose_current.O,
-                                    }
-                                ]
-                                + value,
+                                "path",
+                                [pose_current.model_dump(exclude_defaults=True, mode="json")] + value,
                             )
-                    case "pose_order":
-                        self.blocked_counter = 0
-                        if self.sio.connected:
-                            await self.sio_ns.emit(name, value)
                     case "starter_changed":
                         await self.starter_changed(value)
                     case _:
