@@ -21,34 +21,10 @@ jobs:
         - name: Set up Docker Buildx
           uses: docker/setup-buildx-action@v3
 
-        - name: Cache Docker layers
-          uses: actions/cache@v4
-          with:
-            path: /tmp/.buildx-cache
-            key: ${{ runner.os }}-buildx-${{ github.sha }}
-            restore-keys: |
-              ${{ runner.os }}-buildx-
-
-        - name: Build docker image with layer caching
-          uses: docker/build-push-action@v4
-          with:
-            context: .
-            target: uv_base
-            platforms: linux/arm64
-            load: true
-            cache-from: type=local,src=/tmp/.buildx-cache
-            cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-        - # Temp fix
-          # https://github.com/docker/build-push-action/issues/252
-          # https://github.com/moby/buildkit/issues/1896
-          name: Move cache
-          run: |
-            rm -rf /tmp/.buildx-cache
-            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
         - name: Build wheel
-          run: docker compose up build_wheel
+          run: |
+            docker compose pull build_wheel
+            docker compose up build_wheel
 
         - name: Check if wheel exists
           run: |

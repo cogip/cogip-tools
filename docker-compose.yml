@@ -519,10 +519,12 @@ services:
     build:
       context: .
       target: build_wheel
+    image: cogip/cogip-tools:build-wheel-1
     platform: "linux/arm64"
     command:
       - /bin/sh
       - -x
+      - -e
       - -c
       - |
         uv build --wheel -C build-dir=/src/build/wheel
