@@ -47,9 +47,10 @@ SharedMemory::SharedMemory(const std::string& name, bool owner):
 
     if (owner_) {
         std::memset(data_, 0, sizeof(shared_data_t));
-        for (std::size_t i{0}; i < NUM_ANGLES; ++i) {
-            data_->lidar_data[i][0] = 65535;
-            data_->lidar_data[i][1] = 0;
+        for (std::size_t i{0}; i < MAX_LIDAR_DATA_COUNT; ++i) {
+            data_->lidar_data[i][0] = -1;
+            data_->lidar_data[i][1] = -1;
+            data_->lidar_data[i][2] = -1;
         }
     }
 
@@ -57,10 +58,9 @@ SharedMemory::SharedMemory(const std::string& name, bool owner):
         locks_.emplace(lock, std::make_unique<WritePriorityLock>(name_ + "_" + name, owner_));
     }
     pose_current_buffer_ = new models::PoseBuffer(&data_->pose_current_buffer);
-    pose_current_ = new models::Pose(&data_->pose_current);
     pose_order_ = new models::Pose(&data_->pose_order);
-    detector_obstacles_ = new models::CoordsList(&data_->detector_obstacles);
-    monitor_obstacles_ = new models::CoordsList(&data_->monitor_obstacles);
+    detector_obstacles_ = new models::CircleList(&data_->detector_obstacles);
+    monitor_obstacles_ = new models::CircleList(&data_->monitor_obstacles);
     circle_obstacles_ = new obstacles::ObstacleCircleList(&data_->circle_obstacles);
     rectangle_obstacles_ = new obstacles::ObstacleRectangleList(&data_->rectangle_obstacles);
 
@@ -73,7 +73,6 @@ SharedMemory::~SharedMemory() {
     delete monitor_obstacles_;
     delete detector_obstacles_;
     delete pose_order_;
-    delete pose_current_;
     delete pose_current_buffer_;
 
     if (data_ != nullptr) {

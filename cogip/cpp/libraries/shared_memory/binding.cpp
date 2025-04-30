@@ -26,7 +26,6 @@ NB_MODULE(shared_memory, m) {
     nb::class_<shared_data_t>(m, "SharedData")
         .def(nb::init<>())
         .def_rw("pose_current_buffer", &shared_data_t::pose_current_buffer)
-        .def_rw("pose_current", &shared_data_t::pose_current)
         .def_rw("pose_order", &shared_data_t::pose_order)
         .def("__repr__", [](const shared_data_t &s) {
             std::ostringstream oss;
@@ -39,6 +38,7 @@ NB_MODULE(shared_memory, m) {
         .value("PoseCurrent", LockName::PoseCurrent)
         .value("PoseOrder", LockName::PoseOrder)
         .value("LidarData", LockName::LidarData)
+        .value("LidarCoords", LockName::LidarCoords)
         .value("DetectorObstacles", LockName::DetectorObstacles)
         .value("MonitorObstacles", LockName::MonitorObstacles)
         .value("Obstacles", LockName::Obstacles)
@@ -63,6 +63,8 @@ NB_MODULE(shared_memory, m) {
              "Wait for the updated signal meaning that data was updated.")
         .def("reset", &WritePriorityLock::reset,
              "Reset counters and semaphores.")
+        .def("set_debug", &WritePriorityLock::setDebug, "debug"_a,
+             "Set/unset debug mode.")
      ;
 
     nb::class_<SharedMemory>(m, "SharedMemory")
@@ -74,23 +76,38 @@ NB_MODULE(shared_memory, m) {
              "Get the shared data.")
         .def("get_pose_current_buffer", &SharedMemory::getPoseCurrentBuffer, nb::rv_policy::reference_internal,
              "Get PoseBuffer object wrapping the shared memory pose_current_buffer structure.")
-        .def("get_pose_current", &SharedMemory::getPoseCurrent, nb::rv_policy::reference_internal,
-             "Get Pose object wrapping the shared memory pose_current structure.")
         .def("get_pose_order", &SharedMemory::getPoseOrder, nb::rv_policy::reference_internal,
              "Get Pose object wrapping the shared memory pose_order structure.")
         .def(
-            "get_lidar_data",
-            [](SharedMemory &self) -> nb::ndarray<uint16_t, nb::numpy, nb::shape<NUM_ANGLES, 2>> {
-                auto &data = self.getLidarData();
-                return nb::ndarray<uint16_t, nb::numpy, nb::shape<NUM_ANGLES, 2>>((void *)data);
+            "get_table_limits",
+            [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<4>> {
+                return nb::ndarray<float, nb::numpy, nb::shape<4>>((void *)self.getTableLimits());
             },
             nb::rv_policy::reference_internal,
-            "Get the lidar_data structure from shared memory ."
+            "Get the table_limits structure from shared memory ."
+        )
+        .def(
+          "get_lidar_data",
+          [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>> {
+              auto &data = self.getLidarData();
+              return nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>>((void *)data);
+          },
+          nb::rv_policy::reference_internal,
+          "Get the lidar_data structure from shared memory ."
+        )
+       .def(
+          "get_lidar_coords",
+          [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 2>> {
+                auto &data = self.getLidarCoords();
+                return nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 2>>((void *)data);
+          },
+          nb::rv_policy::reference_internal,
+          "Get the lidar_coords structure from shared memory ."
         )
         .def("get_detector_obstacles", &SharedMemory::getDetectorObstacles, nb::rv_policy::reference_internal,
-             "Get CoordsList object wrapping the shared memory detector_obstacles structure.")
+             "Get CircleList object wrapping the shared memory detector_obstacles structure.")
         .def("get_monitor_obstacles", &SharedMemory::getMonitorObstacles, nb::rv_policy::reference_internal,
-             "Get CoordsList object wrapping the shared memory monitor_obstacles structure.")
+             "Get CircleList object wrapping the shared memory monitor_obstacles structure.")
         .def("get_circle_obstacles", &SharedMemory::getCircleObstacles, nb::rv_policy::reference_internal,
              "Get ObstacleCircleList object wrapping the shared memory circle_obstacles structure.")
         .def("get_rectangle_obstacles", &SharedMemory::getRectangleObstacles, nb::rv_policy::reference_internal,

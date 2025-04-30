@@ -26,14 +26,11 @@ class DetectorNamespace(socketio.AsyncNamespace):
 
         self.context.detector_sid = sid
 
-    async def on_connected(self, sid):
-        logger.info("Detector connected.")
-        if self.context.virtual:
-            await self.emit("start_sensors_emulation", self.context.robot_id, namespace="/monitor")
+    async def on_connected(self, sid, virtual: bool):
+        logger.info(f"Detector connected (virtual={virtual}).")
+        self.context.virtual_detector = virtual
 
     async def on_disconnect(self, sid):
-        if self.context.virtual:
-            await self.emit("stop_sensors_emulation", self.context.robot_id, namespace="/monitor")
         self.context.detector_sid = None
         logger.info("Detector disconnected.")
 

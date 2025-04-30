@@ -18,7 +18,7 @@ from . import context, logger, namespaces
 class Server:
     _original_uvicorn_exit_handler = UvicornServer.handle_exit  # Backup of original exit handler to overload it
     _shared_memory: SharedMemory | None = None  # Shared memory instance
-    _shared_pose_current: SharedPose | None = None
+    _shared_pose_current_buffer: SharedPose | None = None
     _shared_circle_obstacles: SharedObstacleCircleList | None = None
     _shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
 
@@ -27,7 +27,7 @@ class Server:
         """Overload function for Uvicorn handle_exit"""
         Server._shared_rectangle_obstacles = None
         Server._shared_circle_obstacles = None
-        Server._shared_pose_current = None
+        Server._shared_pose_current_buffer = None
         Server._shared_memory = None
         Server._original_uvicorn_exit_handler(*args, **kwargs)
 
@@ -50,7 +50,7 @@ class Server:
 
         if Server._shared_memory is None:
             Server._shared_memory = SharedMemory(f"cogip_{self.context.robot_id}", owner=True)
-            Server._shared_pose_current = Server._shared_memory.get_pose_current()
+            Server._shared_pose_current_buffer = Server._shared_memory.get_pose_current_buffer()
             Server._shared_circle_obstacles = Server._shared_memory.get_circle_obstacles()
             Server._shared_rectangle_obstacles = Server._shared_memory.get_rectangle_obstacles()
 
@@ -111,10 +111,11 @@ class Server:
         )
 
     async def update_dashboard(self):
+        shared_pose_current = Server._shared_pose_current_buffer.last
         pose_current = {
-            "x": Server._shared_pose_current.x,
-            "y": Server._shared_pose_current.y,
-            "O": Server._shared_pose_current.angle,
+            "x": shared_pose_current.x,
+            "y": shared_pose_current.y,
+            "O": shared_pose_current.angle,
         }
         await self.sio.emit("pose_current", (self.context.robot_id, pose_current), namespace="/dashboard")
         obstacles = []

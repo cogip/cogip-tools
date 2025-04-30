@@ -130,11 +130,14 @@ x-robot: &robot
     DETECTOR_RELOAD:
     DETECTOR_DEBUG:
     DETECTOR_UART_PORT:
-    DETECTOR_UART_SPEED:
     DETECTOR_MIN_DISTANCE:
     DETECTOR_MAX_DISTANCE:
-    DETECTOR_BEACON_RADIUS:
+    DETECTOR_MIN_INTENSITY:
     DETECTOR_REFRESH_INTERVAL:
+    DETECTOR_SENSOR_DELAY:
+    DETECTOR_CLUSTER_MIN_SAMPLES:
+    DETECTOR_CLUSTER_EPS:
+    DETECTOR_WEB:
     DETECTOR_EMULATION: 1
   command:
     - /bin/sh
@@ -181,11 +184,15 @@ x-pami: &pami
     PLANNER_DISABLE_FIXED_OBSTACLES:
     COPILOT_RELOAD:
     COPILOT_DEBUG:
-    DETECTOR_PAMI_TOF_BUS:
-    DETECTOR_PAMI_TOF_ADDRESS:
+    DETECTOR_PAMI_LIDAR_PORT:
     DETECTOR_PAMI_MIN_DISTANCE:
     DETECTOR_PAMI_MAX_DISTANCE:
+    DETECTOR_PAMI_MIN_INTENSITY:
     DETECTOR_PAMI_REFRESH_INTERVAL:
+    DETECTOR_PAMI_SENSOR_DELAY:
+    DETECTOR_PAMI_CLUSTER_MIN_SAMPLES:
+    DETECTOR_PAMI_CLUSTER_EPS:
+    DETECTOR_PAMI_WEB:
     DETECTOR_PAMI_RELOAD:
     DETECTOR_PAMI_DEBUG:
   command:
@@ -512,10 +519,12 @@ services:
     build:
       context: .
       target: build_wheel
+    image: cogip/cogip-tools:build-wheel-1
     platform: "linux/arm64"
     command:
       - /bin/sh
       - -x
+      - -e
       - -c
       - |
         uv build --wheel -C build-dir=/src/build/wheel

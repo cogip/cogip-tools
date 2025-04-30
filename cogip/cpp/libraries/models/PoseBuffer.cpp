@@ -53,8 +53,12 @@ void PoseBuffer::push(float x, float y, float angle)
 
 Pose PoseBuffer::get(std::size_t n) const
 {
+    if (size() == 0) {
+        return Pose(); // Return an empty Pose if the buffer is empty
+    }
+
     if (n >= size()) {
-        throw std::out_of_range("Requested index is out of bounds.");
+        n = size() - 1; // Adjust n to be within bounds
     }
 
     // Calculate index relative to head (reverse order)

@@ -17,7 +17,7 @@ target_include_directories(
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-target_link_libraries(lidar_ld19 PRIVATE ${LibSerial_LIBRARIES})
+target_link_libraries(lidar_ld19 PRIVATE ${LibSerial_LIBRARIES} models shared_memory)
 set_target_properties(lidar_ld19 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
 
 # Install the library.
@@ -35,6 +35,7 @@ nanobind_add_stub(
     PYTHON_PATH ${CMAKE_BINARY_DIR}
     DEPENDS lidar_ld19
     VERBOSE
+    INSTALL_TIME
 )
 
 # Copy stub files into the source directory.

@@ -40,7 +40,7 @@ class SioEvents(socketio.AsyncClientNamespace):
             poll_forever=True,
         )
         logger.info("Connected to cogip-server")
-        await self.emit("connected")
+        await self.emit("connected", self.planner.virtual)
         await self.emit("register_menu", {"name": "planner", "menu": menu.model_dump()})
         await self.emit("register_menu", {"name": "wizard", "menu": wizard_test_menu.model_dump()})
         if self.planner.robot_id == 1:

@@ -18,18 +18,18 @@ class Properties(BaseModel):
         title="Max Distance",
         description="Maximum distance to detect an obstacle (mm)",
     )
-    beacon_radius: int = Field(
+    min_intensity: int = Field(
         ...,
-        ge=10,
-        le=150,
-        title="Opponent Beacon Radius",
-        description="Radius of the opponent beacon support (mm)",
+        ge=0,
+        le=255,
+        title="Min intensity",
+        description="Minimum intensity to detect an obstacle",
     )
     refresh_interval: float = Field(
         ...,
-        ge=0.05,
+        ge=-1.0,
         le=2.0,
-        multiple_of=0.05,
+        multiple_of=0.01,
         title="Refresh Interval",
         description="Interval between each update of the obstacle list (seconds)",
     )
@@ -43,4 +43,19 @@ class Properties(BaseModel):
             "Delay to compensate the delay between sensor data fetch and obstacle positions computation,"
             "unit is the index of pose current to get in the past"
         ),
+    )
+    cluster_min_samples: int = Field(
+        ...,
+        ge=1,
+        le=20,
+        title="Cluster Min Samples",
+        description="Minimum number of samples to form a cluster",
+    )
+    cluster_eps: float = Field(
+        ...,
+        ge=1.0,
+        le=100.0,
+        multiple_of=1.0,
+        title="Cluster Epsilon",
+        description="Maximum distance between two samples to form a cluster (mm)",
     )

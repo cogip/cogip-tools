@@ -20,6 +20,16 @@ def run(*args, **kwargs) -> None:
 
 
 def main_opt(
+    robot_id: Annotated[
+        int,
+        typer.Option(
+            "-i",
+            "--robot-id",
+            min=1,
+            help="Robot ID.",
+            envvar=["ROBOT_ID", "DETECTOR_ID"],
+        ),
+    ] = 1,
     server_url: Annotated[
         Optional[str],  # noqa
         typer.Option(
@@ -27,16 +37,6 @@ def main_opt(
             envvar="COGIP_SOCKETIO_SERVER_URL",
         ),
     ] = None,
-    id: Annotated[
-        int,
-        typer.Option(
-            "-i",
-            "--id",
-            min=1,
-            help="Robot ID.",
-            envvar=["ROBOT_ID", "DETECTOR_ID"],
-        ),
-    ] = 1,
     lidar_port: Annotated[
         Optional[Path],  # noqa
         typer.Option(
@@ -64,24 +64,24 @@ def main_opt(
             envvar=["COGIP_MAX_DISTANCE", "DETECTOR_MAX_DISTANCE"],
         ),
     ] = 2500,
-    beacon_radius: Annotated[
+    min_intensity: Annotated[
         int,
         typer.Option(
-            min=10,
-            max=150,
-            help="Radius of the opponent beacon support (a cylinder of 70mm diameter to a cube of 100mm width)",
-            envvar="DETECTOR_BEACON_RADIUS",
+            min=0,
+            max=255,
+            help="Minimum intensity to detect an obstacle",
+            envvar="DETECTOR_MIN_INTENSITY",
         ),
-    ] = 35,
+    ] = 0,
     refresh_interval: Annotated[
         float,
         typer.Option(
-            min=0.05,
+            min=-1.0,
             max=2.0,
             help="Interval between each update of the obstacle list (in seconds)",
             envvar="DETECTOR_REFRESH_INTERVAL",
         ),
-    ] = 0.2,
+    ] = 0.1,
     sensor_delay: Annotated[
         int,
         typer.Option(
@@ -94,6 +94,42 @@ def main_opt(
             envvar="DETECTOR_SENSOR_DELAY",
         ),
     ] = 0,
+    cluster_min_samples: Annotated[
+        int,
+        typer.Option(
+            min=1,
+            max=20,
+            help="Minimum number of samples to form a cluster",
+            envvar="DETECTOR_CLUSTER_MIN_SAMPLES",
+        ),
+    ] = 4,
+    cluster_eps: Annotated[
+        float,
+        typer.Option(
+            min=1.0,
+            max=100.0,
+            help="Maximum distance between two samples to form a cluster (mm)",
+            envvar="DETECTOR_CLUSTER_EPS",
+        ),
+    ] = 40.0,
+    gui: Annotated[
+        bool,
+        typer.Option(
+            "-g",
+            "--gui",
+            help="Launch the GUI.",
+            envvar=["DETECTOR_GUI"],
+        ),
+    ] = False,
+    web: Annotated[
+        bool,
+        typer.Option(
+            "-w",
+            "--web",
+            help="Launch the web server.",
+            envvar=["DETECTOR_WEB"],
+        ),
+    ] = False,
     reload: Annotated[
         bool,
         typer.Option(
@@ -117,17 +153,21 @@ def main_opt(
         logger.setLevel(logging.DEBUG)
 
     if not server_url:
-        server_url = f"http://localhost:809{id}"
+        server_url = f"http://localhost:809{robot_id}"
 
     args = (
-        id,
+        robot_id,
         server_url,
         lidar_port,
         min_distance,
         max_distance,
-        beacon_radius,
+        min_intensity,
         refresh_interval,
         sensor_delay,
+        cluster_min_samples,
+        cluster_eps,
+        gui,
+        web,
     )
 
     if reload:

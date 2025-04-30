@@ -117,6 +117,8 @@ class SioEvents(socketio.AsyncClientNamespace):
         Forward to mcu-firmware.
         """
         pose_order = models.PathPose.model_validate(data)
+        if self.copilot.id > 1:
+            pose_order.allow_reverse = False
         pb_pose_order = PB_PathPose()
         pose_order.copy_pb(pb_pose_order)
         await self.copilot.pbcom.send_can_message(copilot.pose_order_uuid, pb_pose_order)

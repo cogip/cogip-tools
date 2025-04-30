@@ -1,8 +1,10 @@
 from PySide6 import QtGui
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
+from PySide6.Qt3DRender import Qt3DRender
 
 from cogip.cpp.libraries.models import Pose
+from cogip.entities.sensor import Sensor
 
 
 class ColumnEntity(Qt3DCore.QEntity):
@@ -89,3 +91,11 @@ class TribuneEntity(Qt3DCore.QEntity):
         self.column2 = ColumnEntity(self, -50)
         self.column3 = ColumnEntity(self, 50)
         self.column4 = ColumnEntity(self, 150)
+
+        # Create a layer used by sensors to activate detection on the artifacts
+        self.layer = Qt3DRender.QLayer(self)
+        self.layer.setRecursive(True)
+        self.layer.setEnabled(True)
+        self.addComponent(self.layer)
+
+        Sensor.add_obstacle(self)

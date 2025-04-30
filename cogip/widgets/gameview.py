@@ -212,7 +212,8 @@ class GameView(QtWidgets.QWidget):
             models.Vertex(x=0, y=0, z=5000),
         )
 
-        self.path: dict[int, PathEntity] = {}
+        # Add robot path entity
+        self.path = PathEntity(parent=self.scene_entity)
 
         # Init Camera
         self.camera_entity: Qt3DRender.QCamera = self.view.camera()
@@ -397,31 +398,6 @@ class GameView(QtWidgets.QWidget):
         self.plane_intersection = None
         self.new_move_delta.emit(None)
 
-    def add_robot(self, robot_id: int) -> None:
-        """
-        Add a new robot status bar.
-
-        Parameters:
-            robot_id: ID of the new robot
-        """
-        if self.path.get(robot_id):
-            return
-        path = PathEntity(parent=self.scene_entity)
-        path.set_points([])
-        self.path[robot_id] = path
-
-    def del_robot(self, robot_id: int) -> None:
-        """
-        Remove a robot.
-
-        Parameters:
-            robot_id: ID of the robot to remove
-        """
-        path = self.path.pop(robot_id, None)
-        if not path:
-            return
-        path.set_points([])
-
     def new_robot_path(self, robot_id: int, new_path: list[models.Vertex]) -> None:
         """
         Function called when robot path is updated.
@@ -430,12 +406,10 @@ class GameView(QtWidgets.QWidget):
             robot_id: ID of the robot
             new_path: new robot path
         """
-        path = self.path.get(robot_id)
-        if not path:
-            return
         for vertex in new_path:
             vertex.z = 20
-        path.set_points(new_path)
+        new_path.pop()
+        self.path.set_points(new_path)
 
     def pressed(self, pick: Qt3DRender.QPickEvent):
         """

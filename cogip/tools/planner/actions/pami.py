@@ -19,7 +19,7 @@ class Pami2Action(Action):
         self.start_pose = models.Pose(
             x=self.planner.pose_current.x,
             y=self.planner.pose_current.y,
-            O=self.planner.pose_current.angle,
+            O=self.planner.pose_current.O,
         )
         self.game_context.fixed_obstacles.pop()
 
@@ -67,7 +67,7 @@ class Pami3Action(Action):
         self.start_pose = models.Pose(
             x=self.planner.pose_current.x,
             y=self.planner.pose_current.y,
-            O=self.planner.pose_current.angle,
+            O=self.planner.pose_current.O,
         )
 
         # Top planter
@@ -105,7 +105,7 @@ class Pami4Action(Action):
         self.start_pose = models.Pose(
             x=self.planner.pose_current.x,
             y=self.planner.pose_current.y,
-            O=self.planner.pose_current.angle,
+            O=self.planner.pose_current.O,
         )
 
         # Top dropoff

@@ -15,12 +15,13 @@ from gpiozero.pins.mock import MockFactory
 from luma.core.interface.serial import i2c
 from luma.core.render import canvas
 from luma.oled.device import sh1106
+from numpy.typing import NDArray
 from PIL import ImageFont
 from pydantic import RootModel, TypeAdapter
 
 from cogip import models
-from cogip.cpp.libraries.models import CoordsList as SharedCoordsList
-from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.models import CircleList as SharedCircleList
+from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
@@ -103,10 +104,11 @@ class Planner:
 
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
-        self.pose_current: SharedPose | None = None
-        self.shared_detector_obstacles: SharedCoordsList | None = None
+        self.shared_pose_current_buffer: SharedPoseBuffer | None = None
+        self.shared_table_limits: NDArray | None = None
+        self.shared_detector_obstacles: SharedCircleList | None = None
         self.shared_detector_obstacles_lock: WritePriorityLock | None = None
-        self.shared_monitor_obstacles: SharedCoordsList | None = None
+        self.shared_monitor_obstacles: SharedCircleList | None = None
         self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
         self.shared_circle_obstacles: SharedObstacleCircleList | None = None
         self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
@@ -148,7 +150,6 @@ class Planner:
             self.update_obstacles,
             logger=self.debug,
         )
-        self._pose_current: models.Pose | None = None
         self._pose_order: pose.Pose | None = None
         self.pose_reached: bool = True
         self.avoidance_path: list[pose.Pose] = []
@@ -214,7 +215,8 @@ class Planner:
         if self.shared_memory is None:
             self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
             self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
-            self.pose_current = self.shared_memory.get_pose_current()
+            self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
+            self.shared_table_limits = self.shared_memory.get_table_limits()
             self.shared_detector_obstacles = self.shared_memory.get_detector_obstacles()
             self.shared_detector_obstacles_lock = self.shared_memory.get_lock(LockName.DetectorObstacles)
             self.shared_monitor_obstacles = self.shared_memory.get_monitor_obstacles()
@@ -230,9 +232,10 @@ class Planner:
             self.shared_circle_obstacles = None
             self.shared_monitor_obstacles_lock = None
             self.shared_monitor_obstacles = None
-            self.shared_detector_obstacles_lock: WritePriorityLock | None = None
-            self.shared_detector_obstacles: SharedCoordsList | None = None
-            self.pose_current = None
+            self.shared_detector_obstacles_lock = None
+            self.shared_detector_obstacles = None
+            self.shared_table_limits = None
+            self.shared_pose_current_buffer = None
             self.shared_pose_current_lock = None
             self.shared_memory = None
 
@@ -259,6 +262,14 @@ class Planner:
                 time.sleep(2)
                 continue
             break
+
+    @property
+    def pose_current(self) -> models.Pose:
+        """
+        Get the current pose of the robot.
+        """
+        pose = self.shared_pose_current_buffer.last
+        return models.Pose(x=pose.x, y=pose.y, O=pose.angle)
 
     async def start(self):
         """
@@ -349,6 +360,10 @@ class Planner:
         Only reset context and actions.
         """
         self.game_context.reset()
+        self.shared_table_limits[0] = self.game_context.table.x_min
+        self.shared_table_limits[1] = self.game_context.table.x_max
+        self.shared_table_limits[2] = self.game_context.table.y_min
+        self.shared_table_limits[3] = self.game_context.table.y_max
         self.actions = action_classes.get(self.game_context.strategy, actions.Actions)(self)
         available_start_poses = self.game_context.get_available_start_poses()
         if available_start_poses and self.start_position not in available_start_poses:
@@ -389,13 +404,14 @@ class Planner:
                                     new_controller = ControllerEnum.LINEAR_POSE_DISABLED
                         await self.set_controller(new_controller)
                         if self.sio.connected:
+                            pose_current = self.pose_current
                             await self.sio_ns.emit(
                                 name,
                                 [
                                     {
-                                        "x": self.pose_current.x,
-                                        "y": self.pose_current.y,
-                                        "O": self.pose_current.angle,
+                                        "x": pose_current.x,
+                                        "y": pose_current.y,
+                                        "O": pose_current.O,
                                     }
                                 ]
                                 + value,
@@ -506,10 +522,7 @@ class Planner:
 
         # When the firmware receives a pose start, it does not send its updated pose current,
         # so do it here.
-        self.pose_current.x = pose_start.x
-        self.pose_current.y = pose_start.y
-        self.pose_current.angle = pose_start.O
-
+        self.shared_pose_current_buffer.push(pose_start.x, pose_start.y, pose_start.O)
         await self.sio_ns.emit("pose_start", pose_start.model_dump())
 
     @property
@@ -628,15 +641,8 @@ class Planner:
 
     async def update_obstacles(self):
         table = self.game_context.table
-
-        # Add dynamic obstacles
-        if self.robot_id == 1:
-            margin = self.properties.obstacle_bb_margin * self.properties.robot_length / 2
-            radius = self.properties.obstacle_radius + self.properties.robot_length / 2
-        else:
-            margin = 0
-            radius = 10
         try:
+            margin = self.properties.obstacle_bb_margin * self.properties.robot_length / 2
             if self.properties.bypass_detector:
                 shared_obstacles = self.shared_monitor_obstacles
                 shared_lock = self.shared_monitor_obstacles_lock
@@ -647,9 +653,16 @@ class Planner:
             self.shared_obstacles_lock.start_writing()
             self.shared_circle_obstacles.clear()
             self.shared_rectangle_obstacles.clear()
+
+            # Add dynamic obstacles
             for detector_obstacle in shared_obstacles:
                 if not table.contains(detector_obstacle, margin):
                     continue
+                if self.robot_id == 1:
+                    radius = self.properties.obstacle_radius
+                else:
+                    radius = detector_obstacle.radius
+                radius += self.properties.robot_length / 2
                 self.shared_circle_obstacles.append(
                     x=detector_obstacle.x,
                     y=detector_obstacle.y,
@@ -661,38 +674,39 @@ class Planner:
             shared_lock.finish_reading()
 
             if not self.properties.disable_fixed_obstacles:
-                # Add artifact obstacles
-                construction_areas: list[ConstructionArea] = list(self.game_context.construction_areas.values()) + list(
-                    self.game_context.opponent_construction_areas.values()
-                )
-                for construction_area in construction_areas:
-                    if not construction_area.enabled:
-                        continue
-                    if not table.contains(construction_area, margin):
-                        continue
-                    self.shared_rectangle_obstacles.append(
-                        x=construction_area.x,
-                        y=construction_area.y,
-                        angle=construction_area.O,
-                        length_x=construction_area.width + self.properties.robot_width,
-                        length_y=construction_area.length + self.properties.robot_width,
-                        bounding_box_margin=margin,
-                        id=construction_area.id.value,
-                    )
-                for tribune in self.game_context.tribunes.values():
-                    if not tribune.enabled:
-                        continue
-                    if not table.contains(tribune, margin):
-                        continue
-                    self.shared_rectangle_obstacles.append(
-                        x=tribune.x,
-                        y=tribune.y,
-                        angle=tribune.O,
-                        length_x=tribune.width + self.properties.robot_width,
-                        length_y=tribune.length + self.properties.robot_width,
-                        bounding_box_margin=margin,
-                        id=tribune.id.value,
-                    )
+                if self.robot_id == 1:
+                    # Add artifact obstacles
+                    construction_areas: list[ConstructionArea] = list(
+                        self.game_context.construction_areas.values()
+                    ) + list(self.game_context.opponent_construction_areas.values())
+                    for construction_area in construction_areas:
+                        if not construction_area.enabled:
+                            continue
+                        if not table.contains(construction_area, margin):
+                            continue
+                        self.shared_rectangle_obstacles.append(
+                            x=construction_area.x,
+                            y=construction_area.y,
+                            angle=construction_area.O,
+                            length_x=construction_area.width + self.properties.robot_width,
+                            length_y=construction_area.length + self.properties.robot_width,
+                            bounding_box_margin=margin,
+                            id=construction_area.id.value,
+                        )
+                    for tribune in self.game_context.tribunes.values():
+                        if not tribune.enabled:
+                            continue
+                        if not table.contains(tribune, margin):
+                            continue
+                        self.shared_rectangle_obstacles.append(
+                            x=tribune.x,
+                            y=tribune.y,
+                            angle=tribune.O,
+                            length_x=tribune.width + self.properties.robot_width,
+                            length_y=tribune.length + self.properties.robot_width,
+                            bounding_box_margin=margin,
+                            id=tribune.id.value,
+                        )
 
                 # Add fixed obstacles
                 for fixed_obstacle in self.game_context.fixed_obstacles:
@@ -709,18 +723,20 @@ class Planner:
                     )
 
             self.shared_obstacles_lock.finish_writing()
+            self.shared_obstacles_lock.post_update()
         except Exception as exc:
             logger.warning(f"Planner: update_obstacles: Unknown exception {exc}")
             traceback.print_exc()
 
     async def update_oled_display(self):
         try:
+            pose_current = self.pose_current
             text = (
                 f"{'Connected' if self.sio.connected else 'Not connected': <20}"
                 f"{'▶' if self.game_context.playing else '◼'}\n"
                 f"Camp: {self.game_context.camp.color.name}\n"
                 f"Strategy: {self.game_context.strategy.name}\n"
-                f"Pose: {self.pose_current.x},{self.pose_current.y},{self.pose_current.angle}\n"
+                f"Pose: {pose_current.x},{pose_current.y},{pose_current.O}\n"
                 f"Countdown: {self.game_context.countdown:.2f}"
             )
             with self.oled_image as draw:
@@ -980,6 +996,10 @@ class Planner:
                     )
                     return
                 self.game_context.table = new_table
+                self.shared_table_limits[0] = self.game_context.table.x_min
+                self.shared_table_limits[1] = self.game_context.table.x_max
+                self.shared_table_limits[2] = self.game_context.table.y_min
+                self.shared_table_limits[3] = self.game_context.table.y_max
                 self.shared_properties["table"] = new_table
                 await self.soft_reset()
                 logger.info(f"Wizard: New table: {self.game_context._table.name}")

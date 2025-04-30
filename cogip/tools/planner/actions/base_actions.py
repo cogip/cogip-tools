@@ -27,7 +27,7 @@ class AlignAction(Action):
         self.start_pose = models.Pose(
             x=self.planner.pose_current.x,
             y=self.planner.pose_current.y,
-            O=self.planner.pose_current.angle,
+            O=self.planner.pose_current.O,
         )
         self.start_avoidance = self.game_context.avoidance_strategy
 
@@ -58,7 +58,7 @@ class AlignAction(Action):
         current_pose = models.Pose(
             x=self.planner.pose_current.x,
             y=self.planner.pose_current.y,
-            O=self.planner.pose_current.angle,
+            O=self.planner.pose_current.O,
         )
         current_pose.y = Camp().adapt_y(-1500 + self.game_context.properties.robot_length / 2)
         current_pose.O = Camp().adapt_angle(90)
@@ -101,7 +101,7 @@ class AlignAction(Action):
         current_pose = models.Pose(
             x=self.planner.pose_current.x,
             y=self.planner.pose_current.y,
-            O=self.planner.pose_current.angle,
+            O=self.planner.pose_current.O,
         )
         if current_pose.x > 0:
             current_pose.x = 1000 - self.game_context.properties.robot_length / 2

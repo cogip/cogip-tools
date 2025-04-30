@@ -2,6 +2,7 @@
 
 #include "lidar_ld19/ldlidar_datatype.h"
 #include "lidar_ld19/ldlidar_protocol.h"
+#include "shared_memory/WritePriorityLock.hpp"
 
 #include <libserial/SerialPort.h>
 
@@ -19,17 +20,17 @@ namespace nb = nanobind;
 namespace ldlidar {
 
 constexpr size_t MAX_ACK_BUF_LEN = 512;
-constexpr size_t NUM_ANGLES = 360;
+constexpr std::size_t MAX_DATA_COUNT = 1024;
 
 uint64_t getSystemTimeStamp();
 
 class LDLidarDriver {
 public:
     /// Constructor with optional external memory pointer
-    explicit LDLidarDriver(uint16_t (*external_lidar_data)[2] = nullptr);
+    explicit LDLidarDriver(float (*external_lidar_data)[3] = nullptr);
 
     /// Constructor accepting a nanobind::ndarray
-    explicit LDLidarDriver(nb::ndarray<uint16_t, nb::numpy, nb::shape<NUM_ANGLES, 2>> external_lidar_data);
+    explicit LDLidarDriver(nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_data);
 
     ~LDLidarDriver();
 
@@ -82,8 +83,17 @@ public:
     /// Function executed after reading data on serial port.
     void commReadCallback(const char *byte, size_t len);
 
+    /// Set the minimum intensity value to validate data.
+    void setMinIntensity(uint8_t min_intensity) { min_intensity_ = min_intensity; }
+
+    /// Set the minimum distance to validate data.
+    void setMinDistance(uint16_t min_distance) { min_distance_ = min_distance; }
+
+    /// Set the maximum distance to validate data.
+    void setMaxDistance(uint16_t max_distance) { max_distance_ = max_distance; }
+
     /// Get pointer to internal lidar points
-    const uint16_t (&getLidarData() const)[2] { return *lidar_data_; }
+    const float (&getLidarData() const)[3] { return *lidar_data_; }
 
     /// Get Lidar spin speed (Hz)
     double getSpeed() const { return (speed_ / 360.0); };
@@ -103,6 +113,17 @@ public:
         tmp_lidar_scan_data_vec_.clear();
     }
 
+    /// Set the data write lock.
+    void setDataWriteLock(cogip::shared_memory::WritePriorityLock &lock) {
+        data_write_lock_ = &lock;
+    }
+
+    /// Set invalid angle range
+    void setInvalidAngleRange(uint16_t min_angle, uint16_t max_angle) {
+        min_angle_ = min_angle;
+        max_angle_ = max_angle;
+    }
+
 protected:
     bool is_start_flag_;
     bool is_connect_flag_;
@@ -117,15 +138,20 @@ private:
     LidarStatus lidar_status_;
     uint8_t lidar_error_code_;
     bool is_frame_ready_;
-    bool is_noise_filter_;
+    bool external_data_;      ///< Flag to indicate if memory is externally managed
+    float (*lidar_data_)[3];  ///< Pointer to lidar data memory
+    cogip::shared_memory::WritePriorityLock *data_write_lock_;
+    uint8_t min_intensity_;
     uint16_t timestamp_;
+    uint16_t min_distance_;
+    uint16_t max_distance_;
+    uint16_t min_angle_;
+    uint16_t max_angle_;
     double speed_;
     bool is_poweron_comm_normal_;
     uint64_t last_pkg_timestamp_;
     LdLidarProtocol *protocol_handle_;
     Points2D tmp_lidar_scan_data_vec_;
-    uint16_t (*lidar_data_)[2];  ///< Pointer to lidar data memory
-    bool external_data_;           ///< Flag to indicate if memory is externally managed
     std::mutex mutex_lock1_;
     std::mutex mutex_lock2_;
 

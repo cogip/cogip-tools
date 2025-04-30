@@ -7,6 +7,7 @@ from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
 from PySide6.QtCore import Slot as qtSlot
 
+from cogip.cpp.libraries.shared_memory import WritePriorityLock
 from cogip.entities.asset import AssetEntity
 from cogip.entities.impact import ImpactEntity
 
@@ -34,12 +35,12 @@ class Sensor(QtCore.QObject):
         asset_entity: AssetEntity,
         name: str,
         angle: int,
-        origin_x: int,
-        origin_y: int,
-        origin_z: int,
-        direction_x: int,
-        direction_y: int,
-        direction_z: int,
+        origin_x: float,
+        origin_y: float,
+        origin_z: float,
+        direction_x: float,
+        direction_y: float,
+        direction_z: float,
         impact_radius: float = 50,
         impact_color: QtCore.Qt.GlobalColor = QtCore.Qt.red,
     ):
@@ -66,20 +67,21 @@ class Sensor(QtCore.QObject):
         Sensor.all_sensors.append(self)
         self.origin_x = origin_x
         self.origin_y = origin_y
+        self.origin_z = origin_z
         self.asset_entity = asset_entity
         self.name = name
         self.angle = angle
         self.shared_sensor_data: NDArray | None = None
+        self.shared_sensor_data_lock: WritePriorityLock | None = None
         self.hit: Qt3DRender.QRayCasterHit | None = None
         self.hit_distance = 65535
 
         self.ray_caster = Qt3DRender.QRayCaster()
-        self.ray_caster.setEnabled(False)  # Start casting only when the first obstacle is registered
         self.ray_caster.setLength(0)  # Infinite
         self.ray_caster.setRunMode(Qt3DRender.QAbstractRayCaster.RunMode.SingleShot)
         self.ray_caster.setFilterMode(Qt3DRender.QAbstractRayCaster.FilterMode.AcceptAnyMatchingLayers)
         self.ray_caster.setOrigin(QtGui.QVector3D(float(origin_x), float(origin_y), float(origin_z)))
-        self.ray_caster.setDirection(QtGui.QVector3D(direction_x, direction_y, direction_z))
+        self.ray_caster.setDirection(QtGui.QVector3D(float(direction_x), float(direction_y), float(direction_z)))
         self.ray_caster.hitsChanged.connect(self.update_hit)
         self.asset_entity.addComponent(self.ray_caster)
 
@@ -101,13 +103,16 @@ class Sensor(QtCore.QObject):
         distances = [hit for hit in self.ray_caster.hits() if hit.distance() != 0.0]
         if len(distances):
             self.hit = min(distances, key=lambda x: x.distance())
-            self.hit_distance = int(self.hit.distance() + math.dist((0, 0), (self.origin_x, self.origin_y)))
+            self.hit_distance = int(self.hit.distance())
         else:
             self.hit = None
             self.hit_distance = 65535
 
         if self.shared_sensor_data is not None:
-            self.shared_sensor_data[self.angle][0] = self.hit_distance
+            self.shared_sensor_data[self.angle][1] = self.hit_distance
+
+            if self.angle == 359:
+                self.shared_sensor_data_lock.post_update()
 
         self.update_impact()
 
@@ -144,7 +149,6 @@ class Sensor(QtCore.QObject):
             obstacle: The obstacle to detect
         """
         self.ray_caster.addLayer(obstacle.layer)
-        # Activate if not already done
         self.ray_caster.trigger()
 
 
@@ -164,8 +168,8 @@ class ToFSensor(Sensor):
         asset_entity: AssetEntity,
         name: str,
         angle: int,
-        origin_x: int,
-        origin_y: int,
+        origin_x: float,
+        origin_y: float,
     ):
         """
         Class constructor.
@@ -228,10 +232,11 @@ class LidarSensor(Sensor):
         asset_entity: AssetEntity,
         name: str,
         angle: int,
-        origin_x: int,
-        origin_y: int,
-        direction_x: int,
-        direction_y: int,
+        origin_x: float,
+        origin_y: float,
+        origin_z: float,
+        direction_x: float,
+        direction_y: float,
     ):
         """
         Class constructor.
@@ -242,6 +247,7 @@ class LidarSensor(Sensor):
             angle: Sensor orientation in degrees
             origin_x: X origin of the ray caster
             origin_y: Y origin of the ray caster
+            origin_z: Z origin of the ray caster
             direction_x: X direction of the ray caster
             direction_y: Y direction of the ray caster
         """
@@ -252,11 +258,11 @@ class LidarSensor(Sensor):
             angle=angle,
             origin_x=origin_x,
             origin_y=origin_y,
-            origin_z=360,
+            origin_z=origin_z,
             direction_x=direction_x,
             direction_y=direction_y,
             direction_z=0,
-            impact_radius=20,
+            impact_radius=10,
             impact_color=QtCore.Qt.cyan,
         )
 

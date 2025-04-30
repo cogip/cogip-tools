@@ -48,6 +48,8 @@ public:
     /// Reset counters and semaphores.
     void reset();
 
+    /// Set/unset debug mode.
+    void setDebug(bool debug) { debug_ = debug; }
 
 private:
     bool owner_;                    ///< Indicates whether this instance owns the resources.
@@ -70,6 +72,7 @@ private:
     int* reader_count_;             ///< Shared memory pointer for reader count.
     int* write_request_count_;      ///< Shared memory pointer for writer request count.
     int* consumer_count_;           ///< Shared memory pointer for consumer count.
+    bool debug_;                    ///< Debug flag for logging.
 };
 
 } // namespace shared_memory

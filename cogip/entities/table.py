@@ -1,8 +1,10 @@
 from pathlib import Path
 
 from PySide6.Qt3DCore import Qt3DCore
+from PySide6.Qt3DRender import Qt3DRender
 
 from cogip.entities.asset import AssetEntity
+from cogip.entities.sensor import Sensor
 
 
 class TableEntity(AssetEntity):
@@ -23,3 +25,11 @@ class TableEntity(AssetEntity):
         """
         super().__init__(self.asset_path, parent=parent)
         self._parent = parent
+
+        # Create a layer used by sensors to activate detection on the table borders
+        self.layer = Qt3DRender.QLayer(self)
+        self.layer.setRecursive(True)
+        self.layer.setEnabled(True)
+        self.addComponent(self.layer)
+
+        Sensor.add_obstacle(self)

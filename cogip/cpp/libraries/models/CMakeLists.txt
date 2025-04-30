@@ -3,6 +3,8 @@
 add_library(
     models_cpp
     SHARED
+    Circle.cpp
+    CircleList.cpp
     Coords.cpp
     CoordsList.cpp
     Polar.cpp
@@ -41,6 +43,7 @@ nanobind_add_stub(
     PYTHON_PATH ${CMAKE_BINARY_DIR}
     DEPENDS models
     VERBOSE
+    INSTALL_TIME
 )
 
 # Copy stub files into the source directory.

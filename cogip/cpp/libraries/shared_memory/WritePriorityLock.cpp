@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdexcept>
+#include <iostream>
 
 namespace cogip {
 
@@ -34,7 +35,8 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
     consumer_count_shm_fd_(-1),
     reader_count_(nullptr),
     write_request_count_(nullptr),
-    consumer_count_(nullptr)
+    consumer_count_(nullptr),
+    debug_(false)
 {
     int shm_flags = O_RDWR;
     if (owner) {
@@ -184,6 +186,7 @@ WritePriorityLock::~WritePriorityLock() {
 }
 
 void WritePriorityLock::startReading() {
+    if (debug_) std::cout << name_ << " startReading: enter, lock sem_mutex_ (write_request_count_=" << *write_request_count_ << ")" << std::endl;
     sem_wait(sem_mutex_);
     while (*write_request_count_ > 0) {  // Wait if there are pending writers
         sem_post(sem_mutex_);
@@ -192,34 +195,47 @@ void WritePriorityLock::startReading() {
     }
     (*reader_count_)++;
     if (*reader_count_ == 1) {
+        if (debug_) std::cout << name_ << " startReading: lock sem_write_lock_ (reader_count_=" << *reader_count_ << ")" << std::endl;
         sem_wait(sem_write_lock_);  // First reader locks the writer
     }
+    if (debug_) std::cout << name_ << " startReading: unlock sem_mutex_" << std::endl;
     sem_post(sem_mutex_);
+    if (debug_) std::cout << name_ << " startReading: end" << std::endl;
 }
 
 void WritePriorityLock::finishReading() {
+    if (debug_) std::cout << name_ << " finishReading: enter (reader_count_=" << *reader_count_ << ")" << std::endl;
     sem_wait(sem_mutex_);
     (*reader_count_)--;
     if (*reader_count_ == 0) {
+        if (debug_) std::cout << name_ << " finishReading: unlock sem_write_lock_" << std::endl;
         sem_post(sem_write_lock_);  // Last reader unlocks the writer
     }
+    if (debug_) std::cout << name_ << " finishReading: unlock sem_mutex_" << std::endl;
     sem_post(sem_mutex_);
+    if (debug_) std::cout << name_ << " finishReading: end" << std::endl;
 }
 
 void WritePriorityLock::startWriting() {
+    if (debug_) std::cout << name_ << " startWriting: enter, lock sem_mutex_ (write_request_count_=" << *write_request_count_ << ")" << std::endl;
     sem_wait(sem_mutex_);
     (*write_request_count_)++;
+    if (debug_) std::cout << name_ << " startWriting: unlock sem_mutex_" << std::endl;
     sem_post(sem_mutex_);
-
+    if (debug_) std::cout << name_ << " startWriting: lock sem_write_lock_" << std::endl;
     sem_wait(sem_write_lock_);  // Wait for exclusive write access
+    if (debug_) std::cout << name_ << " startWriting: end" << std::endl;
 }
 
 void WritePriorityLock::finishWriting() {
+    if (debug_) std::cout << name_ << " finishWriting: enter, lock sem_mutex_ (write_request_count_=" << *write_request_count_ << ")" << std::endl;
     sem_wait(sem_mutex_);
     (*write_request_count_)--;
+    if (debug_) std::cout << name_ << " finishWriting: unlock sem_mutex_" << *write_request_count_ << std::endl;
     sem_post(sem_mutex_);
-
+    if (debug_) std::cout << name_ << " finishWriting: unlock sem_write_lock_" << std::endl;
     sem_post(sem_write_lock_);  // Release exclusive write access
+    if (debug_) std::cout << name_ << " finishWriting: end" << std::endl;
 }
 
 void WritePriorityLock::registerConsumer() {
@@ -230,16 +246,28 @@ void WritePriorityLock::registerConsumer() {
 }
 
 void WritePriorityLock::postUpdate() {
+    if (debug_) {
+        int value;
+        sem_getvalue(sem_update_, &value);
+        std::cout << name_ << " postUpdate: count= " << *consumer_count_ << " sem_update_=" << value << std::endl;
+    }
     for (int i = 0; i < *consumer_count_; ++i) {
         sem_post(sem_update_);
     }
 }
 
 void WritePriorityLock::waitUpdate() {
+    if (debug_) {
+        int value;
+        sem_getvalue(sem_update_, &value);
+        std::cout << name_ << " waitUpdate: count=" << *consumer_count_ << " sem_update_=" << value << std::endl;
+    }
     sem_wait(sem_update_);
+    if (debug_) std::cout << name_ << " waitUpdate: end" << std::endl;
 }
 
 void WritePriorityLock::reset() {
+    if (debug_) std::cout << name_ << " reset: enter" << std::endl;
     *reader_count_ = 0;
     *write_request_count_ = 0;
     registered_consumer_ = false;
@@ -249,6 +277,7 @@ void WritePriorityLock::reset() {
     sem_init(sem_write_lock_, 1, 1);
     sem_init(sem_update_, 1, 0);
     sem_init(sem_register_, 1, 1);
+    if (debug_) std::cout << name_ << " reset: end" << std::endl;
 }
 
 } // namespace shared_memory
