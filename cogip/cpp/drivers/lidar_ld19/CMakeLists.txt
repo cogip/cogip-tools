@@ -35,6 +35,7 @@ nanobind_add_stub(
     PYTHON_PATH ${CMAKE_BINARY_DIR}
     DEPENDS lidar_ld19
     VERBOSE
+    INSTALL_TIME
 )
 
 # Copy stub files into the source directory.

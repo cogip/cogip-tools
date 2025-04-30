@@ -46,6 +46,7 @@ nanobind_add_stub(
     PYTHON_PATH ${CMAKE_BINARY_DIR}
     DEPENDS avoidance models_stub obstacles_stub
     VERBOSE
+    INSTALL_TIME
 )
 
 # Copy stub files into the source directory.

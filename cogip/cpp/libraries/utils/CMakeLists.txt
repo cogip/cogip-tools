@@ -47,6 +47,7 @@ nanobind_add_stub(
     PYTHON_PATH ${CMAKE_BINARY_DIR}
     DEPENDS utils shared_memory_stub
     VERBOSE
+    INSTALL_TIME
 )
 
 # Copy stub files into the source directory.
