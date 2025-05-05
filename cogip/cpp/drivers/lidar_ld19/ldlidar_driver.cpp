@@ -347,11 +347,8 @@ void LDLidarDriver::setLaserScanData(Points2D &src) {
     std::lock_guard<std::mutex> lg(mutex_lock2_);
     std::array<std::vector<uint16_t>, FILTERED_DATA_COUNT> tmp_distances;
     std::array<std::vector<uint8_t>, FILTERED_DATA_COUNT> tmp_intensities;
-
-    // Build a list of points for each integer degree
     std::size_t count = 0;
 
-    // Compute mean of points list for each degree.
     if (data_write_lock_ != nullptr) {
         data_write_lock_->startWriting();
     }

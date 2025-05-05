@@ -84,6 +84,7 @@ cogip-cansend = "cogip.tools.cansend.__main__:main"
 cogip-cpp-cython-example = "cogip.tools.cpp_cython_example.__main__:main"
 cogip-cpp-nanobind-example = "cogip.tools.cpp_nanobind_example.__main__:main"
 cogip-lidar-ld19 = "cogip.tools.lidar_ld19.__main__:main"
+cogip-ydlidar-g2 = "cogip.tools.ydlidar_g2.__main__:main"
 cogip-cpp-shm-example = "cogip.tools.cpp_shm_example.__main__:main"
 cogip-scservo = "cogip.tools.scservo.__main__:main"
 
