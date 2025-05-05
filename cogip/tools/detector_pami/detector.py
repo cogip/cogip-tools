@@ -315,5 +315,6 @@ class Detector:
         Stop the Lidar.
         """
         if self.lidar:
+            self.lidar.stop()
             self.lidar.disconnect()
             self.lidar = None

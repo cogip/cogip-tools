@@ -280,7 +280,6 @@ dependencies = [
     { name = "v4l2py" },
     { name = "watchfiles" },
     { name = "websocket-client" },
-    { name = "ydlidar", marker = "platform_machine == 'aarch64'" },
 ]
 
 [package.dev-dependencies]
@@ -336,7 +335,6 @@ requires-dist = [
     { name = "v4l2py", specifier = "==3.0.0" },
     { name = "watchfiles", specifier = "==0.24.0" },
     { name = "websocket-client", specifier = "==1.7.0" },
-    { name = "ydlidar", marker = "platform_machine == 'aarch64'", specifier = "==1.1.3", index = "https://github.com/cogip/YDLidar-SDK/releases/expanded_assets/wheels" },
 ]
 
 [package.metadata.requires-dev]
@@ -2169,15 +2167,4 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f7/25/c323097b066a2b5a554f77e27a35bc067aebfcd3a001a0a3a6bc14190460/yarl-1.16.0-cp313-cp313-win32.whl", hash = "sha256:595ca5e943baed31d56b33b34736461a371c6ea0038d3baec399949dd628560b", size = 308302 },
     { url = "https://files.pythonhosted.org/packages/52/76/ca2c3de3511a127fc4124723e7ccc641aef5e0ec56c66d25dbd11f19ab84/yarl-1.16.0-cp313-cp313-win_amd64.whl", hash = "sha256:921b81b8d78f0e60242fb3db615ea3f368827a76af095d5a69f1c3366db3f596", size = 314035 },
     { url = "https://files.pythonhosted.org/packages/fb/f7/87a32867ddc1a9817018bfd6109ee57646a543acf0d272843d8393e575f9/yarl-1.16.0-py3-none-any.whl", hash = "sha256:e6980a558d8461230c457218bd6c92dfc1d10205548215c2c21d79dc8d0a96f3", size = 43746 },
-]
-
-[[package]]
-name = "ydlidar"
-version = "1.1.3"
-source = { registry = "https://github.com/cogip/YDLidar-SDK/releases/expanded_assets/wheels" }
-wheels = [
-    { url = "https://github.com/cogip/YDLidar-SDK/releases/download/wheels/ydlidar-1.1.3-cp312-cp312-linux_aarch64.whl" },
-    { url = "https://github.com/cogip/YDLidar-SDK/releases/download/wheels/ydlidar-1.1.3-cp312-cp312-linux_x86_64.whl" },
-    { url = "https://github.com/cogip/YDLidar-SDK/releases/download/wheels/ydlidar-1.1.3-cp313-cp313-linux_aarch64.whl" },
-    { url = "https://github.com/cogip/YDLidar-SDK/releases/download/wheels/ydlidar-1.1.3-cp313-cp313-linux_x86_64.whl" },
 ]
