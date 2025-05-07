@@ -1,11 +1,8 @@
-x-vol-cogip: &vol-cogip
-  "./cogip:/src/cogip"
-
 x-vol-run: &vol-run
   "run:/var/run/cogip"
 
-x-vol-pts: &vol-pts
-  "/dev/pts:/dev/pts"
+x-vol-dev: &vol-dev
+  "/dev:/dev"
 
 x-vol-vscode: &vol-vscode
   "vscode:/root/.vscode-server"
@@ -13,12 +10,11 @@ x-vol-vscode: &vol-vscode
 x-volumes-common: &volumes-common
   volumes:
     - *vol-run
-    - *vol-pts
+    - *vol-dev
     - *vol-vscode
     - "build_cache:/src/build"
     - "./assets:/src/assets"
     - "/tmp/.X11-unix/:/tmp/.X11-unix/"
-    - "/dev/dri/:/dev/dri/"
     - "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR"
 
 x-extra-hosts-common: &extra-hosts-common
@@ -74,7 +70,7 @@ x-build-firmware: &build-firmware
   working_dir: /cogip-tools/submodules/mcu-firmware
   volumes:
     - *vol-run
-    - *vol-pts
+    - *vol-dev
     - *vol-vscode
     - ".:/cogip-tools"
   command:
@@ -101,8 +97,7 @@ x-robot: &robot
   <<: [*build-console, *volumes-common, *extra-hosts-common, *watch-all]
   network_mode: "host"
   ipc: host
-  cap_add:
-    - SYS_PTRACE
+  privileged: true
   environment: &env-robot
     UID: ${UID:-1000}
     GID: ${GID:-1000}
@@ -129,7 +124,7 @@ x-robot: &robot
     COPILOT_DEBUG:
     DETECTOR_RELOAD:
     DETECTOR_DEBUG:
-    DETECTOR_UART_PORT:
+    DETECTOR_LIDAR_PORT:
     DETECTOR_MIN_DISTANCE:
     DETECTOR_MAX_DISTANCE:
     DETECTOR_MIN_INTENSITY:
@@ -144,13 +139,14 @@ x-robot: &robot
     - -x
     - -c
     - |
+      USERNAME=`getent passwd $${UID} | cut -d: -f1` || exit 1
       uv sync --reinstall-package cogip-tools -C build-dir=/src/build/$${ROBOT_ID}
-      gosu $${UID}:$${GID} uv run cogip-server &
+      su $${USERNAME} -c "uv run cogip-server" &
       wait-for-it -t 0 localhost:809$${ROBOT_ID}
-      gosu $${UID}:$${GID} uv run cogip-planner &
-      gosu $${UID}:$${GID} uv run cogip-copilot -b 500000 -B 1000000 &
-      gosu $${UID}:$${GID} uv run cogip-detector &
-      gosu $${UID}:$${GID} uv run cogip-dashboard &
+      su $${USERNAME} -c "uv run cogip-planner" &
+      su $${USERNAME} -c "uv run cogip-copilot -b 500000 -B 1000000" &
+      su $${USERNAME} -c "uv run cogip-detector" &
+      su $${USERNAME} -c "uv run cogip-dashboard" &
       sleep infinity
   stop_signal: SIGKILL
 
@@ -158,8 +154,7 @@ x-pami: &pami
   <<: [*build-console, *volumes-common, *extra-hosts-common, *watch-all]
   network_mode: "host"
   ipc: host
-  cap_add:
-    - SYS_PTRACE
+  privileged: true
   environment: &env-pami
     UID: ${UID:-1000}
     GID: ${GID:-1000}
@@ -200,13 +195,14 @@ x-pami: &pami
     - -x
     - -c
     - |
+      USERNAME=`getent passwd $${UID} | cut -d: -f1` || exit 1
       uv sync --reinstall-package cogip-tools -C build-dir=/src/build/$${ROBOT_ID}
-      gosu $${UID}:$${GID} uv run cogip-server &
+      su $${USERNAME} -c "uv run cogip-server" &
       wait-for-it -t 0 localhost:809$${ROBOT_ID}
-      gosu $${UID}:$${GID} uv run cogip-planner &
-      gosu $${UID}:$${GID} uv run cogip-copilot -b 500000 -B 1000000 &
-      gosu $${UID}:$${GID} uv run cogip-detector-pami &
-      gosu $${UID}:$${GID} uv run cogip-dashboard &
+      su $${USERNAME} -c "uv run cogip-planner" &
+      su $${USERNAME} -c "uv run cogip-copilot -b 500000 -B 1000000" &
+      su $${USERNAME} -c "uv run cogip-detector-pami" &
+      su $${USERNAME} -c "uv run cogip-dashboard" &
       sleep infinity
 
 x-monitor: &monitor
