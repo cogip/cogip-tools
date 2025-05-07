@@ -133,7 +133,6 @@ x-robot: &robot
     DETECTOR_CLUSTER_MIN_SAMPLES:
     DETECTOR_CLUSTER_EPS:
     DETECTOR_WEB:
-    DETECTOR_EMULATION: 1
   command:
     - /bin/sh
     - -x
@@ -149,61 +148,6 @@ x-robot: &robot
       su $${USERNAME} -c "uv run cogip-dashboard" &
       sleep infinity
   stop_signal: SIGKILL
-
-x-pami: &pami
-  <<: [*build-console, *volumes-common, *extra-hosts-common, *watch-all]
-  network_mode: "host"
-  ipc: host
-  privileged: true
-  environment: &env-pami
-    UID: ${UID:-1000}
-    GID: ${GID:-1000}
-    DISPLAY:
-    XDG_RUNTIME_DIR:
-    SERVER_DEBUG:
-    SERVER_RELOAD:
-    SERVER_DASHBOARD_UPDATE_INTERVAL:
-    PLANNER_DEBUG:
-    PLANNER_RELOAD:
-    PLANNER_ROBOT_LENGTH: 212
-    PLANNER_ROBOT_WIDTH: 100
-    PLANNER_OBSTACLE_RADIUS:
-    PLANNER_OBSTACLE_BB_MARGIN:
-    PLANNER_OBSTACLE_BB_VERTICES: 6
-    PLANNER_OBSTACLE_UPDATER_INTERVAL:
-    PLANNER_PATH_REFRESH_INTERVAL:
-    PLANNER_PLOT:
-    PLANNER_BYPASS_DETECTOR:
-    PLANNER_SCSERVOS_PORT:
-    PLANNER_SCSERVOS_BAUD_RATE:
-    PLANNER_DISABLE_FIXED_OBSTACLES:
-    COPILOT_RELOAD:
-    COPILOT_DEBUG:
-    DETECTOR_PAMI_LIDAR_PORT:
-    DETECTOR_PAMI_MIN_DISTANCE:
-    DETECTOR_PAMI_MAX_DISTANCE:
-    DETECTOR_PAMI_MIN_INTENSITY:
-    DETECTOR_PAMI_REFRESH_INTERVAL:
-    DETECTOR_PAMI_SENSOR_DELAY:
-    DETECTOR_PAMI_CLUSTER_MIN_SAMPLES:
-    DETECTOR_PAMI_CLUSTER_EPS:
-    DETECTOR_PAMI_WEB:
-    DETECTOR_PAMI_RELOAD:
-    DETECTOR_PAMI_DEBUG:
-  command:
-    - /bin/sh
-    - -x
-    - -c
-    - |
-      USERNAME=`getent passwd $${UID} | cut -d: -f1` || exit 1
-      uv sync --reinstall-package cogip-tools -C build-dir=/src/build/$${ROBOT_ID}
-      su $${USERNAME} -c "uv run cogip-server" &
-      wait-for-it -t 0 localhost:809$${ROBOT_ID}
-      su $${USERNAME} -c "uv run cogip-planner" &
-      su $${USERNAME} -c "uv run cogip-copilot -b 500000 -B 1000000" &
-      su $${USERNAME} -c "uv run cogip-detector-pami" &
-      su $${USERNAME} -c "uv run cogip-dashboard" &
-      sleep infinity
 
 x-monitor: &monitor
   << : [*build-console, *volumes-common, *extra-hosts-common]
@@ -407,40 +351,40 @@ services:
       - robot1
 
   robot2:
-    << : *pami
+    << : *robot
     hostname: robot2
     environment:
-      << : *env-pami
+      << : *env-robot
       ROBOT_ID: 2
       COPILOT_CAN_CHANNEL: vcan2
     profiles:
       - robot2
 
   robot3:
-    << : *pami
+    << : *robot
     hostname: robot3
     environment:
-      << : *env-pami
+      << : *env-robot
       ROBOT_ID: 3
       COPILOT_CAN_CHANNEL: vcan3
     profiles:
       - robot3
 
   robot4:
-    << : *pami
+    << : *robot
     hostname: robot4
     environment:
-      << : *env-pami
+      << : *env-robot
       ROBOT_ID: 4
       COPILOT_CAN_CHANNEL: vcan4
     profiles:
       - robot4
 
   robot5:
-    << : *pami
+    << : *robot
     hostname: robot5
     environment:
-      << : *env-pami
+      << : *env-robot
       ROBOT_ID: 5
       COPILOT_CAN_CHANNEL: vcan5
     profiles:

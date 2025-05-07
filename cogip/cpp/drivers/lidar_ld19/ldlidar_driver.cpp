@@ -83,7 +83,7 @@ LDLidarDriver::~LDLidarDriver() {
     }
 }
 
-bool LDLidarDriver::connect(const std::string &serial_port_name, LibSerial::BaudRate serial_baudrate) {
+bool LDLidarDriver::connect(const std::string &serial_port_name) {
     if (is_connect_flag_) {
         return true;
     }
@@ -100,7 +100,7 @@ bool LDLidarDriver::connect(const std::string &serial_port_name, LibSerial::Baud
         std::cerr << "Serial is not opened: " << serial_port_name << std::endl;
         return false;
     }
-    comm_serial_->SetBaudRate(serial_baudrate);
+    comm_serial_->SetBaudRate(LibSerial::BaudRate::BAUD_230400);
 
     is_connect_flag_ = true;
     rx_thread_exit_flag_ = false;

@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 from sklearn.cluster import DBSCAN
 
+from cogip.cpp.drivers.lidar_ld19 import LDLidarDriver
 from cogip.cpp.drivers.ydlidar_g2 import YDLidar
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
@@ -31,8 +32,6 @@ class Detector:
     Build obstacles and send the list to the server.
     """
 
-    LIDAR_OFFSET_X: float = 0.0
-    LIDAR_OFFSET_Y: float = 0.0
     TABLE_LIMITS_MARGIN: int = 50
 
     def __init__(
@@ -83,6 +82,12 @@ class Detector:
             cluster_eps=cluster_eps,
         )
 
+        if robot_id == 1:
+            self.LIDAR_OFFSET_X = 0.0
+        else:
+            self.LIDAR_OFFSET_X = 75.5
+        self.LIDAR_OFFSET_Y = 0.0
+
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
         self.shared_pose_current_buffer: SharedPoseBuffer | None = None
@@ -95,7 +100,7 @@ class Detector:
 
         self.lidar_data_converter: LidarDataConverter | None = None
 
-        self.lidar: YDLidar | None = None
+        self.lidar: LDLidarDriver | YDLidar | None = None
         self.clusters: list[NDArray] = []
 
         self.obstacles_updater_loop = ThreadLoop(
@@ -286,19 +291,30 @@ class Detector:
         Start the Lidar.
         """
         if self.lidar_port:
-            self.lidar = YDLidar(self.shared_lidar_data)
+            if self.robot_id == 1:
+                self.lidar = YDLidar(self.shared_lidar_data)
+                self.lidar.set_scan_frequency(12)
+                self.lidar.set_invalid_angle_range(0, 0)  # No excluded angle range
+            else:
+                self.lidar = LDLidarDriver(self.shared_lidar_data)
+            self.lidar.set_invalid_angle_range(90, 270)  # Skip rear-facing Lidar data because Lidar is mounted in PAMI
             self.lidar.set_data_write_lock(self.shared_lidar_data_lock)
             self.lidar.set_min_distance(self.properties.min_distance)
             self.lidar.set_max_distance(self.properties.max_distance)
             self.lidar.set_min_intensity(self.properties.min_intensity)
-            self.lidar.set_invalid_angle_range(0, 0)  # No excluded angle range
-            self.lidar.set_scan_frequency(12)
 
             res = self.lidar.connect(str(self.lidar_port))
             if not res:
                 logger.error("Error: Lidar connection failed.")
                 return
             logger.info("Lidar connected.")
+
+            if self.robot_id > 1:
+                res = self.lidar.wait_lidar_comm(1000)
+                if not res:
+                    logger.error("Error: Lidar not ready.")
+                    return
+                logger.info("Lidar is ready.")
 
             res = self.lidar.start()
             if not res:

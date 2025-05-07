@@ -44,12 +44,8 @@ public:
 
     /// Opens the communication port and asserts the initialization parameters.
     /// @param serial_port_name The serial device system path (e.g., "/dev/ttyUSB0").
-    /// @param serial_baudrate The baud rate for serial communication, in bits per second. Default is 230400.
     /// @return `true` if the connection is successfully established, `false` otherwise.
-    bool connect(
-        const std::string &serial_port_name,
-        LibSerial::BaudRate serial_baudrate = LibSerial::BaudRate::BAUD_230400
-    );
+    bool connect(const std::string &serial_port_name);
 
     /// Closes the communication port.
     /// @return `true` if the disconnection is successful, `false` otherwise.
