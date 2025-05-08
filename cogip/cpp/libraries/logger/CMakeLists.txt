@@ -1,47 +1,39 @@
 # Generate library with only C++ source files.
 # This library will be used by the binding library and dependent libraries.
 add_library(
-    utils_cpp
+    logger_cpp
     SHARED
-    LidarDataConverter.cpp
+    PythonLogger.cpp
 )
-set_target_properties(utils_cpp PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
+set_target_properties(logger_cpp PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
 target_include_directories(
-    utils_cpp
+    logger_cpp
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/cogip/cpp/libraries/utils/include
-    ${PROJECT_SOURCE_DIR}/cogip/cpp/libraries/shared_memory/include
 )
-target_link_libraries(
-    utils_cpp
-    PUBLIC
-    shared_memory_cpp
-)
-
 # Generate library with source code and binding.
 nanobind_add_module(
-    utils
+    logger
     NB_SHARED STABLE_ABI LTO
     binding.cpp
 )
-target_link_libraries(utils PUBLIC utils_cpp)
-set_target_properties(utils PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
+target_link_libraries(logger PUBLIC logger_cpp)
+set_target_properties(logger PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
 
 # Install the library.
 install(
-    TARGETS utils_cpp utils
+    TARGETS logger_cpp logger
     LIBRARY DESTINATION cogip/cpp/libraries
 )
 
 # Generate stub files that are needed to enable static type checking and autocompletion in Python IDEs.
 nanobind_add_stub(
-    utils_stub
-    MODULE cogip.cpp.libraries.utils
+    logger_stub
+    MODULE cogip.cpp.libraries.logger
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/__init__.pyi
     MARKER_FILE ${CMAKE_CURRENT_BINARY_DIR}/py.typed
     PYTHON_PATH ${CMAKE_BINARY_DIR}
-    DEPENDS utils shared_memory_stub
+    DEPENDS logger
     VERBOSE
     INSTALL_TIME
 )
@@ -60,6 +52,6 @@ install(
 )
 install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/__init__.pyi
-    RENAME utils.pyi
+    RENAME logger.pyi
     DESTINATION cogip/cpp/libraries
 )
