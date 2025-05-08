@@ -15,6 +15,8 @@
 /// @author      Gilles DOFFE <g.doffe@gmail.com>
 #pragma once
 
+#include "LogLevel.hpp"
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -22,14 +24,6 @@
 namespace cogip {
 
 namespace logger {
-
-/// Log levels for the Logger class.
-enum class LogLevel {
-    DEBUG,
-    INFO,
-    WARNING,
-    ERROR
-};
 
 /// A simple logger class that supports verbosity control and logging to stdout.
 class Logger {
