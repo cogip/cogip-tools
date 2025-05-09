@@ -35,7 +35,6 @@
 /// Project includes
 #include "models/Coords.hpp"
 #include "obstacles/ObstaclePolygon.hpp"
-#include "logger/Logger.hpp"
 
 namespace nb = nanobind;
 
@@ -101,8 +100,6 @@ private:
     float table_margin_;  ///< Margin inside the table limits.
 
     std::vector<std::reference_wrapper<obstacles::Obstacle>> dynamic_obstacles_; ///< List of dynamic obstacles.
-
-    logger::Logger logger_; ///< Logger instance for logging.
 
     /// @brief Validates the obstacle points and ensures they can be used for graph building.
     void validate_obstacle_points();
