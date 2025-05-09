@@ -1,4 +1,6 @@
+import logging
 import math
+import os
 import time
 from multiprocessing import Queue
 from multiprocessing.managers import DictProxy
@@ -7,7 +9,7 @@ from cogip import models
 from cogip.cpp.libraries.obstacles import ObstacleCircle as SharedObstacleCircle
 from cogip.cpp.libraries.obstacles import ObstacleRectangle as SharedObstacleRectangle
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory
-from .. import logger
+from cogip.utils.logger import Logger
 from ..actions import Strategy
 from .avoidance import Avoidance, AvoidanceStrategy
 
@@ -17,6 +19,10 @@ def avoidance_process(
     shared_properties: DictProxy,
     queue_sio: Queue,
 ):
+    logger = Logger("cogip-avoidance")
+    if os.getenv("PLANNER_DEBUG") not in [None, False, "False", "false", 0, "0", "no", "No"]:
+        logger.setLevel(logging.DEBUG)
+
     logger.info("Avoidance: process started")
     shared_memory = SharedMemory(f"cogip_{shared_properties["robot_id"]}")
     shared_pose_current_buffer = shared_memory.get_pose_current_buffer()

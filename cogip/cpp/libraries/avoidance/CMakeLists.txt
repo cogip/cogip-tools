@@ -17,6 +17,7 @@ target_include_directories(
 target_link_libraries(
     avoidance
     PUBLIC
+    logger_cpp
     models_cpp
     obstacles_cpp
 )
