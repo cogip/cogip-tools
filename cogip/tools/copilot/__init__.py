@@ -1,8 +1,3 @@
-import logging
+from cogip.utils.logger import Logger
 
-logging.basicConfig(
-    level=logging.INFO,  # logging.DEBUG
-    format="[%(asctime)s][%(name)s][%(threadName)s] %(levelname)s: %(message)s",
-)
-
-logger = logging.getLogger(__name__)
+logger = Logger("cogip-copilot")
