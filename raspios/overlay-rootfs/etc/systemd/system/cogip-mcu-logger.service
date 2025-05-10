@@ -1,0 +1,16 @@
+[Unit]
+Description=COGIP MCU Logger
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+Restart=on-failure
+WorkingDirectory=/opt
+ExecStart=uv run cogip-mcu-logger
+RestartSec=5
+EnvironmentFile=/etc/environment
+
+[Install]
+WantedBy=multi-user.target

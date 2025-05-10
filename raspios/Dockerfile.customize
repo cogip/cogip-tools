@@ -132,4 +132,5 @@ RUN systemctl enable openocd \
  && systemctl enable cogip-dashboard \
  && systemctl enable cogip-planner \
  && systemctl enable cogip-copilot \
- && systemctl enable cogip-detector
+ && systemctl enable cogip-detector \
+ && systemctl enable cogip-mcu-logger
