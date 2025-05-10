@@ -8,11 +8,8 @@ from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 from sklearn.cluster import DBSCAN
 
-try:
-    import ydlidar
-except:  # noqa
-    ydlidar = None
-
+from cogip.cpp.drivers.lidar_ld19 import LDLidarDriver
+from cogip.cpp.drivers.ydlidar_g2 import YDLidar
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
@@ -35,8 +32,6 @@ class Detector:
     Build obstacles and send the list to the server.
     """
 
-    LIDAR_OFFSET_X: float = 0.0
-    LIDAR_OFFSET_Y: float = 0.0
     TABLE_LIMITS_MARGIN: int = 50
 
     def __init__(
@@ -87,6 +82,12 @@ class Detector:
             cluster_eps=cluster_eps,
         )
 
+        if robot_id == 1:
+            self.LIDAR_OFFSET_X = 0.0
+        else:
+            self.LIDAR_OFFSET_X = 75.5
+        self.LIDAR_OFFSET_Y = 0.0
+
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
         self.shared_pose_current_buffer: SharedPoseBuffer | None = None
@@ -99,19 +100,13 @@ class Detector:
 
         self.lidar_data_converter: LidarDataConverter | None = None
 
+        self.lidar: LDLidarDriver | YDLidar | None = None
         self.clusters: list[NDArray] = []
 
         self.obstacles_updater_loop = ThreadLoop(
             "Obstacles updater loop",
             refresh_interval,
             self.process_lidar_coords,
-            logger=True,
-        )
-
-        self.lidar_reader_loop = ThreadLoop(
-            "Lidar reader loop",
-            refresh_interval,
-            self.read_lidar,
             logger=True,
         )
 
@@ -124,27 +119,6 @@ class Detector:
                 args=(self, 8100 + robot_id),
                 name="Web thread",
             )
-
-        self.laser: ydlidar.CYdLidar | None = None
-        self.scan: ydlidar.LaserScan | None = None
-        if ydlidar and not self.lidar_port:
-            for _, value in ydlidar.lidarPortList().items():
-                self.lidar_port = value
-        if self.lidar_port:
-            self.laser = ydlidar.CYdLidar()
-            self.laser.setlidaropt(ydlidar.LidarPropSerialPort, str(self.lidar_port))
-            self.laser.setlidaropt(ydlidar.LidarPropSerialBaudrate, 230400)
-            self.laser.setlidaropt(ydlidar.LidarPropLidarType, ydlidar.TYPE_TRIANGLE)
-            self.laser.setlidaropt(ydlidar.LidarPropDeviceType, ydlidar.YDLIDAR_TYPE_SERIAL)
-            self.laser.setlidaropt(ydlidar.LidarPropSingleChannel, False)
-            self.laser.setlidaropt(ydlidar.LidarPropSampleRate, 5)
-            self.laser.setlidaropt(ydlidar.LidarPropIntenstiy, True)
-            self.laser.setlidaropt(ydlidar.LidarPropScanFrequency, 12.0)
-            self.laser.setlidaropt(ydlidar.LidarPropMaxRange, max_distance / 1000)
-            self.laser.setlidaropt(ydlidar.LidarPropMinRange, min_distance / 1000)
-            self.laser.setlidaropt(ydlidar.LidarPropInverted, False)
-
-            self.scan = ydlidar.LaserScan()
 
         self.sio = socketio.Client(logger=False)
         self.sio.register_namespace(SioEvents(self))
@@ -316,52 +290,43 @@ class Detector:
         """
         Start the Lidar.
         """
-        if self.laser:
-            self.laser.initialize()
-            self.laser.turnOn()
+        if self.lidar_port:
+            if self.robot_id == 1:
+                self.lidar = YDLidar(self.shared_lidar_data)
+                self.lidar.set_scan_frequency(12)
+                self.lidar.set_invalid_angle_range(0, 0)  # No excluded angle range
+            else:
+                self.lidar = LDLidarDriver(self.shared_lidar_data)
+            self.lidar.set_invalid_angle_range(90, 270)  # Skip rear-facing Lidar data because Lidar is mounted in PAMI
+            self.lidar.set_data_write_lock(self.shared_lidar_data_lock)
+            self.lidar.set_min_distance(self.properties.min_distance)
+            self.lidar.set_max_distance(self.properties.max_distance)
+            self.lidar.set_min_intensity(self.properties.min_intensity)
 
-            self.lidar_reader_loop.start()
+            res = self.lidar.connect(str(self.lidar_port))
+            if not res:
+                logger.error("Error: Lidar connection failed.")
+                return
+            logger.info("Lidar connected.")
 
-    def read_lidar(self):
-        """
-        Function executed in a thread loop to read Lidar data.
-        """
-        if not ydlidar.os_isOk():
-            return
+            if self.robot_id > 1:
+                res = self.lidar.wait_lidar_comm(1000)
+                if not res:
+                    logger.error("Error: Lidar not ready.")
+                    return
+                logger.info("Lidar is ready.")
 
-        ret = self.laser.doProcessSimple(self.scan)
-        if ret:
-            self.shared_lidar_data_lock.start_writing()
-
-            count = 0
-            for point in self.scan.points:
-                angle_deg = -np.degrees(point.angle)
-                if angle_deg < 0:
-                    angle_deg += 360
-                range = point.range * 1000
-                if range < self.properties.min_distance or range > self.properties.max_distance:
-                    continue
-                if point.intensity < self.properties.min_intensity:
-                    continue
-                self.shared_lidar_data[count][0] = angle_deg
-                self.shared_lidar_data[count][1] = range
-                self.shared_lidar_data[count][2] = point.intensity
-                count += 1
-            self.shared_lidar_data[count][0] = -1
-            self.shared_lidar_data[count][1] = -1
-            self.shared_lidar_data[count][2] = -1
-
-            self.shared_lidar_data_lock.finish_writing()
-            self.shared_lidar_data_lock.post_update()
-        else:
-            print("Failed to get Lidar Data")
+            res = self.lidar.start()
+            if not res:
+                logger.error("Error: Lidar not started.")
+                return
+            logger.info("Lidar started.")
 
     def stop_lidar(self):
         """
         Stop the Lidar.
         """
-        if self.laser:
-            self.lidar_reader_loop.stop()
-
-            self.laser.turnOff()
-            self.laser.disconnecting()
+        if self.lidar:
+            self.lidar.stop()
+            self.lidar.disconnect()
+            self.lidar = None

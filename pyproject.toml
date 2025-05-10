@@ -45,7 +45,6 @@ dependencies = [
     "scikit-learn~=1.6.1",
     "watchfiles==0.24.0",
     "websocket-client==1.7.0",
-    "ydlidar==1.1.3 ; platform_machine == 'aarch64'"
 ]
 
 [dependency-groups]
@@ -79,24 +78,16 @@ cogip-server = "cogip.tools.server.__main__:main"
 cogip-dashboard = "cogip.tools.dashboard.__main__:main"
 cogip-camera = "cogip.tools.camera.__main__:main"
 cogip-server-beacon = "cogip.tools.server_beacon.__main__:main"
-cogip-detector-pami = "cogip.tools.detector_pami.__main__:main"
 cogip-cansend = "cogip.tools.cansend.__main__:main"
 cogip-cpp-cython-example = "cogip.tools.cpp_cython_example.__main__:main"
 cogip-cpp-nanobind-example = "cogip.tools.cpp_nanobind_example.__main__:main"
 cogip-lidar-ld19 = "cogip.tools.lidar_ld19.__main__:main"
+cogip-ydlidar-g2 = "cogip.tools.ydlidar_g2.__main__:main"
 cogip-cpp-shm-example = "cogip.tools.cpp_shm_example.__main__:main"
 cogip-scservo = "cogip.tools.scservo.__main__:main"
 
 [tool.uv]
 python-preference = "only-managed"
-
-[[tool.uv.index]]
-name = "ydlidar"
-url = "https://github.com/cogip/YDLidar-SDK/releases/expanded_assets/wheels"
-explicit = true
-
-[tool.uv.sources]
-ydlidar = { index = "ydlidar" }
 
 [tool.scikit-build]
 logging.level = "DEBUG"

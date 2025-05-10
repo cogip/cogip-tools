@@ -74,6 +74,14 @@ class SioEvents(socketio.ClientNamespace):
         match name:
             case "refresh_interval":
                 self.detector.obstacles_updater_loop.interval = value
-                self.detector.lidar_reader_loop.interval = value
+            case "min_distance":
+                if self.detector.lidar:
+                    self.detector.lidar.set_min_distance(value)
+            case "max_distance":
+                if self.detector.lidar:
+                    self.detector.lidar.set_max_distance(value)
+            case "min_intensity":
+                if self.detector.lidar:
+                    self.detector.lidar.set_min_intensity(value)
             case "sensor_delay":
                 self.detector.lidar_data_converter.set_pose_current_index(value)

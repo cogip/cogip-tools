@@ -58,7 +58,8 @@ ARG GID=1000
 RUN group_exists=$(getent group ${GID} || true) && echo $group_exists \
  && if [ -z "$group_exists" ]; then groupadd -g ${GID} cogip_users; fi \
  && user_exists=$(getent passwd ${UID} || true) \
- && if [ -z "$user_exists" ]; then useradd -u ${UID} -g ${GID} -m cogip_user; fi
+ && if [ -z "$user_exists" ]; then useradd -u ${UID} -g ${GID} -m cogip_user; fi \
+ && usermod -aG dialout `getent passwd 1000 | cut -d: -f1`
 
 ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
 ADD cogip /src/cogip
