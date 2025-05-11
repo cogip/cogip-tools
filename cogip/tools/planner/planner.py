@@ -8,9 +8,11 @@ from multiprocessing import Manager, Process
 from multiprocessing.managers import DictProxy
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import socketio
-from gpiozero import Button
+from colorzero import Color
+from gpiozero import RGBLED, Button
 from gpiozero.pins.mock import MockFactory
 from luma.core.interface.serial import i2c
 from luma.core.render import canvas
@@ -60,6 +62,9 @@ class Planner:
         obstacle_updater_interval: float,
         path_refresh_interval: float,
         starter_pin: int | None,
+        led_red_pin: int | None,
+        led_green_pin: int | None,
+        led_blue_pin: int | None,
         oled_bus: int | None,
         oled_address: int | None,
         bypass_detector: bool,
@@ -84,6 +89,9 @@ class Planner:
             obstacle_updater_interval: Interval between each send of obstacles to dashboards (in seconds)
             path_refresh_interval: Interval between each update of robot paths (in seconds)
             starter_pin: GPIO pin connected to the starter
+            led_red_pin: GPIO pin connected to the red LED
+            led_green_pin: GPIO pin connected to the green LED
+            led_blue_pin: GPIO pin connected to the blue LED
             oled_bus: PAMI OLED display i2c bus
             oled_address: PAMI OLED display i2c address
             bypass_detector: Use perfect obstacles from monitor instead of detected obstacles by Lidar
@@ -197,6 +205,16 @@ class Planner:
                 pull_up=True,
                 pin_factory=MockFactory(),
             )
+
+        if led_red_pin and led_green_pin and led_blue_pin:
+            self.led = RGBLED(
+                led_red_pin,
+                led_green_pin,
+                led_blue_pin,
+                initial_value=(1, 0, 0),
+            )
+        else:
+            self.led = Mock()
 
         self.starter.when_pressed = partial(self.sio_emitter_queue.put, ("starter_changed", True))
         self.starter.when_released = partial(self.sio_emitter_queue.put, ("starter_changed", False))
@@ -822,6 +840,8 @@ class Planner:
 
         self.game_context.countdown = self.game_context.game_duration
         self.game_context.playing = True
+        self.led.color = Color("blue")
+
         await self.sio_ns.emit("start_video_record")
         await self.sio_receiver_queue.put(self.set_pose_reached())
 

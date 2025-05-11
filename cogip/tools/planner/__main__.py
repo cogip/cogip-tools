@@ -111,6 +111,33 @@ def main_opt(
             envvar="PLANNER_STARTER_PIN",
         ),
     ] = None,
+    led_red_pin: Annotated[
+        Optional[int],  # noqa
+        typer.Option(
+            "-lr",
+            "--led-red-pin",
+            help="GPIO pin connected to the red LED",
+            envvar="PLANNER_LED_RED_PIN",
+        ),
+    ] = None,
+    led_green_pin: Annotated[
+        Optional[int],  # noqa
+        typer.Option(
+            "-lg",
+            "--led-green-pin",
+            help="GPIO pin connected to the green LED",
+            envvar="PLANNER_LED_GREEN_PIN",
+        ),
+    ] = None,
+    led_blue_pin: Annotated[
+        Optional[int],  # noqa
+        typer.Option(
+            "-lb",
+            "--led-blue-pin",
+            help="GPIO pin connected to the blue LED",
+            envvar="PLANNER_LED_BLUE_PIN",
+        ),
+    ] = None,
     oled_bus: Annotated[
         Optional[int],  # noqa
         typer.Option(
@@ -220,6 +247,9 @@ def main_opt(
         obstacle_updater_interval,
         path_refresh_interval,
         starter_pin,
+        led_red_pin,
+        led_green_pin,
+        led_blue_pin,
         oled_bus,
         oled_address,
         bypass_detector,
