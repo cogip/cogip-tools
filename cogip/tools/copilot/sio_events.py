@@ -6,8 +6,8 @@ import socketio
 from pydantic import TypeAdapter
 
 from cogip import models
-from cogip.models.actuators import ActuatorCommand, PositionalActuatorCommand, ServoCommand
-from cogip.protobuf import PB_ActuatorCommand, PB_Command, PB_Controller, PB_PathPose, PB_Pid_Id, PB_PidEnum
+from cogip.models.actuators import ActuatorCommand, PositionalActuatorCommand
+from cogip.protobuf import PB_ActuatorCommand, PB_Controller, PB_PathPose, PB_Pid_Id, PB_PidEnum
 from . import copilot, logger
 from .menu import menu
 
@@ -87,20 +87,6 @@ class SioEvents(socketio.AsyncClientNamespace):
             case _:
                 logger.warning(f"Unknown command: {cmd}")
 
-    async def on_shell_command(self, data):
-        """
-        Callback on shell command message.
-
-        Build the Protobuf command message:
-
-        * split received string at first space if any.
-        * first is the command and goes to `cmd` attribute.
-        * second part is arguments, if any, and goes to `desc` attribute.
-        """
-        response = PB_Command()
-        response.cmd, _, response.desc = data.partition(" ")
-        await self.copilot.pbcom.send_can_message(copilot.command_uuid, response)
-
     async def on_pose_start(self, data: dict[str, Any]):
         """
         Callback on pose start (from planner).
@@ -145,9 +131,7 @@ class SioEvents(socketio.AsyncClientNamespace):
         command = TypeAdapter(ActuatorCommand).validate_python(data)
 
         pb_command = PB_ActuatorCommand()
-        if isinstance(command, ServoCommand):
-            command.pb_copy(pb_command.servo)
-        elif isinstance(command, PositionalActuatorCommand):
+        if isinstance(command, PositionalActuatorCommand):
             command.pb_copy(pb_command.positional_actuator)
         await self.copilot.pbcom.send_can_message(copilot.actuator_command_uuid, pb_command)
 

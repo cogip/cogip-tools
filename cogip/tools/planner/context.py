@@ -3,8 +3,6 @@ from cogip.models.actuators import (
     BoolSensorEnum,
     PositionalActuator,
     PositionalActuatorEnum,
-    Servo,
-    ServoEnum,
 )
 from cogip.models.artifacts import (
     ConstructionArea,
@@ -195,7 +193,6 @@ class GameContext(metaclass=Singleton):
             self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=150)]
 
     def create_actuators_states(self):
-        self.servo_states: dict[ServoEnum, Servo] = {}
         self.positional_actuator_states: dict[PositionalActuatorEnum, PositionalActuator] = {}
         self.bool_sensor_states: dict[BoolSensorEnum, BoolSensor] = {id: BoolSensor(id=id) for id in BoolSensorEnum}
-        self.emulated_actuator_states: set[ServoEnum | PositionalActuatorEnum] = {}
+        self.emulated_actuator_states: set[PositionalActuatorEnum] = {}

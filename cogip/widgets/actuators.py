@@ -11,91 +11,8 @@ from cogip.models.actuators import (
     PositionalActuator,
     PositionalActuatorCommand,
     PositionalActuatorEnum,
-    Servo,
-    ServoCommand,
-    ServoEnum,
     actuator_limits,
 )
-
-
-class ServoControl(QtCore.QObject):
-    """
-    ServoControl class.
-
-    Build a widget to control a servo.
-    """
-
-    command_updated: qtSignal = qtSignal(object)
-
-    def __init__(self, id: ServoEnum, layout: QtWidgets.QGridLayout):
-        """
-        Class constructor.
-
-        Arguments:
-            id: ID of servo to control
-            layout: The parent layout
-        """
-        super().__init__()
-        self.enabled = False
-        position_schema = Servo.model_json_schema()["properties"]["position"]
-        self.id = id
-
-        row = layout.rowCount()
-        minimum, maximum = actuator_limits.get(id, (position_schema.get("minimum"), position_schema.get("maximum")))
-
-        self.label = QtWidgets.QLabel(self.id.name)
-        layout.addWidget(self.label, row, 0)
-
-        self.kind = QtWidgets.QLabel("Servo")
-        layout.addWidget(self.kind, row, 1)
-
-        self.command = QtWidgets.QSpinBox()
-        self.command.setToolTip("Position command")
-        self.command.setMinimum(minimum)
-        self.command.setMaximum(maximum)
-        self.command.setSingleStep(1)
-        self.command.valueChanged.connect(self.command_changed)
-        layout.addWidget(self.command, row, 2)
-
-        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.slider.setToolTip("Position command")
-        self.slider.setMinimum(minimum)
-        self.slider.setMaximum(maximum)
-        self.slider.setSingleStep(1)
-        self.slider.valueChanged.connect(self.command.setValue)
-        layout.addWidget(self.slider, row, 3)
-
-        self.position = QtWidgets.QLabel()
-        self.position.setToolTip("Current position")
-        layout.addWidget(self.position, row, 4)
-
-        self.label.setEnabled(False)
-        self.kind.setEnabled(False)
-        self.command.setEnabled(False)
-        self.slider.setEnabled(False)
-        self.position.setEnabled(False)
-
-    def command_changed(self, value):
-        self.slider.setValue(value)
-        command = ServoCommand(id=self.id, command=value)
-        self.command_updated.emit(command)
-
-    def update_value(self, actuator: Servo):
-        if not self.enabled:
-            self.enabled = True
-            self.label.setEnabled(True)
-            self.kind.setEnabled(True)
-            self.command.setEnabled(True)
-            self.slider.setEnabled(True)
-            self.position.setEnabled(True)
-
-        self.command.blockSignals(True)
-        self.command.setValue(actuator.position)
-        self.command.blockSignals(True)
-        self.slider.blockSignals(False)
-        self.slider.setValue(actuator.command)
-        self.slider.blockSignals(False)
-        self.position.setText(str(actuator.position))
 
 
 class PositionalActuatorControl(QtCore.QObject):
@@ -117,7 +34,7 @@ class PositionalActuatorControl(QtCore.QObject):
         """
         super().__init__()
         self.enabled = False
-        command_schema = Servo.model_json_schema()["properties"]["command"]
+        command_schema = PositionalActuator.model_json_schema()["properties"]["command"]
         self.id = id
 
         row = layout.rowCount()
@@ -248,7 +165,6 @@ class ActuatorsDialog(QtWidgets.QDialog):
             parent: The parent widget
         """
         super().__init__(parent)
-        self.servos: dict[ServoEnum, ServoControl] = {}
         self.positional_actuators: dict[PositionalActuatorEnum, PositionalActuatorControl] = {}
         self.bool_sensors: dict[BoolSensorEnum, BoolSensorControl] = {}
         self.setWindowTitle("Actuators Control")
@@ -256,10 +172,6 @@ class ActuatorsDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QGridLayout()
         self.setLayout(layout)
-
-        for id in ServoEnum:
-            self.servos[id] = ServoControl(id, layout)
-            self.servos[id].command_updated.connect(self.command_updated)
 
         for id in PositionalActuatorEnum:
             self.positional_actuators[id] = PositionalActuatorControl(id, layout)

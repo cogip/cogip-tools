@@ -65,12 +65,6 @@ class DashboardNamespace(socketio.AsyncNamespace):
                 namespace = split_ns.pop(0)
                 await self.emit("command", cmd, namespace=f"/{namespace}")
 
-    async def on_shell_cmd(self, sid, cmd: str) -> None:
-        """
-        Callback on shell command message from dashboard.
-        """
-        await self.emit("shell_command", cmd, namespace="/copilot")
-
     async def on_config_updated(self, sid, config: dict[str, Any]) -> None:
         namespace = config.pop("namespace")
         sio_event = config.pop("sio_event")

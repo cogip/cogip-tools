@@ -8,7 +8,7 @@ from cogip import models
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorsKindEnum
-from cogip.protobuf import PB_ActuatorState, PB_Menu, PB_Pid, PB_PidEnum, PB_Pose, PB_State
+from cogip.protobuf import PB_ActuatorState, PB_Pid, PB_PidEnum, PB_Pose, PB_State
 from .pbcom import PBCom, pb_exception_handler
 from .pid import Pid
 from .sio_events import SioEvents
@@ -31,8 +31,6 @@ actuator_command_uuid: int = 0x2004
 reset_uuid: int = 0x3001
 copilot_connected_uuid: int = 0x3002
 copilot_disconnected_uuid: int = 0x3003
-menu_uuid: int = 0x3004
-command_uuid: int = 0x3005
 # Game: 0x4000 - 0x4FFF
 game_start_uuid: int = 0x4001
 game_end_uuid: int = 0x4002
@@ -74,7 +72,6 @@ class Copilot:
 
         pb_message_handlers = {
             reset_uuid: self.handle_reset,
-            menu_uuid: self.handle_message_menu,
             pose_order_uuid: self.handle_message_pose,
             state_uuid: self.handle_message_state,
             pose_reached_uuid: self.handle_pose_reached,
@@ -128,21 +125,6 @@ class Copilot:
         """
         await self.pbcom.send_can_message(copilot_connected_uuid, None)
         await self.sio_events.emit("reset")
-
-    @pb_exception_handler
-    async def handle_message_menu(self, message: bytes | None = None) -> None:
-        """
-        Send shell menu received from the robot to connected monitors.
-        """
-        pb_menu = PB_Menu()
-
-        if message:
-            await self.loop.run_in_executor(None, pb_menu.ParseFromString, message)
-
-        menu = MessageToDict(pb_menu)
-        self.shell_menu = models.ShellMenu.model_validate(menu)
-        if self.sio_events.connected:
-            await self.sio_events.emit("menu", self.shell_menu.model_dump(exclude_defaults=True, exclude_unset=True))
 
     @pb_exception_handler
     async def handle_message_pose(self, message: bytes | None = None) -> None:

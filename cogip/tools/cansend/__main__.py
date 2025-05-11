@@ -8,7 +8,6 @@ from pydantic import TypeAdapter
 from cogip.models.actuators import (
     ActuatorCommand,
     PositionalActuatorCommand,
-    ServoCommand,
 )
 from cogip.protobuf import PB_ActuatorCommand
 from cogip.tools.copilot.copilot import (
@@ -19,9 +18,7 @@ from cogip.tools.copilot.pbcom import PBCom
 
 async def actuator_command(pbcom: PBCom, uuid: int, command: ActuatorCommand):
     pb_command = PB_ActuatorCommand()
-    if isinstance(command, ServoCommand):
-        command.pb_copy(pb_command.servo)
-    elif isinstance(command, PositionalActuatorCommand):
+    if isinstance(command, PositionalActuatorCommand):
         command.pb_copy(pb_command.positional_actuator)
     await pbcom.send_can_message(uuid, pb_command)
 
