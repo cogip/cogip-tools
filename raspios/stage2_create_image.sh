@@ -187,6 +187,7 @@ case ${ROBOT_ID} in
     [2-9]) # PAMIs
         sudo sed -i "s/# PLANNER_OLED_BUS=/PLANNER_OLED_BUS=${PAMI_OLED_BUS}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_OLED_ADDRESS=/PLANNER_OLED_ADDRESS=${PAMI_OLED_ADDRESS}/" ${MOUNT_DIR}/etc/environment
+        sudo rm -f ${MOUNT_DIR}/root/.bash_profile
         ;;
 esac
 
