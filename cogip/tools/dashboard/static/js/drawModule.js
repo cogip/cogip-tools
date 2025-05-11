@@ -73,20 +73,6 @@ export function resizeCanvas() {
 
   ratioX = adjustedWidth / 3000;
   ratioY = -adjustedHeight / 2000;
-  setButtonPosition(canvas);
-}
-
-function setButtonPosition(canvas) {
-  const menuWidth = cacheElement("#menu").offsetWidth;
-  const rightPx = Math.max(window.innerWidth - menuWidth - canvas.width, 0);
-  const buttonRefresh = cacheElement("#buttonRefresh");
-  buttonRefresh.style.right = `${rightPx}px`;
-
-  const buttonCameraModal = cacheElement("#buttonCameraModal");
-  if (buttonCameraModal) {
-    buttonCameraModal.style.top = `${canvas.height - 44}px`; // 44 is the height of the camera image
-    buttonCameraModal.style.right = `${rightPx - 59}px`; // 59 is the width of the refresh image
-  }
 }
 
 export function displayMsg(robot_id, msg) {

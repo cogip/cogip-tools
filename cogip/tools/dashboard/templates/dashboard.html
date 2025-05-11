@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html style="font-size: 16px; height: 100%; margin: 0;">
 
 <head>
   <title>COGIP Dashboard</title>
@@ -40,38 +40,46 @@
   {% if robot_id == 0 %}
   <div class="tab-content" id="myTabContent">
     <div class="tab-pane fade show active" id="beacon" role="tabpanel" aria-labelledby="beacon-tab">
+  {% endif %}
 
-      {% endif %}
-      <div class="flex flex-row">
-        <div class="w-1/4 text-center h-minus-footer pt-2.5 pr-1 pl-2.5 border-r border-grey-color" id="menu">
-          <img src="static/img/cogip-logo.png" class="mx-auto h-10p py-2.5" />
-          <div id="nav-tool">
+      <div class="flex flex-row flex-1 h-full">
+        <div class="w-auto text-center h-minus-footer border-r border-grey-color" id="menu">
+          <img src="static/img/cogip-logo.png" class="mx-auto h-10p py-2" />
+          <div id="nav-tool" class="flex flex-col flex-1 h-full">
             ...
           </div>
         </div>
 
-        <div class="w-3/4">
+        <div>
+          <canvas
+            id="board" class="bg-contain" style="background-image: url(../static/img/ground2025.webp)">
+          </canvas>
+        </div>
+
+        <div id="sidebar" class="flex flex-col items-center z-20 p-2 gap-2">
           <button
-            class="relative z-10 mt-3 px-4 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end z-60"
+            class="relative w-12 h-12 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70"
             id="buttonRefresh" type="button" onclick="location.reload();">
-            <img src="{{ url_for('static', path='img/refresh.svg') }}" />
+            <img src="{{ url_for('static', path='img/refresh.svg') }}" class="w-full h-full" />
           </button>
-          <canvas id="board" class="mt-2.5 absolute bg-contain"
-            style="background-image: url(../static/img/ground2025.webp)"></canvas>
 
           {% if robot_id != 0 %}
           <button
-            class="relative z-10 mt-3 px-4 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end"
-            id="buttonCameraModal" type="button" onclick="modalCamera()" data-bs-toggle="modal"
-            data-bs-target="#cameraModal">
-            <img src="{{ url_for('static', path='img/camera.svg') }}" />
+            class="relative w-12 h-12 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70"
+            id="buttonCameraModal" type="button" onclick="modalCamera()" data-bs-toggle="modal" data-bs-target="#cameraModal">
+            <img src="{{ url_for('static', path='img/camera.svg') }}" class="w-full h-full" />
           </button>
           {% endif %}
         </div>
       </div>
 
+      {% if robot_id == 0 %}
+    </div>
+  </div>
+  {% endif %}
+
       <footer class="mt-auto bg-zinc-900 text-grey-color mx-2">
-        <div class="container-lg pt-2 flex items-center justify-between">
+        <div class="container-lg p-2 flex items-center justify-between">
           <span class="text-muted inline" id="connection">
             <pre
               class="text-grey-color text-sm"><img class="mr-5 w-[20px]" src="{{ url_for('static', path='img/cross_red_circle.svg') }}" /></pre>
@@ -89,11 +97,6 @@
           {% endif %}
         </div>
       </footer>
-
-      {% if robot_id == 0 %}
-    </div>
-  </div>
-  {% endif %}
 
   {% if robot_id != 0 %}
   <div id="cameraModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
@@ -170,9 +173,6 @@
 
     document.addEventListener("DOMContentLoaded", function (event) {
       const robotId = parseInt(document.getElementsByTagName('body')[0].dataset.robotId);
-
-      let cameraModule = null;
-      let scoreModule = null;
 
       drawModule.resizeCanvas(); // draw background
       virtualKeyboard.init(); // initialize keyboard
