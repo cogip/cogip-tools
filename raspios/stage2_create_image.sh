@@ -152,9 +152,7 @@ sudo sed -i "s/IP_ADDRESS_ROBOT2/${IP_ADDRESS_ROBOT2_WLAN0}/" ${MOUNT_DIR}/etc/h
 sudo sed -i "s/IP_ADDRESS_ROBOT3/${IP_ADDRESS_ROBOT3_WLAN0}/" ${MOUNT_DIR}/etc/hosts
 sudo sed -i "s/IP_ADDRESS_ROBOT4/${IP_ADDRESS_ROBOT4_WLAN0}/" ${MOUNT_DIR}/etc/hosts
 sudo sed -i "s/IP_ADDRESS_ROBOT5/${IP_ADDRESS_ROBOT5_WLAN0}/" ${MOUNT_DIR}/etc/hosts
-sudo sed -i "s/ROBOT_ID/${ROBOT_ID}/" ${MOUNT_DIR}/root/.xinitrc
-sudo sed -i "s/SCREEN_WIDTH/${SCREEN_WIDTH}/" ${MOUNT_DIR}/root/.xinitrc
-sudo sed -i "s/SCREEN_HEIGHT/${SCREEN_HEIGHT}/" ${MOUNT_DIR}/root/.xinitrc
+sudo sed -i "s/ROBOT_ID/${ROBOT_ID}/" ${MOUNT_DIR}/root/start_chromium.sh
 sudo sed -i "s/VC4_V3D_DRIVER/${VC4_V3D_DRIVER}/" ${MOUNT_DIR}/boot/firmware/config.txt
 sudo sed -i "s/SCREEN_WIDTH/${SCREEN_WIDTH}/" ${MOUNT_DIR}/boot/firmware/config.txt
 sudo sed -i "s/SCREEN_HEIGHT/${SCREEN_HEIGHT}/" ${MOUNT_DIR}/boot/firmware/config.txt
