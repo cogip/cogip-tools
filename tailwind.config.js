@@ -15,7 +15,6 @@ module.exports = {
             },
             height: {
                 "10p": "10%",
-                "minus-footer": "calc(100vh - 75px)",
             },
             fontSize: {
                 "1500p": "1500%",
