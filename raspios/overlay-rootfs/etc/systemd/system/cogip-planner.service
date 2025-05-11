@@ -4,6 +4,7 @@ Description=COGIP Planner
 Wants=network.target
 After=cogip-server.service
 Requires=cogip-server.service
+BindsTo=cogip-server.service
 
 [Service]
 Type=simple

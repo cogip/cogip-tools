@@ -2,8 +2,6 @@
 Description=COGIP Dashboard
 
 Wants=network.target
-After=cogip-server.service
-Requires=cogip-server.service
 
 [Service]
 Type=simple

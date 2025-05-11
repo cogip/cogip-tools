@@ -2,7 +2,9 @@
 Description=COGIP Copilot
 
 Wants=network.target
-After=syslog.target network-online.target
+After=cogip-server.service
+Requires=cogip-server.service
+BindsTo=cogip-server.service
 
 [Service]
 Type=simple

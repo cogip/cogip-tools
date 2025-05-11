@@ -2,8 +2,9 @@
 Description=COGIP Detector
 
 Wants=network.target
-Before=cogip-robotcam.service
-After=syslog.target network-online.target
+After=cogip-server.service
+Requires=cogip-robotcam.service
+BindsTo=cogip-server.service
 
 [Service]
 Type=simple
