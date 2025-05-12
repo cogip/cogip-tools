@@ -28,3 +28,5 @@ hdmi_drive=1
 hdmi_group=2
 hdmi_mode=87
 hdmi_cvt SCREEN_WIDTH SCREEN_HEIGHT 60 6 0 0 0
+
+gpu_mem=128

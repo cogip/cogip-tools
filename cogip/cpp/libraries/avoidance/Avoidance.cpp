@@ -24,8 +24,10 @@ namespace cogip {
 
 namespace avoidance {
 
-Avoidance::Avoidance(const cogip::obstacles::ObstaclePolygon& borders)
-    : is_avoidance_computed_(false), borders_(borders),
+Avoidance::Avoidance(nb::ndarray<float, nb::numpy, nb::shape<4>> table_limits, float table_margin)
+    : is_avoidance_computed_(false),
+    table_limits_(reinterpret_cast<float*>(table_limits.data())),
+    table_margin_(table_margin),
     logger_("Avoidance", cogip::logger::LogLevel::INFO) {
 }
 
@@ -44,7 +46,7 @@ bool Avoidance::avoidance(const models::Coords& start,
     logger_.debug() << "finish_pose_ = " << finish_pose_ << std::endl;
 
     // Validate that the finish pose is inside borders
-    if (!borders_.is_point_inside(finish_pose_)) {
+    if (!is_point_in_table_limits(finish_pose_)) {
         logger_.error() << "avoidance: Finish pose is outside the borders" << std::endl;
         return false;
     }
@@ -100,7 +102,7 @@ bool Avoidance::check_recompute(const models::Coords& start,
                                 const models::Coords& stop)
 {
     for (auto obstacle : dynamic_obstacles_) {
-        if (!borders_.is_point_inside(obstacle.get().center())) {
+        if (!is_point_in_table_limits(obstacle.get().center())) {
             continue;
         }
         if (obstacle.get().is_segment_crossing(start, stop)) {
@@ -115,12 +117,12 @@ void Avoidance::validate_obstacle_points()
     for (const auto& obstacle_wrapper : dynamic_obstacles_) {
         auto& obstacle = obstacle_wrapper.get();
 
-        if (!borders_.is_point_inside(obstacle.center())) {
+        if (!is_point_in_table_limits(obstacle.center())) {
             continue;
         }
 
         for (const auto& point : obstacle.bounding_box()) {
-            if (!borders_.is_point_inside(point) || is_point_in_obstacles(point, nullptr)) {
+            if (!is_point_in_table_limits(point) || is_point_in_obstacles(point, nullptr)) {
                 continue;
             }
             valid_points_.emplace_back(point.x(), point.y());
@@ -278,14 +280,6 @@ void Avoidance::print_parents(const std::map<int, int>& parents) {
         logger_.debug() << "    (" << child << ", " << parent << ")" << std::endl;
     }
     logger_.debug() << std::endl;
-}
-
-const cogip::obstacles::ObstaclePolygon& Avoidance::borders() const {
-    return borders_;
-}
-
-void Avoidance::set_borders(const cogip::obstacles::ObstaclePolygon& new_borders) {
-    borders_ = new_borders;
 }
 
 } // namespace avoidance

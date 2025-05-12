@@ -149,9 +149,10 @@ sudo sed -i "s/HOSTNAME/${HOSTNAME}/" ${MOUNT_DIR}/etc/ssh/sshd_config
 sudo sed -i "s/IP_ADDRESS_BEACON/${IP_ADDRESS_BEACON_ETH0}/" ${MOUNT_DIR}/etc/hosts
 sudo sed -i "s/IP_ADDRESS_ROBOT1/${IP_ADDRESS_ROBOT1_WLAN0}/" ${MOUNT_DIR}/etc/hosts
 sudo sed -i "s/IP_ADDRESS_ROBOT2/${IP_ADDRESS_ROBOT2_WLAN0}/" ${MOUNT_DIR}/etc/hosts
-sudo sed -i "s/ROBOT_ID/${ROBOT_ID}/" ${MOUNT_DIR}/root/.xinitrc
-sudo sed -i "s/SCREEN_WIDTH/${SCREEN_WIDTH}/" ${MOUNT_DIR}/root/.xinitrc
-sudo sed -i "s/SCREEN_HEIGHT/${SCREEN_HEIGHT}/" ${MOUNT_DIR}/root/.xinitrc
+sudo sed -i "s/IP_ADDRESS_ROBOT3/${IP_ADDRESS_ROBOT3_WLAN0}/" ${MOUNT_DIR}/etc/hosts
+sudo sed -i "s/IP_ADDRESS_ROBOT4/${IP_ADDRESS_ROBOT4_WLAN0}/" ${MOUNT_DIR}/etc/hosts
+sudo sed -i "s/IP_ADDRESS_ROBOT5/${IP_ADDRESS_ROBOT5_WLAN0}/" ${MOUNT_DIR}/etc/hosts
+sudo sed -i "s/ROBOT_ID/${ROBOT_ID}/" ${MOUNT_DIR}/root/start_chromium.sh
 sudo sed -i "s/VC4_V3D_DRIVER/${VC4_V3D_DRIVER}/" ${MOUNT_DIR}/boot/firmware/config.txt
 sudo sed -i "s/SCREEN_WIDTH/${SCREEN_WIDTH}/" ${MOUNT_DIR}/boot/firmware/config.txt
 sudo sed -i "s/SCREEN_HEIGHT/${SCREEN_HEIGHT}/" ${MOUNT_DIR}/boot/firmware/config.txt
@@ -186,6 +187,7 @@ case ${ROBOT_ID} in
     [2-9]) # PAMIs
         sudo sed -i "s/# PLANNER_OLED_BUS=/PLANNER_OLED_BUS=${PAMI_OLED_BUS}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_OLED_ADDRESS=/PLANNER_OLED_ADDRESS=${PAMI_OLED_ADDRESS}/" ${MOUNT_DIR}/etc/environment
+        sudo rm -f ${MOUNT_DIR}/root/.bash_profile
         ;;
 esac
 

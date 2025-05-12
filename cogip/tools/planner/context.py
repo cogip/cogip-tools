@@ -3,8 +3,6 @@ from cogip.models.actuators import (
     BoolSensorEnum,
     PositionalActuator,
     PositionalActuatorEnum,
-    Servo,
-    ServoEnum,
 )
 from cogip.models.artifacts import (
     ConstructionArea,
@@ -24,7 +22,6 @@ from .avoidance.avoidance import AvoidanceStrategy
 from .camp import Camp
 from .pose import AdaptedPose, Pose
 from .positions import StartPosition
-from .properties import Properties
 from .table import Table, TableEnum, tables
 
 
@@ -34,12 +31,12 @@ class GameContext(metaclass=Singleton):
     """
 
     def __init__(self):
+        from .properties import Properties
+
         self.properties = Properties()
         self.game_duration: int = 90 if self.properties.robot_id == 1 else 100
         self.minimum_score: int = 0
         self.camp = Camp()
-        self.strategy = actions.Strategy.TestVisitStartingAreas
-        self._table = TableEnum.Game
         self.avoidance_strategy = AvoidanceStrategy.AvoidanceCpp
         self.reset()
 
@@ -48,11 +45,7 @@ class GameContext(metaclass=Singleton):
         """
         Selected table.
         """
-        return tables[self._table]
-
-    @table.setter
-    def table(self, new_table: TableEnum):
-        self._table = new_table
+        return tables[self.properties.table]
 
     def reset(self):
         """
@@ -68,7 +61,7 @@ class GameContext(metaclass=Singleton):
 
     @property
     def default_controller(self) -> ControllerEnum:
-        match self.strategy:
+        match self.properties.strategy:
             case actions.Strategy.PidAngularSpeedTest:
                 return ControllerEnum.ANGULAR_SPEED_TEST
             case actions.Strategy.PidLinearSpeedTest:
@@ -85,15 +78,15 @@ class GameContext(metaclass=Singleton):
 
     def create_start_poses(self):
         self.start_poses = {
+            StartPosition.Bottom: AdaptedPose(
+                x=-550 - self.properties.robot_length / 2,
+                y=-100 - self.properties.robot_width / 2,
+                O=0,
+            ),
             StartPosition.Top: AdaptedPose(
                 x=550 + self.properties.robot_length / 2,
                 y=-900 - self.properties.robot_width / 2,
                 O=180,
-            ),
-            StartPosition.Bottom: AdaptedPose(
-                x=-550 - self.properties.robot_length / 2,
-                y=-50 - self.properties.robot_width / 2,
-                O=0,
             ),
             StartPosition.Opposite: AdaptedPose(
                 x=-350 + self.properties.robot_width / 2,
@@ -123,7 +116,7 @@ class GameContext(metaclass=Singleton):
         }
 
         # Adapt poses for training table
-        if self._table == TableEnum.Training:
+        if self.properties.table == TableEnum.Training:
             self.start_poses[StartPosition.Top].x -= 1000
             self.start_poses[StartPosition.PAMI2].x -= 1000
             self.start_poses[StartPosition.PAMI3].x -= 1000
@@ -173,7 +166,7 @@ class GameContext(metaclass=Singleton):
             adapted_pose = AdaptedPose(**tribune.model_dump())
             self.tribunes[id] = Tribune(**adapted_pose.model_dump(), id=id)
 
-        if self._table == TableEnum.Training:
+        if self.properties.table == TableEnum.Training:
             self.opponent_construction_areas[ConstructionAreaID.OppositeCenterLarge].enabled = False
 
     def create_fixed_obstacles(self):
@@ -200,7 +193,6 @@ class GameContext(metaclass=Singleton):
             self.fixed_obstacles += [DynObstacleRect(x=pose.x, y=pose.y, angle=0, length_x=450, length_y=150)]
 
     def create_actuators_states(self):
-        self.servo_states: dict[ServoEnum, Servo] = {}
         self.positional_actuator_states: dict[PositionalActuatorEnum, PositionalActuator] = {}
         self.bool_sensor_states: dict[BoolSensorEnum, BoolSensor] = {id: BoolSensor(id=id) for id in BoolSensorEnum}
-        self.emulated_actuator_states: set[ServoEnum | PositionalActuatorEnum] = {}
+        self.emulated_actuator_states: set[PositionalActuatorEnum] = {}

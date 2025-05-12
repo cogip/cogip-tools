@@ -300,13 +300,24 @@ function configureChoiceInput(typeInput, value, choices) {
     const tabContentDiv = document.createElement("div");
     setAttributes(tabContentDiv, { id: "tabContentDiv" });
 
+    let defaultTab = Object.keys(tabGroups)[0]; // By default, it's first tab
+    Object.entries(tabGroups).forEach(([tab, labels]) => {
+      labels.forEach(({ inputValue }) => {
+        if (value.includes(inputValue)) {
+          defaultTab = tab; // Update default tab
+        }
+      });
+    });
+
     // Iterate through the tab groups to create tabs and their content
     Object.entries(tabGroups).forEach(([tab, labels], tabIndex) => {
+      const isActive = tab === defaultTab;
+
       // Create tab button
       const tabButton = document.createElement("button");
       setAttributes(tabButton, {
         class: `tab-button px-4 py-2 text-sm font-semibold border-b-2 ${
-          tabIndex === 0
+          isActive
             ? "border-red-cogip text-red-cogip"
             : " text-gray-600 border-transparent"
         } hover:border-red-cogip hover:text-red-cogip focus:outline-none`,
@@ -319,7 +330,7 @@ function configureChoiceInput(typeInput, value, choices) {
       setAttributes(tabContent, {
         id: `tab-content-${tab}`,
         class: `tab-content ${
-          tabIndex === 0 ? "" : "hidden"
+          isActive ? "" : "hidden"
         } max-h-[70vh] overflow-y-auto mt-4`,
       });
 

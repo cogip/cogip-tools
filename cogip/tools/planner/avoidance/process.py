@@ -9,13 +9,11 @@ from cogip.cpp.libraries.obstacles import ObstacleRectangle as SharedObstacleRec
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory
 from .. import logger
 from ..actions import Strategy
-from ..table import Table
 from .avoidance import Avoidance, AvoidanceStrategy
 
 
 def avoidance_process(
     strategy: Strategy,
-    table: Table,
     shared_properties: DictProxy,
     queue_sio: Queue,
 ):
@@ -26,16 +24,18 @@ def avoidance_process(
     shared_circle_obstacles = shared_memory.get_circle_obstacles()
     shared_rectangle_obstacles = shared_memory.get_rectangle_obstacles()
     shared_obstacles_lock = shared_memory.get_lock(LockName.Obstacles)
+    shared_table_limits = shared_memory.get_table_limits()
 
-    avoidance = Avoidance(table, shared_properties)
+    avoidance = Avoidance(shared_table_limits, shared_properties)
     avoidance_path: list[models.PathPose] = []
     last_emitted_pose_order: models.PathPose | None = None
     start = time.time() - shared_properties["path_refresh_interval"] + 0.01
 
-    while not shared_properties["exiting"]:
-        queue_sio.put(("avoidance_path", [pose.pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
-        path_refresh_interval = shared_properties["path_refresh_interval"]
+    # Sometimes the first message sent is not received, so send a dummy message.
+    queue_sio.put(("nop", None))
 
+    while not shared_properties["exiting"]:
+        path_refresh_interval = shared_properties["path_refresh_interval"]
         now = time.time()
         duration = now - start
         if duration > path_refresh_interval:
@@ -121,13 +121,13 @@ def avoidance_process(
                 or avoidance.check_recompute(pose_current, last_emitted_pose_order)
             ):
                 logger.info("Avoidance: compute path")
-                path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
+                path = avoidance.get_path(pose_current, pose_order)
         else:
             if any([obstacle.is_point_inside(pose_current.x, pose_current.y) for obstacle in dyn_obstacles]):
-                logger.debug("Avoidance: pose current in obstacle")
+                logger.info("Avoidance: pose current in obstacle")
                 path = []
             elif any([obstacle.is_point_inside(pose_order.x, pose_order.y) for obstacle in dyn_obstacles]):
-                logger.debug("Avoidance: pose order in obstacle")
+                logger.info("Avoidance: pose order in obstacle")
                 path = []
             else:
                 shared_properties["last_avoidance_pose_current"] = (pose_current.x, pose_current.y)
@@ -138,7 +138,7 @@ def avoidance_process(
                     logger.debug("Avoidance: rotation only")
                     path = [pose_current, pose_order]
                 else:
-                    path = avoidance.get_path(pose_current, pose_order, dyn_obstacles)
+                    path = avoidance.get_path(pose_current, pose_order)
 
         if len(path) == 0:
             logger.debug("Avoidance: No path found")
@@ -149,6 +149,9 @@ def avoidance_process(
 
         for p in path:
             p.allow_reverse = pose_order.allow_reverse
+            p.timeout_ms = pose_order.timeout_ms
+            p.max_speed_linear = pose_order.max_speed_linear
+            p.max_speed_angular = pose_order.max_speed_angular
 
         if len(path) == 1:
             # Only one pose in path means the pose order is reached and robot is waiting next order,
@@ -176,7 +179,6 @@ def avoidance_process(
             next_delta_y = path[2].y - path[1].y
 
             path[1].O = math.degrees(math.atan2(next_delta_y, next_delta_x))  # noqa
-            path[1].allow_reverse = True
 
         avoidance_path = path[1:]
         new_pose_order = path[1]
@@ -187,11 +189,11 @@ def avoidance_process(
 
         last_emitted_pose_order = new_pose_order.model_copy()
 
-        logger.debug("Avoidance: Update path")
-        queue_sio.put(("path", [pose.pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
-        queue_sio.put(("pose_order", new_pose_order.model_dump(exclude_defaults=True)))
+        logger.info("Avoidance: Update path")
+        queue_sio.put(("path", [pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
 
     # Remove reference to shared memory data to trigger garbage collection
+    shared_table_limits = None
     shared_circle_obstacles = None
     shared_rectangle_obstacles = None
     shared_obstacles_lock = None

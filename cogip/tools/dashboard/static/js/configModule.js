@@ -10,6 +10,11 @@ export function openConfigModal(config, send_socket) {
   form.classList.add("grid", "grid-cols-[30%_67%]", "gap-4", "items-center");
 
   Object.entries(config.properties).forEach(([key, property]) => {
+    if (property.value === undefined) {
+      // Value is not set for properties with excluded=True
+      return;
+    }
+
     const label = document.createElement("label");
     label.textContent = property.title;
     label.classList.add("font-medium", "text-grey-color", "text-left");

@@ -120,14 +120,10 @@ class SocketioController(QtCore.QObject):
         Send a command to the robot.
 
         Arguments:
-            menu_name: menu to update ("shell", "tool", ...)
+            menu_name: menu to update ("tool", ...)
             command: Command to send
         """
-        name, _, robot_id = menu_name.partition(" ")
-        if name == "shell":
-            self.sio.emit("shell_cmd", command, namespace="/dashboard")
-        else:
-            self.sio.emit(f"{menu_name}_cmd", command, namespace="/dashboard")
+        self.sio.emit(f"{menu_name}_cmd", command, namespace="/dashboard")
         self.signal_new_console_text.emit(f"Send '{command}' to {menu_name}")
 
     @qtSlot(dict)

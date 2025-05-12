@@ -8,6 +8,7 @@ After=syslog.target network-online.target
 Type=simple
 Restart=on-failure
 WorkingDirectory=/opt
+ExecStartPre=/bin/sh -c 'rm -rf /dev/shm/*'
 ExecStart=uv run cogip-server
 RestartSec=5
 EnvironmentFile=/etc/environment

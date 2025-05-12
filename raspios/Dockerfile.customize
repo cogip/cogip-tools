@@ -15,7 +15,9 @@ RUN apt-get update \
         xserver-xorg-video-all xserver-xorg-input-all xserver-xorg-core xinit x11-xserver-utils chromium-browser unclutter \
         systemd-resolved systemd-timesyncd \
         i2c-tools libi2c-dev libserial-dev \
-        cockpit dnsmasq iptables wait-for-it ifmetric can-utils
+        cockpit dnsmasq iptables wait-for-it ifmetric can-utils \
+        libinput-tools libegl1-mesa libgles2-mesa mesa-utils mesa-utils-bin \
+        weston
 
 # Configure locale, timezone and keyboard
 RUN rm -f /etc/localtime \

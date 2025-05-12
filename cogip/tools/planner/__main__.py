@@ -8,7 +8,9 @@ import typer
 from watchfiles import PythonFilter, run_process
 
 from . import logger
+from .actions import Strategy
 from .planner import Planner
+from .table import TableEnum
 
 
 def changes_callback(changes):
@@ -84,15 +86,6 @@ def main_opt(
             envvar="PLANNER_OBSTACLE_BB_VERTICES",
         ),
     ] = 6,
-    max_distance: Annotated[
-        int,
-        typer.Option(
-            min=0,
-            max=4000,
-            help="Maximum distance to take avoidance points into account (mm)",
-            envvar=["COGIP_MAX_DISTANCE", "PLANNER_MAX_DISTANCE"],
-        ),
-    ] = 2500,
     obstacle_updater_interval: Annotated[
         float,
         typer.Option(
@@ -111,15 +104,6 @@ def main_opt(
             envvar="PLANNER_PATH_REFRESH_INTERVAL",
         ),
     ] = 0.2,
-    plot: Annotated[
-        bool,
-        typer.Option(
-            "-p",
-            "--plot",
-            help="Display avoidance graph in realtime",
-            envvar=["PLANNER_PLOT"],
-        ),
-    ] = False,
     starter_pin: Annotated[
         Optional[int],  # noqa
         typer.Option(
@@ -182,6 +166,24 @@ def main_opt(
             envvar=["PLANNER_DISABLE_FIXED_OBSTACLES"],
         ),
     ] = False,
+    table: Annotated[
+        TableEnum,
+        typer.Option(
+            "-t",
+            "--table",
+            help="Default table on startup",
+            envvar="PLANNER_TABLE",
+        ),
+    ] = TableEnum.Game.name,
+    strategy: Annotated[
+        Strategy,
+        typer.Option(
+            "-s",
+            "--strategy",
+            help="Default strategy on startup",
+            envvar="PLANNER_STRATEGY",
+        ),
+    ] = Strategy.TestVisitStartingAreas.name,
     reload: Annotated[
         bool,
         typer.Option(
@@ -215,10 +217,8 @@ def main_opt(
         obstacle_radius,
         obstacle_bb_margin,
         obstacle_bb_vertices,
-        max_distance,
         obstacle_updater_interval,
         path_refresh_interval,
-        plot,
         starter_pin,
         oled_bus,
         oled_address,
@@ -226,6 +226,8 @@ def main_opt(
         scservos_port,
         scservos_baud_rate,
         disable_fixed_obstacles,
+        table,
+        strategy,
         debug,
     )
 

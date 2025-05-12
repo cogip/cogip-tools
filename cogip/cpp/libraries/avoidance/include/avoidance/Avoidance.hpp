@@ -29,10 +29,15 @@
 #include <set>
 #include <vector>
 
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+
 /// Project includes
 #include "models/Coords.hpp"
 #include "obstacles/ObstaclePolygon.hpp"
 #include "logger/Logger.hpp"
+
+namespace nb = nanobind;
 
 namespace cogip {
 
@@ -45,8 +50,8 @@ public:
     static constexpr uint32_t max_distance = UINT32_MAX; ///< Maximum distance used for Dijkstra's algorithm.
 
     /// @brief Constructor initializing the avoidance system with obstacle borders.
-    /// @param borders The polygon defining the boundaries of the avoidance area.
-    Avoidance(const obstacles::ObstaclePolygon& borders);
+    /// @param table_limits The limits of the table as a NumPy array.
+    Avoidance(nb::ndarray<float, nb::numpy, nb::shape<4>> table_limits, float table_margin);
 
     /// @brief Checks if a point is inside any obstacle.
     /// @param point The coordinates of the point to check.
@@ -75,14 +80,6 @@ public:
     /// @return True if recomputation is needed, false otherwise.
     bool check_recompute(const models::Coords& start, const models::Coords& stop);
 
-    /// @brief Retrieves the current obstacle borders.
-    /// @return A constant reference to the obstacle polygon defining the borders.
-    const obstacles::ObstaclePolygon& borders() const;
-
-    /// @brief Updates the obstacle borders with a new polygon.
-    /// @param new_borders The new polygon defining the borders of the avoidance area.
-    void set_borders(const obstacles::ObstaclePolygon& new_borders);
-
     /// @brief Adds a dynamic obstacle to the list of obstacles.
     /// @param obstacle The dynamic obstacle to add.
     void add_dynamic_obstacle(obstacles::Obstacle& obstacle);
@@ -100,7 +97,8 @@ private:
     std::deque<std::reference_wrapper<models::Coords>> path_; ///< Path from start to finish.
     bool is_avoidance_computed_; ///< Flag indicating whether the path has been computed.
 
-    cogip::obstacles::ObstaclePolygon borders_; ///< The polygon defining the borders of the avoidance area.
+    float *table_limits_; ///< The limits of the table.
+    float table_margin_;  ///< Margin inside the table limits.
 
     std::vector<std::reference_wrapper<obstacles::Obstacle>> dynamic_obstacles_; ///< List of dynamic obstacles.
 
@@ -125,6 +123,19 @@ private:
     /// @brief Executes Dijkstra's algorithm on the graph to find the shortest path.
     /// @return True if a path was found, false otherwise.
     bool dijkstra();
+
+    /// @brief Checks if a point is within the table limits.
+    /// @param point The coordinates of the point to check.
+    /// @return True if the point is within the table limits, false otherwise.
+    bool is_point_in_table_limits(const models::Coords& point) const
+    {
+        return (
+            (table_limits_[0] + table_margin_ < point.x() &&
+            point.x() < table_limits_[1] - table_margin_) &&
+            (table_limits_[2] + table_margin_ < point.y() &&
+            point.y() < table_limits_[3] - table_margin_)
+        );
+    }
 };
 
 } // namespace avoidance

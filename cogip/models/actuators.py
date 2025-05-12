@@ -3,7 +3,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from cogip.protobuf import PB_PositionalActuatorCommand, PB_ServoCommand
+from cogip.protobuf import PB_PositionalActuatorCommand
 
 # Actuators common definitions
 
@@ -23,75 +23,6 @@ class ActuatorBase(BaseModel):
         False,
         title="Enabled",
         description="An actuator is enabled if it has been initialized with its current value",
-    )
-
-
-# Servo related definitions
-
-
-class ServoEnum(IntEnum):
-    """Enum defining servo IDs"""
-
-    LXSERVO_UNDEFINED = 0
-
-
-class ServoCommand(BaseModel):
-    """Model defining a command to send to servos"""
-
-    kind: Literal[ActuatorsKindEnum.servo] = ActuatorsKindEnum.servo
-    id: ServoEnum = Field(
-        ...,
-        title="Id",
-        description="Servo identifier",
-    )
-    command: int = Field(
-        0,
-        ge=0,
-        le=999,
-        title="Position Command",
-        description="Current servo position command",
-    )
-
-    @field_validator("kind", mode="before")
-    @classmethod
-    def validate_kind(cls, v: str) -> ActuatorsKindEnum:
-        try:
-            value = ActuatorsKindEnum[v]
-        except KeyError:
-            try:
-                value = ActuatorsKindEnum(v)
-            except Exception:
-                raise ValueError("Not a ActuatorsKindEnum")
-        if value != ActuatorsKindEnum.servo:
-            raise ValueError("Not ActuatorsKindEnum.servo value")
-        return value
-
-    @field_validator("id", mode="before")
-    @classmethod
-    def validate_id(cls, v: str) -> ServoEnum:
-        try:
-            return ServoEnum[v]
-        except KeyError:
-            try:
-                return ServoEnum(v)
-            except Exception:
-                raise ValueError("Not a ServoEnum")
-
-    def pb_copy(self, message: PB_ServoCommand) -> None:
-        """Copy values to Protobuf message"""
-        message.id = self.id
-        message.command = self.command
-
-
-class Servo(ActuatorBase, ServoCommand):
-    "Full model for servos"
-
-    position: int = Field(
-        0,
-        ge=0,
-        le=999,
-        title="Position",
-        description="Current servo position",
     )
 
 
@@ -183,8 +114,8 @@ class BoolSensor(BaseModel):
     ] = False
 
 
-ActuatorState = Servo | PositionalActuator | BoolSensor
-ActuatorCommand = ServoCommand | PositionalActuatorCommand
+ActuatorState = PositionalActuator | BoolSensor
+ActuatorCommand = PositionalActuatorCommand
 
 
 # Actuator limits

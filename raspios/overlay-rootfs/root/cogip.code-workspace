@@ -1,20 +1,20 @@
 {
     "folders": [
-            {
-                    "path": "/boot"
-            },
-            {
-                    "path": "/etc"
-            },
-            {
-                    "path": "/root"
-            },
-            {
-                    "path": "/opt"
-            },
-            {
-                    "path": "/opt/.venv/lib/python3.12/site-packages/cogip"
-            }
+        {
+            "path": "/root"
+        },
+        {
+            "path": "/opt/.venv/lib/python3.12/site-packages/cogip"
+        },
+        {
+            "path": "/etc"
+        },
+        {
+            "path": "/boot"
+        },
+        {
+            "path": "/opt"
+        },
     ],
     "settings": {}
 }

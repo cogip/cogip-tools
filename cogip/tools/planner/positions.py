@@ -6,8 +6,8 @@ class StartPosition(IntEnum):
     Enum for available start positions.
     """
 
-    Top = auto()
     Bottom = auto()
+    Top = auto()
     Opposite = auto()
     PAMI2 = auto()
     PAMI3 = auto()

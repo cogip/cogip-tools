@@ -1,9 +1,9 @@
 import importlib.util
 import inspect
 import sys
-from enum import IntEnum
 from pathlib import Path
 
+from cogip.utils.argenum import ArgEnum
 from .. import logger
 from .actions import Actions
 
@@ -41,7 +41,7 @@ for path in Path(__file__).parent.glob("*.py"):
 sorted_actions = sorted(actions_found, key=lambda cls: cls.__name__)
 actions_map = {strip_action_name(strategy.__name__): i + 1 for i, strategy in enumerate(sorted_actions)}
 
-Strategy = IntEnum("Strategy", actions_map)
+Strategy = ArgEnum("Strategy", actions_map)
 
 action_classes: dict[Strategy, Actions] = {
     strategy: actions_class for strategy, actions_class in zip(Strategy, sorted_actions)
