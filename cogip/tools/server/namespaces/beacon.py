@@ -2,7 +2,6 @@ import socketio
 
 from .. import logger, server
 from ..context import Context
-from ..recorder import GameRecorder
 
 
 class BeaconNamespace(socketio.AsyncNamespace):
@@ -14,7 +13,6 @@ class BeaconNamespace(socketio.AsyncNamespace):
         super().__init__("/beacon")
         self.cogip_server = cogip_server
         self.context = Context()
-        self.recorder = GameRecorder()
 
     async def on_connect(self, sid, environ):
         if self.context.beacon_sid:

@@ -5,7 +5,6 @@ import socketio
 from cogip import models
 from .. import logger, server
 from ..context import Context
-from ..recorder import GameRecorder
 
 
 class CopilotNamespace(socketio.AsyncNamespace):
@@ -17,7 +16,6 @@ class CopilotNamespace(socketio.AsyncNamespace):
         super().__init__("/copilot")
         self.cogip_server = cogip_server
         self.context = Context()
-        self.recorder = GameRecorder()
         self.context.copilot_sid = None
 
     async def on_connect(self, sid, environ):
@@ -42,8 +40,6 @@ class CopilotNamespace(socketio.AsyncNamespace):
         Callback on reset event.
         """
         await self.emit("reset", namespace="/planner")
-        await self.recorder.async_do_rollover()
-        self.recorder.recording = True
 
     async def on_register_menu(self, sid, data: dict[str, Any]):
         """
@@ -69,7 +65,6 @@ class CopilotNamespace(socketio.AsyncNamespace):
         Callback on state event.
         """
         await self.emit("state", (self.context.robot_id, state), namespace="/dashboard")
-        await self.recorder.async_record({"state": state})
 
     async def on_actuator_state(self, sid, actuator_state: dict[str, Any]):
         """

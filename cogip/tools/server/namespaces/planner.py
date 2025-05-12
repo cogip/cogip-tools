@@ -4,7 +4,6 @@ import socketio
 
 from .. import logger, server
 from ..context import Context
-from ..recorder import GameRecorder
 
 
 class PlannerNamespace(socketio.AsyncNamespace):
@@ -17,7 +16,6 @@ class PlannerNamespace(socketio.AsyncNamespace):
         self.cogip_server = cogip_server
         self.context = Context()
         self.connected = False
-        self.recorder = GameRecorder()
         self.context.planner_sid = None
 
     async def on_connect(self, sid, environ):
@@ -56,7 +54,6 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         await self.emit("pose_order", pose, namespace="/copilot")
         await self.emit("pose_order", (self.context.robot_id, pose), namespace="/dashboard")
-        await self.recorder.async_record({"pose_order": pose})
 
     async def on_wizard(self, sid, message: list[dict[str, Any]]):
         """
@@ -79,7 +76,6 @@ class PlannerNamespace(socketio.AsyncNamespace):
         Forward the path to dashboard.
         """
         await self.emit("path", (self.context.robot_id, path), namespace="/dashboard")
-        await self.recorder.async_record({"pose_order": path})
 
     async def on_config(self, sid, config: dict[str, Any]):
         """
