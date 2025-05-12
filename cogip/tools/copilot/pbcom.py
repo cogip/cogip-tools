@@ -73,7 +73,7 @@ class PBCom:
                 uuid, encoded_payload = await self.messages_received.get()
                 request_handler = self.message_handlers.get(uuid)
                 if not request_handler:
-                    print(f"No handler found for message uuid '{uuid}'")
+                    logger.warning(f"No handler found for message uuid '{uuid}'")
                 else:
                     if not encoded_payload:
                         await request_handler()
@@ -111,7 +111,7 @@ class PBCom:
                 try:
                     pb_message = base64.decodebytes(can_message.data)
                 except binascii.Error:
-                    print("Failed to decode base64 message.")
+                    logger.error("Failed to decode base64 message.")
                     continue
 
                 # Send Protobuf message for decoding

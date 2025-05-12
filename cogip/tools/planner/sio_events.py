@@ -77,18 +77,21 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         Copilot connected, start planner.
         """
+        logger.info("[SIO] Copilot connected.")
         await self.planner.start()
 
     async def on_copilot_disconnected(self):
         """
         Copilot disconnected, stop planner.
         """
+        logger.info("[SIO] Copilot disconnected.")
         await self.planner.stop()
 
     def on_starter_changed(self, pushed: bool):
         """
         Signal received from the Monitor when the starter state changes in emulation mode.
         """
+        logger.info(f"[SIO] Starter changed: {pushed}")
         if not self.planner.virtual:
             return
         if pushed:
@@ -100,18 +103,21 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         Callback on reset message from copilot.
         """
+        logger.info("[SIO] Reset.")
         await self.planner.reset()
 
     async def on_pose_reached(self):
         """
         Callback on pose reached message.
         """
+        logger.info("[SIO] Pose reached.")
         await self.planner.sio_receiver_queue.put(self.planner.set_pose_reached())
 
     async def on_command(self, cmd: str):
         """
         Callback on command message from dashboard.
         """
+        logger.info(f"[SIO] Command: {cmd}")
         await self.planner.command(cmd)
 
     async def on_config_updated(self, config: dict[str, Any]):
@@ -136,6 +142,7 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         Callback on game end message.
         """
+        logger.info("[SIO] Game ended.")
         await self.planner.game_end()
 
     async def on_actuator_state(self, actuator_state: dict[str, Any]):

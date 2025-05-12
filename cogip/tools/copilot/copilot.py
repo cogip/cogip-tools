@@ -9,6 +9,7 @@ from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorsKindEnum
 from cogip.protobuf import PB_ActuatorState, PB_Pid, PB_PidEnum, PB_Pose, PB_State
+from . import logger
 from .pbcom import PBCom, pb_exception_handler
 from .pid import Pid
 from .sio_events import SioEvents
@@ -123,6 +124,7 @@ class Copilot:
 
         Send a reset message to all connected clients.
         """
+        logger.info("[CAN] Received reset")
         await self.pbcom.send_can_message(copilot_connected_uuid, None)
         await self.sio_events.emit("reset")
 
@@ -227,5 +229,6 @@ class Copilot:
 
         Forward info to the planner.
         """
+        logger.info("[CAN] Received pose reached")
         if self.sio_events.connected:
             await self.sio_events.emit("pose_reached")
