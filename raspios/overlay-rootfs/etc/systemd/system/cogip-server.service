@@ -12,6 +12,8 @@ ExecStartPre=/bin/sh -c 'rm -rf /dev/shm/*'
 ExecStart=uv run cogip-server
 RestartSec=5
 EnvironmentFile=/etc/environment
+StandardOutput=null
+StandardError=null
 
 [Install]
 WantedBy=multi-user.target

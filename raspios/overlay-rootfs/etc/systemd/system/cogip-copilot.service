@@ -13,6 +13,8 @@ WorkingDirectory=/opt
 ExecStart=uv run cogip-copilot
 RestartSec=5
 EnvironmentFile=/etc/environment
+StandardOutput=null
+StandardError=null
 
 [Install]
 WantedBy=multi-user.target
