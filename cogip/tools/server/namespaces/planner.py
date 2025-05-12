@@ -45,6 +45,7 @@ class PlannerNamespace(socketio.AsyncNamespace):
         Callback on pose start.
         Forward to pose to copilot.
         """
+        logger.info(f"[planner => copilot] Pose start: {pose}")
         await self.emit("pose_start", pose, namespace="/copilot")
 
     async def on_pose_order(self, sid, pose: dict[str, Any]):
@@ -52,6 +53,7 @@ class PlannerNamespace(socketio.AsyncNamespace):
         Callback on pose order.
         Forward to pose to copilot and dashboards.
         """
+        logger.info(f"[planner => copilot] Pose order: {pose}")
         await self.emit("pose_order", pose, namespace="/copilot")
         await self.emit("pose_order", (self.context.robot_id, pose), namespace="/dashboard")
 
@@ -105,24 +107,28 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         Callback on game_start message.
         """
+        logger.info("[planner => copilot] Game started.")
         await self.emit("game_start", namespace="/copilot")
 
     async def on_game_end(self, sid):
         """
         Callback on game_end message.
         """
+        logger.info("[planner => copilot] Game ended.")
         await self.emit("game_end", namespace="/copilot")
 
     async def on_robot_end(self, sid):
         """
         Callback on robot_end message.
         """
+        logger.info("[planner => copilot] Robot ended.")
         await self.emit("game_end", namespace="/copilot")
 
     async def on_game_reset(self, sid):
         """
         Callback on game_reset message.
         """
+        logger.info("[planner => copilot] Game reset.")
         await self.emit("game_reset", namespace="/copilot")
 
     async def on_score(self, sid, score: int):
@@ -135,6 +141,7 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         Callback on actuator_command message.
         """
+        logger.info(f"[planner => copilot] Actuator command: {data}")
         await self.emit("actuator_command", data, namespace="/copilot")
 
     async def on_start_video_record(self, sid):
@@ -153,12 +160,14 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         Callback on brake message.
         """
+        logger.info("[planner => copilot] Brake.")
         await self.emit("brake", namespace="/copilot")
 
     async def on_pami_reset(self, sid):
         """
         Callback on pami_reset message.
         """
+        logger.info("[planner => beacon] PAMI reset.")
         await self.emit("pami_reset", namespace="/beacon")
 
     async def on_pami_camp(self, sid, data):
@@ -177,4 +186,5 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         Callback on pami_play message.
         """
+        logger.info("[planner => beacon] PAMI play.")
         await self.emit("pami_play", namespace="/beacon")

@@ -63,6 +63,7 @@ class DashboardNamespace(socketio.AsyncNamespace):
             else:
                 split_ns = self.context.current_tool_menu.split("/")
                 namespace = split_ns.pop(0)
+                logger.info(f"[dashboard => {namespace}] Forwarding command: {cmd}")
                 await self.emit("command", cmd, namespace=f"/{namespace}")
 
     async def on_config_updated(self, sid, config: dict[str, Any]) -> None:
@@ -100,5 +101,6 @@ class DashboardNamespace(socketio.AsyncNamespace):
         """
         Callback on starter_changed message.
         """
+        logger.info(f"[dashboard => planner] Starter changed: {pushed}")
         await self.emit("starter_changed", pushed, namespace="/planner")
         await self.emit("starter_changed", (self.context.robot_id, pushed), namespace="/dashboard", skip_sid=[sid])

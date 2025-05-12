@@ -426,6 +426,7 @@ class Planner:
         try:
             while True:
                 func = await self.sio_receiver_queue.get()
+                logger.info(f"Planner: SIO Task received: {func}")
                 await func
                 self.sio_receiver_queue.task_done()
         except asyncio.CancelledError:
@@ -518,6 +519,7 @@ class Planner:
 
     @pose_order.setter
     def pose_order(self, new_pose: pose.Pose | None):
+        logger.info(f"Planner: set_pose_order({new_pose})")
         self._pose_order = new_pose
         if new_pose is None:
             self.shared_properties["pose_order"] = None
@@ -807,6 +809,7 @@ class Planner:
         """
         Play command from the menu.
         """
+        logger.info("Planner: cmd_play()")
         if self.game_context.playing:
             return
 
@@ -819,6 +822,7 @@ class Planner:
         """
         Stop command from the menu.
         """
+        logger.info("Planner: cmd_stop()")
         self.game_context.playing = False
         await self.sio_ns.emit("stop_video_record")
 
@@ -827,6 +831,7 @@ class Planner:
         Next command from the menu.
         Ignored if current pose is not reached for all robots.
         """
+        logger.info("Planner: cmd_next()")
         if self.game_context.playing:
             return
 
@@ -840,6 +845,7 @@ class Planner:
         """
         Reset command from the menu.
         """
+        logger.info("Planner: cmd_reset()")
         await self.reset()
         await self.sio_ns.emit("cmd_reset")
 
