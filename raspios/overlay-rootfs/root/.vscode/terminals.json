@@ -1,0 +1,29 @@
+{
+    "autorun": true,
+    "terminals": [
+        {
+            "name": "Server",
+            "command": "journalctl -fu cogip-server"
+        },
+        {
+            "name": "Planner",
+            "command": "journalctl -fu cogip-planner"
+        },
+        {
+            "name": "Copilot",
+            "command": "journalctl -fu cogip-copilot"
+        },
+        {
+            "name": "Detector",
+            "command": "journalctl -fu cogip-detector"
+        },
+        {
+            "name": "Dashboard",
+            "command": "journalctl -fu cogip-dashboard"
+        },
+        {
+            "name": "MCU",
+            "command": "journalctl -fu cogip-mcu-logger"
+        }
+    ]
+}

@@ -4,6 +4,7 @@ py.typed
 *.pyi
 *.egg-info
 .vscode
+!raspios/overlay-rootfs/root/.vscode
 dist
 tests
 *.tree.dot
