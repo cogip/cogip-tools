@@ -17,7 +17,7 @@ RUN apt-get update \
         i2c-tools libi2c-dev libserial-dev \
         cockpit dnsmasq iptables wait-for-it ifmetric can-utils \
         libinput-tools libegl1-mesa libgles2-mesa mesa-utils mesa-utils-bin \
-        weston
+        weston rsyslog
 
 # Configure locale, timezone and keyboard
 RUN rm -f /etc/localtime \
