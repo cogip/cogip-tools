@@ -12,15 +12,11 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/cogip/cpp/libraries/utils/include
     ${PROJECT_SOURCE_DIR}/cogip/cpp/libraries/shared_memory/include
-    # ${PROJECT_SOURCE_DIR}/cogip/cpp/libraries/models/include
-    # ${PROJECT_SOURCE_DIR}/cogip/cpp/libraries/obstacles/include
 )
 target_link_libraries(
     utils_cpp
     PUBLIC
     shared_memory_cpp
-    # models_cpp
-    # obstacles_cpp
 )
 
 # Generate library with source code and binding.
