@@ -566,7 +566,7 @@ class Planner:
             self.pose_order = pose_order
 
             if self.properties.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
-                await self.sio_ns.emit("pose_order", self.pose_order.pose.model_dump())
+                await self.sio_ns.emit("pose_order", self.pose_order.path_pose.model_dump())
 
     async def next_pose(self):
         """
