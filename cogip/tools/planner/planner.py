@@ -170,8 +170,9 @@ class Planner:
                 "robot_id": self.robot_id,
                 "exiting": False,
                 "avoidance_strategy": self.game_context.avoidance_strategy,
-                "pose_order": {},
-                "last_avoidance_pose_current": {},
+                "new_pose_order": None,
+                "pose_order": None,
+                "last_avoidance_pose_current": None,
                 "path_refresh_interval": path_refresh_interval,
                 "robot_width": robot_width,
                 "obstacle_radius": obstacle_radius,
@@ -375,6 +376,7 @@ class Planner:
         try:
             while True:
                 name, value = await asyncio.to_thread(self.sio_emitter_queue.get)
+                logger.info(f"Planner: Task SIO emitter: {name} {value}")
                 match name:
                     case "nop":
                         pass
@@ -400,7 +402,7 @@ class Planner:
                                     new_controller = ControllerEnum.QUADPID
                         await self.set_controller(new_controller)
                         if self.sio.connected:
-                            logger.info(f"Send pose order: {value[0]}")
+                            logger.info(f"Task SIO Emitter: Planner: Send pose order: {value[0]}")
                             await self.sio_ns.emit("pose_order", value[0])
                             pose_current = self.pose_current
                             await self.sio_ns.emit(
@@ -519,12 +521,13 @@ class Planner:
 
     @pose_order.setter
     def pose_order(self, new_pose: pose.Pose | None):
-        logger.info(f"Planner: set_pose_order({new_pose})")
+        logger.info(f"Planner: pose_order={new_pose.path_pose if new_pose else None}")
         self._pose_order = new_pose
         if new_pose is None:
+            self.shared_properties["new_pose_order"] = None
             self.shared_properties["pose_order"] = None
         else:
-            self.shared_properties["pose_order"] = new_pose.path_pose.model_dump(exclude_unset=True)
+            self.shared_properties["new_pose_order"] = new_pose.path_pose.model_dump(exclude_unset=True)
             self.shared_properties["last_avoidance_pose_current"] = None
 
     async def set_pose_reached(self):

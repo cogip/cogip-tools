@@ -53,6 +53,10 @@ def avoidance_process(
 
         avoidance_path = []
 
+        if new_pose_order := shared_properties["new_pose_order"]:
+            logger.info(f"Avoidance: New pose order received: {new_pose_order}")
+            shared_properties["pose_order"] = new_pose_order
+            shared_properties["new_pose_order"] = None
         pose_order = shared_properties["pose_order"]
         last_avoidance_pose_current = shared_properties["last_avoidance_pose_current"]
         if not pose_order:
@@ -195,8 +199,11 @@ def avoidance_process(
 
         last_emitted_pose_order = new_pose_order.model_copy()
 
-        logger.info("Avoidance: Update path")
-        queue_sio.put(("path", [pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
+        if shared_properties["new_pose_order"]:
+            logger.info("Avoidance: ignore path update (new pose order has been received)")
+        else:
+            logger.info("Avoidance: Update path")
+            queue_sio.put(("path", [pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
 
     # Remove reference to shared memory data to trigger garbage collection
     shared_table_limits = None
