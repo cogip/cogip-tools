@@ -137,6 +137,13 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         await self.emit("score", score, namespace="/dashboard")
 
+    async def on_start_countdown(self, sid, countdown: int):
+        """
+        Callback on start_countdown message.
+        """
+        logger.info(f"[planner => beacon] Start countdown: {countdown}.")
+        await self.emit("start_countdown", countdown, namespace="/beacon")
+
     async def on_actuator_command(self, sid, data):
         """
         Callback on actuator_command message.
