@@ -813,6 +813,8 @@ class Planner:
         if self.game_context.playing:
             return
 
+        await self.sio_ns.emit("start_countdown", self.game_context.game_duration)
+
         self.game_context.countdown = self.game_context.game_duration
         self.game_context.playing = True
         await self.sio_ns.emit("start_video_record")

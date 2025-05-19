@@ -189,3 +189,8 @@ class Robot:
                     continue
                 if robot.sio.connected:
                     await robot.sio.emit("command", "play", namespace="/beacon")
+
+        @self.sio.event(namespace="/beacon")
+        async def start_countdown(countdown: int):
+            logger.info(f"Start countdown: {countdown}")
+            await self.server.sio.emit("start_countdown", countdown, namespace="/dashboard")
