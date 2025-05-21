@@ -142,5 +142,5 @@ function sendSocketUpdate(event, name, value, namespace) {
     sio_event: event,
     value: +value,
   };
-  socket.emit(event, socketUpdate);
+  socket.emit("config_updated", socketUpdate);
 }
