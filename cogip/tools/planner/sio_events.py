@@ -113,6 +113,13 @@ class SioEvents(socketio.AsyncClientNamespace):
         logger.info("[SIO] Pose reached.")
         await self.planner.sio_receiver_queue.put(self.planner.set_pose_reached())
 
+    async def on_blocked(self):
+        """
+        Callback on blocked message.
+        """
+        logger.info("[SIO] Blocked.")
+        await self.planner.sio_receiver_queue.put(self.planner.blocked())
+
     async def on_command(self, cmd: str):
         """
         Callback on command message from dashboard.

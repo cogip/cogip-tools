@@ -55,6 +55,13 @@ class CopilotNamespace(socketio.AsyncNamespace):
         logger.info("[copilot => planner] Pose reached.")
         await self.emit("pose_reached", namespace="/planner")
 
+    async def on_blocked(self, sid) -> None:
+        """
+        Callback on blocked message.
+        """
+        logger.info("[copilot => planner] Blocked.")
+        await self.emit("blocked", namespace="/planner")
+
     async def on_menu(self, sid, menu):
         """
         Callback on menu event.
