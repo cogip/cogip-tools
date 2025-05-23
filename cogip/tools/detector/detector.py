@@ -116,7 +116,7 @@ class Detector:
         if web:
             self.web_thread = threading.Thread(
                 target=start_web,
-                args=(self, 8100 + robot_id),
+                args=(self, 8110 + robot_id),
                 name="Web thread",
             )
 
@@ -294,10 +294,12 @@ class Detector:
             if self.robot_id == 1:
                 self.lidar = YDLidar(self.shared_lidar_data)
                 self.lidar.set_scan_frequency(12)
-                self.lidar.set_invalid_angle_range(0, 0)  # No excluded angle range
+                # No excluded angle range
+                self.lidar.set_invalid_angle_range(360, 0)
             else:
                 self.lidar = LDLidarDriver(self.shared_lidar_data)
-            self.lidar.set_invalid_angle_range(90, 270)  # Skip rear-facing Lidar data because Lidar is mounted in PAMI
+                # Skip rear-facing Lidar data because Lidar is mounted in PAMI
+                self.lidar.set_invalid_angle_range(90, 270)
             self.lidar.set_data_write_lock(self.shared_lidar_data_lock)
             self.lidar.set_min_distance(self.properties.min_distance)
             self.lidar.set_max_distance(self.properties.max_distance)
