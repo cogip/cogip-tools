@@ -23,6 +23,7 @@ pid_request_uuid: int = 0x1005
 pid_uuid: int = 0x1006
 brake_uuid: int = 0x1007
 controller_uuid: int = 0x1008
+blocked_uuid: int = 0x1009
 # Actuators: 0x2000 - 0x2FFF
 actuators_thread_start_uuid: int = 0x2001
 actuators_thread_stop_uuid: int = 0x2002
@@ -78,6 +79,7 @@ class Copilot:
             pose_reached_uuid: self.handle_pose_reached,
             actuator_state_uuid: self.handle_actuator_state,
             pid_uuid: self.handle_pid,
+            blocked_uuid: self.handle_blocked,
         }
 
         self.pbcom = PBCom(can_channel, can_bitrate, canfd_data_bitrate, pb_message_handlers)
@@ -232,3 +234,13 @@ class Copilot:
         logger.info("[CAN] Received pose reached")
         if self.sio_events.connected:
             await self.sio_events.emit("pose_reached")
+
+    async def handle_blocked(self) -> None:
+        """
+        Handle blocked message.
+
+        Forward info to the planner.
+        """
+        logger.info("[CAN] Received blocked")
+        if self.sio_events.connected:
+            await self.sio_events.emit("blocked")
