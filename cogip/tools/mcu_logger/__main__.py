@@ -32,9 +32,8 @@ def main_opt(
 
     try:
         while True:
-            if ser.in_waiting > 0:
-                line = ser.readline().decode("utf-8").strip()
-                logger.info(line)
+            line = ser.readline().decode("utf-8").strip()
+            logger.info(line)
     except KeyboardInterrupt:
         return
 
