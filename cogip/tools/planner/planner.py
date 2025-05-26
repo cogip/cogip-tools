@@ -280,7 +280,6 @@ class Planner:
         self.create_shared_memory()
         self.shared_properties["exiting"] = False
         await self.soft_reset()
-        await self.set_controller(self.game_context.default_controller, True)
         self.sio_receiver_task = asyncio.create_task(
             self.task_sio_receiver(),
             name="Robot: Task SIO Receiver",
@@ -360,6 +359,7 @@ class Planner:
         Only reset context and actions.
         """
         self.game_context.reset()
+        await self.set_controller(self.game_context.default_controller, True)
         self.shared_table_limits[0] = self.game_context.table.x_min
         self.shared_table_limits[1] = self.game_context.table.x_max
         self.shared_table_limits[2] = self.game_context.table.y_min
@@ -972,8 +972,7 @@ class Planner:
                 self.shared_properties["avoidance_strategy"] = new_strategy
                 logger.info(f"Wizard: New avoidance strategy: {self.game_context.avoidance_strategy.name}")
             case "Choose Start Position":
-                start_position = StartPosition[value]
-                self.start_position = start_position
+                self.start_position = StartPosition[value]
                 await self.soft_reset()
             case "Choose Table":
                 new_table = TableEnum[value]
