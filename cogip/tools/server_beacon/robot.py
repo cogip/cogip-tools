@@ -7,7 +7,6 @@ import socketio.exceptions
 from cogip import logger
 from cogip.tools.planner import actions
 from cogip.tools.planner.positions import StartPosition
-from cogip.tools.planner.table import TableEnum
 
 if TYPE_CHECKING:
     from .server import Server
@@ -109,6 +108,8 @@ class Robot:
                             strategy = actions.Strategy.Pami3
                         case 4:
                             strategy = actions.Strategy.Pami4
+                        case 5:
+                            strategy = actions.Strategy.Pami5
 
                     if strategy:
                         await robot.sio.emit(
@@ -145,22 +146,15 @@ class Robot:
                         namespace="/beacon",
                     )
                     position: StartPosition | None = None
-                    if TableEnum[table] == TableEnum.Game:
-                        match robot_id:
-                            case 2:
-                                position = StartPosition.PAMI2
-                            case 3:
-                                position = StartPosition.PAMI3
-                            case 4:
-                                position = StartPosition.PAMI4
-                    else:
-                        match robot_id:
-                            case 2:
-                                position = StartPosition.PAMI2_TRAINING
-                            case 3:
-                                position = StartPosition.PAMI3_TRAINING
-                            case 4:
-                                position = StartPosition.PAMI4_TRAINING
+                    match robot_id:
+                        case 2:
+                            position = StartPosition.PAMI2
+                        case 3:
+                            position = StartPosition.PAMI3
+                        case 4:
+                            position = StartPosition.PAMI4
+                        case 5:
+                            position = StartPosition.PAMI5
 
                     if position:
                         await robot.sio.emit(

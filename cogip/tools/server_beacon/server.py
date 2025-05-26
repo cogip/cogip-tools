@@ -111,6 +111,8 @@ class Server:
                         position = StartPosition.PAMI3
                     case 4:
                         position = StartPosition.PAMI4
+                    case 5:
+                        position = StartPosition.PAMI5
                 if position:
                     await robot.sio.emit(
                         "wizard",

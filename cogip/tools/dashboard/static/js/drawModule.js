@@ -12,7 +12,7 @@ let ratioX = null, ratioY = null,  coordX = 0, coordY = 0;
 
 // Preload robot and order images
 (function loadImages() {
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 5; i++) {
     robotImages[i] = new Image();
     orderImages[i] = new Image();
     robotImages[i].src = `static/img/robot${i}.png`;
