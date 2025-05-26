@@ -20,7 +20,7 @@ def avoidance_process(
     queue_sio: Queue,
 ):
     logger = Logger("cogip-avoidance")
-    if os.getenv("PLANNER_DEBUG") not in [None, False, "False", "false", 0, "0", "no", "No"]:
+    if os.getenv("AVOIDANCE_DEBUG") not in [None, False, "False", "false", 0, "0", "no", "No"]:
         logger.setLevel(logging.DEBUG)
 
     logger.info("Avoidance: process started")
