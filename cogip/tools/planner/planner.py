@@ -12,7 +12,7 @@ from unittest.mock import Mock
 
 import socketio
 from colorzero import Color
-from gpiozero import RGBLED, Button
+from gpiozero import RGBLED, Button, OutputDevice
 from gpiozero.pins.mock import MockFactory
 from luma.core.interface.serial import i2c
 from luma.core.render import canvas
@@ -65,6 +65,7 @@ class Planner:
         led_red_pin: int | None,
         led_green_pin: int | None,
         led_blue_pin: int | None,
+        flag_motor_pin: int | None,
         oled_bus: int | None,
         oled_address: int | None,
         bypass_detector: bool,
@@ -92,6 +93,7 @@ class Planner:
             led_red_pin: GPIO pin connected to the red LED
             led_green_pin: GPIO pin connected to the green LED
             led_blue_pin: GPIO pin connected to the blue LED
+            flag_motor_pin: GPIO pin connected to the flag motor
             oled_bus: PAMI OLED display i2c bus
             oled_address: PAMI OLED display i2c address
             bypass_detector: Use perfect obstacles from monitor instead of detected obstacles by Lidar
@@ -215,6 +217,11 @@ class Planner:
             )
         else:
             self.led = Mock()
+
+        if flag_motor_pin:
+            self.flag_motor = OutputDevice(flag_motor_pin)
+        else:
+            self.flag_motor = Mock()
 
         self.starter.when_pressed = partial(self.sio_emitter_queue.put, ("starter_changed", True))
         self.starter.when_released = partial(self.sio_emitter_queue.put, ("starter_changed", False))
@@ -383,6 +390,7 @@ class Planner:
         self.shared_table_limits[1] = self.game_context.table.x_max
         self.shared_table_limits[2] = self.game_context.table.y_min
         self.shared_table_limits[3] = self.game_context.table.y_max
+        self.flag_motor.off()
         self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
         available_start_poses = self.game_context.get_available_start_poses()
         if available_start_poses and self.start_position not in available_start_poses:
@@ -508,6 +516,7 @@ class Planner:
         self.game_context.playing = False
         await self.sio_ns.emit("game_end")
         await self.sio_ns.emit("score", self.game_context.score)
+        self.flag_motor.on()
 
     async def starter_changed(self, pushed: bool):
         if not self.virtual:

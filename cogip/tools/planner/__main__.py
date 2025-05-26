@@ -138,6 +138,15 @@ def main_opt(
             envvar="PLANNER_LED_BLUE_PIN",
         ),
     ] = None,
+    flag_motor_pin: Annotated[
+        Optional[int],  # noqa
+        typer.Option(
+            "-fm",
+            "--flag-motor-pin",
+            help="GPIO pin connected to flag motor",
+            envvar="PLANNER_FLAG_MOTOR_PIN",
+        ),
+    ] = None,
     oled_bus: Annotated[
         Optional[int],  # noqa
         typer.Option(
@@ -250,6 +259,7 @@ def main_opt(
         led_red_pin,
         led_green_pin,
         led_blue_pin,
+        flag_motor_pin,
         oled_bus,
         oled_address,
         bypass_detector,

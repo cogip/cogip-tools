@@ -191,6 +191,7 @@ case ${ROBOT_ID} in
         sudo sed -i "s/# PLANNER_LED_RED_PIN=/PLANNER_LED_RED_PIN=${PAMI_LED_RED_PIN}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_LED_GREEN_PIN=/PLANNER_LED_GREEN_PIN=${PAMI_LED_GREEN_PIN}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_LED_BLUE_PIN=/PLANNER_LED_BLUE_PIN=${PAMI_LED_BLUE_PIN}/" ${MOUNT_DIR}/etc/environment
+        sudo sed -i "s/# PLANNER_FLAG_MOTOR_PIN=/PLANNER_FLAG_MOTOR_PIN=${PAMI_FLAG_MOTOR_PIN}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_OLED_BUS=/PLANNER_OLED_BUS=${PAMI_OLED_BUS}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_OLED_ADDRESS=/PLANNER_OLED_ADDRESS=${PAMI_OLED_ADDRESS}/" ${MOUNT_DIR}/etc/environment
         sudo rm -f ${MOUNT_DIR}/root/.bash_profile
