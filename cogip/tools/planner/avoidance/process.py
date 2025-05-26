@@ -169,10 +169,15 @@ def avoidance_process(
             logger.debug("Avoidance: len(path) == 1")
             continue
 
+        if len(path) > 2:
+            # Intermediate pose
+            path[1].bypass_final_orientation = True
+            path[1].is_intermediate = True
+
         if len(path) >= 2 and last_emitted_pose_order:
             dist_xy = math.dist((last_emitted_pose_order.x, last_emitted_pose_order.y), (path[1].x, path[1].y))
-            dist_angle = abs(path[1].O - last_emitted_pose_order.O)
             if not path[1].bypass_final_orientation:
+                dist_angle = abs(path[1].O - last_emitted_pose_order.O)
                 if dist_xy < 20 and dist_angle < 5:
                     logger.debug(
                         f"Avoidance: Skip path update (new pose order too close: {dist_xy:0.2f}/{dist_angle:0.2f})"
@@ -183,13 +188,6 @@ def avoidance_process(
                     logger.debug(f"Avoidance: Skip path update (new pose order too close: {dist_xy:0.2f})")
                     continue
 
-        if len(path) > 2:
-            # Intermediate pose
-            next_delta_x = path[2].x - path[1].x
-            next_delta_y = path[2].y - path[1].y
-
-            path[1].O = math.degrees(math.atan2(next_delta_y, next_delta_x))  # noqa
-
         avoidance_path = path[1:]
         new_pose_order = path[1]
 
@@ -197,12 +195,11 @@ def avoidance_process(
             logger.debug("Avoidance: ignore path update (last_emitted_pose_order == new_pose_order)")
             continue
 
-        last_emitted_pose_order = new_pose_order.model_copy()
-
         if shared_properties["new_pose_order"]:
             logger.info("Avoidance: ignore path update (new pose order has been received)")
         else:
             logger.info("Avoidance: Update path")
+            last_emitted_pose_order = new_pose_order.model_copy()
             queue_sio.put(("path", [pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
 
     # Remove reference to shared memory data to trigger garbage collection

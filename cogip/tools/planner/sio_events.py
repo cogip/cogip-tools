@@ -113,6 +113,13 @@ class SioEvents(socketio.AsyncClientNamespace):
         logger.info("[SIO] Pose reached.")
         await self.planner.sio_receiver_queue.put(self.planner.set_pose_reached())
 
+    async def on_intermediate_pose_reached(self):
+        """
+        Callback on intermediate pose reached message.
+        """
+        logger.info("[SIO] Intermediate pose reached.")
+        await self.planner.sio_receiver_queue.put(self.planner.set_intermediate_pose_reached())
+
     async def on_blocked(self):
         """
         Callback on blocked message.

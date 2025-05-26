@@ -24,6 +24,7 @@ pid_uuid: int = 0x1006
 brake_uuid: int = 0x1007
 controller_uuid: int = 0x1008
 blocked_uuid: int = 0x1009
+intermediate_pose_reached_uuid: int = 0x100A
 # Actuators: 0x2000 - 0x2FFF
 actuators_thread_start_uuid: int = 0x2001
 actuators_thread_stop_uuid: int = 0x2002
@@ -77,6 +78,7 @@ class Copilot:
             pose_order_uuid: self.handle_message_pose,
             state_uuid: self.handle_message_state,
             pose_reached_uuid: self.handle_pose_reached,
+            intermediate_pose_reached_uuid: self.handle_intermediate_pose_reached,
             actuator_state_uuid: self.handle_actuator_state,
             pid_uuid: self.handle_pid,
             blocked_uuid: self.handle_blocked,
@@ -234,6 +236,16 @@ class Copilot:
         logger.info("[CAN] Received pose reached")
         if self.sio_events.connected:
             await self.sio_events.emit("pose_reached")
+
+    async def handle_intermediate_pose_reached(self) -> None:
+        """
+        Handle intermediate pose reached message.
+
+        Forward info to the planner.
+        """
+        logger.info("[CAN] Received intermediate pose reached")
+        if self.sio_events.connected:
+            await self.sio_events.emit("intermediate_pose_reached")
 
     async def handle_blocked(self) -> None:
         """

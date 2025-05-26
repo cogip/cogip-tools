@@ -120,6 +120,7 @@ class PathPose(Pose):
         bypass_anti_blocking: send pose_reached if robot is blocked
         timeout_ms: max time is milliseconds to reach the pose, the robot stops if timeout is reached, 0 for no timeout
         bypass_final_orientation: do not set orientation pose order
+        is_intermediate: whether this pose is an intermediate pose in a path
     """
 
     max_speed_linear: int = 66
@@ -128,6 +129,7 @@ class PathPose(Pose):
     bypass_anti_blocking: bool = False
     timeout_ms: int = 0
     bypass_final_orientation: bool = False
+    is_intermediate: bool = False
 
     @property
     def pose(self) -> Pose:
@@ -149,6 +151,7 @@ class PathPose(Pose):
         pb_path_pose.bypass_anti_blocking = self.bypass_anti_blocking
         pb_path_pose.timeout_ms = self.timeout_ms
         pb_path_pose.bypass_final_orientation = self.bypass_final_orientation
+        pb_path_pose.is_intermediate = self.is_intermediate
 
 
 class DynObstacleRect(BaseModel):

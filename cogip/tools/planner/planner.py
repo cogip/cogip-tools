@@ -517,6 +517,7 @@ class Planner:
         await self.sio_ns.emit("game_end")
         await self.sio_ns.emit("score", self.game_context.score)
         self.flag_motor.on()
+        self.pose_order = None
 
     async def starter_changed(self, pushed: bool):
         if not self.virtual:
@@ -555,19 +556,13 @@ class Planner:
             self.shared_properties["pose_order"] = None
         else:
             self.shared_properties["new_pose_order"] = new_pose.path_pose.model_dump(exclude_unset=True)
-            self.shared_properties["last_avoidance_pose_current"] = None
+        self.shared_properties["last_avoidance_pose_current"] = None
 
     async def set_pose_reached(self):
         """
         Set pose reached for a robot.
         """
         logger.info("Planner: set_pose_reached()")
-
-        self.shared_properties["last_avoidance_pose_current"] = None
-
-        if len(self.avoidance_path) > 1:
-            # The pose reached is intermediate, do nothing.
-            return
 
         # Set pose reached
         self.avoidance_path = []
@@ -586,6 +581,15 @@ class Planner:
             return
 
         await self.next_pose()
+
+    async def set_intermediate_pose_reached(self):
+        """
+        Set pose reached for a robot.
+        """
+        logger.info("Planner: set_intermediate_pose_reached()")
+
+        # The pose reached is intermediate, just force path recompute.
+        self.shared_properties["last_avoidance_pose_current"] = None
 
     async def next_pose_in_action(self):
         if self.action and len(self.action.poses) > 0:
