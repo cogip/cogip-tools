@@ -3,6 +3,7 @@ import platform
 import re
 import time
 import traceback
+from datetime import UTC, datetime
 from functools import partial
 from multiprocessing import Manager, Process
 from multiprocessing.managers import DictProxy
@@ -175,6 +176,8 @@ class Planner:
         self.countdown_task: asyncio.Task | None = None
         self.scservos = SCServos(self.scservos_port, scservos_baud_rate)
         self.pami_event = asyncio.Event()
+        self.last_starter_event_timestamp: datetime | None = None
+        self.countdown_start_timestamp: datetime = datetime.now(UTC)
 
         self.shared_properties: DictProxy = self.process_manager.dict(
             {
@@ -472,12 +475,13 @@ class Planner:
     async def countdown_loop(self):
         logger.info("Planner: Task Countdown started")
         try:
-            last_now = time.time()
             last_countdown = self.game_context.countdown
             while True:
                 await asyncio.sleep(0.2)
-                now = time.time()
-                self.game_context.countdown -= now - last_now
+                now = datetime.now(UTC)
+                self.game_context.countdown = (
+                    self.game_context.game_duration - (now - self.countdown_start_timestamp).total_seconds()
+                )
                 if self.game_context.playing:
                     logger.info(f"Planner: countdown = {self.game_context.countdown: 3.2f}")
                 if (
@@ -501,7 +505,6 @@ class Planner:
                     await self.final_action()
                 if self.game_context.countdown < -5 and last_countdown > -5:
                     await self.sio_ns.emit("stop_video_record")
-                last_now = now
                 last_countdown = self.game_context.countdown
         except asyncio.CancelledError:
             logger.info("Planner: Task Countdown cancelled")
@@ -538,6 +541,7 @@ class Planner:
         self.pose_order = None
 
     async def starter_changed(self, pushed: bool):
+        self.last_starter_event_timestamp = datetime.now(UTC)
         if not self.virtual:
             await self.sio_ns.emit("starter_changed", pushed)
 
@@ -794,7 +798,7 @@ class Planner:
             logger.warning(f"Planner: OLED display update loop: Unknown exception {exc}")
             traceback.print_exc()
 
-    async def command(self, cmd: str):
+    async def command(self, cmd: str, *args):
         """
         Execute a command from the menu.
         """
@@ -837,7 +841,7 @@ class Planner:
             logger.warning(f"Unknown command: {cmd}")
             return
 
-        await cmd_func()
+        await cmd_func(*args)
 
     def update_config(self, config: dict[str, Any]) -> None:
         """
@@ -859,19 +863,27 @@ class Planner:
         """
         self.scservos.set(SCServoEnum[servo["name"]], servo["value"])
 
-    async def cmd_play(self):
+    async def cmd_play(self, timestamp: str | None = None):
         """
         Play command from the menu.
         """
-        logger.info("Planner: cmd_play()")
+        if timestamp:
+            self.countdown_start_timestamp = datetime.fromisoformat(timestamp)
+        else:
+            self.countdown_start_timestamp = datetime.now(UTC)
+
+        logger.info(f"Planner: cmd_play({self.countdown_start_timestamp})")
         if self.game_context.playing:
             return
-
-        await self.sio_ns.emit("start_countdown", self.game_context.game_duration)
 
         self.game_context.countdown = self.game_context.game_duration
         self.game_context.playing = True
         self.led.color = Color("blue")
+
+        await self.sio_ns.emit(
+            "start_countdown",
+            (self.robot_id, self.game_context.game_duration, self.countdown_start_timestamp.isoformat(), "deepskyblue"),
+        )
 
         await self.sio_ns.emit("start_video_record")
         await self.sio_receiver_queue.put(self.set_pose_reached())

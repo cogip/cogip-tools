@@ -137,12 +137,12 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         await self.emit("score", score, namespace="/dashboard")
 
-    async def on_start_countdown(self, sid, countdown: int):
+    async def on_start_countdown(self, sid, robot_id: int, countdown: int, timestamp: str, color: str | None):
         """
         Callback on start_countdown message.
         """
         logger.info(f"[planner => beacon] Start countdown: {countdown}.")
-        await self.emit("start_countdown", countdown, namespace="/beacon")
+        await self.emit("start_countdown", (robot_id, countdown, timestamp, color), namespace="/beacon")
 
     async def on_actuator_command(self, sid, data):
         """
@@ -196,9 +196,9 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         await self.emit("pami_table", data, namespace="/beacon")
 
-    async def on_pami_play(self, sid):
+    async def on_pami_play(self, sid, timestamp: str):
         """
         Callback on pami_play message.
         """
         logger.info("[planner => beacon] PAMI play.")
-        await self.emit("pami_play", namespace="/beacon")
+        await self.emit("pami_play", timestamp, namespace="/beacon")

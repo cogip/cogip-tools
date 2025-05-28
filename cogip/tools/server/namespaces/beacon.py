@@ -35,12 +35,12 @@ class BeaconNamespace(socketio.AsyncNamespace):
         logger.info("[beacon => planner] reset.")
         await self.emit("reset", namespace="/planner")
 
-    async def on_command(self, sid, cmd):
+    async def on_command(self, sid, cmd, *args):
         """
         Callback on command.
         """
         logger.info(f"[beacon => planner] Command: {cmd}")
-        await self.emit("command", cmd, namespace="/planner")
+        await self.emit("command", (cmd, *args), namespace="/planner")
 
     async def on_wizard(self, sid, message):
         """

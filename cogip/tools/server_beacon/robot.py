@@ -183,14 +183,18 @@ class Robot:
                     )
 
         @self.sio.event(namespace="/beacon")
-        async def pami_play():
+        async def pami_play(timestamp: str):
             for robot_id, robot in self.server.robots.items():
                 if robot_id == 1:
                     continue
                 if robot.sio.connected:
-                    await robot.sio.emit("command", "play", namespace="/beacon")
+                    await robot.sio.emit("command", ("play", timestamp), namespace="/beacon")
 
         @self.sio.event(namespace="/beacon")
-        async def start_countdown(countdown: int):
+        async def start_countdown(robot_id: int, countdown: int, timestamp: str, color: str | None = None):
             logger.info(f"Start countdown: {countdown}")
-            await self.server.sio.emit("start_countdown", countdown, namespace="/dashboard")
+            await self.server.sio.emit(
+                "start_countdown",
+                (robot_id, countdown, timestamp, color),
+                namespace="/dashboard",
+            )

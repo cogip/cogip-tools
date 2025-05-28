@@ -131,12 +131,12 @@ class SioEvents(socketio.AsyncClientNamespace):
         logger.info("[SIO] Blocked.")
         await self.planner.sio_receiver_queue.put(self.planner.blocked())
 
-    async def on_command(self, cmd: str):
+    async def on_command(self, cmd: str, *args):
         """
         Callback on command message from dashboard.
         """
         logger.info(f"[SIO] Command: {cmd}")
-        await self.planner.command(cmd)
+        await self.planner.command(cmd, *args)
 
     async def on_config_updated(self, config: dict[str, Any]):
         """

@@ -230,5 +230,5 @@ class GameWizard:
         self.game_context.playing = False
         await self.planner.soft_reset()
         await self.planner.sio_ns.emit("game_start")
-        await self.planner.sio_ns.emit("pami_play")
-        await self.planner.cmd_play()
+        await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
+        await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())
