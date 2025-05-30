@@ -301,7 +301,7 @@ class Detector:
             else:
                 self.lidar = LDLidarDriver(self.shared_lidar_data)
                 # Skip rear-facing Lidar data because Lidar is mounted in PAMI
-                self.lidar.set_invalid_angle_range(90, 270)
+                self.lidar.set_invalid_angle_range(30, 330)
             self.lidar.set_data_write_lock(self.shared_lidar_data_lock)
             self.lidar.set_min_distance(self.properties.min_distance)
             self.lidar.set_max_distance(self.properties.max_distance)
