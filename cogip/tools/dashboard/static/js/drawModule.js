@@ -50,6 +50,7 @@ export function resizeCanvas() {
   const footerHeight = getFullHeight("footer", false);
   const navHeight = getFullHeight("flex-wrap", true);
   const menuWidth = cacheElement("#menu").offsetWidth;
+  const sidebarWidth = cacheElement("#sidebar").offsetWidth + 50;
   const canvas = cacheElement("#board");
   const menuHeight = cacheElement("#menu").offsetHeight;
 
@@ -62,7 +63,6 @@ export function resizeCanvas() {
   const imgRatio = 2/3;
   const adjustedHeight = Math.min(canvas.height, canvas.width * imgRatio);
   const adjustedWidth = adjustedHeight * (3 / 2);
-
   const context = canvas.getContext("2d");
   context.canvas.width = adjustedWidth;
   context.canvas.height = adjustedHeight;

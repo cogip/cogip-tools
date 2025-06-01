@@ -70,6 +70,14 @@
             <img src="{{ url_for('static', path='img/camera.svg') }}" class="w-full h-full" />
           </button>
           {% endif %}
+
+          {% if robot_id == 0 %}
+          <button
+            class="relative w-14 h-14 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70"
+            id="buttonCoundownModal" type="button" onclick="modalCountdown();">
+            <img src="{{ url_for('static', path='img/countdown.svg') }}" class="w-full h-full" />
+          </button>
+          {% endif %}
         </div>
       </div>
 
@@ -167,9 +175,30 @@
           <button type="button" class="text-grey-color text-2xl leading-none hover:text-gray-400" aria-label="Close"
             onclick="closeModal('countdownModal')">&times;</button>
         </div>
-        <div class="flex h-full items-center justify-center align-middle">
-          <div class="align-middle text-grey-color text-1500p">
-            <p class="m-auto" id="displayCountdown"></p>
+        <div class="flex h-full items-center  align-left">
+          <div class="align-left text-grey-color text-350p">
+            <table>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 1</td>
+                <td class="border border-gray-300 w-64 px-4" id="displayCountdown_1"></td>
+              </tr>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 2</td>
+                <td class="border border-gray-300 w-64 px-4"  id="displayCountdown_2"></td>
+              </tr>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 3</td>
+                <td class="border border-gray-300 w-64 px-4"  id="displayCountdown_3"></td>
+              </tr>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 4</td>
+                <td class="border border-gray-300 w-64 px-4"  id="displayCountdown_4"></td>
+              </tr>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 5</td>
+                <td class="border border-gray-300 w-64 px-4"  id="displayCountdown_5"></td>
+              </tr>
+            </table>
           </div>
         </div>
       </div>
@@ -261,7 +290,8 @@
           socket.on("close_score", function () {
             const scoreModal = document.getElementById("scoreModal");
             if (scoreModal) {
-              scoreModal.setAttribute("style", "display: none;");
+              scoreModal.classList.remove("flex");
+              scoreModal.classList.add("hidden");
             }
           });
         }).catch((err) => {
@@ -270,15 +300,16 @@
       } else {
 
         import("../static/js/countdownModule.js").then((countdownModule) => {
-          socket.on("start_countdown", function (countdown) {
+          socket.on("start_countdown", function (robot_id, countdown, start, color=null) {
             if (countdownModule.openCountdownModal) {
-              countdownModule.openCountdownModal(countdown);
+              countdownModule.openCountdownModal(robot_id, countdown, start, color);
             }
           });
           socket.on("close_countdown", function () {
             const countdownModal = document.getElementById("countdownModal");
             if (countdownModal) {
-              countdownModal.setAttribute("style", "display: none;");
+              countdownModal.classList.remove("flex");
+              countdownModal.classList.add("hidden");
             }
           });
         }).catch((err) => {

@@ -35,7 +35,7 @@ window.modalCamera = function () {
 window.closeModal = function (modalId) {
   const modal = document.getElementById(modalId);
   modal.classList.add("hidden");
-  scoreModal.classList.remove("flex"); // Consider using class manipulation for consistency
+  modal.classList.remove("flex"); // Consider using class manipulation for consistency
 
 
   // Reset streaming only if it exists
