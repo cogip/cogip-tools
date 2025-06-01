@@ -95,7 +95,7 @@ export function onMenu(menu, type, socket) {
 
   // Create the container for the buttons
   const buttonContainer = document.createElement("div");
-  buttonContainer.classList.add("h-full", "overflow-y-auto", "pt-2.5", "pl-2.5");
+  buttonContainer.classList.add("h-full", "overflow-y-auto", "pt-2", "px-2");
 
   // Separate "Exit Menu" from other entries
   const exitMenuEntry = menu.entries.find(
