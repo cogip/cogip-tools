@@ -24,7 +24,8 @@ def avoidance_process(
         logger.setLevel(logging.DEBUG)
 
     logger.info("Avoidance: process started")
-    shared_memory = SharedMemory(f"cogip_{shared_properties["robot_id"]}")
+    robot_id = shared_properties["robot_id"]
+    shared_memory = SharedMemory(f"cogip_{robot_id}")
     shared_pose_current_buffer = shared_memory.get_pose_current_buffer()
     shared_pose_current_lock = shared_memory.get_lock(LockName.PoseCurrent)
     shared_circle_obstacles = shared_memory.get_circle_obstacles()
@@ -126,7 +127,10 @@ def avoidance_process(
             # Path is recomputed only if the pose order is reachable or an obstacle prevents
             # to reach next path pose.
             if (
-                (not avoidance.check_recompute(pose_current, pose_order) and last_emitted_pose_order != pose_order)
+                (
+                    (not avoidance.check_recompute(pose_current, pose_order) and robot_id == 1)
+                    and last_emitted_pose_order != pose_order
+                )
                 or last_emitted_pose_order is None
                 or avoidance.check_recompute(pose_current, last_emitted_pose_order)
             ):
