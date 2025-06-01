@@ -11,6 +11,28 @@ if TYPE_CHECKING:
     from cogip.tools.planner.planner import Planner
 
 
+async def actuators_init(planner: "Planner"):
+    """
+    Send actuators initialization command to the firmware.
+    """
+    await arm_right_front(planner)
+    await arm_left_front(planner)
+    await magnet_side_right_in(planner)
+    await magnet_center_right_in(planner)
+    await magnet_center_left_in(planner)
+    await magnet_side_left_in(planner)
+    await arms_close(planner)
+
+    # Right arm first
+    await arm_grip_right_close(planner)
+    await asyncio.sleep(0.2)
+
+    # Left arm
+    await arm_grip_left_close(planner)
+
+    await planner.sio_ns.emit("actuator_init")
+
+
 # Positional Motors
 async def positional_motor_command(
     planner: "Planner",

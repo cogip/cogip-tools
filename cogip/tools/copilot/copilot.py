@@ -30,6 +30,7 @@ actuators_thread_start_uuid: int = 0x2001
 actuators_thread_stop_uuid: int = 0x2002
 actuator_state_uuid: int = 0x2003
 actuator_command_uuid: int = 0x2004
+actuator_init_uuid: int = 0x2005
 # Service: 0x3000 - 0x3FFF
 reset_uuid: int = 0x3001
 copilot_connected_uuid: int = 0x3002
