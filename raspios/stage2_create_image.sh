@@ -178,6 +178,10 @@ sudo ln -sf /run/systemd/resolve/resolv.conf ${MOUNT_DIR}/etc/resolv.conf
 sudo rm -f ${MOUNT_DIR}/.dockerenv
 sudo rm -f ${MOUNT_DIR}/etc/sshd_config.d/rename_user.conf
 
+if [[ "${ROBOT_ID}" -gt 0 && "${PROFILE}" == "cup" ]]; then
+    sudo mv -f "${MOUNT_DIR}/etc/systemd/timesyncd-cup.conf" "${MOUNT_DIR}/etc/systemd/timesyncd.conf"
+fi
+
 case ${ROBOT_ID} in
     0) # Beacon
         sudo sed -i "s/IP_ADDRESS/${IP_ADDRESS_ETH0}/" ${MOUNT_DIR}/etc/dnsmasq.conf
