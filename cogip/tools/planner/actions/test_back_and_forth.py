@@ -16,7 +16,7 @@ class BackAndForthAction(Action):
     """
 
     def __init__(self, planner: "Planner", actions: Actions):
-        super().__init__("BackAnForth action", planner, actions)
+        super().__init__("BackAndForth action", planner, actions)
         self.before_action_func = self.compute_poses
 
     async def compute_poses(self) -> None:

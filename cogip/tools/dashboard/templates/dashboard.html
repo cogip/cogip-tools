@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html style="font-size: 16px; height: 100%; margin: 0; font-family: Arial, Helvetica, sans-serif">
 
 <head>
   <title>COGIP Dashboard</title>
@@ -40,38 +40,54 @@
   {% if robot_id == 0 %}
   <div class="tab-content" id="myTabContent">
     <div class="tab-pane fade show active" id="beacon" role="tabpanel" aria-labelledby="beacon-tab">
+  {% endif %}
 
-      {% endif %}
-      <div class="flex flex-row">
-        <div class="w-1/4 text-center h-minus-footer pt-2.5 pr-1 pl-2.5 border-r border-grey-color" id="menu">
-          <img src="static/img/cogip-logo.png" class="mx-auto h-10p py-2.5" />
-          <div id="nav-tool">
+      <div class="flex flex-row flex-1 h-full">
+        <div class="w-auto text-center h-minus-footer border-r border-grey-color" id="menu">
+          <img src="static/img/cogip-logo.png" class="mx-auto h-10p py-2" />
+          <div id="nav-tool" class="flex flex-col flex-1 h-full">
             ...
           </div>
         </div>
 
-        <div class="w-3/4">
+        <div>
+          <canvas
+            id="board" class="bg-contain" style="background-image: url(../static/img/ground2025.webp)">
+          </canvas>
+        </div>
+
+        <div id="sidebar" class="flex flex-col items-center z-20 pt-2 px-2 gap-2">
           <button
-            class="relative z-10 mt-3 px-4 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end z-60"
+            class="relative w-14 h-14 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70"
             id="buttonRefresh" type="button" onclick="location.reload();">
-            <img src="{{ url_for('static', path='img/refresh.svg') }}" />
+            <img src="{{ url_for('static', path='img/refresh.svg') }}" class="w-full h-full" />
           </button>
-          <canvas id="board" class="mt-2.5 absolute bg-contain"
-            style="background-image: url(../static/img/ground2025.webp)"></canvas>
 
           {% if robot_id != 0 %}
           <button
-            class="relative z-10 mt-3 px-4 py-2 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70 float-end"
-            id="buttonCameraModal" type="button" onclick="modalCamera()" data-bs-toggle="modal"
-            data-bs-target="#cameraModal">
-            <img src="{{ url_for('static', path='img/camera.svg') }}" />
+            class="relative w-14 h-14 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70"
+            id="buttonCameraModal" type="button" onclick="modalCamera()" data-bs-toggle="modal" data-bs-target="#cameraModal">
+            <img src="{{ url_for('static', path='img/camera.svg') }}" class="w-full h-full" />
+          </button>
+          {% endif %}
+
+          {% if robot_id == 0 %}
+          <button
+            class="relative w-14 h-14 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70"
+            id="buttonCoundownModal" type="button" onclick="modalCountdown();">
+            <img src="{{ url_for('static', path='img/countdown.svg') }}" class="w-full h-full" />
           </button>
           {% endif %}
         </div>
       </div>
 
+      {% if robot_id == 0 %}
+    </div>
+  </div>
+  {% endif %}
+
       <footer class="mt-auto bg-zinc-900 text-grey-color mx-2">
-        <div class="container-lg pt-2 flex items-center justify-between">
+        <div class="container-lg p-2 flex items-center justify-between">
           <span class="text-muted inline" id="connection">
             <pre
               class="text-grey-color text-sm"><img class="mr-5 w-[20px]" src="{{ url_for('static', path='img/cross_red_circle.svg') }}" /></pre>
@@ -89,11 +105,6 @@
           {% endif %}
         </div>
       </footer>
-
-      {% if robot_id == 0 %}
-    </div>
-  </div>
-  {% endif %}
 
   {% if robot_id != 0 %}
   <div id="cameraModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
@@ -129,9 +140,9 @@
     <div id="configModalContent" class="bg-zinc-900 rounded-lg shadow-lg w-[85vw] h-[85vh]">
       <div id="configModalHeader" class="flex items-center justify-between p-4 border-b border-gray-600">
         <h5 class="text-lg font-medium text-grey-color " id="configModalTitle"></h5>
-        <button type="button" class="text-grey-color text-2xl leading-none hover:text-gray-400" aria-label="Close"  onclick="closeModal('configModal')">&times;</button>
+        <button type="button" class="text-grey-color text-2xl leading-none hover:text-gray-400" aria-label="Close" onclick="closeModal('configModal')">&times;</button>
       </div>
-      <div id="configModalBody" class="m-4 text-center overflow-y-auto max-h-[24rem]">
+      <div id="configModalBody" class="m-4 text-center overflow-y-auto max-h-[22rem]">
       </div>
     </div>
   </div>
@@ -155,6 +166,46 @@
   </div>
   {% endif %}
 
+  {% if robot_id == 0 %}
+  <div class="fixed inset-0 z-50 hidden" id="countdownModal">
+    <div class="flex h-full w-full p-4 text-center">
+      <div class="w-full p-6 mx-auto bg-zinc-900 rounded-lg shadow-lg">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-600">
+          <h5 class="text-lg font-medium text-grey-color">Countdown</h5>
+          <button type="button" class="text-grey-color text-2xl leading-none hover:text-gray-400" aria-label="Close"
+            onclick="closeModal('countdownModal')">&times;</button>
+        </div>
+        <div class="flex h-full items-center  align-left">
+          <div class="align-left text-grey-color text-350p">
+            <table>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 1</td>
+                <td class="border border-gray-300 w-64 px-4" id="displayCountdown_1"></td>
+              </tr>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 2</td>
+                <td class="border border-gray-300 w-64 px-4"  id="displayCountdown_2"></td>
+              </tr>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 3</td>
+                <td class="border border-gray-300 w-64 px-4"  id="displayCountdown_3"></td>
+              </tr>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 4</td>
+                <td class="border border-gray-300 w-64 px-4"  id="displayCountdown_4"></td>
+              </tr>
+              <tr>
+                <td class="border border-gray-300 px-4">Robot 5</td>
+                <td class="border border-gray-300 w-64 px-4"  id="displayCountdown_5"></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <script type="text/javascript" src="{{ url_for('static', path='js/external/socket.io.min.js') }}"></script>
 
   <script type="module">
@@ -164,15 +215,13 @@
     import * as wizardModule from "../static/js/wizardModule.js";
     import * as configModule from "../static/js/configModule.js";
     import * as scoreModule from "../static/js/scoreModule.js";
+    import * as countdownModule from "../static/js/countdownModule.js";
     import { virtualKeyboard } from "../static/js/keyboardModule.js";
 
     window.addEventListener("resize", drawModule.resizeCanvas, false);
 
     document.addEventListener("DOMContentLoaded", function (event) {
       const robotId = parseInt(document.getElementsByTagName('body')[0].dataset.robotId);
-
-      let cameraModule = null;
-      let scoreModule = null;
 
       drawModule.resizeCanvas(); // draw background
       virtualKeyboard.init(); // initialize keyboard
@@ -241,13 +290,32 @@
           socket.on("close_score", function () {
             const scoreModal = document.getElementById("scoreModal");
             if (scoreModal) {
-              scoreModal.setAttribute("style", "display: none;");
+              scoreModal.classList.remove("flex");
+              scoreModal.classList.add("hidden");
             }
           });
         }).catch((err) => {
           console.error("Failed to load scoreModule:", err);
         });
       } else {
+
+        import("../static/js/countdownModule.js").then((countdownModule) => {
+          socket.on("start_countdown", function (robot_id, countdown, start, color=null) {
+            if (countdownModule.openCountdownModal) {
+              countdownModule.openCountdownModal(robot_id, countdown, start, color);
+            }
+          });
+          socket.on("close_countdown", function () {
+            const countdownModal = document.getElementById("countdownModal");
+            if (countdownModal) {
+              countdownModal.classList.remove("flex");
+              countdownModal.classList.add("hidden");
+            }
+          });
+        }).catch((err) => {
+          console.error("Failed to load countdownModule:", err);
+        });
+
         socketModule.setupTabEventListener(
             "beacon-tab",
             "beacon",

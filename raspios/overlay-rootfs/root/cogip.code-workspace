@@ -1,20 +1,41 @@
 {
     "folders": [
         {
+            "name": "root",
             "path": "/root"
         },
         {
+            "name": "src",
             "path": "/opt/.venv/lib/python3.12/site-packages/cogip"
         },
         {
+            "name": "etc",
             "path": "/etc"
         },
         {
+            "name": "logs",
+            "path": "/var/log/cogip"
+        },
+        {
+            "name": "boot",
             "path": "/boot"
         },
         {
+            "name": "opt",
             "path": "/opt"
-        },
+        }
     ],
-    "settings": {}
+    "settings": {},
+    "extensions": {
+        "recommendations": [
+            "ecmel.vscode-html-css",
+            "fabiospampinato.vscode-terminals",
+            "github.copilot",
+            "ms-python.vscode-pylance",
+            "ms-python.python",
+            "ms-python.debugpy",
+            "visualstudioexptteam.vscodeintellicode",
+            "visualstudioexptteam.vscodeintellicode-completions"
+        ]
+    }
 }

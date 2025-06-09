@@ -714,7 +714,7 @@ result_t YDlidarDriver::parseResponseHeader(
                     }
                     if (csc != csr) {
                         std::cerr << "Stamp checksum error c[0x" << std::hex << static_cast<int>(csc)
-                                  << "] != r[0x" << static_cast<int>(csr) << "]" << std::endl;
+                                  << "] != r[0x" << static_cast<int>(csr) << "]" << std::dec << std::endl;
                     }
                     else {
                         stamp_package_t sp;

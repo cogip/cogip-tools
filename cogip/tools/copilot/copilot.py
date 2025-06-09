@@ -9,6 +9,7 @@ from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorsKindEnum
 from cogip.protobuf import PB_ActuatorState, PB_Pid, PB_PidEnum, PB_Pose, PB_State
+from . import logger
 from .pbcom import PBCom, pb_exception_handler
 from .pid import Pid
 from .sio_events import SioEvents
@@ -22,11 +23,14 @@ pid_request_uuid: int = 0x1005
 pid_uuid: int = 0x1006
 brake_uuid: int = 0x1007
 controller_uuid: int = 0x1008
+blocked_uuid: int = 0x1009
+intermediate_pose_reached_uuid: int = 0x100A
 # Actuators: 0x2000 - 0x2FFF
 actuators_thread_start_uuid: int = 0x2001
 actuators_thread_stop_uuid: int = 0x2002
 actuator_state_uuid: int = 0x2003
 actuator_command_uuid: int = 0x2004
+actuator_init_uuid: int = 0x2005
 # Service: 0x3000 - 0x3FFF
 reset_uuid: int = 0x3001
 copilot_connected_uuid: int = 0x3002
@@ -75,8 +79,10 @@ class Copilot:
             pose_order_uuid: self.handle_message_pose,
             state_uuid: self.handle_message_state,
             pose_reached_uuid: self.handle_pose_reached,
+            intermediate_pose_reached_uuid: self.handle_intermediate_pose_reached,
             actuator_state_uuid: self.handle_actuator_state,
             pid_uuid: self.handle_pid,
+            blocked_uuid: self.handle_blocked,
         }
 
         self.pbcom = PBCom(can_channel, can_bitrate, canfd_data_bitrate, pb_message_handlers)
@@ -123,6 +129,7 @@ class Copilot:
 
         Send a reset message to all connected clients.
         """
+        logger.info("[CAN] Received reset")
         await self.pbcom.send_can_message(copilot_connected_uuid, None)
         await self.sio_events.emit("reset")
 
@@ -227,5 +234,26 @@ class Copilot:
 
         Forward info to the planner.
         """
+        logger.info("[CAN] Received pose reached")
         if self.sio_events.connected:
             await self.sio_events.emit("pose_reached")
+
+    async def handle_intermediate_pose_reached(self) -> None:
+        """
+        Handle intermediate pose reached message.
+
+        Forward info to the planner.
+        """
+        logger.info("[CAN] Received intermediate pose reached")
+        if self.sio_events.connected:
+            await self.sio_events.emit("intermediate_pose_reached")
+
+    async def handle_blocked(self) -> None:
+        """
+        Handle blocked message.
+
+        Forward info to the planner.
+        """
+        logger.info("[CAN] Received blocked")
+        if self.sio_events.connected:
+            await self.sio_events.emit("blocked")

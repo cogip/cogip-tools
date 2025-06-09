@@ -12,7 +12,7 @@ let ratioX = null, ratioY = null,  coordX = 0, coordY = 0;
 
 // Preload robot and order images
 (function loadImages() {
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 5; i++) {
     robotImages[i] = new Image();
     orderImages[i] = new Image();
     robotImages[i].src = `static/img/robot${i}.png`;
@@ -50,6 +50,7 @@ export function resizeCanvas() {
   const footerHeight = getFullHeight("footer", false);
   const navHeight = getFullHeight("flex-wrap", true);
   const menuWidth = cacheElement("#menu").offsetWidth;
+  const sidebarWidth = cacheElement("#sidebar").offsetWidth + 50;
   const canvas = cacheElement("#board");
   const menuHeight = cacheElement("#menu").offsetHeight;
 
@@ -62,7 +63,6 @@ export function resizeCanvas() {
   const imgRatio = 2/3;
   const adjustedHeight = Math.min(canvas.height, canvas.width * imgRatio);
   const adjustedWidth = adjustedHeight * (3 / 2);
-
   const context = canvas.getContext("2d");
   context.canvas.width = adjustedWidth;
   context.canvas.height = adjustedHeight;
@@ -73,20 +73,6 @@ export function resizeCanvas() {
 
   ratioX = adjustedWidth / 3000;
   ratioY = -adjustedHeight / 2000;
-  setButtonPosition(canvas);
-}
-
-function setButtonPosition(canvas) {
-  const menuWidth = cacheElement("#menu").offsetWidth;
-  const rightPx = Math.max(window.innerWidth - menuWidth - canvas.width, 0);
-  const buttonRefresh = cacheElement("#buttonRefresh");
-  buttonRefresh.style.right = `${rightPx}px`;
-
-  const buttonCameraModal = cacheElement("#buttonCameraModal");
-  if (buttonCameraModal) {
-    buttonCameraModal.style.top = `${canvas.height - 44}px`; // 44 is the height of the camera image
-    buttonCameraModal.style.right = `${rightPx - 59}px`; // 59 is the width of the refresh image
-  }
 }
 
 export function displayMsg(robot_id, msg) {

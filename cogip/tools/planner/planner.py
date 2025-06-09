@@ -3,14 +3,17 @@ import platform
 import re
 import time
 import traceback
+from datetime import UTC, datetime
 from functools import partial
 from multiprocessing import Manager, Process
 from multiprocessing.managers import DictProxy
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import socketio
-from gpiozero import Button
+from colorzero import Color
+from gpiozero import RGBLED, Button, OutputDevice
 from gpiozero.pins.mock import MockFactory
 from luma.core.interface.serial import i2c
 from luma.core.render import canvas
@@ -18,6 +21,8 @@ from luma.oled.device import sh1106
 from numpy.typing import NDArray
 from PIL import ImageFont
 from pydantic import RootModel, TypeAdapter
+from shapely.affinity import rotate, translate
+from shapely.geometry import Polygon
 
 from cogip import models
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
@@ -26,7 +31,7 @@ from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCi
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorState
-from cogip.models.artifacts import ConstructionArea
+from cogip.models.artifacts import ConstructionArea, FixedObstacleID
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from cogip.utils.singleton import Singleton
@@ -60,6 +65,10 @@ class Planner:
         obstacle_updater_interval: float,
         path_refresh_interval: float,
         starter_pin: int | None,
+        led_red_pin: int | None,
+        led_green_pin: int | None,
+        led_blue_pin: int | None,
+        flag_motor_pin: int | None,
         oled_bus: int | None,
         oled_address: int | None,
         bypass_detector: bool,
@@ -84,6 +93,10 @@ class Planner:
             obstacle_updater_interval: Interval between each send of obstacles to dashboards (in seconds)
             path_refresh_interval: Interval between each update of robot paths (in seconds)
             starter_pin: GPIO pin connected to the starter
+            led_red_pin: GPIO pin connected to the red LED
+            led_green_pin: GPIO pin connected to the green LED
+            led_blue_pin: GPIO pin connected to the blue LED
+            flag_motor_pin: GPIO pin connected to the flag motor
             oled_bus: PAMI OLED display i2c bus
             oled_address: PAMI OLED display i2c address
             bypass_detector: Use perfect obstacles from monitor instead of detected obstacles by Lidar
@@ -164,14 +177,18 @@ class Planner:
         self.sio_emitter_task: asyncio.Task | None = None
         self.countdown_task: asyncio.Task | None = None
         self.scservos = SCServos(self.scservos_port, scservos_baud_rate)
+        self.pami_event = asyncio.Event()
+        self.last_starter_event_timestamp: datetime | None = None
+        self.countdown_start_timestamp: datetime = datetime.now(UTC)
 
         self.shared_properties: DictProxy = self.process_manager.dict(
             {
                 "robot_id": self.robot_id,
                 "exiting": False,
                 "avoidance_strategy": self.game_context.avoidance_strategy,
-                "pose_order": {},
-                "last_avoidance_pose_current": {},
+                "new_pose_order": None,
+                "pose_order": None,
+                "last_avoidance_pose_current": None,
                 "path_refresh_interval": path_refresh_interval,
                 "robot_width": robot_width,
                 "obstacle_radius": obstacle_radius,
@@ -196,6 +213,21 @@ class Planner:
                 pull_up=True,
                 pin_factory=MockFactory(),
             )
+
+        if led_red_pin and led_green_pin and led_blue_pin:
+            self.led = RGBLED(
+                led_red_pin,
+                led_green_pin,
+                led_blue_pin,
+                initial_value=(1, 0, 0),
+            )
+        else:
+            self.led = Mock()
+
+        if flag_motor_pin:
+            self.flag_motor = OutputDevice(flag_motor_pin)
+        else:
+            self.flag_motor = Mock()
 
         self.starter.when_pressed = partial(self.sio_emitter_queue.put, ("starter_changed", True))
         self.starter.when_released = partial(self.sio_emitter_queue.put, ("starter_changed", False))
@@ -280,7 +312,6 @@ class Planner:
         self.create_shared_memory()
         self.shared_properties["exiting"] = False
         await self.soft_reset()
-        await self.set_controller(self.game_context.default_controller, True)
         self.sio_receiver_task = asyncio.create_task(
             self.task_sio_receiver(),
             name="Robot: Task SIO Receiver",
@@ -305,6 +336,8 @@ class Planner:
             ),
         )
         self.avoidance_process.start()
+
+        await actuators.actuators_init(self)
 
     async def stop(self):
         """
@@ -360,21 +393,25 @@ class Planner:
         Only reset context and actions.
         """
         self.game_context.reset()
+        await self.set_controller(self.game_context.default_controller, True)
         self.shared_table_limits[0] = self.game_context.table.x_min
         self.shared_table_limits[1] = self.game_context.table.x_max
         self.shared_table_limits[2] = self.game_context.table.y_min
         self.shared_table_limits[3] = self.game_context.table.y_max
+        self.flag_motor.off()
         self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
         available_start_poses = self.game_context.get_available_start_poses()
         if available_start_poses and self.start_position not in available_start_poses:
             self.start_position = available_start_poses[(self.robot_id - 1) % len(available_start_poses)]
         await self.set_pose_start(self.game_context.get_start_pose(self.start_position).pose)
+        self.pami_event.clear()
 
     async def task_sio_emitter(self):
         logger.info("Planner: Task SIO Emitter started")
         try:
             while True:
                 name, value = await asyncio.to_thread(self.sio_emitter_queue.get)
+                logger.info(f"Planner: Task SIO emitter: {name} {value}")
                 match name:
                     case "nop":
                         pass
@@ -400,7 +437,7 @@ class Planner:
                                     new_controller = ControllerEnum.QUADPID
                         await self.set_controller(new_controller)
                         if self.sio.connected:
-                            logger.info(f"Send pose order: {value[0]}")
+                            logger.info(f"Task SIO Emitter: Planner: Send pose order: {value[0]}")
                             await self.sio_ns.emit("pose_order", value[0])
                             pose_current = self.pose_current
                             await self.sio_ns.emit(
@@ -426,6 +463,7 @@ class Planner:
         try:
             while True:
                 func = await self.sio_receiver_queue.get()
+                logger.info(f"Planner: SIO Task received: {func}")
                 await func
                 self.sio_receiver_queue.task_done()
         except asyncio.CancelledError:
@@ -439,22 +477,36 @@ class Planner:
     async def countdown_loop(self):
         logger.info("Planner: Task Countdown started")
         try:
-            last_now = time.time()
             last_countdown = self.game_context.countdown
             while True:
-                await asyncio.sleep(0.5)
-                now = time.time()
-                self.game_context.countdown -= now - last_now
-                logger.debug(f"Planner: countdown = {self.game_context.countdown}")
-                if self.game_context.playing and self.game_context.countdown < 15 and last_countdown > 15:
-                    logger.info("Planner: countdown==15: force blocked")
+                await asyncio.sleep(0.2)
+                now = datetime.now(UTC)
+                self.game_context.countdown = (
+                    self.game_context.game_duration - (now - self.countdown_start_timestamp).total_seconds()
+                )
+                if self.game_context.playing:
+                    logger.info(f"Planner: countdown = {self.game_context.countdown: 3.2f}")
+                if (
+                    self.robot_id > 1
+                    and self.game_context.playing
+                    and self.game_context.countdown < 15
+                    and last_countdown > 15
+                ):
+                    logger.info("Planner: countdown==15: start PAMI")
+                    self.pami_event.set()
+                if (
+                    self.robot_id == 1
+                    and self.game_context.playing
+                    and self.game_context.countdown < 7
+                    and last_countdown > 7
+                ):
+                    logger.info("Planner: countdown==7: force blocked")
                     await self.sio_receiver_queue.put(self.blocked())
                 if self.game_context.playing and self.game_context.countdown < 0 and last_countdown > 0:
                     logger.info("Planner: countdown==0: final action")
                     await self.final_action()
                 if self.game_context.countdown < -5 and last_countdown > -5:
                     await self.sio_ns.emit("stop_video_record")
-                last_now = now
                 last_countdown = self.game_context.countdown
         except asyncio.CancelledError:
             logger.info("Planner: Task Countdown cancelled")
@@ -486,9 +538,18 @@ class Planner:
             return
         self.game_context.playing = False
         await self.sio_ns.emit("game_end")
-        await self.sio_ns.emit("score", self.game_context.score)
+        if self.robot_id == 1:
+            if self.robot_in_parking():
+                self.game_context.score += 10
+
+            # Display score
+            await self.sio_ns.emit("score", self.game_context.score)
+
+        self.flag_motor.on()
+        self.pose_order = None
 
     async def starter_changed(self, pushed: bool):
+        self.last_starter_event_timestamp = datetime.now(UTC)
         if not self.virtual:
             await self.sio_ns.emit("starter_changed", pushed)
 
@@ -518,24 +579,20 @@ class Planner:
 
     @pose_order.setter
     def pose_order(self, new_pose: pose.Pose | None):
+        logger.info(f"Planner: pose_order={new_pose.path_pose if new_pose else None}")
         self._pose_order = new_pose
         if new_pose is None:
+            self.shared_properties["new_pose_order"] = None
             self.shared_properties["pose_order"] = None
         else:
-            self.shared_properties["pose_order"] = new_pose.path_pose.model_dump(exclude_unset=True)
-            self.shared_properties["last_avoidance_pose_current"] = None
+            self.shared_properties["new_pose_order"] = new_pose.path_pose.model_dump(exclude_unset=True)
+        self.shared_properties["last_avoidance_pose_current"] = None
 
     async def set_pose_reached(self):
         """
         Set pose reached for a robot.
         """
         logger.info("Planner: set_pose_reached()")
-
-        self.shared_properties["last_avoidance_pose_current"] = None
-
-        if len(self.avoidance_path) > 1:
-            # The pose reached is intermediate, do nothing.
-            return
 
         # Set pose reached
         self.avoidance_path = []
@@ -555,6 +612,15 @@ class Planner:
 
         await self.next_pose()
 
+    async def set_intermediate_pose_reached(self):
+        """
+        Set pose reached for a robot.
+        """
+        logger.info("Planner: set_intermediate_pose_reached()")
+
+        # The pose reached is intermediate, just force path recompute.
+        self.shared_properties["last_avoidance_pose_current"] = None
+
     async def next_pose_in_action(self):
         if self.action and len(self.action.poses) > 0:
             pose_order = self.action.poses.pop(0)
@@ -564,7 +630,7 @@ class Planner:
             self.pose_order = pose_order
 
             if self.properties.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
-                await self.sio_ns.emit("pose_order", self.pose_order.pose.model_dump())
+                await self.sio_ns.emit("pose_order", self.pose_order.path_pose.model_dump())
 
     async def next_pose(self):
         """
@@ -675,8 +741,8 @@ class Planner:
                             x=construction_area.x,
                             y=construction_area.y,
                             angle=construction_area.O,
-                            length_x=construction_area.width + self.properties.robot_width,
-                            length_y=construction_area.length + self.properties.robot_width,
+                            length_x=construction_area.length + self.properties.robot_width,
+                            length_y=construction_area.width + self.properties.robot_width,
                             bounding_box_margin=margin,
                             id=construction_area.id.value,
                         )
@@ -696,17 +762,19 @@ class Planner:
                         )
 
                 # Add fixed obstacles
-                for fixed_obstacle in self.game_context.fixed_obstacles:
+                for fixed_obstacle in self.game_context.fixed_obstacles.values():
+                    if not fixed_obstacle.enabled:
+                        continue
                     if not table.contains(fixed_obstacle, margin):
                         continue
                     self.shared_rectangle_obstacles.append(
                         x=fixed_obstacle.x,
                         y=fixed_obstacle.y,
-                        angle=fixed_obstacle.angle,
-                        length_x=fixed_obstacle.length_x + self.properties.robot_length,
-                        length_y=fixed_obstacle.length_y + self.properties.robot_length,
+                        angle=0,
+                        length_x=fixed_obstacle.width + self.properties.robot_width,
+                        length_y=fixed_obstacle.length + self.properties.robot_width,
                         bounding_box_margin=margin,
-                        id=1,
+                        id=fixed_obstacle.id.value,
                     )
 
             self.shared_obstacles_lock.finish_writing()
@@ -738,7 +806,7 @@ class Planner:
             logger.warning(f"Planner: OLED display update loop: Unknown exception {exc}")
             traceback.print_exc()
 
-    async def command(self, cmd: str):
+    async def command(self, cmd: str, *args):
         """
         Execute a command from the menu.
         """
@@ -781,7 +849,7 @@ class Planner:
             logger.warning(f"Unknown command: {cmd}")
             return
 
-        await cmd_func()
+        await cmd_func(*args)
 
     def update_config(self, config: dict[str, Any]) -> None:
         """
@@ -803,15 +871,28 @@ class Planner:
         """
         self.scservos.set(SCServoEnum[servo["name"]], servo["value"])
 
-    async def cmd_play(self):
+    async def cmd_play(self, timestamp: str | None = None):
         """
         Play command from the menu.
         """
+        if timestamp:
+            self.countdown_start_timestamp = datetime.fromisoformat(timestamp)
+        else:
+            self.countdown_start_timestamp = datetime.now(UTC)
+
+        logger.info(f"Planner: cmd_play({self.countdown_start_timestamp})")
         if self.game_context.playing:
             return
 
         self.game_context.countdown = self.game_context.game_duration
         self.game_context.playing = True
+        self.led.color = Color("blue")
+
+        await self.sio_ns.emit(
+            "start_countdown",
+            (self.robot_id, self.game_context.game_duration, self.countdown_start_timestamp.isoformat(), "deepskyblue"),
+        )
+
         await self.sio_ns.emit("start_video_record")
         await self.sio_receiver_queue.put(self.set_pose_reached())
 
@@ -819,6 +900,7 @@ class Planner:
         """
         Stop command from the menu.
         """
+        logger.info("Planner: cmd_stop()")
         self.game_context.playing = False
         await self.sio_ns.emit("stop_video_record")
 
@@ -827,6 +909,7 @@ class Planner:
         Next command from the menu.
         Ignored if current pose is not reached for all robots.
         """
+        logger.info("Planner: cmd_next()")
         if self.game_context.playing:
             return
 
@@ -840,6 +923,7 @@ class Planner:
         """
         Reset command from the menu.
         """
+        logger.info("Planner: cmd_reset()")
         await self.reset()
         await self.sio_ns.emit("cmd_reset")
 
@@ -964,8 +1048,7 @@ class Planner:
                 self.shared_properties["avoidance_strategy"] = new_strategy
                 logger.info(f"Wizard: New avoidance strategy: {self.game_context.avoidance_strategy.name}")
             case "Choose Start Position":
-                start_position = StartPosition[value]
-                self.start_position = start_position
+                self.start_position = StartPosition[value]
                 await self.soft_reset()
             case "Choose Table":
                 new_table = TableEnum[value]
@@ -1130,3 +1213,33 @@ class Planner:
         # if not self.virtual and actuator_state.id in self.game_context.emulated_actuator_states:
         #     self.game_context.emulated_actuator_states.remove(actuator_state.id)
         pass
+
+    def robot_in_parking(self) -> bool:
+        pose_current = self.pose_current.model_copy()
+        robot_half = self.properties.robot_width / 2.0
+        robot_square = Polygon(
+            [
+                (-robot_half, -robot_half),
+                (robot_half, -robot_half),
+                (robot_half, robot_half),
+                (-robot_half, robot_half),
+            ]
+        )
+        robot_square = rotate(robot_square, pose_current.O, origin=(0, 0), use_radians=False)
+        robot_square = translate(robot_square, xoff=pose_current.x, yoff=pose_current.y)
+
+        parking = self.game_context.fixed_obstacles[FixedObstacleID.Backstage]
+        parking_half = parking.width / 2.0
+        parking_square = Polygon(
+            [
+                (-parking_half, -parking_half),
+                (parking_half, -parking_half),
+                (parking_half, parking_half),
+                (-parking_half, parking_half),
+            ]
+        )
+        parking_square = translate(parking_square, xoff=parking.x, yoff=parking.y)
+
+        result = robot_square.intersects(parking_square)
+        logger.info(f"Planner: Robot in parking={result}")
+        return result

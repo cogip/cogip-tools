@@ -7,7 +7,6 @@ import socketio.exceptions
 from cogip import logger
 from cogip.tools.planner import actions
 from cogip.tools.planner.positions import StartPosition
-from cogip.tools.planner.table import TableEnum
 
 if TYPE_CHECKING:
     from .server import Server
@@ -77,25 +76,25 @@ class Robot:
             logger.info(f"Beacon handler: disconnected from robot {self.robot_id}")
             await self.server.sio.emit("del_robot", self.robot_id, namespace="/dashboard")
 
-        @self.sio.event(namespace="/dashboard")
-        async def state(robot_id: int, state: dict[str, Any]):
-            await self.server.sio.emit("state", (robot_id, state), namespace="/dashboard")
+        # @self.sio.event(namespace="/dashboard")
+        # async def state(robot_id: int, state: dict[str, Any]):
+        #     await self.server.sio.emit("state", (robot_id, state), namespace="/dashboard")
 
         @self.sio.event(namespace="/dashboard")
         async def pose_current(robot_id: int, pose: dict[str, Any]):
             await self.server.sio.emit("pose_current", (robot_id, pose), namespace="/dashboard")
 
-        @self.sio.event(namespace="/dashboard")
-        async def pose_order(robot_id: int, pose: dict[str, Any]):
-            await self.server.sio.emit("pose_order", (robot_id, pose), namespace="/dashboard")
+        # @self.sio.event(namespace="/dashboard")
+        # async def pose_order(robot_id: int, pose: dict[str, Any]):
+        #     await self.server.sio.emit("pose_order", (robot_id, pose), namespace="/dashboard")
 
-        @self.sio.event(namespace="/dashboard")
-        async def obstacles(robot_id, obstacles: list[dict[str, Any]]):
-            await self.server.sio.emit("obstacles", (robot_id, obstacles), namespace="/dashboard")
+        # @self.sio.event(namespace="/dashboard")
+        # async def obstacles(robot_id, obstacles: list[dict[str, Any]]):
+        #     await self.server.sio.emit("obstacles", (robot_id, obstacles), namespace="/dashboard")
 
-        @self.sio.event(namespace="/dashboard")
-        async def path(robot_id: int, path: list[dict[str, Any]]):
-            await self.server.sio.emit("path", (robot_id, path), namespace="/dashboard")
+        # @self.sio.event(namespace="/dashboard")
+        # async def path(robot_id: int, path: list[dict[str, Any]]):
+        #     await self.server.sio.emit("path", (robot_id, path), namespace="/dashboard")
 
         @self.sio.event(namespace="/beacon")
         async def pami_reset():
@@ -109,6 +108,8 @@ class Robot:
                             strategy = actions.Strategy.Pami3
                         case 4:
                             strategy = actions.Strategy.Pami4
+                        case 5:
+                            strategy = actions.Strategy.Pami5
 
                     if strategy:
                         await robot.sio.emit(
@@ -145,22 +146,15 @@ class Robot:
                         namespace="/beacon",
                     )
                     position: StartPosition | None = None
-                    if TableEnum[table] == TableEnum.Game:
-                        match robot_id:
-                            case 2:
-                                position = StartPosition.PAMI2
-                            case 3:
-                                position = StartPosition.PAMI3
-                            case 4:
-                                position = StartPosition.PAMI4
-                    else:
-                        match robot_id:
-                            case 2:
-                                position = StartPosition.PAMI2_TRAINING
-                            case 3:
-                                position = StartPosition.PAMI3_TRAINING
-                            case 4:
-                                position = StartPosition.PAMI4_TRAINING
+                    match robot_id:
+                        case 2:
+                            position = StartPosition.PAMI2
+                        case 3:
+                            position = StartPosition.PAMI3
+                        case 4:
+                            position = StartPosition.PAMI4
+                        case 5:
+                            position = StartPosition.PAMI5
 
                     if position:
                         await robot.sio.emit(
@@ -189,9 +183,18 @@ class Robot:
                     )
 
         @self.sio.event(namespace="/beacon")
-        async def pami_play():
+        async def pami_play(timestamp: str):
             for robot_id, robot in self.server.robots.items():
                 if robot_id == 1:
                     continue
                 if robot.sio.connected:
-                    await robot.sio.emit("command", "play", namespace="/beacon")
+                    await robot.sio.emit("command", ("play", timestamp), namespace="/beacon")
+
+        @self.sio.event(namespace="/beacon")
+        async def start_countdown(robot_id: int, countdown: int, timestamp: str, color: str | None = None):
+            logger.info(f"Start countdown: {countdown}")
+            await self.server.sio.emit(
+                "start_countdown",
+                (robot_id, countdown, timestamp, color),
+                namespace="/dashboard",
+            )

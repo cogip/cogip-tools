@@ -39,6 +39,7 @@ class CopilotNamespace(socketio.AsyncNamespace):
         """
         Callback on reset event.
         """
+        logger.info("[copilot => planner] reset.")
         await self.emit("reset", namespace="/planner")
 
     async def on_register_menu(self, sid, data: dict[str, Any]):
@@ -51,7 +52,22 @@ class CopilotNamespace(socketio.AsyncNamespace):
         """
         Callback on pose reached message.
         """
+        logger.info("[copilot => planner] Pose reached.")
         await self.emit("pose_reached", namespace="/planner")
+
+    async def on_intermediate_pose_reached(self, sid) -> None:
+        """
+        Callback on intermediate pose reached message.
+        """
+        logger.info("[copilot => planner] Intermediate pose reached.")
+        await self.emit("intermediate_pose_reached", namespace="/planner")
+
+    async def on_blocked(self, sid) -> None:
+        """
+        Callback on blocked message.
+        """
+        logger.info("[copilot => planner] Blocked.")
+        await self.emit("blocked", namespace="/planner")
 
     async def on_menu(self, sid, menu):
         """
@@ -89,4 +105,5 @@ class CopilotNamespace(socketio.AsyncNamespace):
         """
         Callback on game end message.
         """
+        logger.info("[copilot => planner] Game end.")
         await self.emit("game_end", namespace="/planner")

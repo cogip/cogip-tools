@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 if typing.TYPE_CHECKING:
-    from cogip.tools.detector_pami.detector import Detector
+    from cogip.tools.detector.detector import Detector
 
 asgi_app = FastAPI()
 asgi_server = uvicorn.Server(uvicorn.Config(asgi_app, host="0.0.0.0", access_log=False))

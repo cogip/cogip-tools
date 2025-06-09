@@ -289,7 +289,6 @@ void YDLidar::updateSharedMemory() {
             data_write_lock_->finishWriting();
             data_write_lock_->postUpdate();
         }
-
         auto loop_end_time = std::chrono::steady_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(loop_end_time - loop_start_time);
         if (elapsed_time < std::chrono::milliseconds(refresh_interval_)) {
@@ -412,7 +411,7 @@ inline bool printVersionInfo(const device_info_t& info) {
               << "  - Serial: ";
 
     for (int i = 0; i < 16; i++) {
-        std::cout << std::hex << (info.serialnum[i] & 0xff);
+        std::cout << std::hex << (info.serialnum[i] & 0xff) << std::dec;
     }
 
     std::cout << std::endl;

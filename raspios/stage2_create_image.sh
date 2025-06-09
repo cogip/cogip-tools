@@ -46,6 +46,7 @@ case ${ROBOT_ID} in
         DETECTOR_SENSOR_DELAY=${ROBOT_DETECTOR_SENSOR_DELAY}
         DETECTOR_CLUSTER_MIN_SAMPLES=${ROBOT_DETECTOR_CLUSTER_MIN_SAMPLES}
         DETECTOR_CLUSTER_EPS=${ROBOT_DETECTOR_CLUSTER_EPS}
+        PLANNER_OBSTACLE_BB_MARGIN=${ROBOT_PLANNER_OBSTACLE_BB_MARGIN}
         ;;
     [2-9]) # PAMIs
         DOCKER_TAG=robot
@@ -59,6 +60,7 @@ case ${ROBOT_ID} in
         DETECTOR_SENSOR_DELAY=${PAMI_DETECTOR_SENSOR_DELAY}
         DETECTOR_CLUSTER_MIN_SAMPLES=${PAMI_DETECTOR_CLUSTER_MIN_SAMPLES}
         DETECTOR_CLUSTER_EPS=${PAMI_DETECTOR_CLUSTER_EPS}
+        PLANNER_OBSTACLE_BB_MARGIN=${PAMI_PLANNER_OBSTACLE_BB_MARGIN}
         ;;
 esac
 
@@ -168,12 +170,17 @@ sudo sed -i "s/CUSTOM_DETECTOR_REFRESH_INTERVAL/${DETECTOR_REFRESH_INTERVAL}/" $
 sudo sed -i "s/CUSTOM_DETECTOR_SENSOR_DELAY/${DETECTOR_SENSOR_DELAY}/" ${MOUNT_DIR}/etc/environment
 sudo sed -i "s/CUSTOM_DETECTOR_CLUSTER_MIN_SAMPLES/${DETECTOR_CLUSTER_MIN_SAMPLES}/" ${MOUNT_DIR}/etc/environment
 sudo sed -i "s/CUSTOM_DETECTOR_CLUSTER_EPS/${DETECTOR_CLUSTER_EPS}/" ${MOUNT_DIR}/etc/environment
+sudo sed -i "s/CUSTOM_PLANNER_OBSTACLE_BB_MARGIN/${PLANNER_OBSTACLE_BB_MARGIN}/" ${MOUNT_DIR}/etc/environment
 sudo echo "ROBOT_ID=${ROBOT_ID}" | sudo tee -a ${MOUNT_DIR}/etc/environment 1> /dev/null
 sudo chmod 600 ${MOUNT_DIR}/etc/sudoers.d/*
 sudo chmod 600 ${MOUNT_DIR}/etc/wpa_supplicant/wpa_supplicant-wlan0.conf
 sudo ln -sf /run/systemd/resolve/resolv.conf ${MOUNT_DIR}/etc/resolv.conf
 sudo rm -f ${MOUNT_DIR}/.dockerenv
 sudo rm -f ${MOUNT_DIR}/etc/sshd_config.d/rename_user.conf
+
+if [[ "${ROBOT_ID}" -gt 0 && "${PROFILE}" == "cup" ]]; then
+    sudo mv -f "${MOUNT_DIR}/etc/systemd/timesyncd-cup.conf" "${MOUNT_DIR}/etc/systemd/timesyncd.conf"
+fi
 
 case ${ROBOT_ID} in
     0) # Beacon
@@ -185,6 +192,10 @@ case ${ROBOT_ID} in
         sudo sed -i "s/# PLANNER_SCSERVOS_BAUD_RATE=/PLANNER_SCSERVOS_BAUD_RATE=${ROBOT_SCSERVOS_BAUD_RATE}/" ${MOUNT_DIR}/etc/environment
         ;;
     [2-9]) # PAMIs
+        sudo sed -i "s/# PLANNER_LED_RED_PIN=/PLANNER_LED_RED_PIN=${PAMI_LED_RED_PIN}/" ${MOUNT_DIR}/etc/environment
+        sudo sed -i "s/# PLANNER_LED_GREEN_PIN=/PLANNER_LED_GREEN_PIN=${PAMI_LED_GREEN_PIN}/" ${MOUNT_DIR}/etc/environment
+        sudo sed -i "s/# PLANNER_LED_BLUE_PIN=/PLANNER_LED_BLUE_PIN=${PAMI_LED_BLUE_PIN}/" ${MOUNT_DIR}/etc/environment
+        sudo sed -i "s/# PLANNER_FLAG_MOTOR_PIN=/PLANNER_FLAG_MOTOR_PIN=${PAMI_FLAG_MOTOR_PIN}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_OLED_BUS=/PLANNER_OLED_BUS=${PAMI_OLED_BUS}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_OLED_ADDRESS=/PLANNER_OLED_ADDRESS=${PAMI_OLED_ADDRESS}/" ${MOUNT_DIR}/etc/environment
         sudo rm -f ${MOUNT_DIR}/root/.bash_profile

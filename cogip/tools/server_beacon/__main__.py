@@ -19,7 +19,7 @@ def main_opt(
             help="Maximum number of robots to detect (from 1 to max)",
             envvar="SERVER_BEACON_MAX_ROBOTS",
         ),
-    ] = 4,
+    ] = 5,
     record_dir: Annotated[
         Path,
         typer.Option(

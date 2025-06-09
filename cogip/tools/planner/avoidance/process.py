@@ -20,11 +20,12 @@ def avoidance_process(
     queue_sio: Queue,
 ):
     logger = Logger("cogip-avoidance")
-    if os.getenv("PLANNER_DEBUG") not in [None, False, "False", "false", 0, "0", "no", "No"]:
+    if os.getenv("AVOIDANCE_DEBUG") not in [None, False, "False", "false", 0, "0", "no", "No"]:
         logger.setLevel(logging.DEBUG)
 
     logger.info("Avoidance: process started")
-    shared_memory = SharedMemory(f"cogip_{shared_properties["robot_id"]}")
+    robot_id = shared_properties["robot_id"]
+    shared_memory = SharedMemory(f"cogip_{robot_id}")
     shared_pose_current_buffer = shared_memory.get_pose_current_buffer()
     shared_pose_current_lock = shared_memory.get_lock(LockName.PoseCurrent)
     shared_circle_obstacles = shared_memory.get_circle_obstacles()
@@ -53,6 +54,10 @@ def avoidance_process(
 
         avoidance_path = []
 
+        if new_pose_order := shared_properties["new_pose_order"]:
+            logger.info(f"Avoidance: New pose order received: {new_pose_order}")
+            shared_properties["pose_order"] = new_pose_order
+            shared_properties["new_pose_order"] = None
         pose_order = shared_properties["pose_order"]
         last_avoidance_pose_current = shared_properties["last_avoidance_pose_current"]
         if not pose_order:
@@ -122,7 +127,10 @@ def avoidance_process(
             # Path is recomputed only if the pose order is reachable or an obstacle prevents
             # to reach next path pose.
             if (
-                (not avoidance.check_recompute(pose_current, pose_order) and last_emitted_pose_order != pose_order)
+                (
+                    (not avoidance.check_recompute(pose_current, pose_order) and robot_id == 1)
+                    and last_emitted_pose_order != pose_order
+                )
                 or last_emitted_pose_order is None
                 or avoidance.check_recompute(pose_current, last_emitted_pose_order)
             ):
@@ -165,10 +173,15 @@ def avoidance_process(
             logger.debug("Avoidance: len(path) == 1")
             continue
 
+        if len(path) > 2:
+            # Intermediate pose
+            path[1].bypass_final_orientation = True
+            path[1].is_intermediate = True
+
         if len(path) >= 2 and last_emitted_pose_order:
             dist_xy = math.dist((last_emitted_pose_order.x, last_emitted_pose_order.y), (path[1].x, path[1].y))
-            dist_angle = abs(path[1].O - last_emitted_pose_order.O)
             if not path[1].bypass_final_orientation:
+                dist_angle = abs(path[1].O - last_emitted_pose_order.O)
                 if dist_xy < 20 and dist_angle < 5:
                     logger.debug(
                         f"Avoidance: Skip path update (new pose order too close: {dist_xy:0.2f}/{dist_angle:0.2f})"
@@ -179,13 +192,6 @@ def avoidance_process(
                     logger.debug(f"Avoidance: Skip path update (new pose order too close: {dist_xy:0.2f})")
                     continue
 
-        if len(path) > 2:
-            # Intermediate pose
-            next_delta_x = path[2].x - path[1].x
-            next_delta_y = path[2].y - path[1].y
-
-            path[1].O = math.degrees(math.atan2(next_delta_y, next_delta_x))  # noqa
-
         avoidance_path = path[1:]
         new_pose_order = path[1]
 
@@ -193,10 +199,12 @@ def avoidance_process(
             logger.debug("Avoidance: ignore path update (last_emitted_pose_order == new_pose_order)")
             continue
 
-        last_emitted_pose_order = new_pose_order.model_copy()
-
-        logger.info("Avoidance: Update path")
-        queue_sio.put(("path", [pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
+        if shared_properties["new_pose_order"]:
+            logger.info("Avoidance: ignore path update (new pose order has been received)")
+        else:
+            logger.info("Avoidance: Update path")
+            last_emitted_pose_order = new_pose_order.model_copy()
+            queue_sio.put(("path", [pose.model_dump(exclude_defaults=True) for pose in avoidance_path]))
 
     # Remove reference to shared memory data to trigger garbage collection
     shared_table_limits = None

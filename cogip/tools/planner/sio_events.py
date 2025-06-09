@@ -12,6 +12,7 @@ from .menu import (
     menu,
     pami_actuators_menu,
     robot_actuators_menu,
+    robot_actuators_multi_menu,
     wizard_test_menu,
 )
 
@@ -45,6 +46,9 @@ class SioEvents(socketio.AsyncClientNamespace):
         await self.emit("register_menu", {"name": "wizard", "menu": wizard_test_menu.model_dump()})
         if self.planner.robot_id == 1:
             await self.emit("register_menu", {"name": "actuators", "menu": robot_actuators_menu.model_dump()})
+            await self.emit(
+                "register_menu", {"name": "actuators_multi", "menu": robot_actuators_multi_menu.model_dump()}
+            )
         else:
             await self.emit("register_menu", {"name": "actuators", "menu": pami_actuators_menu.model_dump()})
         await self.emit("register_menu", {"name": "cameras", "menu": cameras_menu.model_dump()})
@@ -77,18 +81,21 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         Copilot connected, start planner.
         """
+        logger.info("[SIO] Copilot connected.")
         await self.planner.start()
 
     async def on_copilot_disconnected(self):
         """
         Copilot disconnected, stop planner.
         """
+        logger.info("[SIO] Copilot disconnected.")
         await self.planner.stop()
 
     def on_starter_changed(self, pushed: bool):
         """
         Signal received from the Monitor when the starter state changes in emulation mode.
         """
+        logger.info(f"[SIO] Starter changed: {pushed}")
         if not self.planner.virtual:
             return
         if pushed:
@@ -100,19 +107,36 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         Callback on reset message from copilot.
         """
+        logger.info("[SIO] Reset.")
         await self.planner.reset()
 
     async def on_pose_reached(self):
         """
         Callback on pose reached message.
         """
+        logger.info("[SIO] Pose reached.")
         await self.planner.sio_receiver_queue.put(self.planner.set_pose_reached())
 
-    async def on_command(self, cmd: str):
+    async def on_intermediate_pose_reached(self):
+        """
+        Callback on intermediate pose reached message.
+        """
+        logger.info("[SIO] Intermediate pose reached.")
+        await self.planner.sio_receiver_queue.put(self.planner.set_intermediate_pose_reached())
+
+    async def on_blocked(self):
+        """
+        Callback on blocked message.
+        """
+        logger.info("[SIO] Blocked.")
+        await self.planner.sio_receiver_queue.put(self.planner.blocked())
+
+    async def on_command(self, cmd: str, *args):
         """
         Callback on command message from dashboard.
         """
-        await self.planner.command(cmd)
+        logger.info(f"[SIO] Command: {cmd}")
+        await self.planner.command(cmd, *args)
 
     async def on_config_updated(self, config: dict[str, Any]):
         """
@@ -136,6 +160,7 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         Callback on game end message.
         """
+        logger.info("[SIO] Game ended.")
         await self.planner.game_end()
 
     async def on_actuator_state(self, actuator_state: dict[str, Any]):

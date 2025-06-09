@@ -1,10 +1,11 @@
 import re
 from typing import TYPE_CHECKING, Any
 
+from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.positions import StartPosition
 from cogip.tools.planner.table import TableEnum
 from cogip.utils.asyncloop import AsyncLoop
-from .actions import Strategy
+from .actions import Strategy, action_classes
 from .camp import Camp
 from .context import GameContext
 
@@ -41,6 +42,7 @@ class GameWizard:
             (self.request_table, self.response_table),
             (self.request_camp, self.response_camp),
             (self.request_start_pose, self.response_start_pose),
+            (self.request_avoidance, self.response_avoidance),
             (self.request_strategy, self.response_strategy),
             (self.request_starter_for_calibration, self.response_starter_for_calibration),
             (self.request_wait_for_calibration, self.response_wait_for_calibration),
@@ -81,7 +83,7 @@ class GameWizard:
     async def response_table(self, message: dict[str, Any]):
         value = message["value"]
         new_table = TableEnum[value]
-        self.properties.table = new_table
+        self.planner.properties.table = new_table
         self.planner.shared_properties["table"] = new_table
         await self.planner.soft_reset()
         await self.planner.sio_ns.emit("pami_table", value)
@@ -116,6 +118,20 @@ class GameWizard:
         self.planner.start_position = start_position
         await self.planner.set_pose_start(self.game_context.get_start_pose(start_position).pose)
 
+    async def request_avoidance(self):
+        message = {
+            "name": "Game Wizard: Choose Avoidance",
+            "type": "choice_str",
+            "choices": [e.name for e in AvoidanceStrategy],
+            "value": AvoidanceStrategy.AvoidanceCpp.name,
+        }
+        await self.planner.sio_ns.emit("wizard", message)
+
+    async def response_avoidance(self, message: dict[str, Any]):
+        value = message["value"]
+        self.game_context.avoidance_strategy = AvoidanceStrategy[value]
+        self.planner.shared_properties["avoidance_strategy"] = AvoidanceStrategy[value]
+
     async def request_strategy(self):
         choices: list[tuple[str, str, str]] = []  # list of (value, category, name). Name can be used for display.
         for strategy in Strategy:
@@ -132,7 +148,7 @@ class GameWizard:
     async def response_strategy(self, message: dict[str, Any]):
         value = message["value"]
         self.game_strategy = Strategy[value]
-        self.planner.properties.strategy = Strategy.TestAlign
+        self.planner.properties.strategy = Strategy.TestAlignBottomForBanner
         await self.planner.soft_reset()
 
     async def request_starter_for_calibration(self):
@@ -226,9 +242,9 @@ class GameWizard:
         self.waiting_start_loop.exit = True
         await self.waiting_start_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
+        self.game_context.reset()
         self.planner.properties.strategy = self.game_strategy
-        self.game_context.playing = False
-        await self.planner.soft_reset()
+        self.planner.actions = action_classes.get(self.game_strategy)(self.planner)
         await self.planner.sio_ns.emit("game_start")
-        await self.planner.sio_ns.emit("pami_play")
-        await self.planner.cmd_play()
+        await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
+        await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())

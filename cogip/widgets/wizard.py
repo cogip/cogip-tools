@@ -314,9 +314,6 @@ class CampWizard(QtCore.QObject):
             }
             """
         )
-        self.buttons.addButton(self.button_blue)
-        button_layout.addWidget(self.button_blue)
-
         self.button_yellow = QtWidgets.QRadioButton()
         self.button_yellow.setObjectName("yellowCamp")
         self.button_yellow.setCheckable(True)
@@ -343,17 +340,20 @@ class CampWizard(QtCore.QObject):
         self.buttons.addButton(self.button_yellow)
         button_layout.addWidget(self.button_yellow)
 
+        self.buttons.addButton(self.button_blue)
+        button_layout.addWidget(self.button_blue)
+
         if wizard["value"] == "yellow":
-            self.button_blue.setChecked(True)
-        else:
             self.button_yellow.setChecked(True)
+        else:
+            self.button_blue.setChecked(True)
         send_button = QtWidgets.QPushButton("Send")
         layout.addWidget(send_button)
         send_button.clicked.connect(self.send)
 
     @qtSlot()
     def send(self, clicked: bool):
-        color = "yellow" if self.button_blue.isChecked() else "blue"
+        color = "blue" if self.button_blue.isChecked() else "yellow"
         self.response.emit(color)
 
 

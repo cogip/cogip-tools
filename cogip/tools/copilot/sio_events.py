@@ -92,6 +92,7 @@ class SioEvents(socketio.AsyncClientNamespace):
         Callback on pose start (from planner).
         Forward to mcu-firmware.
         """
+        logger.info(f"[SIO] Pose start: {data}")
         start_pose = models.PathPose.model_validate(data)
         pb_start_pose = PB_PathPose()
         start_pose.copy_pb(pb_start_pose)
@@ -102,6 +103,7 @@ class SioEvents(socketio.AsyncClientNamespace):
         Callback on pose order (from planner).
         Forward to mcu-firmware.
         """
+        logger.info(f"[SIO] Pose order: {data}")
         pose_order = models.PathPose.model_validate(data)
         if self.copilot.id > 1:
             pose_order.allow_reverse = False
@@ -128,12 +130,21 @@ class SioEvents(socketio.AsyncClientNamespace):
         Callback on actuator_command (from dashboard).
         Forward to mcu-firmware.
         """
+        logger.info(f"[SIO] Actuator command: {data}")
         command = TypeAdapter(ActuatorCommand).validate_python(data)
 
         pb_command = PB_ActuatorCommand()
         if isinstance(command, PositionalActuatorCommand):
             command.pb_copy(pb_command.positional_actuator)
         await self.copilot.pbcom.send_can_message(copilot.actuator_command_uuid, pb_command)
+
+    async def on_actuator_init(self):
+        """
+        Callback on actuator_init (from dashboard).
+        Forward to mcu-firmware.
+        """
+        logger.info("[SIO] Actuator init")
+        await self.copilot.pbcom.send_can_message(copilot.actuator_init_uuid, None)
 
     async def on_config_updated(self, config: dict[str, Any]) -> None:
         """
@@ -159,6 +170,7 @@ class SioEvents(socketio.AsyncClientNamespace):
         Callback on game_start message.
         Forward to firmware.
         """
+        logger.info("[SIO] Game start")
         await self.copilot.pbcom.send_can_message(copilot.game_start_uuid, None)
 
     async def on_game_end(self):
@@ -166,6 +178,7 @@ class SioEvents(socketio.AsyncClientNamespace):
         Callback on game_end message.
         Forward to firmware.
         """
+        logger.info("[SIO] Game end")
         await self.copilot.pbcom.send_can_message(copilot.game_end_uuid, None)
 
     async def on_game_reset(self):
@@ -173,6 +186,7 @@ class SioEvents(socketio.AsyncClientNamespace):
         Callback on game_reset message.
         Forward to firmware.
         """
+        logger.info("[SIO] Game reset")
         await self.copilot.pbcom.send_can_message(copilot.game_reset_uuid, None)
 
     async def on_brake(self):
@@ -180,4 +194,5 @@ class SioEvents(socketio.AsyncClientNamespace):
         Callback on brake message.
         Forward to firmware.
         """
+        logger.info("[SIO] Brake")
         await self.copilot.pbcom.send_can_message(copilot.brake_uuid, None)
