@@ -10,6 +10,7 @@ from watchfiles import PythonFilter, run_process
 from . import logger
 from .actions import Strategy
 from .planner import Planner
+from .positions import StartPosition
 from .table import TableEnum
 
 
@@ -220,6 +221,15 @@ def main_opt(
             envvar="PLANNER_STRATEGY",
         ),
     ] = Strategy.TestVisitStartingAreas.name,
+    start_position: Annotated[
+        StartPosition,
+        typer.Option(
+            "-p",
+            "--start-position",
+            help="Default start position on startup",
+            envvar="PLANNER_START_POSITION",
+        ),
+    ] = StartPosition.Bottom.name,
     reload: Annotated[
         bool,
         typer.Option(
@@ -268,6 +278,7 @@ def main_opt(
         disable_fixed_obstacles,
         table,
         strategy,
+        start_position,
         debug,
     )
 

@@ -49,6 +49,13 @@ class GameContext(metaclass=Singleton):
         """
         return tables[self.properties.table]
 
+    @property
+    def start_pose(self) -> Pose:
+        """
+        Start pose.
+        """
+        return self.start_poses[self.properties.start_position]
+
     def reset(self):
         """
         Reset the context.
@@ -71,13 +78,6 @@ class GameContext(metaclass=Singleton):
                 return ControllerEnum.LINEAR_SPEED_TEST
             case _:
                 return ControllerEnum.QUADPID
-
-    def get_start_pose(self, n: StartPosition) -> Pose:
-        """
-        Define the possible start positions.
-        Default positions for blue camp.
-        """
-        return self.start_poses.get(n, AdaptedPose())
 
     def create_start_poses(self):
         self.start_poses = {
@@ -126,22 +126,16 @@ class GameContext(metaclass=Singleton):
             self.start_poses[StartPosition.PAMI4].x -= 1000
             self.start_poses[StartPosition.PAMI5].x -= 1000
 
-    def get_available_start_poses(self) -> list[StartPosition]:
-        """
-        Get start poses available depending on camp and table.
-        """
-        start_pose_indices = []
-        for p in StartPosition:
-            if self.properties.robot_id == 1 and p not in [
-                StartPosition.Top,
-                StartPosition.Bottom,
-                StartPosition.Opposite,
-            ]:
-                continue
-            pose = self.get_start_pose(p)
-            if self.table.contains(pose):
-                start_pose_indices.append(p)
-        return start_pose_indices
+    def is_valid_start_position(self, position: StartPosition) -> bool:
+        if self.properties.table == TableEnum.Training and position == StartPosition.Opposite:
+            return False
+        if self.properties.robot_id == 1 and position not in [
+            StartPosition.Top,
+            StartPosition.Bottom,
+            StartPosition.Opposite,
+        ]:
+            return False
+        return True
 
     def create_artifacts(self):
         # Positions are related to the default camp blue.

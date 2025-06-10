@@ -1,7 +1,9 @@
-from enum import IntEnum, auto
+from enum import auto
+
+from cogip.utils.argenum import ArgEnum
 
 
-class StartPosition(IntEnum):
+class StartPosition(ArgEnum):
     """
     Enum for available start positions.
     """

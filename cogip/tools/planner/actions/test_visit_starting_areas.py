@@ -19,13 +19,21 @@ class VisitStartingAreasAction(Action):
         self.before_action_func = self.compute_poses
 
     async def compute_poses(self) -> None:
-        start_positions = self.game_context.get_available_start_poses()
+        start_positions = [p.name for p in StartPosition if self.game_context.is_valid_start_position(p)]
         start_positions_count = len(start_positions)
+        default_start_position_index = 0
         for i in range(start_positions_count):
-            pose = self.game_context.get_start_pose(StartPosition((i + 1) % start_positions_count + 1))
+            start_position = StartPosition((i + 1) % start_positions_count + 1)
+            if start_position == self.game_context.properties.start_position:
+                default_start_position_index = i
+            pose = self.game_context.start_poses[start_position]
             new_pose = Pose(x=pose.x, y=pose.y, O=pose.O, max_speed_linear=66, max_speed_angular=66)
             new_pose.after_pose_func = partial(self.append_pose, new_pose)
             self.poses.append(new_pose)
+
+        self.poses = self.poses[default_start_position_index:] + self.poses[:default_start_position_index]
+        default_start_position = self.poses.pop(0)
+        self.poses.append(default_start_position)
 
     async def append_pose(self, pose: Pose) -> None:
         self.poses.append(pose)
