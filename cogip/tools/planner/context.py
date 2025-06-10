@@ -63,6 +63,7 @@ class GameContext(metaclass=Singleton):
         self.playing = False
         self.score = self.minimum_score
         self.countdown = self.game_duration
+        self.last_countdown = self.game_duration
         self.tribunes_in_robot = 0
         self.create_start_poses()
         self.create_artifacts()

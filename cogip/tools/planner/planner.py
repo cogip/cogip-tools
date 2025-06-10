@@ -478,37 +478,31 @@ class Planner:
     async def countdown_loop(self):
         logger.info("Planner: Task Countdown started")
         try:
-            last_countdown = self.game_context.countdown
+            self.game_context.last_countdown = self.game_context.countdown
             while True:
                 await asyncio.sleep(0.2)
+
+                if not self.game_context.playing:
+                    continue
+
                 now = datetime.now(UTC)
                 self.game_context.countdown = (
                     self.game_context.game_duration - (now - self.countdown_start_timestamp).total_seconds()
                 )
-                if self.game_context.playing:
-                    logger.info(f"Planner: countdown = {self.game_context.countdown: 3.2f}")
-                if (
-                    self.robot_id > 1
-                    and self.game_context.playing
-                    and self.game_context.countdown < 15
-                    and last_countdown > 15
-                ):
+
+                logger.info(f"Planner: countdown = {self.game_context.countdown: 3.2f}")
+                if self.robot_id > 1 and self.game_context.countdown < 15 and self.game_context.last_countdown > 15:
                     logger.info("Planner: countdown==15: start PAMI")
                     self.pami_event.set()
-                if (
-                    self.robot_id == 1
-                    and self.game_context.playing
-                    and self.game_context.countdown < 7
-                    and last_countdown > 7
-                ):
+                if self.robot_id == 1 and self.game_context.countdown < 7 and self.game_context.last_countdown > 7:
                     logger.info("Planner: countdown==7: force blocked")
                     await self.sio_receiver_queue.put(self.blocked())
-                if self.game_context.playing and self.game_context.countdown < 0 and last_countdown > 0:
+                if self.game_context.countdown < 0 and self.game_context.last_countdown > 0:
                     logger.info("Planner: countdown==0: final action")
                     await self.final_action()
-                if self.game_context.countdown < -5 and last_countdown > -5:
+                if self.game_context.countdown < -5 and self.game_context.last_countdown > -5:
                     await self.sio_ns.emit("stop_video_record")
-                last_countdown = self.game_context.countdown
+                self.game_context.last_countdown = self.game_context.countdown
         except asyncio.CancelledError:
             logger.info("Planner: Task Countdown cancelled")
             raise

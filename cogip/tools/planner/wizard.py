@@ -1,4 +1,5 @@
 import re
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
@@ -230,6 +231,12 @@ class GameWizard:
         self.waiting_calibration_loop.exit = True
         await self.waiting_calibration_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
+        # Make sure no actions are executed during/after calibration by setting the countdown start timestamp
+        # far enough in the past (now - game_duration - a margin 100 seconds), so the countdown will always be negative.
+        self.planner.countdown_start_timestamp = datetime.now(UTC) - timedelta(
+            seconds=self.game_context.game_duration + 100
+        )
+        self.game_context.last_countdown = self.game_context.countdown = -100
         self.game_context.playing = True
         await self.planner.sio_receiver_queue.put(self.planner.set_pose_reached())
         await self.next()
