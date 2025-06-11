@@ -1,6 +1,7 @@
 import asyncio
 import platform
 import re
+import sys
 import time
 import traceback
 from datetime import UTC, datetime
@@ -77,6 +78,7 @@ class Planner:
         disable_fixed_obstacles: bool,
         table: TableEnum,
         strategy: Strategy,
+        start_position: StartPosition,
         debug: bool,
     ):
         """
@@ -105,6 +107,7 @@ class Planner:
             disable_fixed_obstacles: Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance
             table: Default table on startup
             strategy: Default strategy on startup
+            start_position: Default start position on startup
             debug: enable debug messages
         """
         self.robot_id = robot_id
@@ -145,6 +148,7 @@ class Planner:
             disable_fixed_obstacles=disable_fixed_obstacles,
             table=table,
             strategy=strategy,
+            start_position=start_position,
         )
         self.virtual = platform.machine() != "aarch64"
         self.retry_connection = True
@@ -169,10 +173,6 @@ class Planner:
         self.blocked_counter: int = 0
         self.controller = self.game_context.default_controller
         self.game_wizard = GameWizard(self)
-        self.start_position: StartPosition | None = None
-        available_start_poses = self.game_context.get_available_start_poses()
-        if available_start_poses:
-            self.start_position = available_start_poses[(self.robot_id - 1) % len(available_start_poses)]
         self.sio_receiver_task: asyncio.Task | None = None
         self.sio_emitter_task: asyncio.Task | None = None
         self.countdown_task: asyncio.Task | None = None
@@ -180,6 +180,10 @@ class Planner:
         self.pami_event = asyncio.Event()
         self.last_starter_event_timestamp: datetime | None = None
         self.countdown_start_timestamp: datetime = datetime.now(UTC)
+
+        if not self.game_context.is_valid_start_position(start_position):
+            logger.error(f"Start position {start_position.name} invalid in current table and camp")
+            sys.exit(1)
 
         self.shared_properties: DictProxy = self.process_manager.dict(
             {
@@ -400,10 +404,7 @@ class Planner:
         self.shared_table_limits[3] = self.game_context.table.y_max
         self.flag_motor.off()
         self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
-        available_start_poses = self.game_context.get_available_start_poses()
-        if available_start_poses and self.start_position not in available_start_poses:
-            self.start_position = available_start_poses[(self.robot_id - 1) % len(available_start_poses)]
-        await self.set_pose_start(self.game_context.get_start_pose(self.start_position).pose)
+        await self.set_pose_start(self.game_context.start_pose.pose)
         self.pami_event.clear()
 
     async def task_sio_emitter(self):
@@ -477,37 +478,31 @@ class Planner:
     async def countdown_loop(self):
         logger.info("Planner: Task Countdown started")
         try:
-            last_countdown = self.game_context.countdown
+            self.game_context.last_countdown = self.game_context.countdown
             while True:
                 await asyncio.sleep(0.2)
+
+                if not self.game_context.playing:
+                    continue
+
                 now = datetime.now(UTC)
                 self.game_context.countdown = (
                     self.game_context.game_duration - (now - self.countdown_start_timestamp).total_seconds()
                 )
-                if self.game_context.playing:
-                    logger.info(f"Planner: countdown = {self.game_context.countdown: 3.2f}")
-                if (
-                    self.robot_id > 1
-                    and self.game_context.playing
-                    and self.game_context.countdown < 15
-                    and last_countdown > 15
-                ):
+
+                logger.info(f"Planner: countdown = {self.game_context.countdown: 3.2f}")
+                if self.robot_id > 1 and self.game_context.countdown < 15 and self.game_context.last_countdown > 15:
                     logger.info("Planner: countdown==15: start PAMI")
                     self.pami_event.set()
-                if (
-                    self.robot_id == 1
-                    and self.game_context.playing
-                    and self.game_context.countdown < 7
-                    and last_countdown > 7
-                ):
+                if self.robot_id == 1 and self.game_context.countdown < 7 and self.game_context.last_countdown > 7:
                     logger.info("Planner: countdown==7: force blocked")
                     await self.sio_receiver_queue.put(self.blocked())
-                if self.game_context.playing and self.game_context.countdown < 0 and last_countdown > 0:
+                if self.game_context.countdown < 0 and self.game_context.last_countdown > 0:
                     logger.info("Planner: countdown==0: final action")
                     await self.final_action()
-                if self.game_context.countdown < -5 and last_countdown > -5:
+                if self.game_context.countdown < -5 and self.game_context.last_countdown > -5:
                     await self.sio_ns.emit("stop_video_record")
-                last_countdown = self.game_context.countdown
+                self.game_context.last_countdown = self.game_context.countdown
         except asyncio.CancelledError:
             logger.info("Planner: Task Countdown cancelled")
             raise
@@ -980,25 +975,15 @@ class Planner:
         Choose start position command from the menu.
         Send start position wizard message.
         """
-        if self.start_position is None:
-            await self.sio_ns.emit(
-                "wizard",
-                {
-                    "name": "Error",
-                    "type": "message",
-                    "value": "No start position available with this Camp/Table",
-                },
-            )
-        else:
-            await self.sio_ns.emit(
-                "wizard",
-                {
-                    "name": "Choose Start Position",
-                    "type": "choice_integer",
-                    "choices": [p.name for p in self.game_context.get_available_start_poses()],
-                    "value": self.start_position.name,
-                },
-            )
+        await self.sio_ns.emit(
+            "wizard",
+            {
+                "name": "Choose Start Position",
+                "type": "choice_integer",
+                "choices": [p.name for p in StartPosition if self.game_context.is_valid_start_position(p)],
+                "value": self.properties.start_position.name,
+            },
+        )
 
     async def cmd_choose_table(self):
         """
@@ -1027,8 +1012,19 @@ class Planner:
                 new_camp = Camp.Colors[value]
                 if self.game_context.camp.color == new_camp:
                     return
+                previous_camp = self.game_context.camp.color
                 if self.properties.table == TableEnum.Training and new_camp == Camp.Colors.yellow:
-                    logger.warning("Wizard: only blue camp is authorized on training table")
+                    error_message = "Yellow camp not compatible with training table"
+                    self.game_context.camp.color = previous_camp
+                    logger.warning(f"Wizard: {error_message}")
+                    await self.sio_ns.emit(
+                        "wizard",
+                        {
+                            "name": "Error",
+                            "type": "message",
+                            "value": message,
+                        },
+                    )
                     return
                 self.game_context.camp.color = new_camp
                 await self.soft_reset()
@@ -1048,24 +1044,50 @@ class Planner:
                 self.shared_properties["avoidance_strategy"] = new_strategy
                 logger.info(f"Wizard: New avoidance strategy: {self.game_context.avoidance_strategy.name}")
             case "Choose Start Position":
-                self.start_position = StartPosition[value]
-                await self.soft_reset()
-            case "Choose Table":
-                new_table = TableEnum[value]
-                if self.game_context.table == new_table:
+                new_start_position = StartPosition[value]
+                if self.properties.start_position == new_start_position:
                     return
-                if self.game_context.camp.color == Camp.Colors.yellow and new_table == TableEnum.Training:
-                    logger.warning("Wizard: training table is not supported with yellow camp")
+                if not self.game_context.is_valid_start_position(new_start_position):
+                    message = f"Start position {new_start_position.name} invalid in current table and camp"
+                    logger.warning(f"Wizard: {message}")
                     await self.sio_ns.emit(
                         "wizard",
                         {
                             "name": "Error",
                             "type": "message",
-                            "value": "Training table is not supported with yellow camp",
+                            "value": message,
                         },
                     )
                     return
+                self.properties.start_position = new_start_position
+                await self.soft_reset()
+            case "Choose Table":
+                new_table = TableEnum[value]
+                if self.game_context.table == new_table:
+                    return
+                error_message = ""
+                previous_table = self.game_context.table
                 self.properties.table = new_table
+                if not self.game_context.is_valid_start_position(self.properties.start_position):
+                    error_message = (
+                        f"Table {new_table.name} not compatible "
+                        f"with start position {self.properties.start_position.name}"
+                    )
+                if new_table == TableEnum.Training and self.game_context.camp.color == Camp.Colors.yellow:
+                    error_message = f"Table {new_table.name} not compatible yellow camp"
+                if error_message:
+                    self.properties.table = previous_table
+                    logger.warning(f"Wizard: {error_message}")
+                    await self.sio_ns.emit(
+                        "wizard",
+                        {
+                            "name": "Error",
+                            "type": "message",
+                            "value": error_message,
+                        },
+                    )
+                    return
+
                 self.shared_table_limits[0] = self.game_context.table.x_min
                 self.shared_table_limits[1] = self.game_context.table.x_max
                 self.shared_table_limits[2] = self.game_context.table.y_min

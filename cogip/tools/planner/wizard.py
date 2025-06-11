@@ -1,4 +1,5 @@
 import re
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
@@ -103,20 +104,19 @@ class GameWizard:
         await self.planner.sio_ns.emit("pami_camp", value)
 
     async def request_start_pose(self):
-        available_start_poses = self.game_context.get_available_start_poses()
         message = {
             "name": "Game Wizard: Choose Start Position",
             "type": "choice_integer",
-            "choices": [start_pose.name for start_pose in available_start_poses],
-            "value": self.planner.start_position.name,
+            "choices": [p.name for p in StartPosition if self.game_context.is_valid_start_position(p)],
+            "value": self.planner.properties.start_position.name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_start_pose(self, message: dict[str, Any]):
         value = message["value"]
         start_position = StartPosition[value]
-        self.planner.start_position = start_position
-        await self.planner.set_pose_start(self.game_context.get_start_pose(start_position).pose)
+        self.planner.properties.start_position = start_position
+        await self.planner.set_pose_start(self.game_context.start_pose.pose)
 
     async def request_avoidance(self):
         message = {
@@ -231,6 +231,12 @@ class GameWizard:
         self.waiting_calibration_loop.exit = True
         await self.waiting_calibration_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
+        # Make sure no actions are executed during/after calibration by setting the countdown start timestamp
+        # far enough in the past (now - game_duration - a margin 100 seconds), so the countdown will always be negative.
+        self.planner.countdown_start_timestamp = datetime.now(UTC) - timedelta(
+            seconds=self.game_context.game_duration + 100
+        )
+        self.game_context.last_countdown = self.game_context.countdown = -100
         self.game_context.playing = True
         await self.planner.sio_receiver_queue.put(self.planner.set_pose_reached())
         await self.next()
