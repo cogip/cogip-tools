@@ -108,7 +108,6 @@ protected:
 /// @param pose The pose to print.
 /// @return A reference to the output stream.
 inline std::ostream& operator<<(std::ostream& os, Pose& pose) {
-    pose.set_y(888);
     os << "Pose(x=" << pose.x() << ", y=" << pose.y() << ", angle=" << pose.angle() << ")";
     return os;
 }
