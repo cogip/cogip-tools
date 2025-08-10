@@ -98,6 +98,7 @@ wheel.py-api = "cp312"
 build.verbose = true
 editable.verbose = true
 install.strip = false
+cmake.version = "==4.0"
 cmake.build-type = "Release" # Can be Debug, Release, MinSizeRel, RelWithDebInfo
 wheel.packages = ["cogip"]
 wheel.exclude = [

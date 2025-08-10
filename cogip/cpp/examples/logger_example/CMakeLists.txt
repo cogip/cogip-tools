@@ -32,7 +32,6 @@ nanobind_add_stub(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/__init__.pyi
     MARKER_FILE ${CMAKE_CURRENT_BINARY_DIR}/py.typed
     PYTHON_PATH ${CMAKE_BINARY_DIR}
-    DEPENDS logger_example
     VERBOSE
     INSTALL_TIME
 )

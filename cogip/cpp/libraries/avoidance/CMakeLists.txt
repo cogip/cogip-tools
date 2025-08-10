@@ -36,7 +36,7 @@ nanobind_add_stub(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/__init__.pyi
     MARKER_FILE ${CMAKE_CURRENT_BINARY_DIR}/py.typed
     PYTHON_PATH ${CMAKE_BINARY_DIR}
-    DEPENDS avoidance models_stub obstacles_stub
+    DEPENDS models_stub obstacles_stub
     VERBOSE
     INSTALL_TIME
 )
