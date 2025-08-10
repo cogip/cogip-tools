@@ -136,7 +136,7 @@ exclude = [
     "cogip/protobuf",
     "cogip/scservo_sdk",
 ]
-select = [
+lint.select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
     "F",  # pyflakes
