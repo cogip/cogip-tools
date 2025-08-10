@@ -175,8 +175,8 @@ class BoolProperty(QtCore.QObject):
         self._value.setChecked(props["value"])
         layout.addWidget(self._value, row, 1)
 
-    def value_changed(self, value):
-        self.value_updated.emit(self._name, value)
+    def value_changed(self, value: int):
+        self.value_updated.emit(self._name, value == QtCore.Qt.CheckState.Checked.value)
 
     def update_value(self, value):
         self._value.blockSignals(True)

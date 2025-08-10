@@ -9,7 +9,7 @@ from .positions import StartPosition
 from .table import TableEnum
 
 
-@dataclass(config=ConfigDict(title="Planner Properties"))
+@dataclass(config=ConfigDict(title="Planner Properties", validate_assignment=True))
 class Properties(metaclass=Singleton):
     robot_id: Annotated[
         int,
