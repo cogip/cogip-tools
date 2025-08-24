@@ -10,6 +10,8 @@ add_library(
     Polar.cpp
     Pose.cpp
     PoseBuffer.cpp
+    PoseOrder.cpp
+    PoseOrderList.cpp
 )
 target_include_directories(
     models_cpp

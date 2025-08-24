@@ -13,6 +13,8 @@ import numpy as np
 from numpy.typing import ArrayLike
 from pydantic import BaseModel
 
+from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.models import PoseOrder as SharedPoseOrder
 from cogip.protobuf import PB_PathPose
 
 
@@ -152,6 +154,53 @@ class PathPose(Pose):
         pb_path_pose.timeout_ms = self.timeout_ms
         pb_path_pose.bypass_final_orientation = self.bypass_final_orientation
         pb_path_pose.is_intermediate = self.is_intermediate
+
+    def to_shared(self, shared_pose_order: SharedPoseOrder | None) -> None:
+        """
+        Copy data in a Protobuf message.
+
+        Arguments:
+            pb_path_pose: Protobuf message to fill
+        """
+        if shared_pose_order is None:
+            return
+        shared_pose_order.x = int(self.x)
+        shared_pose_order.y = int(self.y)
+        shared_pose_order.angle = int(self.O)  # noqa
+        shared_pose_order.max_speed_linear = self.max_speed_linear
+        shared_pose_order.max_speed_angular = self.max_speed_angular
+        shared_pose_order.allow_reverse = self.allow_reverse
+        shared_pose_order.bypass_anti_blocking = self.bypass_anti_blocking
+        shared_pose_order.bypass_final_orientation = self.bypass_final_orientation
+        shared_pose_order.timeout_ms = self.timeout_ms
+        shared_pose_order.is_intermediate = self.is_intermediate
+
+    @classmethod
+    def from_shared(cls, shared_pose: SharedPose | SharedPoseOrder) -> "PathPose":
+        """
+        Create a PathPose from a SharedPoseOrder.
+
+        Arguments:
+            shared_pose_order: SharedPoseOrder to convert
+
+        Returns:
+            A PathPose instance with the data from the SharedPoseOrder.
+        """
+        path_pose = cls(
+            x=shared_pose.x,
+            y=shared_pose.y,
+            O=shared_pose.angle,  # noqa
+        )
+        if isinstance(shared_pose, SharedPoseOrder):
+            path_pose.max_speed_linear = shared_pose.max_speed_linear
+            path_pose.max_speed_angular = shared_pose.max_speed_angular
+            path_pose.allow_reverse = shared_pose.allow_reverse
+            path_pose.bypass_anti_blocking = shared_pose.bypass_anti_blocking
+            path_pose.timeout_ms = shared_pose.timeout_ms
+            path_pose.bypass_final_orientation = shared_pose.bypass_final_orientation
+            path_pose.is_intermediate = shared_pose.is_intermediate
+
+        return path_pose
 
 
 class DynObstacleRect(BaseModel):
