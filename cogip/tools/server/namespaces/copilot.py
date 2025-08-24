@@ -23,11 +23,12 @@ class CopilotNamespace(socketio.AsyncNamespace):
             message = "A copilot is already connected"
             logger.error(f"Copilot connection refused: {message}")
             raise ConnectionRefusedError(message)
-        self.context.copilot_sid = sid
 
     async def on_connected(self, sid):
         logger.info("Copilot connected.")
-        await self.emit("copilot_connected", namespace="/planner")
+        self.context.copilot_sid = sid
+        if self.context.planner_sid:
+            await self.emit("copilot_connected", namespace="/planner")
 
     async def on_disconnect(self, sid):
         self.context.copilot_sid = None

@@ -22,10 +22,10 @@ class PlannerNamespace(socketio.AsyncNamespace):
         if self.context.planner_sid:
             logger.error("Planner connection refused: a planner is already connected")
             raise ConnectionRefusedError("A planner is already connected")
-        self.context.planner_sid = sid
 
     async def on_connected(self, sid, virtual: bool):
         logger.info(f"Planner connected (virtual={virtual}).")
+        self.context.planner_sid = sid
         self.context.virtual_planner = virtual
         if self.context.copilot_sid:
             await self.emit("copilot_connected", namespace="/planner")
