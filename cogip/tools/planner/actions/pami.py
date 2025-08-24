@@ -26,7 +26,7 @@ class Pami2Action(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
-        self.game_context.avoidance_strategy = new_strategy
+        self.planner.properties.avoidance_strategy = new_strategy
         self.planner.shared_properties["avoidance_strategy"] = new_strategy
 
     async def before_action(self):
@@ -150,7 +150,7 @@ class Pami3Action(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
-        self.game_context.avoidance_strategy = new_strategy
+        self.planner.properties.avoidance_strategy = new_strategy
         self.planner.shared_properties["avoidance_strategy"] = new_strategy
 
     async def before_action(self):
@@ -252,7 +252,7 @@ class Pami4Action(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
-        self.game_context.avoidance_strategy = new_strategy
+        self.planner.properties.avoidance_strategy = new_strategy
         self.planner.shared_properties["avoidance_strategy"] = new_strategy
 
     async def before_action(self):
@@ -333,7 +333,7 @@ class Pami5Action(Action):
         self.start_delay = start_delay
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
-        self.game_context.avoidance_strategy = new_strategy
+        self.planner.properties.avoidance_strategy = new_strategy
         self.planner.shared_properties["avoidance_strategy"] = new_strategy
 
     async def before_action(self):

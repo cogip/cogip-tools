@@ -27,7 +27,7 @@ class DropBannerAction(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
-        self.game_context.avoidance_strategy = new_strategy
+        self.planner.properties.avoidance_strategy = new_strategy
         self.planner.shared_properties["avoidance_strategy"] = new_strategy
 
     async def before_action(self):

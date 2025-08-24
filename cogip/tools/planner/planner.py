@@ -79,6 +79,7 @@ class Planner:
         table: TableEnum,
         strategy: Strategy,
         start_position: StartPosition,
+        avoidance_strategy: AvoidanceStrategy,
         debug: bool,
     ):
         """
@@ -149,6 +150,7 @@ class Planner:
             table=table,
             strategy=strategy,
             start_position=start_position,
+            avoidance_strategy=avoidance_strategy,
         )
         self.virtual = platform.machine() != "aarch64"
         self.retry_connection = True
@@ -433,7 +435,7 @@ class Planner:
                             new_controller = ControllerEnum.QUADPID
                         else:
                             # Intermediate pose
-                            match self.game_context.avoidance_strategy:
+                            match self.properties.avoidance_strategy:
                                 case AvoidanceStrategy.Disabled | AvoidanceStrategy.AvoidanceCpp:
                                     new_controller = ControllerEnum.QUADPID
                         await self.set_controller(new_controller)
@@ -966,7 +968,7 @@ class Planner:
                 "name": "Choose Avoidance",
                 "type": "choice_str",
                 "choices": [e.name for e in AvoidanceStrategy],
-                "value": self.game_context.avoidance_strategy.name,
+                "value": self.properties.avoidance_strategy.name,
             },
         )
 
@@ -1038,11 +1040,11 @@ class Planner:
                 logger.info(f"Wizard: New strategy: {self.properties.strategy.name}")
             case "Choose Avoidance":
                 new_strategy = AvoidanceStrategy[value]
-                if self.game_context.avoidance_strategy == new_strategy:
+                if self.properties.avoidance_strategy == new_strategy:
                     return
-                self.game_context.avoidance_strategy = new_strategy
+                self.properties.avoidance_strategy = new_strategy
                 self.shared_properties["avoidance_strategy"] = new_strategy
-                logger.info(f"Wizard: New avoidance strategy: {self.game_context.avoidance_strategy.name}")
+                logger.info(f"Wizard: New avoidance strategy: {self.properties.avoidance_strategy.name}")
             case "Choose Start Position":
                 new_start_position = StartPosition[value]
                 if self.properties.start_position == new_start_position:

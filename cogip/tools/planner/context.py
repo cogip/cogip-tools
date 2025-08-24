@@ -18,7 +18,6 @@ from cogip.models.artifacts import (
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.singleton import Singleton
 from . import actions
-from .avoidance.avoidance import AvoidanceStrategy
 from .camp import Camp
 from .pose import AdaptedPose, Pose
 from .positions import StartPosition
@@ -37,7 +36,6 @@ class GameContext(metaclass=Singleton):
         self.game_duration: int = 100
         self.minimum_score: int = 0
         self.camp = Camp()
-        self.avoidance_strategy = AvoidanceStrategy.AvoidanceCpp
         self.reset()
 
         self.tribunes_in_robot = 0

@@ -5,6 +5,7 @@ from pydantic.dataclasses import dataclass
 
 from cogip.utils.singleton import Singleton
 from .actions import Strategy
+from .avoidance.avoidance import AvoidanceStrategy
 from .positions import StartPosition
 from .table import TableEnum
 
@@ -119,6 +120,13 @@ class Properties(metaclass=Singleton):
         StartPosition,
         Field(
             title="Start Position",
+            exclude=True,
+        ),
+    ]
+    avoidance_strategy: Annotated[
+        AvoidanceStrategy,
+        Field(
+            title="Avoidance Strategy",
             exclude=True,
         ),
     ]

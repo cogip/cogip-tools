@@ -129,7 +129,7 @@ class GameWizard:
 
     async def response_avoidance(self, message: dict[str, Any]):
         value = message["value"]
-        self.game_context.avoidance_strategy = AvoidanceStrategy[value]
+        self.planner.properties.avoidance_strategy = AvoidanceStrategy[value]
         self.planner.shared_properties["avoidance_strategy"] = AvoidanceStrategy[value]
 
     async def request_strategy(self):

@@ -9,6 +9,7 @@ from watchfiles import PythonFilter, run_process
 
 from . import logger
 from .actions import Strategy
+from .avoidance.avoidance import AvoidanceStrategy
 from .planner import Planner
 from .positions import StartPosition
 from .table import TableEnum
@@ -230,6 +231,15 @@ def main_opt(
             envvar="PLANNER_START_POSITION",
         ),
     ] = StartPosition.Bottom.name,
+    avoidance_strategy: Annotated[
+        AvoidanceStrategy,
+        typer.Option(
+            "-a",
+            "--avoidance-strategy",
+            help="Default avoidance strategy on startup",
+            envvar="PLANNER_AVOIDANCE_STRATEGY",
+        ),
+    ] = AvoidanceStrategy.AvoidanceCpp.name,
     reload: Annotated[
         bool,
         typer.Option(
@@ -279,6 +289,7 @@ def main_opt(
         table,
         strategy,
         start_position,
+        avoidance_strategy,
         debug,
     )
 
