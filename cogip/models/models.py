@@ -285,20 +285,6 @@ class Obstacle(BaseModel):
 ObstacleList = list[Obstacle]
 
 
-class LogMessage(BaseModel):
-    """
-    A log received on the serial port.
-
-    Attributes:
-        log: message
-    """
-
-    log: str
-
-
-SerialMessage = RobotState | ShellMenu | LogMessage
-
-
 class CameraExtrinsicParameters(BaseModel):
     """Model representing camera extrinsic properties"""
 

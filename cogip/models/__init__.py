@@ -4,13 +4,11 @@ from .models import (  # noqa
     DynObstacleList,
     DynObstacleRect,
     DynRoundObstacle,
-    LogMessage,
     MenuEntry,
     Obstacle,
     PathPose,
     Pose,
     RobotState,
-    SerialMessage,
     ShellMenu,
     Vertex,
 )
