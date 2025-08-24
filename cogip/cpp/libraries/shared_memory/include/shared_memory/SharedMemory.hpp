@@ -7,6 +7,7 @@
 
 #include "models/CircleList.hpp"
 #include "models/PoseBuffer.hpp"
+#include "models/PoseOrderList.hpp"
 #include "obstacles/ObstacleCircleList.hpp"
 #include "obstacles/ObstacleRectangleList.hpp"
 
@@ -51,8 +52,6 @@ public:
     /// Retrieves a pointer to the PoseBuffer object wrapping the shared memory pose_current_buffer structure.
     models::PoseBuffer* getPoseCurrentBuffer() { return pose_current_buffer_; }
 
-    /// Retrieves a pointer to the Pose object wrapping the shared memory pose_order structure.
-    models::Pose* getPoseOrder() { return pose_order_; }
 
     /// Retrieves a pointer to the Coords object wrapping the shared memory table_limits array.
     float (&getTableLimits())[4] { return data_->table_limits; }
@@ -78,6 +77,30 @@ public:
     /// Retrieves a reference to the shared properties structure.
     shared_properties_t& getProperties() { return data_->properties; }
 
+    /// Gets the avoidance exiting flag
+    bool getAvoidanceExiting() const { return data_->avoidance_exiting; }
+
+    /// Sets the avoidance exiting flag.
+    void setAvoidanceExiting(bool exiting) { data_->avoidance_exiting = exiting; }
+
+    /// Gets the avoidance new pose order available flag.
+    bool getAvoidanceHasNewPoseOrder() const { return data_->avoidance_has_new_pose_order; }
+
+    /// Sets the avoidance new pose order available flag.
+    void setAvoidanceHasNewPoseOrder(bool available) { data_->avoidance_has_new_pose_order = available; }
+
+    /// Gets the avoidance no pose order flag.
+    bool getAvoidanceHasPoseOrder() const { return data_->avoidance_has_pose_order; }
+
+    /// Sets the avoidance no pose order flag.
+    void setAvoidanceHasPoseOrder(bool no_pose_order) { data_->avoidance_has_pose_order = no_pose_order; }
+
+    /// Retrieves a pointer to the shared memory avoidance_new_pose_order structure.
+    models::PoseOrder* getAvoidanceNewPoseOrder() { return avoidance_new_pose_order_; }
+
+    /// Retrieves a pointer to the shared memory avoidance_pose_order structure.
+    models::PoseOrder* getAvoidancePoseOrder() { return avoidance_pose_order_; }
+
 private:
     std::string name_;     ///< Unique name of the shared memory segment.
     bool owner_;           ///< Indicates whether this instance owns the shared memory.
@@ -85,11 +108,12 @@ private:
     shared_data_t* data_;  ///< Pointer to the shared memory data structure.
     std::map<LockName, std::shared_ptr<WritePriorityLock>> locks_;  ///< Map of locks for synchronization.
     models::PoseBuffer* pose_current_buffer_;  ///< Pointer to the PoseBuffer object wrapping the shared memory pose_current_buffer structure.
-    models::Pose* pose_order_;    ///< Pointer to the Pose object wrapping the shared memory pose_order structure.
     models::CircleList* detector_obstacles_;  ///< Pointer to the CircleList object wrapping the shared memory detector_obstacles structure.
     models::CircleList* monitor_obstacles_;  ///< Pointer to the CircleList object wrapping the shared memory monitor_obstacles structure.
     obstacles::ObstacleCircleList* circle_obstacles_;  ///< Pointer to the ObstacleCircleList object wrapping the shared memory circle_obstacles structure.
     obstacles::ObstacleRectangleList* rectangle_obstacles_;  ///< Pointer to the ObstacleRectangleList object wrapping the shared memory rectangle_obstacles structure.
+    models::PoseOrder* avoidance_new_pose_order_;  ///< Pointer to the PoseOrder object for the new pose order in avoidance.
+    models::PoseOrder* avoidance_pose_order_;  ///< Pointer to the PoseOrder object for the current pose order in avoidance.
 };
 
 } // namespace shared_memory

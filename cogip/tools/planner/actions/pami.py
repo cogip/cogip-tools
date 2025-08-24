@@ -27,7 +27,7 @@ class Pami2Action(Action):
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.properties.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_memory_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
         self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
@@ -151,7 +151,7 @@ class Pami3Action(Action):
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.properties.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_memory_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
         self.set_avoidance(AvoidanceStrategy.Disabled)
@@ -253,7 +253,7 @@ class Pami4Action(Action):
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.properties.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_memory_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
         self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
@@ -334,10 +334,11 @@ class Pami5Action(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         self.planner.properties.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_memory_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
         self.planner.properties.disable_fixed_obstacles = True
+        self.planner.shared_memory_properties.disable_fixed_obstacles = True
 
         if self.wait:
             await self.planner.pami_event.wait()
@@ -392,6 +393,7 @@ class Pami5Action(Action):
         await set_countdown_color(self.planner, "red")
         self.actions.clear()
         self.planner.properties.disable_fixed_obstacles = False
+        self.planner.shared_memory_properties.disable_fixed_obstacles = False
         self.planner.flag_motor.on()
 
     def weight(self) -> float:

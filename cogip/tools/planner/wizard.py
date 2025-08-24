@@ -85,7 +85,7 @@ class GameWizard:
         value = message["value"]
         new_table = TableEnum[value]
         self.planner.properties.table = new_table
-        self.planner.shared_properties["table"] = new_table
+        self.planner.shared_memory_properties.table = new_table.val
         await self.planner.soft_reset()
         await self.planner.sio_ns.emit("pami_table", value)
 
@@ -116,6 +116,7 @@ class GameWizard:
         value = message["value"]
         start_position = StartPosition[value]
         self.planner.properties.start_position = start_position
+        self.planner.shared_memory_properties.start_position = start_position.val
         await self.planner.set_pose_start(self.game_context.start_pose.pose)
 
     async def request_avoidance(self):
@@ -130,7 +131,7 @@ class GameWizard:
     async def response_avoidance(self, message: dict[str, Any]):
         value = message["value"]
         self.planner.properties.avoidance_strategy = AvoidanceStrategy[value]
-        self.planner.shared_properties["avoidance_strategy"] = AvoidanceStrategy[value]
+        self.planner.shared_memory_properties.avoidance_strategy = value.val
 
     async def request_strategy(self):
         choices: list[tuple[str, str, str]] = []  # list of (value, category, name). Name can be used for display.
@@ -149,6 +150,7 @@ class GameWizard:
         value = message["value"]
         self.game_strategy = Strategy[value]
         self.planner.properties.strategy = Strategy.TestAlignBottomForBanner
+        self.planner.shared_memory_properties.strategy = self.planner.properties.strategy.val
         await self.planner.soft_reset()
 
     async def request_starter_for_calibration(self):
@@ -250,6 +252,7 @@ class GameWizard:
         await self.planner.sio_ns.emit("close_wizard")
         self.game_context.reset()
         self.planner.properties.strategy = self.game_strategy
+        self.planner.shared_memory_properties.strategy = self.game_strategy.val
         self.planner.actions = action_classes.get(self.game_strategy)(self.planner)
         await self.planner.sio_ns.emit("game_start")
         await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())

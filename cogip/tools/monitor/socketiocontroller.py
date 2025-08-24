@@ -282,7 +282,7 @@ class SocketioController(QtCore.QObject):
             self.signal_new_robot_path.emit(robot_id, path)
 
         @self.sio.on("add_robot", namespace="/monitor")
-        def on_add_robot(robot_id: int, virtual_planner: bool, virtual_detector) -> None:
+        def on_add_robot(robot_id: int, virtual_planner: bool, virtual_detector: bool) -> None:
             """
             Add a new robot.
             """

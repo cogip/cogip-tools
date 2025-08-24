@@ -7,7 +7,6 @@ import traceback
 from datetime import UTC, datetime
 from functools import partial
 from multiprocessing import Manager, Process
-from multiprocessing.managers import DictProxy
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -28,9 +27,10 @@ from shapely.geometry import Polygon
 from cogip import models
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
+from cogip.cpp.libraries.models import PoseOrder as SharedPoseOrder
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
-from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
+from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, SharedProperties, WritePriorityLock
 from cogip.models.actuators import ActuatorState
 from cogip.models.artifacts import ConstructionArea, FixedObstacleID
 from cogip.tools.copilot.controller import ControllerEnum
@@ -119,19 +119,6 @@ class Planner:
         self.scservos_baud_rate = scservos_baud_rate
         self.debug = debug
 
-        self.shared_memory: SharedMemory | None = None
-        self.shared_pose_current_lock: WritePriorityLock | None = None
-        self.shared_pose_current_buffer: SharedPoseBuffer | None = None
-        self.shared_table_limits: NDArray | None = None
-        self.shared_detector_obstacles: SharedCircleList | None = None
-        self.shared_detector_obstacles_lock: WritePriorityLock | None = None
-        self.shared_monitor_obstacles: SharedCircleList | None = None
-        self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
-        self.shared_circle_obstacles: SharedObstacleCircleList | None = None
-        self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
-        self.shared_obstacles_lock: WritePriorityLock | None = None
-        self.create_shared_memory()
-
         # We have to make sure the Planner is the first object calling the constructor
         # of the Properties singleton
         if Properties in Singleton._instance:
@@ -152,6 +139,22 @@ class Planner:
             start_position=start_position,
             avoidance_strategy=avoidance_strategy,
         )
+
+        self.shared_memory: SharedMemory | None = None
+        self.shared_memory_properties: SharedProperties | None = None
+        self.shared_pose_current_lock: WritePriorityLock | None = None
+        self.shared_pose_current_buffer: SharedPoseBuffer | None = None
+        self.shared_table_limits: NDArray | None = None
+        self.shared_detector_obstacles: SharedCircleList | None = None
+        self.shared_detector_obstacles_lock: WritePriorityLock | None = None
+        self.shared_monitor_obstacles: SharedCircleList | None = None
+        self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
+        self.shared_circle_obstacles: SharedObstacleCircleList | None = None
+        self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
+        self.shared_obstacles_lock: WritePriorityLock | None = None
+        self.shared_avoidance_pose_order: SharedPoseOrder | None = None
+        self.create_shared_memory()
+
         self.virtual = platform.machine() != "aarch64"
         self.retry_connection = True
         self.sio = socketio.AsyncClient(logger=False)
@@ -187,24 +190,6 @@ class Planner:
             logger.error(f"Start position {start_position.name} invalid in current table and camp")
             sys.exit(1)
 
-        self.shared_properties: DictProxy = self.process_manager.dict(
-            {
-                "robot_id": self.robot_id,
-                "exiting": False,
-                "avoidance_strategy": self.game_context.avoidance_strategy,
-                "new_pose_order": None,
-                "pose_order": None,
-                "last_avoidance_pose_current": None,
-                "path_refresh_interval": path_refresh_interval,
-                "robot_width": robot_width,
-                "obstacle_radius": obstacle_radius,
-                "obstacle_bb_vertices": obstacle_bb_vertices,
-                "obstacle_bb_margin": obstacle_bb_margin,
-                # table_margin is the half of the max robot size,
-                # increase of 20% to not touch the borders during rotations.
-                "table_margin": max(self.properties.robot_length, self.properties.robot_width) / 1.8,
-            }
-        )
         self.avoidance_process: Process | None = None
 
         if starter_pin:
@@ -253,6 +238,7 @@ class Planner:
     def create_shared_memory(self):
         if self.shared_memory is None:
             self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
+            self.shared_memory_properties = self.shared_memory.get_properties()
             self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
             self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
             self.shared_table_limits = self.shared_memory.get_table_limits()
@@ -263,9 +249,12 @@ class Planner:
             self.shared_circle_obstacles = self.shared_memory.get_circle_obstacles()
             self.shared_rectangle_obstacles = self.shared_memory.get_rectangle_obstacles()
             self.shared_obstacles_lock = self.shared_memory.get_lock(LockName.Obstacles)
+            self.shared_avoidance_pose_order = self.shared_memory.get_avoidance_pose_order()
+            self.properties.update_shared_properties(self.shared_memory_properties)
 
     def delete_shared_memory(self):
         if self.shared_memory is not None:
+            self.shared_avoidance_pose_order = None
             self.shared_obstacles_lock = None
             self.shared_rectangle_obstacles = None
             self.shared_circle_obstacles = None
@@ -276,6 +265,7 @@ class Planner:
             self.shared_table_limits = None
             self.shared_pose_current_buffer = None
             self.shared_pose_current_lock = None
+            self.shared_memory_properties = None
             self.shared_memory = None
 
     async def connect(self):
@@ -316,7 +306,7 @@ class Planner:
         """
         logger.info("Planner: start")
         self.create_shared_memory()
-        self.shared_properties["exiting"] = False
+        self.shared_memory.avoidance_exiting = False
         await self.soft_reset()
         self.sio_receiver_task = asyncio.create_task(
             self.task_sio_receiver(),
@@ -336,8 +326,7 @@ class Planner:
         self.avoidance_process = Process(
             target=avoidance_process,
             args=(
-                self.properties.strategy,
-                self.shared_properties,
+                self.robot_id,
                 self.sio_emitter_queue,
             ),
         )
@@ -351,7 +340,7 @@ class Planner:
         """
         logger.info("Planner: stop")
 
-        self.shared_properties["exiting"] = True
+        self.shared_memory.avoidance_exiting = True
 
         await self.sio_ns.emit("stop_video_record")
 
@@ -404,6 +393,8 @@ class Planner:
         self.shared_table_limits[1] = self.game_context.table.x_max
         self.shared_table_limits[2] = self.game_context.table.y_min
         self.shared_table_limits[3] = self.game_context.table.y_max
+        self.shared_memory.avoidance_has_pose_order = False
+        self.shared_memory.avoidance_has_new_pose_order = False
         self.flag_motor.off()
         self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
         await self.set_pose_start(self.game_context.start_pose.pose)
@@ -442,10 +433,9 @@ class Planner:
                         if self.sio.connected:
                             logger.info(f"Task SIO Emitter: Planner: Send pose order: {value[0]}")
                             await self.sio_ns.emit("pose_order", value[0])
-                            pose_current = self.pose_current
                             await self.sio_ns.emit(
                                 "path",
-                                [pose_current.model_dump(exclude_defaults=True, mode="json")] + value,
+                                [self.pose_current.model_dump(exclude_defaults=True, mode="json")] + value,
                             )
                     case "starter_changed":
                         await self.starter_changed(value)
@@ -578,12 +568,12 @@ class Planner:
     def pose_order(self, new_pose: pose.Pose | None):
         logger.info(f"Planner: pose_order={new_pose.path_pose if new_pose else None}")
         self._pose_order = new_pose
+        self.shared_memory.avoidance_has_pose_order = False
         if new_pose is None:
-            self.shared_properties["new_pose_order"] = None
-            self.shared_properties["pose_order"] = None
+            self.shared_memory.avoidance_has_new_pose_order = False
         else:
-            self.shared_properties["new_pose_order"] = new_pose.path_pose.model_dump(exclude_unset=True)
-        self.shared_properties["last_avoidance_pose_current"] = None
+            self.shared_memory.avoidance_has_new_pose_order = True
+            new_pose.to_shared(self.shared_avoidance_pose_order)
 
     async def set_pose_reached(self):
         """
@@ -616,7 +606,9 @@ class Planner:
         logger.info("Planner: set_intermediate_pose_reached()")
 
         # The pose reached is intermediate, just force path recompute.
-        self.shared_properties["last_avoidance_pose_current"] = None
+        if self.pose_order:
+            self.pose_order.path_pose.to_shared(self.shared_avoidance_pose_order)
+            self.shared_memory.avoidance_has_new_pose_order = True
 
     async def next_pose_in_action(self):
         if self.action and len(self.action.poses) > 0:
@@ -852,15 +844,10 @@ class Planner:
         """
         Update a Planner property with the value sent by the dashboard.
         """
-        self.properties.__setattr__(name := config["name"], value := config["value"])
-        if name in self.shared_properties:
-            self.shared_properties[name] = value
+        self.properties.__setattr__(name := config["name"], config["value"])
         match name:
             case "obstacle_updater_interval":
                 self.obstacles_updater_loop.interval = self.properties.obstacle_updater_interval
-            case "robot_width" | "obstacle_bb_vertices":
-                self.game_context.create_artifacts()
-                self.game_context.create_fixed_obstacles()
 
     async def update_scservo(self, servo: dict[str, Any]) -> None:
         """
@@ -1036,6 +1023,7 @@ class Planner:
                 if self.properties.strategy == new_strategy:
                     return
                 self.properties.strategy = new_strategy
+                self.shared_memory_properties.strategy = new_strategy.val
                 await self.soft_reset()
                 logger.info(f"Wizard: New strategy: {self.properties.strategy.name}")
             case "Choose Avoidance":
@@ -1043,7 +1031,7 @@ class Planner:
                 if self.properties.avoidance_strategy == new_strategy:
                     return
                 self.properties.avoidance_strategy = new_strategy
-                self.shared_properties["avoidance_strategy"] = new_strategy
+                self.shared_memory_properties.avoidance_strategy = new_strategy.val
                 logger.info(f"Wizard: New avoidance strategy: {self.properties.avoidance_strategy.name}")
             case "Choose Start Position":
                 new_start_position = StartPosition[value]
@@ -1062,6 +1050,7 @@ class Planner:
                     )
                     return
                 self.properties.start_position = new_start_position
+                self.shared_memory_properties.start_position = new_start_position.val
                 await self.soft_reset()
             case "Choose Table":
                 new_table = TableEnum[value]
@@ -1090,11 +1079,11 @@ class Planner:
                     )
                     return
 
+                self.shared_memory_properties.table = new_table.val
                 self.shared_table_limits[0] = self.game_context.table.x_min
                 self.shared_table_limits[1] = self.game_context.table.x_max
                 self.shared_table_limits[2] = self.game_context.table.y_min
                 self.shared_table_limits[3] = self.game_context.table.y_max
-                self.shared_properties["table"] = new_table
                 await self.soft_reset()
                 logger.info(f"Wizard: New table: {self.properties.table.name}")
             case game_wizard_response if game_wizard_response.startswith("Game Wizard"):

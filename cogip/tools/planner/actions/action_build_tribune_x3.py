@@ -41,7 +41,7 @@ class BuildTribuneX3Action(Action):
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.properties.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_memory_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
         logger.info(f"{self.name}: before_action - tribunes_in_robot={self.game_context.tribunes_in_robot}")

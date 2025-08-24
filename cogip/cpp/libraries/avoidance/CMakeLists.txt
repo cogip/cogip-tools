@@ -20,6 +20,7 @@ target_link_libraries(
     logger_cpp
     models_cpp
     obstacles_cpp
+    shared_memory_cpp
 )
 set_target_properties(avoidance PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
 

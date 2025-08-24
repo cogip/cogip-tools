@@ -99,8 +99,6 @@ NB_MODULE(shared_memory, m) {
              "Get the shared data.")
         .def("get_pose_current_buffer", &SharedMemory::getPoseCurrentBuffer, nb::rv_policy::reference_internal,
              "Get PoseBuffer object wrapping the shared memory pose_current_buffer structure.")
-        .def("get_pose_order", &SharedMemory::getPoseOrder, nb::rv_policy::reference_internal,
-             "Get Pose object wrapping the shared memory pose_order structure.")
         .def(
             "get_table_limits",
             [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<4>> {
@@ -137,6 +135,16 @@ NB_MODULE(shared_memory, m) {
              "Get ObstacleRectangleList object wrapping the shared memory rectangle_obstacles structure.")
         .def("get_properties", &SharedMemory::getProperties, nb::rv_policy::reference_internal,
              "Get the shared properties.")
+        .def_prop_rw("avoidance_exiting", &SharedMemory::getAvoidanceExiting, &SharedMemory::setAvoidanceExiting,
+             "Get or set the avoidance exiting flag.")
+        .def_prop_rw("avoidance_has_new_pose_order", &SharedMemory::getAvoidanceHasNewPoseOrder, &SharedMemory::setAvoidanceHasNewPoseOrder,
+             "Get or set the avoidance new pose order available flag.")
+        .def_prop_rw("avoidance_has_pose_order", &SharedMemory::getAvoidanceHasPoseOrder, &SharedMemory::setAvoidanceHasPoseOrder,
+             "Get or set the avoidance no pose order flag.")
+        .def("get_avoidance_pose_order", &SharedMemory::getAvoidancePoseOrder, nb::rv_policy::reference_internal,
+             "Get PoseOrder object wrapping the shared memory avoidance_pose_order structure.")
+        .def("get_avoidance_new_pose_order", &SharedMemory::getAvoidanceNewPoseOrder, nb::rv_policy::reference_internal,
+             "Get PoseOrder object wrapping the shared memory avoidance_pose_order structure.")
     ;
 
 }

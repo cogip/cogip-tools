@@ -3,6 +3,7 @@ from typing import Annotated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
+from cogip.cpp.libraries.shared_memory import SharedProperties
 from cogip.utils.singleton import Singleton
 from .actions import Strategy
 from .avoidance.avoidance import AvoidanceStrategy
@@ -130,3 +131,22 @@ class Properties(metaclass=Singleton):
             exclude=True,
         ),
     ]
+
+    def update_shared_properties(self, shared_properties: SharedProperties):
+        """
+        Update shared properties with the current properties.
+        """
+        shared_properties.robot_id = self.robot_id
+        shared_properties.robot_width = self.robot_width
+        shared_properties.robot_length = self.robot_length
+        shared_properties.obstacle_radius = self.obstacle_radius
+        shared_properties.obstacle_bb_margin = self.obstacle_bb_margin
+        shared_properties.obstacle_bb_vertices = self.obstacle_bb_vertices
+        shared_properties.obstacle_updater_interval = self.obstacle_updater_interval
+        shared_properties.path_refresh_interval = self.path_refresh_interval
+        shared_properties.bypass_detector = self.bypass_detector
+        shared_properties.disable_fixed_obstacles = self.disable_fixed_obstacles
+        shared_properties.table = self.table.val
+        shared_properties.strategy = self.strategy.val
+        shared_properties.start_position = self.start_position.val
+        shared_properties.avoidance_strategy = self.avoidance_strategy.val
