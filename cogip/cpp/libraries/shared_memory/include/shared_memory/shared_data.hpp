@@ -10,6 +10,7 @@
 #include "models/pose_buffer.hpp"
 #include "obstacles/obstacle_circle_list.hpp"
 #include "obstacles/obstacle_polygon_list.hpp"
+#include "shared_properties.hpp"
 
 #include <cstdint>
 #include <map>
@@ -32,7 +33,7 @@ typedef struct {
     models::circle_list_t monitor_obstacles;   ///< The obstacles from monitor.
     obstacles::obstacle_circle_list_t circle_obstacles;  ///< The circle obstacles from planner.
     obstacles::obstacle_polygon_list_t rectangle_obstacles;  ///< The rectangle obstacles from planner.
-
+    shared_properties_t properties;  ///< Shared properties.
 } shared_data_t;
 
 /// Overloads the stream insertion operator for `shared_data_t`.

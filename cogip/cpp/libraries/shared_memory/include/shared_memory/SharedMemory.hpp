@@ -75,6 +75,9 @@ public:
     /// Retrieves a pointer to the shared memory rectangle_obstacles structure.
     obstacles::ObstacleRectangleList* getRectangleObstacles() { return rectangle_obstacles_; }
 
+    /// Retrieves a reference to the shared properties structure.
+    shared_properties_t& getProperties() { return data_->properties; }
+
 private:
     std::string name_;     ///< Unique name of the shared memory segment.
     bool owner_;           ///< Indicates whether this instance owns the shared memory.

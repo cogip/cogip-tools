@@ -67,6 +67,29 @@ NB_MODULE(shared_memory, m) {
              "Set/unset debug mode.")
      ;
 
+     nb::class_<shared_properties_t>(m, "SharedProperties")
+        .def(nb::init<>(), "Default constructor")
+        .def_rw("robot_id", &shared_properties_t::robot_id, "Robot ID")
+        .def_rw("robot_width", &shared_properties_t::robot_width, "Robot width in mm")
+        .def_rw("robot_length", &shared_properties_t::robot_length, "Robot length in mm")
+        .def_rw("obstacle_radius", &shared_properties_t::obstacle_radius, "Obstacle radius in mm")
+        .def_rw("obstacle_bb_margin", &shared_properties_t::obstacle_bb_margin, "Obstacle bounding box margin in mm")
+        .def_rw("obstacle_bb_vertices", &shared_properties_t::obstacle_bb_vertices, "Number of vertices for the obstacle bounding box")
+        .def_rw("obstacle_updater_interval", &shared_properties_t::obstacle_updater_interval, "Obstacle updater interval in seconds")
+        .def_rw("path_refresh_interval", &shared_properties_t::path_refresh_interval, "Path refresh interval in seconds")
+        .def_rw("bypass_detector", &shared_properties_t::bypass_detector, "Bypass detector flag")
+        .def_rw("disable_fixed_obstacles", &shared_properties_t::disable_fixed_obstacles, "Disable fixed obstacles flag")
+        .def_rw("table", &shared_properties_t::table, "Table ID")
+        .def_rw("strategy", &shared_properties_t::strategy, "Strategy ID")
+        .def_rw("start_position", &shared_properties_t::start_position, "Start position ID")
+        .def_rw("avoidance_strategy", &shared_properties_t::avoidance_strategy, "Avoidance strategy ID")
+        .def("__repr__", [](const shared_properties_t& properties) {
+           std::ostringstream oss;
+           oss << properties;
+           return oss.str();
+        })
+     ;
+
     nb::class_<SharedMemory>(m, "SharedMemory")
         .def(nb::init<const std::string&, bool>(), "name"_a, "owner"_a = false,
              "Initialize a SharedMemory with a unique name and ownership flag.")
@@ -112,6 +135,8 @@ NB_MODULE(shared_memory, m) {
              "Get ObstacleCircleList object wrapping the shared memory circle_obstacles structure.")
         .def("get_rectangle_obstacles", &SharedMemory::getRectangleObstacles, nb::rv_policy::reference_internal,
              "Get ObstacleRectangleList object wrapping the shared memory rectangle_obstacles structure.")
+        .def("get_properties", &SharedMemory::getProperties, nb::rv_policy::reference_internal,
+             "Get the shared properties.")
     ;
 
 }
