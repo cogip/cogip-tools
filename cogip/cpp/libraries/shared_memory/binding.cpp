@@ -48,11 +48,11 @@ NB_MODULE(shared_memory, m) {
     nb::class_<WritePriorityLock>(m, "WritePriorityLock")
         .def(nb::init<const std::string&, bool>(), "name"_a, "owner"_a = false,
              "Initialize a WritePriorityLock with a unique semaphore name and ownership flag.")
-        .def("start_reading", &WritePriorityLock::startReading,
+        .def("start_reading", &WritePriorityLock::startReading, nb::call_guard<nb::gil_scoped_release>(),
              "Acquire a read lock, allowing multiple readers.")
         .def("finish_reading", &WritePriorityLock::finishReading,
              "Release the read lock.")
-        .def("start_writing", &WritePriorityLock::startWriting,
+        .def("start_writing", &WritePriorityLock::startWriting, nb::call_guard<nb::gil_scoped_release>(),
              "Acquire a write lock, blocking all readers and writers.")
         .def("finish_writing", &WritePriorityLock::finishWriting,
              "Release the write lock.")
@@ -60,7 +60,7 @@ NB_MODULE(shared_memory, m) {
              "Register the the lock will be used to wait the update signal to read updated data.")
         .def("post_update", &WritePriorityLock::postUpdate,
              "Signal to registered consumers that data was updated.")
-        .def("wait_update", &WritePriorityLock::waitUpdate,
+        .def("wait_update", &WritePriorityLock::waitUpdate, nb::call_guard<nb::gil_scoped_release>(),
              "Wait for the updated signal meaning that data was updated.")
         .def("reset", &WritePriorityLock::reset,
              "Reset counters and semaphores.")
