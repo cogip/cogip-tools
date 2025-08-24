@@ -153,6 +153,7 @@ class Planner:
         self.shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
         self.shared_obstacles_lock: WritePriorityLock | None = None
         self.shared_avoidance_pose_order: SharedPoseOrder | None = None
+        self.shared_avoidance_blocked_lock: WritePriorityLock | None = None
         self.create_shared_memory()
 
         self.virtual = platform.machine() != "aarch64"
@@ -181,6 +182,7 @@ class Planner:
         self.sio_receiver_task: asyncio.Task | None = None
         self.sio_emitter_task: asyncio.Task | None = None
         self.countdown_task: asyncio.Task | None = None
+        self.blocked_event_task: asyncio.Task | None = None
         self.scservos = SCServos(self.scservos_port, scservos_baud_rate)
         self.pami_event = asyncio.Event()
         self.last_starter_event_timestamp: datetime | None = None
@@ -250,10 +252,14 @@ class Planner:
             self.shared_rectangle_obstacles = self.shared_memory.get_rectangle_obstacles()
             self.shared_obstacles_lock = self.shared_memory.get_lock(LockName.Obstacles)
             self.shared_avoidance_pose_order = self.shared_memory.get_avoidance_pose_order()
+            self.shared_avoidance_blocked_lock = self.shared_memory.get_lock(LockName.AvoidanceBlocked)
+            self.shared_avoidance_blocked_lock.reset()
+            self.shared_avoidance_blocked_lock.register_consumer()
             self.properties.update_shared_properties(self.shared_memory_properties)
 
     def delete_shared_memory(self):
         if self.shared_memory is not None:
+            self.shared_avoidance_blocked_lock = None
             self.shared_avoidance_pose_order = None
             self.shared_obstacles_lock = None
             self.shared_rectangle_obstacles = None
@@ -316,6 +322,10 @@ class Planner:
             self.task_sio_emitter(),
             name="Robot: Task SIO Emitter",
         )
+        self.blocked_event_task = asyncio.create_task(
+            self.blocked_event_loop(),
+            name="Robot: Task Blocked Event Watcher Loop",
+        )
         await self.sio_ns.emit("starter_changed", self.starter.is_pressed)
         await self.sio_ns.emit("game_reset")
         await self.countdown_start()
@@ -370,6 +380,16 @@ class Planner:
                 logger.warning(f"Planner: Unexpected exception {exc}")
         self.sio_receiver_task = None
 
+        if self.blocked_event_task:
+            self.blocked_event_task.cancel()
+            try:
+                await self.blocked_event_task
+            except asyncio.CancelledError:
+                logger.info("Planner: Task Blocked Event Watcher Loop stopped")
+            except Exception as exc:
+                logger.warning(f"Planner: Unexpected exception {exc}")
+        self.blocked_event_task = None
+
         if self.avoidance_process and self.avoidance_process.is_alive():
             self.avoidance_process.join()
             self.avoidance_process = None
@@ -409,13 +429,6 @@ class Planner:
                 match name:
                     case "nop":
                         pass
-                    case "blocked":
-                        if self.sio.connected:
-                            await self.sio_ns.emit("brake")
-                        self.blocked_counter += 1
-                        if self.blocked_counter > 10:
-                            self.blocked_counter = 0
-                            await self.blocked()
                     case "path":
                         self.blocked_counter = 0
                         self.avoidance_path = [pose.PathPose.model_validate(m) for m in value]
@@ -464,6 +477,25 @@ class Planner:
             raise
         except Exception as exc:  # noqa
             logger.warning(f"Planner: Task SIO Receiver: Unknown exception {exc}")
+            traceback.print_exc()
+            raise
+
+    async def blocked_event_loop(self):
+        logger.info("Planner: Task Blocked Event Watcher Loop started")
+        try:
+            while True:
+                await asyncio.to_thread(self.shared_avoidance_blocked_lock.wait_update)
+                if self.sio.connected:
+                    await self.sio_ns.emit("brake")
+                self.blocked_counter += 1
+                if self.blocked_counter > 10:
+                    self.blocked_counter = 0
+                    await self.blocked()
+        except asyncio.CancelledError:
+            logger.info("Planner: Task Blocked Event Watcher Loop cancelled")
+            raise
+        except Exception as exc:  # noqa
+            logger.warning(f"Planner: Task Blocked Event Watcher Loop: Unknown exception {exc}")
             traceback.print_exc()
             raise
 

@@ -30,6 +30,7 @@ def avoidance_process(
     shared_rectangle_obstacles = shared_memory.get_rectangle_obstacles()
     shared_obstacles_lock = shared_memory.get_lock(LockName.Obstacles)
     shared_avoidance_pose_order = shared_memory.get_avoidance_pose_order()
+    shared_avoidance_blocked_lock = shared_memory.get_lock(LockName.AvoidanceBlocked)
 
     avoidance = Avoidance(shared_memory_properties)
     pose_order: models.PathPose | None = None
@@ -147,7 +148,7 @@ def avoidance_process(
             logger.debug("Avoidance: No path found")
             last_pose_current = None
             last_emitted_pose_order = None
-            queue_sio.put(("blocked", None))
+            shared_avoidance_blocked_lock.post_update()
             continue
 
         last_pose_current = pose_current.pose
@@ -191,6 +192,7 @@ def avoidance_process(
         queue_sio.put(("path", [pose.model_dump(exclude_defaults=True) for pose in path[1:]]))
 
     # Remove reference to shared memory data to trigger garbage collection
+    shared_avoidance_blocked_lock = None
     shared_avoidance_pose_order = None
     shared_circle_obstacles = None
     shared_rectangle_obstacles = None

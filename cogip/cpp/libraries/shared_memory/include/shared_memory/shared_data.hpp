@@ -60,6 +60,7 @@ enum class LockName {
     DetectorObstacles, ///< Lock for the obstacles from detector.
     MonitorObstacles,  ///< Lock for the obstacles from the monitor.
     Obstacles,    ///< Lock for the circle obstacles from planner.
+    AvoidanceBlocked,  ///< Lock blocked event from avoidance.
 };
 
 /// Maps `LockName` enum values to their corresponding string representations.
@@ -71,6 +72,7 @@ static std::map<LockName, std::string> lock2str = {
     { LockName::DetectorObstacles, "DetectorObstacles" },
     { LockName::MonitorObstacles, "MonitorObstacles" },
     { LockName::Obstacles, "Obstacles" },
+    { LockName::AvoidanceBlocked, "AvoidanceBlocked" },
 };
 
 } // namespace shared_memory

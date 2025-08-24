@@ -42,6 +42,7 @@ NB_MODULE(shared_memory, m) {
         .value("DetectorObstacles", LockName::DetectorObstacles)
         .value("MonitorObstacles", LockName::MonitorObstacles)
         .value("Obstacles", LockName::Obstacles)
+        .value("AvoidanceBlocked", LockName::AvoidanceBlocked)
     ;
 
     nb::class_<WritePriorityLock>(m, "WritePriorityLock")
