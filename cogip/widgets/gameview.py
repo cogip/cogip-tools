@@ -408,7 +408,6 @@ class GameView(QtWidgets.QWidget):
         """
         for vertex in new_path:
             vertex.z = 20
-        new_path.pop()
         self.path.set_points(new_path)
 
     def pressed(self, pick: Qt3DRender.QPickEvent):

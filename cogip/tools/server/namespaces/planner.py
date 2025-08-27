@@ -48,15 +48,6 @@ class PlannerNamespace(socketio.AsyncNamespace):
         logger.info(f"[planner => copilot] Pose start: {pose}")
         await self.emit("pose_start", pose, namespace="/copilot")
 
-    async def on_pose_order(self, sid, pose: dict[str, Any]):
-        """
-        Callback on pose order.
-        Forward to pose to copilot and dashboards.
-        """
-        logger.info(f"[planner => copilot] Pose order: {pose}")
-        await self.emit("pose_order", pose, namespace="/copilot")
-        await self.emit("pose_order", (self.context.robot_id, pose), namespace="/dashboard")
-
     async def on_wizard(self, sid, message: list[dict[str, Any]]):
         """
         Callback on wizard message.
@@ -71,13 +62,6 @@ class PlannerNamespace(socketio.AsyncNamespace):
         Forward to copilot.
         """
         await self.emit("set_controller", controller, namespace="/copilot")
-
-    async def on_path(self, sid, path: list[dict[str, float]]):
-        """
-        Callback on robot path.
-        Forward the path to dashboard.
-        """
-        await self.emit("path", (self.context.robot_id, path), namespace="/dashboard")
 
     async def on_config(self, sid, config: dict[str, Any]):
         """

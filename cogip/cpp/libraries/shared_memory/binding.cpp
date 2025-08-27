@@ -43,6 +43,7 @@ NB_MODULE(shared_memory, m) {
         .value("MonitorObstacles", LockName::MonitorObstacles)
         .value("Obstacles", LockName::Obstacles)
         .value("AvoidanceBlocked", LockName::AvoidanceBlocked)
+        .value("AvoidancePath", LockName::AvoidancePath)
     ;
 
     nb::class_<WritePriorityLock>(m, "WritePriorityLock")
@@ -146,6 +147,8 @@ NB_MODULE(shared_memory, m) {
              "Get PoseOrder object wrapping the shared memory avoidance_pose_order structure.")
         .def("get_avoidance_new_pose_order", &SharedMemory::getAvoidanceNewPoseOrder, nb::rv_policy::reference_internal,
              "Get PoseOrder object wrapping the shared memory avoidance_pose_order structure.")
+        .def("get_avoidance_path", &SharedMemory::getAvoidancePath, nb::rv_policy::reference_internal,
+             "Get PoseOrderList object wrapping the shared memory avoidance_path structure.")
     ;
 
 }

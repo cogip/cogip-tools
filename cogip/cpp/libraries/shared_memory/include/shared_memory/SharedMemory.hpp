@@ -101,6 +101,9 @@ public:
     /// Retrieves a pointer to the shared memory avoidance_pose_order structure.
     models::PoseOrder* getAvoidancePoseOrder() { return avoidance_pose_order_; }
 
+    /// Retrieves a pointer to the shared memory avoidance_path structure.
+    models::PoseOrderList* getAvoidancePath() { return avoidance_path_; }
+
 private:
     std::string name_;     ///< Unique name of the shared memory segment.
     bool owner_;           ///< Indicates whether this instance owns the shared memory.
@@ -114,6 +117,7 @@ private:
     obstacles::ObstacleRectangleList* rectangle_obstacles_;  ///< Pointer to the ObstacleRectangleList object wrapping the shared memory rectangle_obstacles structure.
     models::PoseOrder* avoidance_new_pose_order_;  ///< Pointer to the PoseOrder object for the new pose order in avoidance.
     models::PoseOrder* avoidance_pose_order_;  ///< Pointer to the PoseOrder object for the current pose order in avoidance.
+    models::PoseOrderList* avoidance_path_;  ///< Pointer to the PoseOrderList object for the avoidance path.
 };
 
 } // namespace shared_memory

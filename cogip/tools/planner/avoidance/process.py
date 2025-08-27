@@ -2,7 +2,6 @@ import logging
 import math
 import os
 import time
-from multiprocessing import Queue
 
 from cogip import models
 from cogip.cpp.libraries.obstacles import ObstacleCircle as SharedObstacleCircle
@@ -13,10 +12,7 @@ from ..actions import Strategy
 from .avoidance import Avoidance, AvoidanceStrategy
 
 
-def avoidance_process(
-    robot_id: int,
-    queue_sio: Queue,
-):
+def avoidance_process(robot_id: int):
     logger = Logger("cogip-avoidance", enable_cpp=True)
     if os.getenv("AVOIDANCE_DEBUG") not in [None, False, "False", "false", 0, "0", "no", "No"]:
         logger.setLevel(logging.DEBUG)
@@ -31,15 +27,13 @@ def avoidance_process(
     shared_obstacles_lock = shared_memory.get_lock(LockName.Obstacles)
     shared_avoidance_pose_order = shared_memory.get_avoidance_pose_order()
     shared_avoidance_blocked_lock = shared_memory.get_lock(LockName.AvoidanceBlocked)
-
+    shared_avoidance_path = shared_memory.get_avoidance_path()
+    shared_avoidance_path_lock = shared_memory.get_lock(LockName.AvoidancePath)
     avoidance = Avoidance(shared_memory_properties)
     pose_order: models.PathPose | None = None
     last_pose_current: models.Pose | None = None
     last_emitted_pose_order: models.PathPose | None = None
     start = time.time() - shared_memory_properties.path_refresh_interval + 0.01
-
-    # Sometimes the first message sent is not received, so send a dummy message.
-    queue_sio.put(("nop", None))
 
     while not shared_memory.avoidance_exiting:
         path_refresh_interval = shared_memory_properties.path_refresh_interval
@@ -189,9 +183,18 @@ def avoidance_process(
 
         logger.info("Avoidance: Update path")
         last_emitted_pose_order = path[1].model_copy()
-        queue_sio.put(("path", [pose.model_dump(exclude_defaults=True) for pose in path[1:]]))
+        shared_avoidance_path_lock.start_writing()
+        shared_avoidance_path.clear()
+        for pose in path[1:]:
+            shared_avoidance_path.append()
+            shared_pose = shared_avoidance_path[shared_avoidance_path.size() - 1]
+            pose.to_shared(shared_pose)
+        shared_avoidance_path_lock.finish_writing()
+        shared_avoidance_path_lock.post_update()
 
     # Remove reference to shared memory data to trigger garbage collection
+    shared_avoidance_path_lock = None
+    shared_avoidance_path = None
     shared_avoidance_blocked_lock = None
     shared_avoidance_pose_order = None
     shared_circle_obstacles = None

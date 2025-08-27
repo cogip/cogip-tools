@@ -64,6 +64,7 @@ SharedMemory::SharedMemory(const std::string& name, bool owner):
     rectangle_obstacles_ = new obstacles::ObstacleRectangleList(&data_->rectangle_obstacles);
     avoidance_new_pose_order_ = new models::PoseOrder(&data_->avoidance_new_pose_order);
     avoidance_pose_order_ = new models::PoseOrder(&data_->avoidance_pose_order);
+    avoidance_path_ = new models::PoseOrderList(&data_->avoidance_path);
 
     std::cout << "SharedMemory(\"" << name_ << "\", owner=" << owner_ << ", size=" << sizeof(shared_data_t) << ") created." << std::endl;
 }

@@ -39,6 +39,7 @@ typedef struct {
     bool avoidance_has_pose_order;  ///< True if no pose order has been set by the Planner, false otherwise
     models::pose_order_t avoidance_new_pose_order;  ///< New pose order for the avoidance process
     models::pose_order_t avoidance_pose_order;  ///< Current pose order for the avoidance process
+    models::pose_order_list_t avoidance_path;  ///< Path for the avoidance process
 } shared_data_t;
 
 /// Overloads the stream insertion operator for `shared_data_t`.
@@ -61,6 +62,7 @@ enum class LockName {
     MonitorObstacles,  ///< Lock for the obstacles from the monitor.
     Obstacles,    ///< Lock for the circle obstacles from planner.
     AvoidanceBlocked,  ///< Lock blocked event from avoidance.
+    AvoidancePath      ///< Lock for the new avoidance path event from avoidance.
 };
 
 /// Maps `LockName` enum values to their corresponding string representations.
@@ -73,6 +75,7 @@ static std::map<LockName, std::string> lock2str = {
     { LockName::MonitorObstacles, "MonitorObstacles" },
     { LockName::Obstacles, "Obstacles" },
     { LockName::AvoidanceBlocked, "AvoidanceBlocked" },
+    { LockName::AvoidancePath, "AvoidancePath" },
 };
 
 } // namespace shared_memory

@@ -28,6 +28,7 @@ from cogip import models
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.models import PoseOrder as SharedPoseOrder
+from cogip.cpp.libraries.models import PoseOrderList as SharedPoseOrderList
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, SharedProperties, WritePriorityLock
@@ -154,6 +155,8 @@ class Planner:
         self.shared_obstacles_lock: WritePriorityLock | None = None
         self.shared_avoidance_pose_order: SharedPoseOrder | None = None
         self.shared_avoidance_blocked_lock: WritePriorityLock | None = None
+        self.shared_avoidance_path: SharedPoseOrderList | None = None
+        self.shared_avoidance_path_lock: WritePriorityLock | None = None
         self.create_shared_memory()
 
         self.virtual = platform.machine() != "aarch64"
@@ -175,7 +178,6 @@ class Planner:
         )
         self._pose_order: pose.Pose | None = None
         self.pose_reached: bool = True
-        self.avoidance_path: list[pose.Pose] = []
         self.blocked_counter: int = 0
         self.controller = self.game_context.default_controller
         self.game_wizard = GameWizard(self)
@@ -183,6 +185,7 @@ class Planner:
         self.sio_emitter_task: asyncio.Task | None = None
         self.countdown_task: asyncio.Task | None = None
         self.blocked_event_task: asyncio.Task | None = None
+        self.new_path_event_task: asyncio.Task | None = None
         self.scservos = SCServos(self.scservos_port, scservos_baud_rate)
         self.pami_event = asyncio.Event()
         self.last_starter_event_timestamp: datetime | None = None
@@ -255,10 +258,15 @@ class Planner:
             self.shared_avoidance_blocked_lock = self.shared_memory.get_lock(LockName.AvoidanceBlocked)
             self.shared_avoidance_blocked_lock.reset()
             self.shared_avoidance_blocked_lock.register_consumer()
+            self.shared_avoidance_path = self.shared_memory.get_avoidance_path()
+            self.shared_avoidance_path_lock = self.shared_memory.get_lock(LockName.AvoidancePath)
+            self.shared_avoidance_path_lock.register_consumer()
             self.properties.update_shared_properties(self.shared_memory_properties)
 
     def delete_shared_memory(self):
         if self.shared_memory is not None:
+            self.shared_avoidance_path_lock = None
+            self.shared_avoidance_path = None
             self.shared_avoidance_blocked_lock = None
             self.shared_avoidance_pose_order = None
             self.shared_obstacles_lock = None
@@ -326,6 +334,10 @@ class Planner:
             self.blocked_event_loop(),
             name="Robot: Task Blocked Event Watcher Loop",
         )
+        self.new_path_event_task = asyncio.create_task(
+            self.new_path_event_loop(),
+            name="Robot: Task New Path Event Watcher Loop",
+        )
         await self.sio_ns.emit("starter_changed", self.starter.is_pressed)
         await self.sio_ns.emit("game_reset")
         await self.countdown_start()
@@ -333,13 +345,7 @@ class Planner:
         if self.oled_bus and self.oled_address:
             self.oled_update_loop.start()
 
-        self.avoidance_process = Process(
-            target=avoidance_process,
-            args=(
-                self.robot_id,
-                self.sio_emitter_queue,
-            ),
-        )
+        self.avoidance_process = Process(target=avoidance_process, args=(self.robot_id,))
         self.avoidance_process.start()
 
         await actuators.actuators_init(self)
@@ -390,6 +396,17 @@ class Planner:
                 logger.warning(f"Planner: Unexpected exception {exc}")
         self.blocked_event_task = None
 
+        if self.new_path_event_task:
+            self.new_path_event_task.cancel()
+            try:
+                await self.new_path_event_task
+            except asyncio.CancelledError:
+                logger.info("Planner: Task New Path Event Watcher Loop stopped")
+            except Exception as exc:
+                logger.warning(f"Planner: Unexpected exception {exc}")
+                traceback.print_exc()
+        self.new_path_event_task = None
+
         if self.avoidance_process and self.avoidance_process.is_alive():
             self.avoidance_process.join()
             self.avoidance_process = None
@@ -427,29 +444,6 @@ class Planner:
                 name, value = await asyncio.to_thread(self.sio_emitter_queue.get)
                 logger.info(f"Planner: Task SIO emitter: {name} {value}")
                 match name:
-                    case "nop":
-                        pass
-                    case "path":
-                        self.blocked_counter = 0
-                        self.avoidance_path = [pose.PathPose.model_validate(m) for m in value]
-                        if self.pose_order:
-                            await self.pose_order.act_intermediate_pose()
-                        if len(value) == 1:
-                            # Final pose
-                            new_controller = ControllerEnum.QUADPID
-                        else:
-                            # Intermediate pose
-                            match self.properties.avoidance_strategy:
-                                case AvoidanceStrategy.Disabled | AvoidanceStrategy.AvoidanceCpp:
-                                    new_controller = ControllerEnum.QUADPID
-                        await self.set_controller(new_controller)
-                        if self.sio.connected:
-                            logger.info(f"Task SIO Emitter: Planner: Send pose order: {value[0]}")
-                            await self.sio_ns.emit("pose_order", value[0])
-                            await self.sio_ns.emit(
-                                "path",
-                                [self.pose_current.model_dump(exclude_defaults=True, mode="json")] + value,
-                            )
                     case "starter_changed":
                         await self.starter_changed(value)
                     case _:
@@ -496,6 +490,22 @@ class Planner:
             raise
         except Exception as exc:  # noqa
             logger.warning(f"Planner: Task Blocked Event Watcher Loop: Unknown exception {exc}")
+            traceback.print_exc()
+            raise
+
+    async def new_path_event_loop(self):
+        logger.info("Planner: Task New Path Event Watcher Loop started")
+        try:
+            while True:
+                await asyncio.to_thread(self.shared_avoidance_path_lock.wait_update)
+                self.blocked_counter = 0
+                if self.pose_order:
+                    await self.pose_order.act_intermediate_pose()
+        except asyncio.CancelledError:
+            logger.info("Planner: Task New Path Event Watcher Loop cancelled")
+            raise
+        except Exception as exc:  # noqa
+            logger.warning(f"Planner: Task New Path Event Watcher Loop: Unknown exception {exc}")
             traceback.print_exc()
             raise
 
@@ -585,7 +595,6 @@ class Planner:
         self.action = None
         self.pose_order = None
         self.pose_reached = True
-        self.avoidance_path = []
 
         # When the firmware receives a pose start, it does not send its updated pose current,
         # so do it here.
@@ -614,7 +623,6 @@ class Planner:
         logger.info("Planner: set_pose_reached()")
 
         # Set pose reached
-        self.avoidance_path = []
         if not self.pose_reached and (pose_order := self.pose_order):
             self.pose_order = None
             await pose_order.act_after_pose()

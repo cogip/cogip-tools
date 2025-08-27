@@ -42,13 +42,13 @@ class SioEvents(socketio.AsyncClientNamespace):
             await self.emit("menu", self.copilot.shell_menu.model_dump(exclude_defaults=True, exclude_unset=True))
         await self.emit("register_menu", {"name": "copilot", "menu": menu.model_dump()})
 
-    def on_disconnect(self) -> None:
+    async def on_disconnect(self) -> None:
         """
         On disconnection from cogip-server.
         """
         logger.info("Disconnected from cogip-server")
         self.connected = False
-        self.copilot.delete_shared_memory()
+        await self.copilot.delete_shared_memory()
 
     async def on_connect_error(self, data: dict[str, Any]) -> None:
         """
@@ -97,19 +97,6 @@ class SioEvents(socketio.AsyncClientNamespace):
         pb_start_pose = PB_PathPose()
         start_pose.copy_pb(pb_start_pose)
         await self.copilot.pbcom.send_can_message(copilot.pose_start_uuid, pb_start_pose)
-
-    async def on_pose_order(self, data: dict[str, Any]):
-        """
-        Callback on pose order (from planner).
-        Forward to mcu-firmware.
-        """
-        logger.info(f"[SIO] Pose order: {data}")
-        pose_order = models.PathPose.model_validate(data)
-        if self.copilot.id > 1:
-            pose_order.allow_reverse = False
-        pb_pose_order = PB_PathPose()
-        pose_order.copy_pb(pb_pose_order)
-        await self.copilot.pbcom.send_can_message(copilot.pose_order_uuid, pb_pose_order)
 
     async def on_actuators_start(self):
         """
