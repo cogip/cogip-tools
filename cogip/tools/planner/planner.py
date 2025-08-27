@@ -167,7 +167,6 @@ class Planner:
         self.game_context = GameContext()
         self.process_manager = Manager()
         self.sio_receiver_queue = asyncio.Queue()
-        self.sio_emitter_queue = self.process_manager.Queue()
         self.action: actions.Action | None = None
         self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
         self.obstacles_updater_loop = AsyncLoop(
@@ -182,7 +181,6 @@ class Planner:
         self.controller = self.game_context.default_controller
         self.game_wizard = GameWizard(self)
         self.sio_receiver_task: asyncio.Task | None = None
-        self.sio_emitter_task: asyncio.Task | None = None
         self.countdown_task: asyncio.Task | None = None
         self.blocked_event_task: asyncio.Task | None = None
         self.new_path_event_task: asyncio.Task | None = None
@@ -209,6 +207,8 @@ class Planner:
                 pull_up=True,
                 pin_factory=MockFactory(),
             )
+        self.starter.when_activated = partial(self.starter_changed_callback, True)
+        self.starter.when_deactivated = partial(self.starter_changed_callback, False)
 
         if led_red_pin and led_green_pin and led_blue_pin:
             self.led = RGBLED(
@@ -224,9 +224,6 @@ class Planner:
             self.flag_motor = OutputDevice(flag_motor_pin)
         else:
             self.flag_motor = Mock()
-
-        self.starter.when_pressed = partial(self.sio_emitter_queue.put, ("starter_changed", True))
-        self.starter.when_released = partial(self.sio_emitter_queue.put, ("starter_changed", False))
 
         if self.oled_bus and self.oled_address:
             self.oled_serial = i2c(port=self.oled_bus, address=self.oled_address)
@@ -326,10 +323,6 @@ class Planner:
             self.task_sio_receiver(),
             name="Robot: Task SIO Receiver",
         )
-        self.sio_emitter_task = asyncio.create_task(
-            self.task_sio_emitter(),
-            name="Robot: Task SIO Emitter",
-        )
         self.blocked_event_task = asyncio.create_task(
             self.blocked_event_loop(),
             name="Robot: Task Blocked Event Watcher Loop",
@@ -365,16 +358,6 @@ class Planner:
         await self.obstacles_updater_loop.stop()
         if self.oled_bus and self.oled_address:
             await self.oled_update_loop.stop()
-
-        if self.sio_emitter_task:
-            self.sio_emitter_task.cancel()
-            try:
-                await self.sio_emitter_task
-            except asyncio.CancelledError:
-                logger.info("Planner: Task SIO Emitter stopped")
-            except Exception as exc:
-                logger.warning(f"Planner: Unexpected exception {exc}")
-        self.sio_emitter_task = None
 
         if self.sio_receiver_task:
             self.sio_receiver_task.cancel()
@@ -436,27 +419,6 @@ class Planner:
         self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
         await self.set_pose_start(self.game_context.start_pose.pose)
         self.pami_event.clear()
-
-    async def task_sio_emitter(self):
-        logger.info("Planner: Task SIO Emitter started")
-        try:
-            while True:
-                name, value = await asyncio.to_thread(self.sio_emitter_queue.get)
-                logger.info(f"Planner: Task SIO emitter: {name} {value}")
-                match name:
-                    case "starter_changed":
-                        await self.starter_changed(value)
-                    case _:
-                        if self.sio.connected:
-                            await self.sio_ns.emit(name, value)
-                self.sio_emitter_queue.task_done()
-        except asyncio.CancelledError:
-            logger.info("Planner: Task SIO Emitter cancelled")
-            raise
-        except Exception as exc:  # noqa
-            logger.warning(f"Planner: Task SIO Emitter: Unknown exception {exc}")
-            traceback.print_exc()
-            raise
 
     async def task_sio_receiver(self):
         logger.info("Planner: Task SIO Receiver started")
@@ -576,6 +538,9 @@ class Planner:
 
         self.flag_motor.on()
         self.pose_order = None
+
+    def starter_changed_callback(self, pushed: bool):
+        asyncio.create_task(self.starter_changed(pushed))
 
     async def starter_changed(self, pushed: bool):
         self.last_starter_event_timestamp = datetime.now(UTC)
