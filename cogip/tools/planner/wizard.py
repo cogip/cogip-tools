@@ -1,3 +1,4 @@
+import asyncio
 import re
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
@@ -240,7 +241,7 @@ class GameWizard:
         )
         self.game_context.last_countdown = self.game_context.countdown = -100
         self.game_context.playing = True
-        await self.planner.sio_receiver_queue.put(self.planner.set_pose_reached())
+        asyncio.create_task(self.planner.set_pose_reached())
         await self.next()
 
     async def check_start(self):

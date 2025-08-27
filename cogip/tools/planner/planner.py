@@ -166,7 +166,6 @@ class Planner:
         self.sio.register_namespace(self.sio_ns)
         self.game_context = GameContext()
         self.process_manager = Manager()
-        self.sio_receiver_queue = asyncio.Queue()
         self.action: actions.Action | None = None
         self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
         self.obstacles_updater_loop = AsyncLoop(
@@ -180,7 +179,6 @@ class Planner:
         self.blocked_counter: int = 0
         self.controller = self.game_context.default_controller
         self.game_wizard = GameWizard(self)
-        self.sio_receiver_task: asyncio.Task | None = None
         self.countdown_task: asyncio.Task | None = None
         self.blocked_event_task: asyncio.Task | None = None
         self.new_path_event_task: asyncio.Task | None = None
@@ -319,10 +317,6 @@ class Planner:
         self.create_shared_memory()
         self.shared_memory.avoidance_exiting = False
         await self.soft_reset()
-        self.sio_receiver_task = asyncio.create_task(
-            self.task_sio_receiver(),
-            name="Robot: Task SIO Receiver",
-        )
         self.blocked_event_task = asyncio.create_task(
             self.blocked_event_loop(),
             name="Robot: Task Blocked Event Watcher Loop",
@@ -358,16 +352,6 @@ class Planner:
         await self.obstacles_updater_loop.stop()
         if self.oled_bus and self.oled_address:
             await self.oled_update_loop.stop()
-
-        if self.sio_receiver_task:
-            self.sio_receiver_task.cancel()
-            try:
-                await self.sio_receiver_task
-            except asyncio.CancelledError:
-                logger.info("Planner: Task SIO Receiver stopped")
-            except Exception as exc:
-                logger.warning(f"Planner: Unexpected exception {exc}")
-        self.sio_receiver_task = None
 
         if self.blocked_event_task:
             self.blocked_event_task.cancel()
@@ -419,22 +403,6 @@ class Planner:
         self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
         await self.set_pose_start(self.game_context.start_pose.pose)
         self.pami_event.clear()
-
-    async def task_sio_receiver(self):
-        logger.info("Planner: Task SIO Receiver started")
-        try:
-            while True:
-                func = await self.sio_receiver_queue.get()
-                logger.info(f"Planner: SIO Task received: {func}")
-                await func
-                self.sio_receiver_queue.task_done()
-        except asyncio.CancelledError:
-            logger.info("Planner: Task SIO Receiver cancelled")
-            raise
-        except Exception as exc:  # noqa
-            logger.warning(f"Planner: Task SIO Receiver: Unknown exception {exc}")
-            traceback.print_exc()
-            raise
 
     async def blocked_event_loop(self):
         logger.info("Planner: Task Blocked Event Watcher Loop started")
@@ -492,7 +460,7 @@ class Planner:
                     self.pami_event.set()
                 if self.robot_id == 1 and self.game_context.countdown < 7 and self.game_context.last_countdown > 7:
                     logger.info("Planner: countdown==7: force blocked")
-                    await self.sio_receiver_queue.put(self.blocked())
+                    asyncio.create_task(self.blocked())
                 if self.game_context.countdown < 0 and self.game_context.last_countdown > 0:
                     logger.info("Planner: countdown==0: final action")
                     await self.final_action()
@@ -640,7 +608,7 @@ class Planner:
             if not self.pose_order and (new_action := self.get_action()):
                 await self.set_action(new_action)
                 if not self.pose_order:
-                    await self.sio_receiver_queue.put(self.set_pose_reached())
+                    asyncio.create_task(self.set_pose_reached())
         except Exception as exc:  # noqa
             logger.warning(f"Planner: Unknown exception {exc}")
             traceback.print_exc()
@@ -684,7 +652,7 @@ class Planner:
             await current_action.recycle()
             self.actions.append(current_action)
             if not self.pose_order:
-                await self.sio_receiver_queue.put(self.set_pose_reached())
+                asyncio.create_task(self.set_pose_reached())
 
     async def update_obstacles(self):
         table = self.game_context.table
@@ -883,7 +851,7 @@ class Planner:
         )
 
         await self.sio_ns.emit("start_video_record")
-        await self.sio_receiver_queue.put(self.set_pose_reached())
+        asyncio.create_task(self.set_pose_reached())
 
     async def cmd_stop(self):
         """
@@ -906,7 +874,7 @@ class Planner:
         if not self.pose_reached:
             return
 
-        await self.sio_receiver_queue.put(self.next_pose())
+        asyncio.create_task(self.next_pose())
 
     async def cmd_reset(self):
         """

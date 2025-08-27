@@ -115,21 +115,21 @@ class SioEvents(socketio.AsyncClientNamespace):
         Callback on pose reached message.
         """
         logger.info("[SIO] Pose reached.")
-        await self.planner.sio_receiver_queue.put(self.planner.set_pose_reached())
+        asyncio.create_task(self.planner.set_pose_reached())
 
     async def on_intermediate_pose_reached(self):
         """
         Callback on intermediate pose reached message.
         """
         logger.info("[SIO] Intermediate pose reached.")
-        await self.planner.sio_receiver_queue.put(self.planner.set_intermediate_pose_reached())
+        asyncio.create_task(self.planner.set_intermediate_pose_reached())
 
     async def on_blocked(self):
         """
         Callback on blocked message.
         """
         logger.info("[SIO] Blocked.")
-        await self.planner.sio_receiver_queue.put(self.planner.blocked())
+        asyncio.create_task(self.planner.blocked())
 
     async def on_command(self, cmd: str, *args):
         """
