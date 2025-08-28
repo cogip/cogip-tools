@@ -99,8 +99,8 @@ private:
     std::deque<std::reference_wrapper<models::Coords>> path_; ///< Path from start to finish.
     bool is_avoidance_computed_; ///< Flag indicating whether the path has been computed.
 
-    float *table_limits_; ///< The limits of the table.
-    float table_limits_margin_;  ///< Margin inside the table limits.
+    double *table_limits_; ///< The limits of the table.
+    double table_limits_margin_;  ///< Margin inside the table limits.
 
     std::vector<std::reference_wrapper<obstacles::Obstacle>> dynamic_obstacles_; ///< List of dynamic obstacles.
 

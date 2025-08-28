@@ -26,9 +26,9 @@ constexpr std::size_t MAX_LIDAR_DATA_COUNT = 1024;
 typedef struct {
     models::pose_buffer_t pose_current_buffer;  ///< The last current poses.
     models::pose_t pose_order;    ///< The target pose.
-    float table_limits[4];  ///< The limits of the table.
-    float lidar_data[MAX_LIDAR_DATA_COUNT][3];  ///< The Lidar data (angle, distance, intensity).
-    float lidar_coords[MAX_LIDAR_DATA_COUNT][2];  ///< The Lidar points converted in table coordinates.
+    double table_limits[4];  ///< The limits of the table.
+    double lidar_data[MAX_LIDAR_DATA_COUNT][3];  ///< The Lidar data (angle, distance, intensity).
+    double lidar_coords[MAX_LIDAR_DATA_COUNT][2];  ///< The Lidar points converted in table coordinates.
     models::circle_list_t detector_obstacles;  ///< The obstacles from detector.
     models::circle_list_t monitor_obstacles;   ///< The obstacles from monitor.
     obstacles::obstacle_circle_list_t circle_obstacles;  ///< The circle obstacles from planner.

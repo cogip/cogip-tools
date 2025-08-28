@@ -103,26 +103,26 @@ NB_MODULE(shared_memory, m) {
              "Get PoseBuffer object wrapping the shared memory pose_current_buffer structure.")
         .def(
             "get_table_limits",
-            [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<4>> {
-                return nb::ndarray<float, nb::numpy, nb::shape<4>>((void *)self.getTableLimits());
+            [](SharedMemory &self) -> nb::ndarray<double, nb::numpy, nb::shape<4>> {
+                return nb::ndarray<double, nb::numpy, nb::shape<4>>((void *)self.getTableLimits());
             },
             nb::rv_policy::reference_internal,
             "Get the table_limits structure from shared memory ."
         )
         .def(
           "get_lidar_data",
-          [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>> {
+          [](SharedMemory &self) -> nb::ndarray<double, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>> {
               auto &data = self.getLidarData();
-              return nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>>((void *)data);
+              return nb::ndarray<double, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 3>>((void *)data);
           },
           nb::rv_policy::reference_internal,
           "Get the lidar_data structure from shared memory ."
         )
        .def(
           "get_lidar_coords",
-          [](SharedMemory &self) -> nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 2>> {
+          [](SharedMemory &self) -> nb::ndarray<double, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 2>> {
                 auto &data = self.getLidarCoords();
-                return nb::ndarray<float, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 2>>((void *)data);
+                return nb::ndarray<double, nb::numpy, nb::shape<MAX_LIDAR_DATA_COUNT, 2>>((void *)data);
           },
           nb::rv_policy::reference_internal,
           "Get the lidar_coords structure from shared memory ."

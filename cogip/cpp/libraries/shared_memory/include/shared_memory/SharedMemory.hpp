@@ -54,13 +54,13 @@ public:
 
 
     /// Retrieves a pointer to the Coords object wrapping the shared memory table_limits array.
-    float (&getTableLimits())[4] { return data_->table_limits; }
+    double (&getTableLimits())[4] { return data_->table_limits; }
 
     /// Retrieves a pointer to the shared memory lidar_data structure.
-    float (&getLidarData())[MAX_LIDAR_DATA_COUNT][3] { return data_->lidar_data; }
+    double (&getLidarData())[MAX_LIDAR_DATA_COUNT][3] { return data_->lidar_data; }
 
     /// Retrieves a pointer to the shared memory lidar_coords structure.
-    float (&getLidarCoords())[MAX_LIDAR_DATA_COUNT][2] { return data_->lidar_coords; }
+    double (&getLidarCoords())[MAX_LIDAR_DATA_COUNT][2] { return data_->lidar_coords; }
 
     /// Retrieves a pointer to the shared memory detector_obstacles structure.
     models::CircleList* getDetectorObstacles() { return detector_obstacles_; }

@@ -25,10 +25,10 @@ typedef struct shared_properties_t {
     std::uint16_t robot_width;  ///< Width of the robot (mm)
     std::uint16_t robot_length;  ///< Length of the robot (mm)
     std::uint16_t obstacle_radius;  ///< Radius of the obstacle (mm)
-    float obstacle_bb_margin;  ///< Margin for the bounding box of the obstacle (mm)
+    double obstacle_bb_margin;  ///< Margin for the bounding box of the obstacle (mm)
     std::uint8_t obstacle_bb_vertices;  ///< Number of vertices for the bounding box of the obstacle
-    float obstacle_updater_interval;  ///< Interval for updating obstacles (seconds)
-    float path_refresh_interval;  ///< Interval for refreshing the path (seconds)
+    double obstacle_updater_interval;  ///< Interval for updating obstacles (seconds)
+    double path_refresh_interval;  ///< Interval for refreshing the path (seconds)
     bool bypass_detector;  ///< Whether to bypass the detector
     bool disable_fixed_obstacles;  ///< Whether to disable fixed obstacles
     std::uint8_t table;  ///< Table ID
