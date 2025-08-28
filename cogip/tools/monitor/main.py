@@ -12,10 +12,10 @@ os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.webenginecontext.info=false"
 import typer
 from PySide6 import QtGui, QtWidgets
 
-from cogip.entities.table import TableEntity
 from .mainwindow import MainWindow
 from .robots import RobotManager
 from .socketiocontroller import SocketioController
+from .table import TableEntity
 
 
 def main_opt(

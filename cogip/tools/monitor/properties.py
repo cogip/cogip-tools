@@ -5,7 +5,7 @@ from typing import Any
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Signal as qtSignal
 
-from .. import logger
+from cogip import logger
 
 
 class IntegerProperty(QtCore.QObject):

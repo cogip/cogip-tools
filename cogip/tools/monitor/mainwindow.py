@@ -10,12 +10,12 @@ from PySide6.QtCore import Slot as qtSlot
 
 from cogip.models import Pose, RobotState, ShellMenu
 from cogip.models.actuators import ActuatorCommand, ActuatorState
-from cogip.widgets.actuators import ActuatorsDialog
-from cogip.widgets.chartsview import ChartsView
-from cogip.widgets.gameview import GameView
-from cogip.widgets.help import HelpCameraControlDialog
-from cogip.widgets.properties import PropertiesDialog
-from cogip.widgets.wizard import WizardDialog
+from .actuators import ActuatorsDialog
+from .chartsview import ChartsView
+from .gameview import GameView
+from .help import HelpCameraControlDialog
+from .properties import PropertiesDialog
+from .wizard import WizardDialog
 
 
 class MainWindow(QtWidgets.QMainWindow):

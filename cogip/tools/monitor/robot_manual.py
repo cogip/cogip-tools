@@ -143,7 +143,7 @@ class RobotManualEntity(Qt3DCore.QEntity):
         Slot called on a ```moved``` mouse event on the robot.
 
         Just record that the robot is moving, the translation is computed
-        in the [GameView][cogip.widgets.gameview.GameView] object.
+        in the [GameView][cogip.tools.monitor.gameview.GameView] object.
         """
         self.moving = True
 

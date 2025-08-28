@@ -3,8 +3,8 @@ from pathlib import Path
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DRender import Qt3DRender
 
-from cogip.entities.asset import AssetEntity
-from cogip.entities.sensor import Sensor
+from .asset import AssetEntity
+from .sensor import Sensor
 
 
 class TableEntity(AssetEntity):
@@ -21,7 +21,7 @@ class TableEntity(AssetEntity):
         """
         Class constructor.
 
-        Inherits [AssetEntity][cogip.entities.asset.AssetEntity].
+        Inherits [AssetEntity][cogip.tools.monitor.asset.AssetEntity].
         """
         super().__init__(self.asset_path, parent=parent)
         self._parent = parent

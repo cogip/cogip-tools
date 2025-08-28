@@ -4,7 +4,7 @@ from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
 
 from cogip.cpp.libraries.models import Pose
-from cogip.entities.sensor import Sensor
+from .sensor import Sensor
 
 
 class ColumnEntity(Qt3DCore.QEntity):

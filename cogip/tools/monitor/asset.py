@@ -1,5 +1,5 @@
 """
-This module defines the base class [AssetEntity][cogip.entities.asset.AssetEntity]
+This module defines the base class [AssetEntity][cogip.tools.monitor.asset.AssetEntity]
 used directly or inherited for specific assets.
 
 Asset entities are graphic element displayed on the 3D view and loaded from asset files.
@@ -39,7 +39,7 @@ class AssetEntity(Qt3DCore.QEntity):
         The constructor checks the asset's file and starts loading the entity.
 
         The entity load is asynchronous, a signal is emitted when it is done
-        (see [`on_loader_status_changed`][cogip.entities.asset.AssetEntity.on_loader_status_changed])
+        (see [`on_loader_status_changed`][cogip.tools.monitor.asset.AssetEntity.on_loader_status_changed])
 
         Arguments:
             asset_path: path of the asset file
@@ -74,8 +74,8 @@ class AssetEntity(Qt3DCore.QEntity):
         record the main `QEntity` and its `QTransform` component.
 
         Then it generated the dot tree
-        (see [`generate_tree`][cogip.entities.asset.AssetEntity.generate_tree]),
-        run the [`post_init`][cogip.entities.asset.AssetEntity.post_init] pass,
+        (see [`generate_tree`][cogip.tools.monitor.asset.AssetEntity.generate_tree]),
+        run the [`post_init`][cogip.tools.monitor.asset.AssetEntity.post_init] pass,
         and emit the `ready` signal.
 
         Arguments:
