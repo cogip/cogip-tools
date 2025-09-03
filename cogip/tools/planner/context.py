@@ -1,3 +1,6 @@
+import os
+
+from cogip.cpp.libraries.shared_memory import SharedMemory
 from cogip.models.actuators import (
     BoolSensor,
     BoolSensorEnum,
@@ -30,9 +33,9 @@ class GameContext(metaclass=Singleton):
     """
 
     def __init__(self):
-        from .properties import Properties
-
-        self.properties = Properties()
+        self.robot_id = int(os.getenv("ROBOT_ID"))
+        self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
+        self.shared_properties = self.shared_memory.get_properties()
         self.game_duration: int = 100
         self.minimum_score: int = 0
         self.camp = Camp()
@@ -45,14 +48,14 @@ class GameContext(metaclass=Singleton):
         """
         Selected table.
         """
-        return tables[self.properties.table]
+        return tables[TableEnum(self.shared_properties.table)]
 
     @property
     def start_pose(self) -> Pose:
         """
         Start pose.
         """
-        return self.start_poses[self.properties.start_position]
+        return self.start_poses[StartPosition(self.shared_properties.start_position)]
 
     def reset(self):
         """
@@ -70,10 +73,10 @@ class GameContext(metaclass=Singleton):
 
     @property
     def default_controller(self) -> ControllerEnum:
-        match self.properties.strategy:
-            case actions.Strategy.PidAngularSpeedTest:
+        match self.shared_properties.strategy:
+            case actions.Strategy.PidAngularSpeedTest.val:
                 return ControllerEnum.ANGULAR_SPEED_TEST
-            case actions.Strategy.PidLinearSpeedTest:
+            case actions.Strategy.PidLinearSpeedTest.val:
                 return ControllerEnum.LINEAR_SPEED_TEST
             case _:
                 return ControllerEnum.QUADPID
@@ -81,44 +84,44 @@ class GameContext(metaclass=Singleton):
     def create_start_poses(self):
         self.start_poses = {
             StartPosition.Bottom: AdaptedPose(
-                x=-550 - self.properties.robot_length / 2,
-                y=-100 - self.properties.robot_width / 2,
+                x=-550 - self.shared_properties.robot_length / 2,
+                y=-100 - self.shared_properties.robot_width / 2,
                 O=0,
             ),
             StartPosition.Top: AdaptedPose(
-                x=550 + self.properties.robot_length / 2,
-                y=-900 - self.properties.robot_width / 2,
+                x=550 + self.shared_properties.robot_length / 2,
+                y=-900 - self.shared_properties.robot_width / 2,
                 O=180,
             ),
             StartPosition.Opposite: AdaptedPose(
-                x=-350 + self.properties.robot_width / 2,
-                y=1050 + self.properties.robot_length / 2,
+                x=-350 + self.shared_properties.robot_width / 2,
+                y=1050 + self.shared_properties.robot_length / 2,
                 O=-90,
             ),
             StartPosition.PAMI2: AdaptedPose(
                 x=550 + 100 * 0.5,
-                y=-1350 - self.properties.robot_length / 2,
+                y=-1350 - self.shared_properties.robot_length / 2,
                 O=90,
             ),
             StartPosition.PAMI3: AdaptedPose(
                 x=550 + 100 * 1.5,
-                y=-1350 - self.properties.robot_length / 2,
+                y=-1350 - self.shared_properties.robot_length / 2,
                 O=90,
             ),
             StartPosition.PAMI4: AdaptedPose(
                 x=550 + 100 * 2.5,
-                y=-1350 - self.properties.robot_length / 2,
+                y=-1350 - self.shared_properties.robot_length / 2,
                 O=90,
             ),
             StartPosition.PAMI5: AdaptedPose(
                 x=550 + 100 * 3.5,
-                y=-1350 - self.properties.robot_length / 2,
+                y=-1350 - self.shared_properties.robot_length / 2,
                 O=90,
             ),
         }
 
         # Adapt poses for training table
-        if self.properties.table == TableEnum.Training:
+        if self.shared_properties.table == TableEnum.Training.val:
             self.start_poses[StartPosition.Top].x -= 1000
             self.start_poses[StartPosition.PAMI2].x -= 1000
             self.start_poses[StartPosition.PAMI3].x -= 1000
@@ -126,9 +129,9 @@ class GameContext(metaclass=Singleton):
             self.start_poses[StartPosition.PAMI5].x -= 1000
 
     def is_valid_start_position(self, position: StartPosition) -> bool:
-        if self.properties.table == TableEnum.Training and position == StartPosition.Opposite:
+        if self.shared_properties.table == TableEnum.Training.val and position == StartPosition.Opposite:
             return False
-        if self.properties.robot_id == 1 and position not in [
+        if self.robot_id == 1 and position not in [
             StartPosition.Top,
             StartPosition.Bottom,
             StartPosition.Opposite,
@@ -155,7 +158,7 @@ class GameContext(metaclass=Singleton):
 
         self.opponent_construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled = False
         self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
-        if self.properties.table == TableEnum.Training:
+        if self.shared_properties.table == TableEnum.Training.val:
             self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge1].enabled = False
             self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge2].enabled = False
             self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
@@ -165,7 +168,7 @@ class GameContext(metaclass=Singleton):
             adapted_pose = AdaptedPose(**tribune.model_dump())
             self.tribunes[id] = Tribune(**adapted_pose.model_dump(), id=id)
 
-        if self.properties.table == TableEnum.Training:
+        if self.shared_properties.table == TableEnum.Training.val:
             self.tribunes[TribuneID.LocalTop] = self.tribunes[TribuneID.LocalTopTraining].model_copy(
                 update={"id": TribuneID.LocalTop}
             )
@@ -227,7 +230,7 @@ class GameContext(metaclass=Singleton):
         )
 
         # PAMIs starting area for robot ID 1, the main robot.
-        if self.properties.robot_id == 1:
+        if self.robot_id == 1:
             self.fixed_obstacles[FixedObstacleID.PamiStartArea] = FixedObstacle(
                 **AdaptedPose(x=825, y=-1425).model_dump(),
                 length=150,
@@ -251,16 +254,12 @@ class GameContext(metaclass=Singleton):
                 id=FixedObstacleID.OpponentPitArea,
             )
 
-        if (
-            self.properties.robot_id == 1
-            and self.properties.table == TableEnum.Training
-            or self.properties.robot_id == 5
-        ):
+        if self.robot_id == 1 and self.shared_properties.table == TableEnum.Training.val or self.robot_id == 5:
             self.fixed_obstacles[FixedObstacleID.Ramp].enabled = False
             self.fixed_obstacles[FixedObstacleID.Scene].enabled = False
             self.fixed_obstacles[FixedObstacleID.Pami5Path].enabled = False
 
-        if self.properties.table == TableEnum.Training:
+        if self.shared_properties.table == TableEnum.Training.val:
             for obstacle in self.fixed_obstacles.values():
                 obstacle.x -= 1000
 

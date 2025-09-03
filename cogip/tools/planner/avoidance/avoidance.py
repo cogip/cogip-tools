@@ -13,12 +13,12 @@ class AvoidanceStrategy(ArgEnum):
 
 
 class Avoidance:
-    def __init__(self, shared_memory_properties: SharedProperties):
-        self.shared_memory_properties = shared_memory_properties
-        self.cpp_avoidance = CppAvoidance(f"cogip_{shared_memory_properties.robot_id}")
+    def __init__(self, shared_properties: SharedProperties):
+        self.shared_properties = shared_properties
+        self.cpp_avoidance = CppAvoidance(f"cogip_{shared_properties.robot_id}")
 
     def check_recompute(self, pose_current: models.PathPose, goal: models.PathPose) -> bool:
-        match self.shared_memory_properties.avoidance_strategy:
+        match self.shared_properties.avoidance_strategy:
             case AvoidanceStrategy.AvoidanceCpp.val:
                 return self.cpp_avoidance.check_recompute(
                     SharedCoord(x=pose_current.x, y=pose_current.y),
@@ -32,7 +32,7 @@ class Avoidance:
         pose_current: models.PathPose,
         goal: models.PathPose,
     ) -> list[models.PathPose]:
-        match self.shared_memory_properties.avoidance_strategy:
+        match self.shared_properties.avoidance_strategy:
             case AvoidanceStrategy.Disabled.val:
                 path = [pose_current.model_copy(), goal.model_copy()]
             case _:
@@ -60,9 +60,6 @@ class Avoidance:
                     path.append(goal.model_copy())
                 else:
                     path = []
-                if (
-                    self.shared_memory_properties.avoidance_strategy == AvoidanceStrategy.StopAndGo.val
-                    and len(path) > 2
-                ):
+                if self.shared_properties.avoidance_strategy == AvoidanceStrategy.StopAndGo.val and len(path) > 2:
                     path = []
         return path

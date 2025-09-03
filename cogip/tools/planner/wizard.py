@@ -20,7 +20,7 @@ class GameWizard:
         self.planner = planner
         self.game_context = GameContext()
         self.step = 0
-        self.game_strategy = self.planner.properties.strategy
+        self.game_strategy = self.planner.shared_properties.strategy
         self.waiting_starter_pressed_loop = AsyncLoop(
             "Waiting starter pressed thread",
             0.1,
@@ -54,7 +54,7 @@ class GameWizard:
 
     async def start(self):
         self.step = 0
-        self.game_strategy = self.planner.properties.strategy
+        self.game_strategy = self.planner.shared_properties.strategy
         await self.waiting_starter_pressed_loop.stop()
         await self.waiting_calibration_loop.stop()
         await self.waiting_start_loop.stop()
@@ -78,15 +78,14 @@ class GameWizard:
             "name": "Game Wizard: Choose Table",
             "type": "choice_str",
             "choices": [e.name for e in TableEnum],
-            "value": self.planner.properties.table.name,
+            "value": TableEnum(self.planner.shared_properties.table).name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_table(self, message: dict[str, Any]):
         value = message["value"]
         new_table = TableEnum[value]
-        self.planner.properties.table = new_table
-        self.planner.shared_memory_properties.table = new_table.val
+        self.planner.shared_properties.table = new_table.val
         await self.planner.soft_reset()
         await self.planner.sio_ns.emit("pami_table", value)
 
@@ -109,15 +108,14 @@ class GameWizard:
             "name": "Game Wizard: Choose Start Position",
             "type": "choice_integer",
             "choices": [p.name for p in StartPosition if self.game_context.is_valid_start_position(p)],
-            "value": self.planner.properties.start_position.name,
+            "value": StartPosition(self.planner.shared_properties.start_position).name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_start_pose(self, message: dict[str, Any]):
         value = message["value"]
         start_position = StartPosition[value]
-        self.planner.properties.start_position = start_position
-        self.planner.shared_memory_properties.start_position = start_position.val
+        self.planner.shared_properties.start_position = start_position.val
         await self.planner.set_pose_start(self.game_context.start_pose.pose)
 
     async def request_avoidance(self):
@@ -131,8 +129,8 @@ class GameWizard:
 
     async def response_avoidance(self, message: dict[str, Any]):
         value = message["value"]
-        self.planner.properties.avoidance_strategy = AvoidanceStrategy[value]
-        self.planner.shared_memory_properties.avoidance_strategy = value.val
+        new_avoidance_strategy = AvoidanceStrategy[value]
+        self.planner.shared_properties.avoidance_strategy = new_avoidance_strategy.val
 
     async def request_strategy(self):
         choices: list[tuple[str, str, str]] = []  # list of (value, category, name). Name can be used for display.
@@ -143,15 +141,13 @@ class GameWizard:
             "name": "Game Wizard: Choose Strategy",
             "type": "choice_str",
             "choices": choices,
-            "value": self.planner.properties.strategy.name,
+            "value": Strategy(self.planner.shared_properties.strategy).name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_strategy(self, message: dict[str, Any]):
-        value = message["value"]
-        self.game_strategy = Strategy[value]
-        self.planner.properties.strategy = Strategy.TestAlignBottomForBanner
-        self.planner.shared_memory_properties.strategy = self.planner.properties.strategy.val
+        self.game_strategy = Strategy[message["value"]].val
+        self.planner.shared_properties.strategy = Strategy.TestAlignBottomForBanner.val
         await self.planner.soft_reset()
 
     async def request_starter_for_calibration(self):
@@ -252,9 +248,8 @@ class GameWizard:
         await self.waiting_start_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
         self.game_context.reset()
-        self.planner.properties.strategy = self.game_strategy
-        self.planner.shared_memory_properties.strategy = self.game_strategy.val
-        self.planner.actions = action_classes.get(self.game_strategy)(self.planner)
+        self.planner.shared_properties.strategy = self.game_strategy
+        self.planner.actions = action_classes.get(Strategy(self.game_strategy))(self.planner)
         await self.planner.sio_ns.emit("game_start")
         await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
         await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())

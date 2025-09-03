@@ -25,7 +25,7 @@ class CameraCalibrationAction(Action):
         self.poses.append(
             Pose(
                 x=-220,
-                y=-(1500 - 450 + self.game_context.properties.robot_width / 2),
+                y=-(1500 - 450 + self.planner.shared_properties.robot_width / 2),
                 O=90,
                 max_speed_linear=66,
                 max_speed_angular=66,
@@ -101,8 +101,8 @@ class CameraCalibrationAction(Action):
 
         self.poses.append(
             Pose(
-                x=-(1000 - 450 + self.game_context.properties.robot_width / 2),
-                y=-(1500 - 450 + self.game_context.properties.robot_width / 2),
+                x=-(1000 - 450 + self.planner.shared_properties.robot_width / 2),
+                y=-(1500 - 450 + self.planner.shared_properties.robot_width / 2),
                 O=90,
                 max_speed_linear=66,
                 max_speed_angular=66,

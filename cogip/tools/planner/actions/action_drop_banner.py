@@ -27,12 +27,11 @@ class DropBannerAction(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
-        self.planner.properties.avoidance_strategy = new_strategy
-        self.planner.shared_memory_properties.avoidance_strategy = new_strategy.val
+        self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
         logger.info(f"{self.name}: before_action")
-        self.avoidance_backup = self.game_context.avoidance_strategy
+        self.avoidance_backup = AvoidanceStrategy(self.planner.shared_properties.avoidance_strategy)
 
         # On start, the robot is facing the back of the table
         self.start_pose = self.pose_current
@@ -55,7 +54,7 @@ class DropBannerAction(Action):
 
         # Step back
         step_back_pose = Pose(
-            x=-950 + self.game_context.properties.robot_length / 2,
+            x=-950 + self.planner.shared_properties.robot_length / 2,
             y=self.start_pose.y,
             O=self.start_pose.O,
             max_speed_linear=50,

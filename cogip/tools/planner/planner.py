@@ -20,7 +20,6 @@ from luma.core.render import canvas
 from luma.oled.device import sh1106
 from numpy.typing import NDArray
 from PIL import ImageFont
-from pydantic import RootModel, TypeAdapter
 from shapely.affinity import rotate, translate
 from shapely.geometry import Polygon
 
@@ -36,7 +35,6 @@ from cogip.models.actuators import ActuatorState
 from cogip.models.artifacts import ConstructionArea, FixedObstacleID
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
-from cogip.utils.singleton import Singleton
 from . import actuators, cameras, logger, pose, sio_events
 from .actions import Strategy, action_classes, actions
 from .avoidance.avoidance import AvoidanceStrategy
@@ -44,7 +42,7 @@ from .avoidance.process import avoidance_process
 from .camp import Camp
 from .context import GameContext
 from .positions import StartPosition
-from .properties import Properties
+from .properties import properties_schema
 from .scservos import SCServoEnum, SCServos
 from .table import TableEnum
 from .wizard import GameWizard
@@ -120,29 +118,8 @@ class Planner:
         self.scservos_baud_rate = scservos_baud_rate
         self.debug = debug
 
-        # We have to make sure the Planner is the first object calling the constructor
-        # of the Properties singleton
-        if Properties in Singleton._instance:
-            raise RuntimeError("Properties class must not be initialized before this point.")
-        self.properties = Properties(
-            robot_id=robot_id,
-            robot_width=robot_width,
-            robot_length=robot_length,
-            obstacle_radius=obstacle_radius,
-            obstacle_bb_margin=obstacle_bb_margin,
-            obstacle_bb_vertices=obstacle_bb_vertices,
-            obstacle_updater_interval=obstacle_updater_interval,
-            path_refresh_interval=path_refresh_interval,
-            bypass_detector=bypass_detector,
-            disable_fixed_obstacles=disable_fixed_obstacles,
-            table=table,
-            strategy=strategy,
-            start_position=start_position,
-            avoidance_strategy=avoidance_strategy,
-        )
-
         self.shared_memory: SharedMemory | None = None
-        self.shared_memory_properties: SharedProperties | None = None
+        self.shared_properties: SharedProperties | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
         self.shared_pose_current_buffer: SharedPoseBuffer | None = None
         self.shared_table_limits: NDArray | None = None
@@ -159,6 +136,25 @@ class Planner:
         self.shared_avoidance_path_lock: WritePriorityLock | None = None
         self.create_shared_memory()
 
+        # Fix type checker after shared memory creation
+        self.shared_properties: SharedProperties
+
+        # Update shared memory properties
+        self.shared_properties.robot_id = robot_id
+        self.shared_properties.robot_width = robot_width
+        self.shared_properties.robot_length = robot_length
+        self.shared_properties.obstacle_radius = obstacle_radius
+        self.shared_properties.obstacle_bb_margin = obstacle_bb_margin
+        self.shared_properties.obstacle_bb_vertices = obstacle_bb_vertices
+        self.shared_properties.obstacle_updater_interval = obstacle_updater_interval
+        self.shared_properties.path_refresh_interval = path_refresh_interval
+        self.shared_properties.bypass_detector = bypass_detector
+        self.shared_properties.disable_fixed_obstacles = disable_fixed_obstacles
+        self.shared_properties.table = table.val
+        self.shared_properties.strategy = strategy.val
+        self.shared_properties.start_position = start_position.val
+        self.shared_properties.avoidance_strategy = avoidance_strategy.val
+
         self.virtual = platform.machine() != "aarch64"
         self.retry_connection = True
         self.sio = socketio.AsyncClient(logger=False)
@@ -167,7 +163,7 @@ class Planner:
         self.game_context = GameContext()
         self.process_manager = Manager()
         self.action: actions.Action | None = None
-        self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
+        self.actions = action_classes.get(self.shared_properties.strategy, actions.Actions)(self)
         self.obstacles_updater_loop = AsyncLoop(
             "Obstacles updater loop",
             obstacle_updater_interval,
@@ -238,7 +234,7 @@ class Planner:
     def create_shared_memory(self):
         if self.shared_memory is None:
             self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
-            self.shared_memory_properties = self.shared_memory.get_properties()
+            self.shared_properties = self.shared_memory.get_properties()
             self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
             self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
             self.shared_table_limits = self.shared_memory.get_table_limits()
@@ -256,7 +252,6 @@ class Planner:
             self.shared_avoidance_path = self.shared_memory.get_avoidance_path()
             self.shared_avoidance_path_lock = self.shared_memory.get_lock(LockName.AvoidancePath)
             self.shared_avoidance_path_lock.register_consumer()
-            self.properties.update_shared_properties(self.shared_memory_properties)
 
     def delete_shared_memory(self):
         if self.shared_memory is not None:
@@ -274,7 +269,7 @@ class Planner:
             self.shared_table_limits = None
             self.shared_pose_current_buffer = None
             self.shared_pose_current_lock = None
-            self.shared_memory_properties = None
+            self.shared_properties = None
             self.shared_memory = None
 
     async def connect(self):
@@ -400,7 +395,7 @@ class Planner:
         self.shared_memory.avoidance_has_pose_order = False
         self.shared_memory.avoidance_has_new_pose_order = False
         self.flag_motor.off()
-        self.actions = action_classes.get(self.properties.strategy, actions.Actions)(self)
+        self.actions = action_classes.get(Strategy(self.shared_properties.strategy), actions.Actions)(self)
         await self.set_pose_start(self.game_context.start_pose.pose)
         self.pami_event.clear()
 
@@ -591,7 +586,7 @@ class Planner:
             self.blocked_counter = 0
             self.pose_order = pose_order
 
-            if self.properties.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
+            if self.shared_properties.strategy in [Strategy.PidLinearSpeedTest.val, Strategy.PidAngularSpeedTest.val]:
                 await self.sio_ns.emit("pose_order", self.pose_order.path_pose.model_dump())
 
     async def next_pose(self):
@@ -657,8 +652,8 @@ class Planner:
     async def update_obstacles(self):
         table = self.game_context.table
         try:
-            margin = self.properties.obstacle_bb_margin * self.properties.robot_length / 2
-            if self.properties.bypass_detector:
+            margin = self.shared_properties.obstacle_bb_margin * self.shared_properties.robot_length / 2
+            if self.shared_properties.bypass_detector:
                 shared_obstacles = self.shared_monitor_obstacles
                 shared_lock = self.shared_monitor_obstacles_lock
             else:
@@ -674,21 +669,21 @@ class Planner:
                 if not table.contains(detector_obstacle, margin):
                     continue
                 if self.robot_id == 1:
-                    radius = self.properties.obstacle_radius
+                    radius = self.shared_properties.obstacle_radius
                 else:
                     radius = detector_obstacle.radius
-                radius += self.properties.robot_length / 2
+                radius += self.shared_properties.robot_length / 2
                 self.shared_circle_obstacles.append(
                     x=detector_obstacle.x,
                     y=detector_obstacle.y,
                     angle=0,
                     radius=radius,
                     bounding_box_margin=margin,
-                    bounding_box_points_number=self.properties.obstacle_bb_vertices,
+                    bounding_box_points_number=self.shared_properties.obstacle_bb_vertices,
                 )
             shared_lock.finish_reading()
 
-            if not self.properties.disable_fixed_obstacles:
+            if not self.shared_properties.disable_fixed_obstacles:
                 if self.robot_id == 1:
                     # Add artifact obstacles
                     construction_areas: list[ConstructionArea] = list(
@@ -703,8 +698,8 @@ class Planner:
                             x=construction_area.x,
                             y=construction_area.y,
                             angle=construction_area.O,
-                            length_x=construction_area.length + self.properties.robot_width,
-                            length_y=construction_area.width + self.properties.robot_width,
+                            length_x=construction_area.length + self.shared_properties.robot_width,
+                            length_y=construction_area.width + self.shared_properties.robot_width,
                             bounding_box_margin=margin,
                             id=construction_area.id.value,
                         )
@@ -717,8 +712,8 @@ class Planner:
                             x=tribune.x,
                             y=tribune.y,
                             angle=tribune.O,
-                            length_x=tribune.width + self.properties.robot_width,
-                            length_y=tribune.length + self.properties.robot_width,
+                            length_x=tribune.width + self.shared_properties.robot_width,
+                            length_y=tribune.length + self.shared_properties.robot_width,
                             bounding_box_margin=margin,
                             id=tribune.id.value,
                         )
@@ -733,8 +728,8 @@ class Planner:
                         x=fixed_obstacle.x,
                         y=fixed_obstacle.y,
                         angle=0,
-                        length_x=fixed_obstacle.width + self.properties.robot_width,
-                        length_y=fixed_obstacle.length + self.properties.robot_width,
+                        length_x=fixed_obstacle.width + self.shared_properties.robot_width,
+                        length_y=fixed_obstacle.length + self.shared_properties.robot_width,
                         bounding_box_margin=margin,
                         id=fixed_obstacle.id.value,
                     )
@@ -752,7 +747,7 @@ class Planner:
                 f"{'Connected' if self.sio.connected else 'Not connected': <20}"
                 f"{'▶' if self.game_context.playing else '◼'}\n"
                 f"Camp: {self.game_context.camp.color.name}\n"
-                f"Strategy: {self.properties.strategy.name}\n"
+                f"Strategy: {Strategy(self.shared_properties.strategy).name}\n"
                 f"Pose: {pose_current.x},{pose_current.y},{pose_current.O}\n"
                 f"Countdown: {self.game_context.countdown:.2f}"
             )
@@ -786,15 +781,12 @@ class Planner:
 
         if cmd == "config":
             # Get JSON Schema
-            schema = TypeAdapter(Properties).json_schema()
-            # Add namespace in JSON Schema
-            schema["namespace"] = "/planner"
-            schema["sio_event"] = "config_updated"
+            schema_with_values = properties_schema.copy()
             # Add current values in JSON Schema
-            for prop, value in RootModel[Properties](self.properties).model_dump(mode="json").items():
-                schema["properties"][prop]["value"] = value
+            for prop in schema_with_values["properties"]:
+                schema_with_values["properties"][prop]["value"] = getattr(self.shared_properties, prop)
             # Send config
-            await self.sio_ns.emit("config", schema)
+            await self.sio_ns.emit("config", schema_with_values)
             return
 
         if cmd == "scservos":
@@ -817,10 +809,13 @@ class Planner:
         """
         Update a Planner property with the value sent by the dashboard.
         """
-        self.properties.__setattr__(name := config["name"], config["value"])
+        name = config["name"]
+        current_value = getattr(self.shared_properties, name)
+        current_value_type = type(current_value)
+        setattr(self.shared_properties, name, current_value_type(config["value"]))
         match name:
             case "obstacle_updater_interval":
-                self.obstacles_updater_loop.interval = self.properties.obstacle_updater_interval
+                self.obstacles_updater_loop.interval = self.shared_properties.obstacle_updater_interval
 
     async def update_scservo(self, servo: dict[str, Any]) -> None:
         """
@@ -913,7 +908,7 @@ class Planner:
                 "name": "Choose Strategy",
                 "type": "choice_str",
                 "choices": choices,
-                "value": self.properties.strategy.name,
+                "value": Strategy(self.shared_properties.strategy).name,
             },
         )
 
@@ -928,7 +923,7 @@ class Planner:
                 "name": "Choose Avoidance",
                 "type": "choice_str",
                 "choices": [e.name for e in AvoidanceStrategy],
-                "value": self.properties.avoidance_strategy.name,
+                "value": AvoidanceStrategy(self.shared_properties.avoidance_strategy).name,
             },
         )
 
@@ -943,7 +938,7 @@ class Planner:
                 "name": "Choose Start Position",
                 "type": "choice_integer",
                 "choices": [p.name for p in StartPosition if self.game_context.is_valid_start_position(p)],
-                "value": self.properties.start_position.name,
+                "value": StartPosition(self.shared_properties.start_position).name,
             },
         )
 
@@ -958,7 +953,7 @@ class Planner:
                 "name": "Choose Table",
                 "type": "choice_str",
                 "choices": [e.name for e in TableEnum],
-                "value": self.properties.table.name,
+                "value": TableEnum(self.shared_properties.table).name,
             },
         )
 
@@ -975,7 +970,7 @@ class Planner:
                 if self.game_context.camp.color == new_camp:
                     return
                 previous_camp = self.game_context.camp.color
-                if self.properties.table == TableEnum.Training and new_camp == Camp.Colors.yellow:
+                if self.shared_properties.table == TableEnum.Training.val and new_camp == Camp.Colors.yellow:
                     error_message = "Yellow camp not compatible with training table"
                     self.game_context.camp.color = previous_camp
                     logger.warning(f"Wizard: {error_message}")
@@ -993,22 +988,20 @@ class Planner:
                 logger.info(f"Wizard: New camp: {self.game_context.camp.color.name}")
             case "Choose Strategy":
                 new_strategy = Strategy[value]
-                if self.properties.strategy == new_strategy:
+                if self.shared_properties.strategy == new_strategy.val:
                     return
-                self.properties.strategy = new_strategy
-                self.shared_memory_properties.strategy = new_strategy.val
+                self.shared_properties.strategy = new_strategy.val
                 await self.soft_reset()
-                logger.info(f"Wizard: New strategy: {self.properties.strategy.name}")
+                logger.info(f"Wizard: New strategy: {value}")
             case "Choose Avoidance":
-                new_strategy = AvoidanceStrategy[value]
-                if self.properties.avoidance_strategy == new_strategy:
+                new_avoidance = AvoidanceStrategy[value]
+                if self.shared_properties.avoidance_strategy == new_avoidance.val:
                     return
-                self.properties.avoidance_strategy = new_strategy
-                self.shared_memory_properties.avoidance_strategy = new_strategy.val
-                logger.info(f"Wizard: New avoidance strategy: {self.properties.avoidance_strategy.name}")
+                self.shared_properties.avoidance_strategy = new_avoidance.val
+                logger.info(f"Wizard: New avoidance strategy: {value}")
             case "Choose Start Position":
                 new_start_position = StartPosition[value]
-                if self.properties.start_position == new_start_position:
+                if self.shared_properties.start_position == new_start_position.val:
                     return
                 if not self.game_context.is_valid_start_position(new_start_position):
                     message = f"Start position {new_start_position.name} invalid in current table and camp"
@@ -1022,25 +1015,24 @@ class Planner:
                         },
                     )
                     return
-                self.properties.start_position = new_start_position
-                self.shared_memory_properties.start_position = new_start_position.val
+                self.shared_properties.start_position = new_start_position.val
                 await self.soft_reset()
             case "Choose Table":
                 new_table = TableEnum[value]
-                if self.game_context.table == new_table:
+                if self.shared_properties.table == new_table.val:
                     return
                 error_message = ""
-                previous_table = self.game_context.table
-                self.properties.table = new_table
-                if not self.game_context.is_valid_start_position(self.properties.start_position):
+                previous_table = self.shared_properties.table
+                self.shared_properties.table = new_table.val
+                if not self.game_context.is_valid_start_position(StartPosition(self.shared_properties.start_position)):
                     error_message = (
                         f"Table {new_table.name} not compatible "
-                        f"with start position {self.properties.start_position.name}"
+                        f"with start position {StartPosition(self.shared_properties.start_position).name}"
                     )
                 if new_table == TableEnum.Training and self.game_context.camp.color == Camp.Colors.yellow:
                     error_message = f"Table {new_table.name} not compatible yellow camp"
                 if error_message:
-                    self.properties.table = previous_table
+                    self.shared_properties.table = previous_table
                     logger.warning(f"Wizard: {error_message}")
                     await self.sio_ns.emit(
                         "wizard",
@@ -1052,13 +1044,12 @@ class Planner:
                     )
                     return
 
-                self.shared_memory_properties.table = new_table.val
                 self.shared_table_limits[0] = self.game_context.table.x_min
                 self.shared_table_limits[1] = self.game_context.table.x_max
                 self.shared_table_limits[2] = self.game_context.table.y_min
                 self.shared_table_limits[3] = self.game_context.table.y_max
                 await self.soft_reset()
-                logger.info(f"Wizard: New table: {self.properties.table.name}")
+                logger.info(f"Wizard: New table: {value}")
             case game_wizard_response if game_wizard_response.startswith("Game Wizard"):
                 await self.game_wizard.response(message)
             case wizard_test_response if wizard_test_response.startswith("Wizard Test"):
@@ -1202,7 +1193,7 @@ class Planner:
 
     def robot_in_parking(self) -> bool:
         pose_current = self.pose_current.model_copy()
-        robot_half = self.properties.robot_width / 2.0
+        robot_half = self.shared_properties.robot_width / 2.0
         robot_square = Polygon(
             [
                 (-robot_half, -robot_half),

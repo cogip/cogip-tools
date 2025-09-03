@@ -24,7 +24,7 @@ class VisitStartingAreasAction(Action):
         default_start_position_index = 0
         for i in range(start_positions_count):
             start_position = StartPosition((i + 1) % start_positions_count + 1)
-            if start_position == self.game_context.properties.start_position:
+            if start_position.val == self.planner.shared_properties.start_position:
                 default_start_position_index = i
             pose = self.game_context.start_poses[start_position]
             new_pose = Pose(x=pose.x, y=pose.y, O=pose.O, max_speed_linear=66, max_speed_angular=66)

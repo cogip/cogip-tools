@@ -19,7 +19,7 @@ def avoidance_process(robot_id: int):
 
     logger.info("Avoidance: process started")
     shared_memory = SharedMemory(f"cogip_{robot_id}")
-    shared_memory_properties = shared_memory.get_properties()
+    shared_properties = shared_memory.get_properties()
     shared_pose_current_buffer = shared_memory.get_pose_current_buffer()
     shared_pose_current_lock = shared_memory.get_lock(LockName.PoseCurrent)
     shared_circle_obstacles = shared_memory.get_circle_obstacles()
@@ -29,14 +29,14 @@ def avoidance_process(robot_id: int):
     shared_avoidance_blocked_lock = shared_memory.get_lock(LockName.AvoidanceBlocked)
     shared_avoidance_path = shared_memory.get_avoidance_path()
     shared_avoidance_path_lock = shared_memory.get_lock(LockName.AvoidancePath)
-    avoidance = Avoidance(shared_memory_properties)
+    avoidance = Avoidance(shared_properties)
     pose_order: models.PathPose | None = None
     last_pose_current: models.Pose | None = None
     last_emitted_pose_order: models.PathPose | None = None
-    start = time.time() - shared_memory_properties.path_refresh_interval + 0.01
+    start = time.time() - shared_properties.path_refresh_interval + 0.01
 
     while not shared_memory.avoidance_exiting:
-        path_refresh_interval = shared_memory_properties.path_refresh_interval
+        path_refresh_interval = shared_properties.path_refresh_interval
         now = time.time()
         duration = now - start
         if duration > path_refresh_interval:
@@ -68,7 +68,7 @@ def avoidance_process(robot_id: int):
         pose_current = models.PathPose.from_shared(shared_pose_current)
         shared_pose_current_lock.finish_reading()
 
-        if shared_memory_properties.strategy in [Strategy.PidLinearSpeedTest.val, Strategy.PidAngularSpeedTest.val]:
+        if shared_properties.strategy in [Strategy.PidLinearSpeedTest.val, Strategy.PidAngularSpeedTest.val]:
             logger.debug("Avoidance: Skip path update (speed test)")
             continue
 
@@ -95,7 +95,7 @@ def avoidance_process(robot_id: int):
 
         # Create dynamic obstacles
         dyn_obstacles: list[SharedObstacleCircle | SharedObstacleRectangle] = []
-        if shared_memory_properties.avoidance_strategy != AvoidanceStrategy.Disabled.val:
+        if shared_properties.avoidance_strategy != AvoidanceStrategy.Disabled.val:
             # Deep copy of obstacles to not block the shared memory
             shared_obstacles_lock.start_reading()
             for obstacle in shared_circle_obstacles:
@@ -104,7 +104,7 @@ def avoidance_process(robot_id: int):
                 dyn_obstacles.append(SharedObstacleRectangle(obstacle, deep_copy=True))
             shared_obstacles_lock.finish_reading()
 
-        if shared_memory_properties.avoidance_strategy == AvoidanceStrategy.AvoidanceCpp.val:
+        if shared_properties.avoidance_strategy == AvoidanceStrategy.AvoidanceCpp.val:
             # Recreate obstacles list
             avoidance.cpp_avoidance.clear_dynamic_obstacles()
             for obstacle in dyn_obstacles:
@@ -202,7 +202,7 @@ def avoidance_process(robot_id: int):
     shared_obstacles_lock = None
     shared_pose_current_lock = None
     shared_pose_current_buffer = None
-    shared_memory_properties = None
+    shared_properties = None
     shared_memory = None
 
     logger.info("Avoidance: process exited")

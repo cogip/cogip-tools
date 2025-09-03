@@ -6,7 +6,7 @@ import socketio
 from pydantic import TypeAdapter, ValidationError
 
 from cogip.models.actuators import ActuatorState
-from . import context, logger
+from . import logger
 from .menu import (
     cameras_menu,
     menu,
@@ -28,7 +28,6 @@ class SioEvents(socketio.AsyncClientNamespace):
     def __init__(self, planner: "Planner"):
         super().__init__("/planner")
         self.planner = planner
-        self.game_context = context.GameContext()
 
     async def on_connect(self):
         """
