@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 import logging
+import os
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -9,8 +10,10 @@ from watchfiles import PythonFilter, run_process
 
 from . import logger
 from .actions import Strategy
+from .avoidance.avoidance import AvoidanceStrategy
 from .planner import Planner
 from .positions import StartPosition
+from .properties import properties_schema
 from .table import TableEnum
 
 
@@ -21,6 +24,9 @@ def changes_callback(changes):
 def run(*args, **kwargs) -> None:
     planner = Planner(*args, **kwargs)
     asyncio.run(planner.connect())
+
+
+properties = properties_schema["properties"]
 
 
 def main_opt(
@@ -45,66 +51,66 @@ def main_opt(
     robot_width: Annotated[
         int,
         typer.Option(
-            min=100,
-            max=1000,
-            help="Width of the robot (in mm)",
+            min=properties["robot_width"]["minimum"],
+            max=properties["robot_width"]["maximum"],
+            help=properties["robot_width"]["description"],
             envvar="PLANNER_ROBOT_WIDTH",
         ),
-    ] = 295,
+    ] = properties["robot_width"]["default"],
     robot_length: Annotated[
         int,
         typer.Option(
-            min=100,
-            max=1000,
-            help="Length of the robot (in mm)",
+            min=properties["robot_length"]["minimum"],
+            max=properties["robot_length"]["maximum"],
+            help=properties["robot_length"]["description"],
             envvar="PLANNER_ROBOT_LENGTH",
         ),
-    ] = 295,
+    ] = properties["robot_length"]["default"],
     obstacle_radius: Annotated[
         int,
         typer.Option(
-            min=50,
-            max=500,
-            help="Radius of a dynamic obstacle (in mm)",
+            min=properties["obstacle_radius"]["minimum"],
+            max=properties["obstacle_radius"]["maximum"],
+            help=properties["obstacle_radius"]["description"],
             envvar="PLANNER_OBSTACLE_RADIUS",
         ),
-    ] = 150,
+    ] = properties["obstacle_radius"]["default"],
     obstacle_bb_margin: Annotated[
         float,
         typer.Option(
-            min=0,
-            max=1,
-            help="Obstacle bounding box margin in percent of the radius",
+            min=properties["obstacle_bb_margin"]["minimum"],
+            max=properties["obstacle_bb_margin"]["maximum"],
+            help=properties["obstacle_bb_margin"]["description"],
             envvar="PLANNER_OBSTACLE_BB_MARGIN",
         ),
-    ] = 0.2,
+    ] = properties["obstacle_bb_margin"]["default"],
     obstacle_bb_vertices: Annotated[
         int,
         typer.Option(
-            min=3,
-            max=20,
-            help="Number of obstacle bounding box vertices",
+            min=properties["obstacle_bb_vertices"]["minimum"],
+            max=properties["obstacle_bb_vertices"]["maximum"],
+            help=properties["obstacle_bb_vertices"]["description"],
             envvar="PLANNER_OBSTACLE_BB_VERTICES",
         ),
-    ] = 6,
+    ] = properties["obstacle_bb_vertices"]["default"],
     obstacle_updater_interval: Annotated[
         float,
         typer.Option(
-            min=0.05,
-            max=2.0,
-            help="Interval between each obstacles list update (seconds)",
+            min=properties["obstacle_updater_interval"]["minimum"],
+            max=properties["obstacle_updater_interval"]["maximum"],
+            help=properties["obstacle_updater_interval"]["description"],
             envvar="PLANNER_OBSTACLE_UPDATER_INTERVAL",
         ),
-    ] = 0.2,
+    ] = properties["obstacle_updater_interval"]["default"],
     path_refresh_interval: Annotated[
         float,
         typer.Option(
-            min=0.001,
-            max=2.0,
-            help="Interval between each update of robot paths (in seconds)",
+            min=properties["path_refresh_interval"]["minimum"],
+            max=properties["path_refresh_interval"]["maximum"],
+            help=properties["path_refresh_interval"]["description"],
             envvar="PLANNER_PATH_REFRESH_INTERVAL",
         ),
-    ] = 0.2,
+    ] = properties["path_refresh_interval"]["default"],
     starter_pin: Annotated[
         Optional[int],  # noqa
         typer.Option(
@@ -172,10 +178,10 @@ def main_opt(
         typer.Option(
             "-bd",
             "--bypass-detector",
-            help="Use perfect obstacles from monitor instead of detected obstacles by Lidar",
+            help=properties["bypass_detector"]["description"],
             envvar=["PLANNER_BYPASS_DETECTOR"],
         ),
-    ] = False,
+    ] = properties["bypass_detector"]["default"],
     scservos_port: Annotated[
         Path | None,
         typer.Option(
@@ -199,10 +205,10 @@ def main_opt(
         typer.Option(
             "-df",
             "--disable-fixed-obstacles",
-            help="Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance",
+            help=properties["disable_fixed_obstacles"]["description"],
             envvar=["PLANNER_DISABLE_FIXED_OBSTACLES"],
         ),
-    ] = False,
+    ] = properties["disable_fixed_obstacles"]["default"],
     table: Annotated[
         TableEnum,
         typer.Option(
@@ -230,6 +236,15 @@ def main_opt(
             envvar="PLANNER_START_POSITION",
         ),
     ] = StartPosition.Bottom.name,
+    avoidance_strategy: Annotated[
+        AvoidanceStrategy,
+        typer.Option(
+            "-a",
+            "--avoidance-strategy",
+            help="Default avoidance strategy on startup",
+            envvar="PLANNER_AVOIDANCE_STRATEGY",
+        ),
+    ] = AvoidanceStrategy.AvoidanceCpp.name,
     reload: Annotated[
         bool,
         typer.Option(
@@ -251,6 +266,9 @@ def main_opt(
 ):
     if debug:
         logger.setLevel(logging.DEBUG)
+
+    # Make sure robot ID is also available as environment variable for context creation
+    os.environ["ROBOT_ID"] = str(id)
 
     if not server_url:
         server_url = f"http://localhost:809{id}"
@@ -279,6 +297,7 @@ def main_opt(
         table,
         strategy,
         start_position,
+        avoidance_strategy,
         debug,
     )
 

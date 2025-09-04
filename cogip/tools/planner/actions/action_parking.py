@@ -40,7 +40,7 @@ class ParkingAction(Action):
         logger.info(f"{self.name}: before_pose - tribunes_in_robot={self.game_context.tribunes_in_robot}")
         self.planner.pose_order = None
         await self.planner.sio_ns.emit("brake")
-        if self.game_context.properties.table == TableEnum.Game:
+        if self.planner.shared_properties.table == TableEnum.Game.val:
             self.game_context.fixed_obstacles[FixedObstacleID.PitArea].enabled = True
             self.game_context.fixed_obstacles[FixedObstacleID.OpponentPitArea].enabled = True
             self.game_context.fixed_obstacles[FixedObstacleID.PamiStartArea].enabled = False

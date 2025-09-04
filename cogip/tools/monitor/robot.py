@@ -15,8 +15,8 @@ from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCi
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models import Pose
-from cogip.tools.monitor.mainwindow import MainWindow
 from .asset import AssetEntity
+from .mainwindow import MainWindow
 from .robot_order import RobotOrderEntity
 from .sensor import LidarSensor, Sensor, ToFSensor
 
@@ -44,7 +44,7 @@ class RobotEntity(AssetEntity):
         """
         Class constructor.
 
-        Inherits [AssetEntity][cogip.entities.asset.AssetEntity].
+        Inherits [AssetEntity][cogip.tools.monitor.asset.AssetEntity].
         """
         self.win = win
         asset_path = Path(f"assets/{'robot' if robot_id == 1 else 'pami'}2025.dae")

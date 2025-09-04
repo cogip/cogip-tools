@@ -41,7 +41,7 @@ nanobind_add_stub(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/__init__.pyi
     MARKER_FILE ${CMAKE_CURRENT_BINARY_DIR}/py.typed
     PYTHON_PATH ${CMAKE_BINARY_DIR}
-    DEPENDS utils shared_memory_stub
+    DEPENDS shared_memory_stub
     VERBOSE
     INSTALL_TIME
 )

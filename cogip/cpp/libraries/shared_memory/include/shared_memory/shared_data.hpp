@@ -10,6 +10,7 @@
 #include "models/pose_buffer.hpp"
 #include "obstacles/obstacle_circle_list.hpp"
 #include "obstacles/obstacle_polygon_list.hpp"
+#include "shared_properties.hpp"
 
 #include <cstdint>
 #include <map>
@@ -25,14 +26,20 @@ constexpr std::size_t MAX_LIDAR_DATA_COUNT = 1024;
 typedef struct {
     models::pose_buffer_t pose_current_buffer;  ///< The last current poses.
     models::pose_t pose_order;    ///< The target pose.
-    float table_limits[4];  ///< The limits of the table.
-    float lidar_data[MAX_LIDAR_DATA_COUNT][3];  ///< The Lidar data (angle, distance, intensity).
-    float lidar_coords[MAX_LIDAR_DATA_COUNT][2];  ///< The Lidar points converted in table coordinates.
+    double table_limits[4];  ///< The limits of the table.
+    double lidar_data[MAX_LIDAR_DATA_COUNT][3];  ///< The Lidar data (angle, distance, intensity).
+    double lidar_coords[MAX_LIDAR_DATA_COUNT][2];  ///< The Lidar points converted in table coordinates.
     models::circle_list_t detector_obstacles;  ///< The obstacles from detector.
     models::circle_list_t monitor_obstacles;   ///< The obstacles from monitor.
     obstacles::obstacle_circle_list_t circle_obstacles;  ///< The circle obstacles from planner.
     obstacles::obstacle_polygon_list_t rectangle_obstacles;  ///< The rectangle obstacles from planner.
-
+    shared_properties_t properties;  ///< Shared properties.
+    bool avoidance_exiting;  ///< True if the avoidance process is exiting, false otherwise
+    bool avoidance_has_new_pose_order;  ///< True if the avoidance process should use the new pose order property, false otherwise
+    bool avoidance_has_pose_order;  ///< True if no pose order has been set by the Planner, false otherwise
+    models::pose_order_t avoidance_new_pose_order;  ///< New pose order for the avoidance process
+    models::pose_order_t avoidance_pose_order;  ///< Current pose order for the avoidance process
+    models::pose_order_list_t avoidance_path;  ///< Path for the avoidance process
 } shared_data_t;
 
 /// Overloads the stream insertion operator for `shared_data_t`.
@@ -54,6 +61,8 @@ enum class LockName {
     DetectorObstacles, ///< Lock for the obstacles from detector.
     MonitorObstacles,  ///< Lock for the obstacles from the monitor.
     Obstacles,    ///< Lock for the circle obstacles from planner.
+    AvoidanceBlocked,  ///< Lock blocked event from avoidance.
+    AvoidancePath      ///< Lock for the new avoidance path event from avoidance.
 };
 
 /// Maps `LockName` enum values to their corresponding string representations.
@@ -65,6 +74,8 @@ static std::map<LockName, std::string> lock2str = {
     { LockName::DetectorObstacles, "DetectorObstacles" },
     { LockName::MonitorObstacles, "MonitorObstacles" },
     { LockName::Obstacles, "Obstacles" },
+    { LockName::AvoidanceBlocked, "AvoidanceBlocked" },
+    { LockName::AvoidancePath, "AvoidancePath" },
 };
 
 } // namespace shared_memory

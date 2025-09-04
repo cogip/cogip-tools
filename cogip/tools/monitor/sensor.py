@@ -8,8 +8,8 @@ from PySide6.Qt3DRender import Qt3DRender
 from PySide6.QtCore import Slot as qtSlot
 
 from cogip.cpp.libraries.shared_memory import WritePriorityLock
-from cogip.entities.asset import AssetEntity
-from cogip.entities.impact import ImpactEntity
+from .asset import AssetEntity
+from .impact import ImpactEntity
 
 VL53L0X_NUMOF = 6
 
@@ -20,7 +20,7 @@ class Sensor(QtCore.QObject):
 
     The sensors are based on [QRayCaster](https://doc.qt.io/qtforpython-6/PySide6/Qt3DRender/QRayCaster.html).
     It casts a ray and detects collisions with obstacles.
-    Detected collision is represented using a [ImpactEntity][cogip.entities.impact.ImpactEntity] object.
+    Detected collision is represented using a [ImpactEntity][cogip.tools.monitor.impact.ImpactEntity] object.
 
     Attributes:
         obstacles: Class attribute recording all entities that should be detected

@@ -72,7 +72,7 @@ class CaptureTribuneAction(Action):
         if (
             (
                 self.tribune.id == artifacts.TribuneID.LocalCenter
-                and self.game_context.properties.table == TableEnum.Training
+                and self.planner.shared_properties.table == TableEnum.Training.val
             )
             or self.tribune.id == artifacts.TribuneID.LocalTop
             or self.tribune.id == artifacts.TribuneID.LocalTopSide

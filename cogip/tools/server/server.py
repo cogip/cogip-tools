@@ -1,4 +1,6 @@
+import asyncio
 import os
+import traceback
 from typing import Any
 
 import socketio
@@ -7,10 +9,11 @@ from socketio.exceptions import ConnectionRefusedError
 from uvicorn.main import Server as UvicornServer
 
 from cogip import models
-from cogip.cpp.libraries.models import Pose as SharedPose
+from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
+from cogip.cpp.libraries.models import PoseOrderList as SharedPoseOrderList
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
-from cogip.cpp.libraries.shared_memory import SharedMemory
+from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.utils.asyncloop import AsyncLoop
 from . import context, logger, namespaces
 
@@ -18,13 +21,17 @@ from . import context, logger, namespaces
 class Server:
     _original_uvicorn_exit_handler = UvicornServer.handle_exit  # Backup of original exit handler to overload it
     _shared_memory: SharedMemory | None = None  # Shared memory instance
-    _shared_pose_current_buffer: SharedPose | None = None
+    _shared_pose_current_buffer: SharedPoseBuffer | None = None
     _shared_circle_obstacles: SharedObstacleCircleList | None = None
     _shared_rectangle_obstacles: SharedObstacleRectangleList | None = None
+    _shared_avoidance_path: SharedPoseOrderList | None = None
+    _shared_avoidance_path_lock: WritePriorityLock | None = None
 
     @staticmethod
     def handle_exit(*args, **kwargs):
         """Overload function for Uvicorn handle_exit"""
+        Server._shared_avoidance_path = None
+        Server._shared_avoidance_path_lock = None
         Server._shared_rectangle_obstacles = None
         Server._shared_circle_obstacles = None
         Server._shared_pose_current_buffer = None
@@ -53,6 +60,9 @@ class Server:
             Server._shared_pose_current_buffer = Server._shared_memory.get_pose_current_buffer()
             Server._shared_circle_obstacles = Server._shared_memory.get_circle_obstacles()
             Server._shared_rectangle_obstacles = Server._shared_memory.get_rectangle_obstacles()
+            Server._shared_avoidance_path = Server._shared_memory.get_avoidance_path()
+            Server._shared_avoidance_path_lock = Server._shared_memory.get_lock(LockName.AvoidancePath)
+            Server._shared_avoidance_path_lock.register_consumer()
 
         self.sio = socketio.AsyncServer(
             always_connect=False,
@@ -71,6 +81,11 @@ class Server:
         self.sio.register_namespace(namespaces.BeaconNamespace(self))
 
         self.dashboard_updater_loop.start()
+
+        self.new_path_event_task = asyncio.create_task(
+            self.new_path_event_loop(),
+            name="Server: Task New Path Event Watcher Loop",
+        )
 
         # Overload default Uvicorn exit handler
         UvicornServer.handle_exit = Server.handle_exit
@@ -143,3 +158,23 @@ class Server:
             for obstacle in Server._shared_rectangle_obstacles
         ]
         await self.sio.emit("obstacles", (self.context.robot_id, obstacles), namespace="/dashboard")
+
+    async def new_path_event_loop(self):
+        logger.info("Server: Task New Path Event Watcher Loop started")
+        try:
+            while True:
+                await asyncio.to_thread(Server._shared_avoidance_path_lock.wait_update)
+                shared_pose_current = Server._shared_pose_current_buffer.last
+                path = [{"x": shared_pose_current.x, "y": shared_pose_current.y, "O": shared_pose_current.angle}]
+                for pose in Server._shared_avoidance_path:
+                    path.append({"x": pose.x, "y": pose.y, "O": pose.angle})
+                if len(path) > 1:
+                    await self.sio.emit("pose_order", (self.context.robot_id, path[1]), namespace="/dashboard")
+                    await self.sio.emit("path", (self.context.robot_id, path), namespace="/dashboard")
+        except asyncio.CancelledError:
+            logger.info("Server: Task New Path Event Watcher Loop cancelled")
+            raise
+        except Exception as exc:  # noqa
+            logger.warning(f"Server: Task New Path Event Watcher Loop: Unknown exception {exc}")
+            traceback.print_exc()
+            raise

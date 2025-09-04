@@ -6,6 +6,7 @@
 #include "models/CircleList.hpp"
 #include "models/Pose.hpp"
 #include "models/PoseBuffer.hpp"
+#include "models/PoseOrderList.hpp"
 #include "models/binding.hpp"
 
 #include <nanobind/nanobind.h>
@@ -22,6 +23,7 @@ namespace models {
 
 using CoordsIterator = NbSharedArrayIterator<Coords, CoordsList>;
 using CircleIterator = NbSharedArrayIterator<Circle, CircleList>;
+using PoseOrderIterator = NbSharedArrayIterator<PoseOrder, PoseOrderList>;
 
 NB_MODULE(models, m) {
 
@@ -191,6 +193,122 @@ NB_MODULE(models, m) {
         .def("__repr__", [](const PoseBuffer &buffer) {
             std::ostringstream oss;
             oss << buffer;
+            return oss.str();
+        })
+    ;
+
+    // Bind pose_order_t structure
+    nb::class_<pose_order_t>(m, "PoseOrderT")
+        .def_rw("x", &pose_order_t::x, "X-coordinate of the pose")
+        .def_rw("y", &pose_order_t::y, "Y-coordinate of the pose")
+        .def_rw("angle", &pose_order_t::angle, "Orientation angle of the pose in degrees")
+        .def_rw("max_speed_linear", &pose_order_t::max_speed_linear, "Maximum linear speed for the pose (in percent of the robot max speed)")
+        .def_rw("max_speed_angular", &pose_order_t::max_speed_angular, "Maximum angular speed for the pose (in percent of the robot max speed)")
+        .def_rw("allow_reverse", &pose_order_t::allow_reverse, "True if the pose allows reverse movement, false otherwise")
+        .def_rw("bypass_anti_blocking", &pose_order_t::bypass_anti_blocking, "True if the pose bypasses anti-blocking, false otherwise")
+        .def_rw("bypass_final_orientation", &pose_order_t::bypass_final_orientation, "True if the pose bypasses final orientation, false otherwise")
+        .def_rw("timeout_ms", &pose_order_t::timeout_ms, "Timeout in milliseconds for the pose to be reached")
+        .def_rw("is_intermediate", &pose_order_t::is_intermediate, "True if the pose is an intermediate pose, false if it is a final pose")
+        .def("__repr__", [](const pose_order_t& order) {
+            std::ostringstream oss;
+            oss << order;
+            return oss.str();
+        })
+    ;
+
+    // Bind PoseOrder class
+    nb::class_<PoseOrder>(m, "PoseOrder")
+        .def(
+            nb::init<double, double, double, std::uint8_t, std::uint8_t, bool, bool, bool, std::uint32_t, bool, pose_order_t*>(),
+            "Constructor with initial values",
+            "x"_a = 0.0,
+            "y"_a = 0.0,
+            "angle"_a = 0.0,
+            "max_speed_linear"_a = 100,
+            "max_speed_angular"_a = 100,
+            "allow_reverse"_a = false,
+            "bypass_anti_blocking"_a = false,
+            "bypass_final_orientation"_a = false,
+            "timeout_ms"_a = 0,
+            "is_intermediate"_a = false,
+            "data"_a = nullptr
+        )
+        .def(nb::init<const PoseOrder&, bool>(), "Copy constructor", "other"_a, "deep_copy"_a = false)
+        .def("__assign__", [](PoseOrder &self, const PoseOrder &other) -> PoseOrder& { return self = other; }, "Assignment operator")
+        .def_prop_rw("x", &PoseOrder::x, &PoseOrder::set_x, "Get or set the X coordinate")
+        .def_prop_rw("y", &PoseOrder::y, &PoseOrder::set_y, "Get or set the Y coordinate")
+        .def_prop_rw("angle", &PoseOrder::angle, &PoseOrder::set_angle, "Get or set the orientation angle")
+        .def_prop_rw("max_speed_linear", &PoseOrder::max_speed_linear, &PoseOrder::set_max_speed_linear, "Get or set the maximum linear speed (in percent of the robot max speed)")
+        .def_prop_rw("max_speed_angular", &PoseOrder::max_speed_angular, &PoseOrder::set_max_speed_angular, "Get or set the maximum angular speed (in percent of the robot max speed)")
+        .def_prop_rw("allow_reverse", &PoseOrder::allow_reverse, &PoseOrder::set_allow_reverse, "Get or set if reverse movement is allowed")
+        .def_prop_rw("bypass_anti_blocking", &PoseOrder::bypass_anti_blocking, &PoseOrder::set_bypass_anti_blocking, "Get or set if anti-blocking is bypassed")
+        .def_prop_rw("bypass_final_orientation", &PoseOrder::bypass_final_orientation, &PoseOrder::set_bypass_final_orientation, "Get or set if final orientation is bypassed")
+        .def_prop_rw("timeout_ms", &PoseOrder::timeout_ms, &PoseOrder::set_timeout_ms, "Get or set the timeout in milliseconds for the pose to be reached")
+        .def_prop_rw("is_intermediate", &PoseOrder::is_intermediate, &PoseOrder::set_is_intermediate, "Get or set if the pose is intermediate")
+        .def("__repr__", [](const PoseOrder& order) {
+            std::ostringstream oss;
+            oss << order;
+            return oss.str();
+        })
+    ;
+
+    // Bind pose_order_list_t structure
+    nb::class_<pose_order_list_t>(m, "PoseOrderListT")
+        .def("__repr__", [](const pose_order_list_t& list) {
+            std::ostringstream oss;
+            oss << list;
+            return oss.str();
+        })
+    ;
+
+    // Bind PoseOrderIterator class
+    nb::class_<PoseOrderIterator>(m, "PoseOrderArrayIterator")
+        .def("__next__", &PoseOrderIterator::next, "Get the next element")  // Python's equivalent of `__next__`
+        .def("__iter__", [](PoseOrderIterator& self) -> PoseOrderIterator& {
+            return self;  // An iterator must return itself for `__iter__`
+        });
+
+    // Bind PoseOrderList class
+    nb::class_<PoseOrderList>(m, "PoseOrderList")
+        .def(nb::init<>(), "Default constructor")
+        .def("clear", &PoseOrderList::clear, "Clear the list")
+        .def("size", &PoseOrderList::size, "Get the number of pose orders")
+        .def("max_size", &PoseOrderList::max_size, "Get the maximum number of pose orders")
+        .def("get", &PoseOrderList::get, "Get PoseOrder at index", "index"_a)
+        .def("__getitem__", &PoseOrderList::operator[], "Get PoseOrder at index", "index"_a)
+        .def("append", nb::overload_cast<double, double, double, std::uint8_t, std::uint8_t, bool, bool, bool, std::uint32_t, bool>(&PoseOrderList::append), "Append PoseOrder with initial values",
+            "x"_a = 0.0,
+            "y"_a = 0.0,
+            "angle"_a = 0.0,
+            "max_speed_linear"_a = 100,
+            "max_speed_angular"_a = 100,
+            "allow_reverse"_a = false,
+            "bypass_anti_blocking"_a = false,
+            "bypass_final_orientation"_a = false,
+            "timeout_ms"_a = 0,
+            "is_intermediate"_a = false
+        )
+        .def("append", nb::overload_cast<const PoseOrder&>(&PoseOrderList::append), "Append PoseOrder object", "pose_order"_a)
+        .def("set", nb::overload_cast<std::size_t, double, double, double, std::uint8_t, std::uint8_t, bool, bool, bool, std::uint32_t, bool>(&PoseOrderList::set), "Set PoseOrder at index",
+            "index"_a,
+            "x"_a = 0.0,
+            "y"_a = 0.0,
+            "angle"_a = 0.0,
+            "max_speed_linear"_a = 100,
+            "max_speed_angular"_a = 100,
+            "allow_reverse"_a = false,
+            "bypass_anti_blocking"_a = false,
+            "bypass_final_orientation"_a = false,
+            "timeout_ms"_a = 0,
+            "is_intermediate"_a = false
+        )
+        .def("set", nb::overload_cast<std::size_t, const PoseOrder&>(&PoseOrderList::set), "Set PoseOrder at index", "index"_a, "pose_order"_a)
+        .def("__setitem__", nb::overload_cast<std::size_t, const PoseOrder&>(&PoseOrderList::set), "Set PoseOrder at index", "index"_a, "pose_order"_a)
+        .def("__len__", &PoseOrderList::size, "Return the length of the list")
+        .def("__iter__", [](PoseOrderList& self) { return PoseOrderIterator(self, 0); }, "Return an iterator object")
+        .def("__repr__", [](const PoseOrderList& self) {
+            std::ostringstream oss;
+            oss << "PoseOrderList(size=" << self.size() << ", max_size=" << self.max_size() << ")";
             return oss.str();
         })
     ;

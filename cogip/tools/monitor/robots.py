@@ -1,9 +1,9 @@
 from PySide6 import QtCore
 
-from cogip.entities.dynobstacle import DynCircleObstacleEntity, DynRectObstacleEntity
-from cogip.entities.robot import RobotEntity
 from cogip.models import Pose, Vertex
-from cogip.tools.monitor.mainwindow import MainWindow
+from .dynobstacle import DynCircleObstacleEntity, DynRectObstacleEntity
+from .mainwindow import MainWindow
+from .robot import RobotEntity
 
 
 class RobotManager(QtCore.QObject):

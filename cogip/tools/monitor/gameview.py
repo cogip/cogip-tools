@@ -12,14 +12,14 @@ from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
 from PySide6.QtCore import Signal as qtSignal
 
-from cogip.entities.artifacts import TribuneEntity
-from cogip.entities.asset import AssetEntity
-from cogip.entities.line import LineEntity
-from cogip.entities.obstacle import ObstacleEntity
-from cogip.entities.path import PathEntity
-from cogip.entities.robot_manual import RobotManualEntity
 from cogip.models import models
 from cogip.models.artifacts import TribuneID, tribune_positions
+from .artifacts import TribuneEntity
+from .asset import AssetEntity
+from .line import LineEntity
+from .obstacle import ObstacleEntity
+from .path import PathEntity
+from .robot_manual import RobotManualEntity
 
 
 class EventFilter(QtCore.QObject):
@@ -269,8 +269,8 @@ class GameView(QtWidgets.QWidget):
 
     def add_asset(self, asset: AssetEntity) -> None:
         """
-        Add an asset (like [TableEntity][cogip.entities.asset.AssetEntity]
-        or [RobotEntity][cogip.entities.robot.RobotEntity]) in the 3D view.
+        Add an asset (like [TableEntity][cogip.tools.monitor.asset.AssetEntity]
+        or [RobotEntity][cogip.tools.monitor.robot.RobotEntity]) in the 3D view.
 
         Argument:
             asset: The asset entity to add to the vew
@@ -408,7 +408,6 @@ class GameView(QtWidgets.QWidget):
         """
         for vertex in new_path:
             vertex.z = 20
-        new_path.pop()
         self.path.set_points(new_path)
 
     def pressed(self, pick: Qt3DRender.QPickEvent):
@@ -424,7 +423,7 @@ class GameView(QtWidgets.QWidget):
         Function called on a ```moved``` mouse event on the artifact.
 
         Just record that the artifact is moving, the translation is computed
-        in the [GameView][cogip.widgets.gameview.GameView] object.
+        in the [GameView][cogip.tools.monitor.gameview.GameView] object.
         """
 
         if not self.mouse_enabled:

@@ -58,11 +58,13 @@ SharedMemory::SharedMemory(const std::string& name, bool owner):
         locks_.emplace(lock, std::make_unique<WritePriorityLock>(name_ + "_" + name, owner_));
     }
     pose_current_buffer_ = new models::PoseBuffer(&data_->pose_current_buffer);
-    pose_order_ = new models::Pose(&data_->pose_order);
     detector_obstacles_ = new models::CircleList(&data_->detector_obstacles);
     monitor_obstacles_ = new models::CircleList(&data_->monitor_obstacles);
     circle_obstacles_ = new obstacles::ObstacleCircleList(&data_->circle_obstacles);
     rectangle_obstacles_ = new obstacles::ObstacleRectangleList(&data_->rectangle_obstacles);
+    avoidance_new_pose_order_ = new models::PoseOrder(&data_->avoidance_new_pose_order);
+    avoidance_pose_order_ = new models::PoseOrder(&data_->avoidance_pose_order);
+    avoidance_path_ = new models::PoseOrderList(&data_->avoidance_path);
 
     std::cout << "SharedMemory(\"" << name_ << "\", owner=" << owner_ << ", size=" << sizeof(shared_data_t) << ") created." << std::endl;
 }
@@ -72,7 +74,6 @@ SharedMemory::~SharedMemory() {
     delete circle_obstacles_;
     delete monitor_obstacles_;
     delete detector_obstacles_;
-    delete pose_order_;
     delete pose_current_buffer_;
 
     if (data_ != nullptr) {

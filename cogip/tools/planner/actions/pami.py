@@ -26,8 +26,7 @@ class Pami2Action(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
-        self.game_context.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
         self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
@@ -40,7 +39,7 @@ class Pami2Action(Action):
         pose0 = Pose(
             **get_relative_pose(
                 self.start_pose,
-                front_offset=self.game_context.properties.robot_length,
+                front_offset=self.planner.shared_properties.robot_length,
             ).model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
@@ -90,7 +89,7 @@ class Pami2Action(Action):
         )
         self.poses.append(final_pose)
 
-        if self.game_context.properties.table == TableEnum.Training:
+        if self.planner.shared_properties.table == TableEnum.Training.val:
             pose0.x -= 1000
             pose1.x -= 1000
             pose2.x -= 1000
@@ -150,8 +149,7 @@ class Pami3Action(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
-        self.game_context.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
         self.set_avoidance(AvoidanceStrategy.Disabled)
@@ -164,7 +162,7 @@ class Pami3Action(Action):
         pose1 = Pose(
             **get_relative_pose(
                 self.start_pose,
-                front_offset=self.game_context.properties.robot_length,
+                front_offset=self.planner.shared_properties.robot_length,
             ).model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
@@ -201,7 +199,7 @@ class Pami3Action(Action):
         )
         self.poses.append(final_pose)
 
-        if self.game_context.properties.table == TableEnum.Training:
+        if self.planner.shared_properties.table == TableEnum.Training.val:
             pose1.x -= 1000
             pose2.x -= 1000
             final_pose.x -= 1000
@@ -252,8 +250,7 @@ class Pami4Action(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
-        self.game_context.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
         self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
@@ -266,7 +263,7 @@ class Pami4Action(Action):
         pose1 = Pose(
             **get_relative_pose(
                 self.start_pose,
-                front_offset=self.game_context.properties.robot_length,
+                front_offset=self.planner.shared_properties.robot_length,
             ).model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
@@ -290,7 +287,7 @@ class Pami4Action(Action):
         )
         self.poses.append(final_pose)
 
-        if self.game_context.properties.table == TableEnum.Training:
+        if self.planner.shared_properties.table == TableEnum.Training.val:
             pose1.x -= 1000
             final_pose.x -= 1000
 
@@ -333,11 +330,10 @@ class Pami5Action(Action):
         self.start_delay = start_delay
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
-        self.game_context.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
-        self.planner.properties.disable_fixed_obstacles = True
+        self.planner.shared_properties.disable_fixed_obstacles = True
 
         if self.wait:
             await self.planner.pami_event.wait()
@@ -367,7 +363,7 @@ class Pami5Action(Action):
             before_pose_func=self.before_pose2,
             after_pose_func=self.after_pose2,
         )
-        if self.game_context.properties.table == TableEnum.Training:
+        if self.planner.shared_properties.table == TableEnum.Training.val:
             pose2.x -= 1000
         self.poses.append(pose2)
 
@@ -391,7 +387,7 @@ class Pami5Action(Action):
         self.planner.led.color = Color("red")
         await set_countdown_color(self.planner, "red")
         self.actions.clear()
-        self.planner.properties.disable_fixed_obstacles = False
+        self.planner.shared_properties.disable_fixed_obstacles = False
         self.planner.flag_motor.on()
 
     def weight(self) -> float:

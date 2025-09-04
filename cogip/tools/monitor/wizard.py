@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import Signal as qtSignal
 from PySide6.QtCore import Slot as qtSlot
 
-from .. import logger
+from . import logger
 
 
 class BooleanWizard(QtCore.QObject):

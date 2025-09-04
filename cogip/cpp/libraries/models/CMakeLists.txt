@@ -10,6 +10,8 @@ add_library(
     Polar.cpp
     Pose.cpp
     PoseBuffer.cpp
+    PoseOrder.cpp
+    PoseOrderList.cpp
 )
 target_include_directories(
     models_cpp
@@ -41,7 +43,6 @@ nanobind_add_stub(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/__init__.pyi
     MARKER_FILE ${CMAKE_CURRENT_BINARY_DIR}/py.typed
     PYTHON_PATH ${CMAKE_BINARY_DIR}
-    DEPENDS models
     VERBOSE
     INSTALL_TIME
 )

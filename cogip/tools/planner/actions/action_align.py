@@ -35,16 +35,15 @@ class AlignBottomAction(Action):
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
-        self.game_context.avoidance_strategy = new_strategy
-        self.planner.shared_properties["avoidance_strategy"] = new_strategy
+        self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def init_poses(self):
-        self.avoidance_backup = self.game_context.avoidance_strategy
+        self.avoidance_backup = AvoidanceStrategy(self.planner.shared_properties.avoidance_strategy)
 
         # On start, the robot is aligned on the right (blue camp) border of the Bottom start position
         self.start_pose = AdaptedPose(
             x=-750,
-            y=-500 + self.game_context.properties.robot_width / 2,
+            y=-500 + self.planner.shared_properties.robot_width / 2,
             O=0,
         )
         await self.planner.sio_ns.emit("pose_start", self.start_pose.model_dump())
@@ -67,7 +66,7 @@ class AlignBottomAction(Action):
 
         # Step forward
         pose = Pose(
-            x=-950 + self.game_context.properties.robot_length / 2,
+            x=-950 + self.planner.shared_properties.robot_length / 2,
             y=self.start_pose.y,
             O=self.start_pose.O,
             max_speed_linear=50,
@@ -99,7 +98,7 @@ class AlignBottomAction(Action):
     async def after_align_back(self):
         logger.info(f"{self.name}: after_align_back")
         current_pose = models.Pose(
-            x=-1000 + self.game_context.properties.robot_length / 2,
+            x=-1000 + self.planner.shared_properties.robot_length / 2,
             y=self.start_pose.y,
             O=0,
         )
@@ -119,7 +118,6 @@ class AlignBottomAction(Action):
         logger.info(f"{self.name}: after_final_pose")
         self.set_avoidance(self.avoidance_backup)
         if self.reset_countdown:
-            # self.game_context.countdown = self.game_context.game_duration
             now = datetime.now(UTC)
             self.planner.countdown_start_timestamp = now
             await self.planner.sio_ns.emit(

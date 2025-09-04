@@ -6,7 +6,7 @@ from PySide6.QtCore import Signal as qtSignal
 from PySide6.QtCore import Slot as qtSlot
 
 from cogip import models
-from cogip.entities.sensor import Sensor
+from .sensor import Sensor
 
 
 class ObstacleEntity(Qt3DCore.QEntity):
@@ -183,7 +183,7 @@ class ObstacleEntity(Qt3DCore.QEntity):
         Slot called on a ```moved``` mouse event on the obstacle.
 
         Just record that the obstacle is moving, the translation is computed
-        in the [GameView][cogip.widgets.gameview.GameView] object.
+        in the [GameView][cogip.tools.monitor.gameview.GameView] object.
         """
         self.moving = True
 

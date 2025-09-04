@@ -1,14 +1,16 @@
 import asyncio
 import time
+import traceback
 
 import socketio
 from google.protobuf.json_format import MessageToDict
 
 from cogip import models
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
+from cogip.cpp.libraries.models import PoseOrderList as SharedPoseOrderList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorsKindEnum
-from cogip.protobuf import PB_ActuatorState, PB_Pid, PB_PidEnum, PB_Pose, PB_State
+from cogip.protobuf import PB_ActuatorState, PB_PathPose, PB_Pid, PB_PidEnum, PB_Pose, PB_State
 from . import logger
 from .pbcom import PBCom, pb_exception_handler
 from .pid import Pid
@@ -69,6 +71,9 @@ class Copilot:
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_buffer: SharedPoseBuffer | None = None
         self.shared_pose_current_lock: WritePriorityLock | None = None
+        self.shared_avoidance_path: SharedPoseOrderList | None = None
+        self.shared_avoidance_path_lock: WritePriorityLock | None = None
+        self.new_path_event_task: asyncio.Task | None = None
 
         self.sio = socketio.AsyncClient(logger=False)
         self.sio_events = SioEvents(self)
@@ -91,8 +96,28 @@ class Copilot:
         self.shared_memory = SharedMemory(f"cogip_{self.id}")
         self.shared_pose_current_buffer = self.shared_memory.get_pose_current_buffer()
         self.shared_pose_current_lock = self.shared_memory.get_lock(LockName.PoseCurrent)
+        self.shared_avoidance_path = self.shared_memory.get_avoidance_path()
+        self.shared_avoidance_path_lock = self.shared_memory.get_lock(LockName.AvoidancePath)
+        self.shared_avoidance_path_lock.register_consumer()
+        self.new_path_event_task = asyncio.create_task(
+            self.new_path_event_loop(),
+            name="Robot: Task New Path Event Watcher Loop",
+        )
 
-    def delete_shared_memory(self):
+    async def delete_shared_memory(self):
+        if self.new_path_event_task:
+            self.new_path_event_task.cancel()
+            try:
+                await self.new_path_event_task
+            except asyncio.CancelledError:
+                logger.info("Copilot: Task New Path Event Watcher Loop stopped")
+            except Exception as exc:
+                logger.warning(f"Copilot: Unexpected exception {exc}")
+                traceback.print_exc()
+        self.new_path_event_task = None
+
+        self.shared_avoidance_path_lock = None
+        self.shared_avoidance_path = None
         self.shared_pose_current_buffer = None
         self.shared_pose_current_lock = None
         self.shared_memory = None
@@ -257,3 +282,29 @@ class Copilot:
         logger.info("[CAN] Received blocked")
         if self.sio_events.connected:
             await self.sio_events.emit("blocked")
+
+    async def new_path_event_loop(self):
+        """
+        Async worker watching for new path orders in shared memory.
+        When a new path is available, its first pose is sent to the firmware.
+        """
+        logger.info("Copilot: Task New Path Event Watcher Loop started")
+        try:
+            while True:
+                await asyncio.to_thread(self.shared_avoidance_path_lock.wait_update)
+                if len(self.shared_avoidance_path) == 0:
+                    continue
+                pose_order = models.PathPose.from_shared(self.shared_avoidance_path[0])
+                if self.id > 1:
+                    pose_order.allow_reverse = False
+                pb_pose_order = PB_PathPose()
+                pose_order.copy_pb(pb_pose_order)
+                await self.pbcom.send_can_message(pose_order_uuid, pb_pose_order)
+
+        except asyncio.CancelledError:
+            logger.info("Copilot: Task New Path Event Watcher Loop cancelled")
+            raise
+        except Exception as exc:  # noqa
+            logger.warning(f"Copilot: Task New Path Event Watcher Loop: Unknown exception {exc}")
+            traceback.print_exc()
+            raise

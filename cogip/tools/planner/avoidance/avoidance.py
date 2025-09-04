@@ -1,29 +1,25 @@
-from enum import IntEnum
-from multiprocessing.managers import DictProxy
-
-from numpy.typing import NDArray
-
 from cogip import models
 from cogip.cpp.libraries.avoidance import Avoidance as CppAvoidance
 from cogip.cpp.libraries.models import Coords as SharedCoord
+from cogip.cpp.libraries.shared_memory import SharedProperties
+from cogip.utils.argenum import ArgEnum
 from .. import logger
 
 
-class AvoidanceStrategy(IntEnum):
+class AvoidanceStrategy(ArgEnum):
     Disabled = 0
     StopAndGo = 1
     AvoidanceCpp = 2
 
 
 class Avoidance:
-    def __init__(self, table_limits: NDArray, shared_properties: DictProxy):
+    def __init__(self, shared_properties: SharedProperties):
         self.shared_properties = shared_properties
-        self.cpp_avoidance = CppAvoidance(table_limits, self.shared_properties["table_margin"])
+        self.cpp_avoidance = CppAvoidance(f"cogip_{shared_properties.robot_id}")
 
     def check_recompute(self, pose_current: models.PathPose, goal: models.PathPose) -> bool:
-        strategy = AvoidanceStrategy(self.shared_properties["avoidance_strategy"])
-        match strategy:
-            case AvoidanceStrategy.AvoidanceCpp:
+        match self.shared_properties.avoidance_strategy:
+            case AvoidanceStrategy.AvoidanceCpp.val:
                 return self.cpp_avoidance.check_recompute(
                     SharedCoord(x=pose_current.x, y=pose_current.y),
                     SharedCoord(x=goal.x, y=goal.y),
@@ -36,12 +32,11 @@ class Avoidance:
         pose_current: models.PathPose,
         goal: models.PathPose,
     ) -> list[models.PathPose]:
-        strategy = AvoidanceStrategy(self.shared_properties["avoidance_strategy"])
-        match strategy:
-            case AvoidanceStrategy.Disabled:
-                path = [models.PathPose(**pose_current.model_dump()), goal.model_copy()]
+        match self.shared_properties.avoidance_strategy:
+            case AvoidanceStrategy.Disabled.val:
+                path = [pose_current.model_copy(), goal.model_copy()]
             case _:
-                path = [models.PathPose(**pose_current.model_dump())]
+                path = []
                 res = self.cpp_avoidance.avoidance(
                     SharedCoord(pose_current.x, pose_current.y),
                     SharedCoord(goal.x, goal.y),
@@ -53,8 +48,9 @@ class Avoidance:
                         pose = models.PathPose(
                             x=shared_pose.x,
                             y=shared_pose.y,
+                            bypass_final_orientation=True,
+                            is_intermediate=True,
                         )
-                        pose.bypass_final_orientation = True
                         path.append(pose)
 
                     # Remove duplicates
@@ -64,6 +60,6 @@ class Avoidance:
                     path.append(goal.model_copy())
                 else:
                     path = []
-                if strategy == AvoidanceStrategy.StopAndGo and len(path) > 2:
+                if self.shared_properties.avoidance_strategy == AvoidanceStrategy.StopAndGo.val and len(path) > 2:
                     path = []
         return path

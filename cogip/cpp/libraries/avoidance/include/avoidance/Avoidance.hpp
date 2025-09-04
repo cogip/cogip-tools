@@ -35,6 +35,7 @@
 /// Project includes
 #include "models/Coords.hpp"
 #include "obstacles/ObstaclePolygon.hpp"
+#include "shared_memory/SharedMemory.hpp"
 
 namespace nb = nanobind;
 
@@ -49,8 +50,8 @@ public:
     static constexpr uint32_t max_distance = UINT32_MAX; ///< Maximum distance used for Dijkstra's algorithm.
 
     /// @brief Constructor initializing the avoidance system with obstacle borders.
-    /// @param table_limits The limits of the table as a NumPy array.
-    Avoidance(nb::ndarray<float, nb::numpy, nb::shape<4>> table_limits, float table_margin);
+    /// @param name Name of the shared memory segment.
+    Avoidance(const std::string& name);
 
     /// @brief Checks if a point is inside any obstacle.
     /// @param point The coordinates of the point to check.
@@ -87,6 +88,8 @@ public:
     void clear_dynamic_obstacles();
 
 private:
+    shared_memory::SharedMemory shared_memory_; ///< Shared memory instance.
+    shared_memory::shared_properties_t& shared_memory_properties_; ///< Pointer to shared properties in shared memory.
     std::vector<models::Coords> valid_points_; ///< List of valid points for graph vertices.
     std::map<uint64_t, std::map<uint64_t, double>> graph_; ///< Graph representation using adjacency lists.
 
@@ -96,8 +99,8 @@ private:
     std::deque<std::reference_wrapper<models::Coords>> path_; ///< Path from start to finish.
     bool is_avoidance_computed_; ///< Flag indicating whether the path has been computed.
 
-    float *table_limits_; ///< The limits of the table.
-    float table_margin_;  ///< Margin inside the table limits.
+    double *table_limits_; ///< The limits of the table.
+    double table_limits_margin_;  ///< Margin inside the table limits.
 
     std::vector<std::reference_wrapper<obstacles::Obstacle>> dynamic_obstacles_; ///< List of dynamic obstacles.
 
@@ -127,10 +130,10 @@ private:
     bool is_point_in_table_limits(const models::Coords& point) const
     {
         return (
-            (table_limits_[0] + table_margin_ < point.x() &&
-            point.x() < table_limits_[1] - table_margin_) &&
-            (table_limits_[2] + table_margin_ < point.y() &&
-            point.y() < table_limits_[3] - table_margin_)
+            (table_limits_[0] + table_limits_margin_ < point.x() &&
+            point.x() < table_limits_[1] - table_limits_margin_) &&
+            (table_limits_[2] + table_limits_margin_ < point.y() &&
+            point.y() < table_limits_[3] - table_limits_margin_)
         );
     }
 };

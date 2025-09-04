@@ -23,7 +23,7 @@ NB_MODULE(avoidance, m) {
 
     // Bind Avoidance class
     nb::class_<Avoidance>(m, "Avoidance")
-        .def(nb::init<nb::ndarray<float, nb::numpy, nb::shape<4>>, float>(), "Constructor initializing the avoidance system with table limits", "table_limits"_a, "table_margin"_a)
+        .def(nb::init<const std::string&>(), "Constructor initializing the avoidance system", "name"_a)
         .def("is_point_in_obstacles", &Avoidance::is_point_in_obstacles, "Checks if a point is inside any obstacle", "point"_a, "filter"_a = nullptr)
         .def("get_path_size", &Avoidance::get_path_size, "Retrieves the size of the computed avoidance path")
         .def("get_path_pose", &Avoidance::get_path_pose, "Retrieves the pose at a specific index in the computed path", "index"_a)

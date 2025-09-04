@@ -39,13 +39,13 @@ class Game2Actions(Actions):
         # self.append(BuildTribuneX3Action(planner, self, ConstructionAreaID.LocalBottomLarge3, 1_400_000.0))
 
         self.append(WaitAction(planner, self))
-        if planner.game_context.properties.table == TableEnum.Training:
+        if planner.shared_properties.table == TableEnum.Training.val:
             self.append(ParkingAction(planner, self, models.Pose(x=-500, y=-750, O=90)))
         else:
             self.append(
                 ParkingAction(
                     planner,
                     self,
-                    models.Pose(x=1000 - 450, y=-900 - planner.properties.robot_width / 2, O=0),
+                    models.Pose(x=1000 - 450, y=-900 - planner.shared_properties.robot_width / 2, O=0),
                 ),
             )

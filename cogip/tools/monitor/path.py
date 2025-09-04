@@ -1,8 +1,8 @@
 from PySide6 import QtCore, QtGui
 from PySide6.Qt3DCore import Qt3DCore
 
-from cogip.entities.line import LineEntity
 from cogip.models import models
+from .line import LineEntity
 
 
 class PathEntity(Qt3DCore.QEntity):

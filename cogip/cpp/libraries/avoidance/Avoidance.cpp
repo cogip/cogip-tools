@@ -25,10 +25,18 @@ namespace cogip {
 
 namespace avoidance {
 
-Avoidance::Avoidance(nb::ndarray<float, nb::numpy, nb::shape<4>> table_limits, float table_margin)
-    : is_avoidance_computed_(false),
-    table_limits_(reinterpret_cast<float*>(table_limits.data())),
-    table_margin_(table_margin) {
+Avoidance::Avoidance(const std::string& name):
+    shared_memory_(shared_memory::SharedMemory(name, false)),
+    shared_memory_properties_(shared_memory_.getProperties()),
+    table_limits_(shared_memory_.getTableLimits()),
+    is_avoidance_computed_(false)
+{
+    // table limits margin is the half of the max robot size,
+    // increase of the bounding box margin to not touch the borders during rotations.
+    table_limits_margin_ = (
+        std::max(shared_memory_properties_.robot_length, shared_memory_properties_.robot_width)
+        / (2 - shared_memory_properties_.obstacle_bb_margin)
+    );
 }
 
 bool Avoidance::avoidance(const models::Coords& start,

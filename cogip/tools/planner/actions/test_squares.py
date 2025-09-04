@@ -23,8 +23,7 @@ class TestSquaresAction(Action):
 
     async def before_action(self):
         logger.info(f"{self.name}: before_action")
-        self.game_context.avoidance_strategy = AvoidanceStrategy.Disabled
-        self.planner.shared_properties["avoidance_strategy"] = AvoidanceStrategy.Disabled
+        self.planner.shared_properties.avoidance_strategy = AvoidanceStrategy.Disabled.val
         start_pose = self.pose_current
         linear_speed = 50
         angular_speed = 50
