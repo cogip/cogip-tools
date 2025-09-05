@@ -6,7 +6,7 @@ from socketio.exceptions import ConnectionRefusedError
 from uvicorn.main import Server as UvicornServer
 
 from cogip.tools.planner.camp import Camp
-from cogip.tools.planner.positions import StartPosition
+from cogip.tools.planner.start_positions import StartPositionEnum
 from cogip.tools.planner.table import TableEnum
 from . import logger, namespaces
 from .robot import Robot
@@ -101,18 +101,18 @@ class Server:
     async def reset_robots(self):
         for robot_id, robot in self.robots.items():
             if robot.sio.connected:
-                position: StartPosition | None = None
+                position: StartPositionEnum | None = None
                 match robot_id:
                     case 1:
-                        position = StartPosition.Bottom
+                        position = StartPositionEnum.Bottom
                     case 2:
-                        position = StartPosition.PAMI2
+                        position = StartPositionEnum.PAMI2
                     case 3:
-                        position = StartPosition.PAMI3
+                        position = StartPositionEnum.PAMI3
                     case 4:
-                        position = StartPosition.PAMI4
+                        position = StartPositionEnum.PAMI4
                     case 5:
-                        position = StartPosition.PAMI5
+                        position = StartPositionEnum.PAMI5
                 if position:
                     await robot.sio.emit(
                         "wizard",

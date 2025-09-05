@@ -19,8 +19,7 @@ from cogip.models.artifacts import (
     tribune_positions,
 )
 from cogip.utils.singleton import Singleton
-from .pose import AdaptedPose, Pose
-from .positions import StartPosition
+from .pose import AdaptedPose
 from .table import TableEnum
 
 
@@ -39,13 +38,6 @@ class GameContext(metaclass=Singleton):
 
         self.tribunes_in_robot = 0
 
-    @property
-    def start_pose(self) -> Pose:
-        """
-        Start pose.
-        """
-        return self.start_poses[StartPosition(self.shared_properties.start_position)]
-
     def reset(self):
         """
         Reset the context.
@@ -55,68 +47,9 @@ class GameContext(metaclass=Singleton):
         self.countdown = self.game_duration
         self.last_countdown = self.game_duration
         self.tribunes_in_robot = 0
-        self.create_start_poses()
         self.create_artifacts()
         self.create_fixed_obstacles()
         self.create_actuators_states()
-
-    def create_start_poses(self):
-        self.start_poses = {
-            StartPosition.Bottom: AdaptedPose(
-                x=-550 - self.shared_properties.robot_length / 2,
-                y=-100 - self.shared_properties.robot_width / 2,
-                O=0,
-            ),
-            StartPosition.Top: AdaptedPose(
-                x=550 + self.shared_properties.robot_length / 2,
-                y=-900 - self.shared_properties.robot_width / 2,
-                O=180,
-            ),
-            StartPosition.Opposite: AdaptedPose(
-                x=-350 + self.shared_properties.robot_width / 2,
-                y=1050 + self.shared_properties.robot_length / 2,
-                O=-90,
-            ),
-            StartPosition.PAMI2: AdaptedPose(
-                x=550 + 100 * 0.5,
-                y=-1350 - self.shared_properties.robot_length / 2,
-                O=90,
-            ),
-            StartPosition.PAMI3: AdaptedPose(
-                x=550 + 100 * 1.5,
-                y=-1350 - self.shared_properties.robot_length / 2,
-                O=90,
-            ),
-            StartPosition.PAMI4: AdaptedPose(
-                x=550 + 100 * 2.5,
-                y=-1350 - self.shared_properties.robot_length / 2,
-                O=90,
-            ),
-            StartPosition.PAMI5: AdaptedPose(
-                x=550 + 100 * 3.5,
-                y=-1350 - self.shared_properties.robot_length / 2,
-                O=90,
-            ),
-        }
-
-        # Adapt poses for training table
-        if self.shared_properties.table == TableEnum.Training:
-            self.start_poses[StartPosition.Top].x -= 1000
-            self.start_poses[StartPosition.PAMI2].x -= 1000
-            self.start_poses[StartPosition.PAMI3].x -= 1000
-            self.start_poses[StartPosition.PAMI4].x -= 1000
-            self.start_poses[StartPosition.PAMI5].x -= 1000
-
-    def is_valid_start_position(self, position: StartPosition) -> bool:
-        if self.shared_properties.table == TableEnum.Training and position == StartPosition.Opposite:
-            return False
-        if self.robot_id == 1 and position not in [
-            StartPosition.Top,
-            StartPosition.Bottom,
-            StartPosition.Opposite,
-        ]:
-            return False
-        return True
 
     def create_artifacts(self):
         # Positions are related to the default camp blue.

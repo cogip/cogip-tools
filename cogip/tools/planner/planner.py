@@ -42,9 +42,9 @@ from .avoidance.process import avoidance_process
 from .camp import Camp
 from .context import GameContext
 from .event_manager import EventManager
-from .positions import StartPosition
 from .properties import properties_schema
 from .scservos import SCServoEnum, SCServos
+from .start_positions import StartPositionEnum, StartPositions
 from .table import TableEnum, get_table
 from .wizard import GameWizard
 
@@ -78,7 +78,7 @@ class Planner:
         disable_fixed_obstacles: bool,
         table: TableEnum,
         strategy: Strategy,
-        start_position: StartPosition,
+        start_position: StartPositionEnum,
         avoidance_strategy: AvoidanceStrategy,
         debug: bool,
     ):
@@ -163,6 +163,7 @@ class Planner:
         self.sio.register_namespace(self.sio_ns)
         self.game_context = GameContext()
         self.camp = Camp()
+        self.start_positions = StartPositions(self.shared_properties)
         self.process_manager = Manager()
         self.action: actions.Action | None = None
         self.actions = action_classes.get(self.shared_properties.strategy, actions.Actions)(self)
@@ -183,7 +184,7 @@ class Planner:
         self.last_starter_event_timestamp: datetime | None = None
         self.countdown_start_timestamp: datetime = datetime.now(UTC)
 
-        if not self.game_context.is_valid_start_position(start_position):
+        if not self.start_positions.is_valid(start_position):
             logger.error(f"Start position {start_position.name} invalid in current table and camp")
             sys.exit(1)
 
@@ -365,7 +366,7 @@ class Planner:
         self.shared_memory.avoidance_has_new_pose_order = False
         self.flag_motor.off()
         self.actions = action_classes.get(Strategy(self.shared_properties.strategy), actions.Actions)(self)
-        await self.set_pose_start(self.game_context.start_pose.pose)
+        await self.set_pose_start(self.start_positions.current_position)
         self.pami_event.clear()
 
     async def final_action(self):
@@ -828,8 +829,8 @@ class Planner:
             {
                 "name": "Choose Start Position",
                 "type": "choice_integer",
-                "choices": [p.name for p in StartPosition if self.game_context.is_valid_start_position(p)],
-                "value": StartPosition(self.shared_properties.start_position).name,
+                "choices": [p.name for p in StartPositionEnum if self.start_positions.is_valid(p)],
+                "value": StartPositionEnum(self.shared_properties.start_position).name,
             },
         )
 
@@ -891,10 +892,10 @@ class Planner:
                 self.shared_properties.avoidance_strategy = new_avoidance.val
                 logger.info(f"Wizard: New avoidance strategy: {value}")
             case "Choose Start Position":
-                new_start_position = StartPosition[value]
+                new_start_position = StartPositionEnum[value]
                 if self.shared_properties.start_position == new_start_position:
                     return
-                if not self.game_context.is_valid_start_position(new_start_position):
+                if not self.start_positions.is_valid(new_start_position):
                     message = f"Start position {new_start_position.name} invalid in current table and camp"
                     logger.warning(f"Wizard: {message}")
                     await self.sio_ns.emit(
@@ -915,10 +916,10 @@ class Planner:
                 error_message = ""
                 previous_table = self.shared_properties.table
                 self.shared_properties.table = new_table.val
-                if not self.game_context.is_valid_start_position(StartPosition(self.shared_properties.start_position)):
+                if not self.start_positions.is_valid(StartPositionEnum(self.shared_properties.start_position)):
                     error_message = (
                         f"Table {new_table.name} not compatible "
-                        f"with start position {StartPosition(self.shared_properties.start_position).name}"
+                        f"with start position {StartPositionEnum(self.shared_properties.start_position).name}"
                     )
                 if new_table == TableEnum.Training and self.camp.color == Camp.Colors.yellow:
                     error_message = f"Table {new_table.name} not compatible yellow camp"
