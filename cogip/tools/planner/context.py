@@ -74,9 +74,9 @@ class GameContext(metaclass=Singleton):
     @property
     def default_controller(self) -> ControllerEnum:
         match self.shared_properties.strategy:
-            case actions.Strategy.PidAngularSpeedTest.val:
+            case actions.Strategy.PidAngularSpeedTest:
                 return ControllerEnum.ANGULAR_SPEED_TEST
-            case actions.Strategy.PidLinearSpeedTest.val:
+            case actions.Strategy.PidLinearSpeedTest:
                 return ControllerEnum.LINEAR_SPEED_TEST
             case _:
                 return ControllerEnum.QUADPID
@@ -121,7 +121,7 @@ class GameContext(metaclass=Singleton):
         }
 
         # Adapt poses for training table
-        if self.shared_properties.table == TableEnum.Training.val:
+        if self.shared_properties.table == TableEnum.Training:
             self.start_poses[StartPosition.Top].x -= 1000
             self.start_poses[StartPosition.PAMI2].x -= 1000
             self.start_poses[StartPosition.PAMI3].x -= 1000
@@ -129,7 +129,7 @@ class GameContext(metaclass=Singleton):
             self.start_poses[StartPosition.PAMI5].x -= 1000
 
     def is_valid_start_position(self, position: StartPosition) -> bool:
-        if self.shared_properties.table == TableEnum.Training.val and position == StartPosition.Opposite:
+        if self.shared_properties.table == TableEnum.Training and position == StartPosition.Opposite:
             return False
         if self.robot_id == 1 and position not in [
             StartPosition.Top,
@@ -158,7 +158,7 @@ class GameContext(metaclass=Singleton):
 
         self.opponent_construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled = False
         self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
-        if self.shared_properties.table == TableEnum.Training.val:
+        if self.shared_properties.table == TableEnum.Training:
             self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge1].enabled = False
             self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge2].enabled = False
             self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
@@ -168,7 +168,7 @@ class GameContext(metaclass=Singleton):
             adapted_pose = AdaptedPose(**tribune.model_dump())
             self.tribunes[id] = Tribune(**adapted_pose.model_dump(), id=id)
 
-        if self.shared_properties.table == TableEnum.Training.val:
+        if self.shared_properties.table == TableEnum.Training:
             self.tribunes[TribuneID.LocalTop] = self.tribunes[TribuneID.LocalTopTraining].model_copy(
                 update={"id": TribuneID.LocalTop}
             )
@@ -254,12 +254,12 @@ class GameContext(metaclass=Singleton):
                 id=FixedObstacleID.OpponentPitArea,
             )
 
-        if self.robot_id == 1 and self.shared_properties.table == TableEnum.Training.val or self.robot_id == 5:
+        if self.robot_id == 1 and self.shared_properties.table == TableEnum.Training or self.robot_id == 5:
             self.fixed_obstacles[FixedObstacleID.Ramp].enabled = False
             self.fixed_obstacles[FixedObstacleID.Scene].enabled = False
             self.fixed_obstacles[FixedObstacleID.Pami5Path].enabled = False
 
-        if self.shared_properties.table == TableEnum.Training.val:
+        if self.shared_properties.table == TableEnum.Training:
             for obstacle in self.fixed_obstacles.values():
                 obstacle.x -= 1000
 

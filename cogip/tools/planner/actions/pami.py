@@ -89,7 +89,7 @@ class Pami2Action(Action):
         )
         self.poses.append(final_pose)
 
-        if self.planner.shared_properties.table == TableEnum.Training.val:
+        if self.planner.shared_properties.table == TableEnum.Training:
             pose0.x -= 1000
             pose1.x -= 1000
             pose2.x -= 1000
@@ -199,7 +199,7 @@ class Pami3Action(Action):
         )
         self.poses.append(final_pose)
 
-        if self.planner.shared_properties.table == TableEnum.Training.val:
+        if self.planner.shared_properties.table == TableEnum.Training:
             pose1.x -= 1000
             pose2.x -= 1000
             final_pose.x -= 1000
@@ -287,7 +287,7 @@ class Pami4Action(Action):
         )
         self.poses.append(final_pose)
 
-        if self.planner.shared_properties.table == TableEnum.Training.val:
+        if self.planner.shared_properties.table == TableEnum.Training:
             pose1.x -= 1000
             final_pose.x -= 1000
 
@@ -363,7 +363,7 @@ class Pami5Action(Action):
             before_pose_func=self.before_pose2,
             after_pose_func=self.after_pose2,
         )
-        if self.planner.shared_properties.table == TableEnum.Training.val:
+        if self.planner.shared_properties.table == TableEnum.Training:
             pose2.x -= 1000
         self.poses.append(pose2)
 

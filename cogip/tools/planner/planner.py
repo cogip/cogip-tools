@@ -586,7 +586,7 @@ class Planner:
             self.blocked_counter = 0
             self.pose_order = pose_order
 
-            if self.shared_properties.strategy in [Strategy.PidLinearSpeedTest.val, Strategy.PidAngularSpeedTest.val]:
+            if self.shared_properties.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
                 await self.sio_ns.emit("pose_order", self.pose_order.path_pose.model_dump())
 
     async def next_pose(self):
@@ -970,7 +970,7 @@ class Planner:
                 if self.game_context.camp.color == new_camp:
                     return
                 previous_camp = self.game_context.camp.color
-                if self.shared_properties.table == TableEnum.Training.val and new_camp == Camp.Colors.yellow:
+                if self.shared_properties.table == TableEnum.Training and new_camp == Camp.Colors.yellow:
                     error_message = "Yellow camp not compatible with training table"
                     self.game_context.camp.color = previous_camp
                     logger.warning(f"Wizard: {error_message}")
@@ -988,20 +988,20 @@ class Planner:
                 logger.info(f"Wizard: New camp: {self.game_context.camp.color.name}")
             case "Choose Strategy":
                 new_strategy = Strategy[value]
-                if self.shared_properties.strategy == new_strategy.val:
+                if self.shared_properties.strategy == new_strategy:
                     return
                 self.shared_properties.strategy = new_strategy.val
                 await self.soft_reset()
                 logger.info(f"Wizard: New strategy: {value}")
             case "Choose Avoidance":
                 new_avoidance = AvoidanceStrategy[value]
-                if self.shared_properties.avoidance_strategy == new_avoidance.val:
+                if self.shared_properties.avoidance_strategy == new_avoidance:
                     return
                 self.shared_properties.avoidance_strategy = new_avoidance.val
                 logger.info(f"Wizard: New avoidance strategy: {value}")
             case "Choose Start Position":
                 new_start_position = StartPosition[value]
-                if self.shared_properties.start_position == new_start_position.val:
+                if self.shared_properties.start_position == new_start_position:
                     return
                 if not self.game_context.is_valid_start_position(new_start_position):
                     message = f"Start position {new_start_position.name} invalid in current table and camp"
@@ -1019,7 +1019,7 @@ class Planner:
                 await self.soft_reset()
             case "Choose Table":
                 new_table = TableEnum[value]
-                if self.shared_properties.table == new_table.val:
+                if self.shared_properties.table == new_table:
                     return
                 error_message = ""
                 previous_table = self.shared_properties.table
