@@ -18,9 +18,7 @@ from cogip.models.artifacts import (
     construction_area_positions,
     tribune_positions,
 )
-from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.singleton import Singleton
-from . import actions
 from .camp import Camp
 from .pose import AdaptedPose, Pose
 from .positions import StartPosition
@@ -63,16 +61,6 @@ class GameContext(metaclass=Singleton):
         self.create_artifacts()
         self.create_fixed_obstacles()
         self.create_actuators_states()
-
-    @property
-    def default_controller(self) -> ControllerEnum:
-        match self.shared_properties.strategy:
-            case actions.Strategy.PidAngularSpeedTest:
-                return ControllerEnum.ANGULAR_SPEED_TEST
-            case actions.Strategy.PidLinearSpeedTest:
-                return ControllerEnum.LINEAR_SPEED_TEST
-            case _:
-                return ControllerEnum.QUADPID
 
     def create_start_poses(self):
         self.start_poses = {
