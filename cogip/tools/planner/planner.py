@@ -44,7 +44,7 @@ from .context import GameContext
 from .positions import StartPosition
 from .properties import properties_schema
 from .scservos import SCServoEnum, SCServos
-from .table import TableEnum
+from .table import TableEnum, get_table
 from .wizard import GameWizard
 
 
@@ -388,10 +388,11 @@ class Planner:
         """
         self.game_context.reset()
         await self.set_controller(self.game_context.default_controller, True)
-        self.shared_table_limits[0] = self.game_context.table.x_min
-        self.shared_table_limits[1] = self.game_context.table.x_max
-        self.shared_table_limits[2] = self.game_context.table.y_min
-        self.shared_table_limits[3] = self.game_context.table.y_max
+        table = get_table(self.shared_properties.table)
+        self.shared_table_limits[0] = table.x_min
+        self.shared_table_limits[1] = table.x_max
+        self.shared_table_limits[2] = table.y_min
+        self.shared_table_limits[3] = table.y_max
         self.shared_memory.avoidance_has_pose_order = False
         self.shared_memory.avoidance_has_new_pose_order = False
         self.flag_motor.off()
@@ -650,7 +651,7 @@ class Planner:
                 asyncio.create_task(self.set_pose_reached())
 
     async def update_obstacles(self):
-        table = self.game_context.table
+        table = get_table(self.shared_properties.table)
         try:
             margin = self.shared_properties.obstacle_bb_margin * self.shared_properties.robot_length / 2
             if self.shared_properties.bypass_detector:
@@ -1043,11 +1044,6 @@ class Planner:
                         },
                     )
                     return
-
-                self.shared_table_limits[0] = self.game_context.table.x_min
-                self.shared_table_limits[1] = self.game_context.table.x_max
-                self.shared_table_limits[2] = self.game_context.table.y_min
-                self.shared_table_limits[3] = self.game_context.table.y_max
                 await self.soft_reset()
                 logger.info(f"Wizard: New table: {value}")
             case game_wizard_response if game_wizard_response.startswith("Game Wizard"):
