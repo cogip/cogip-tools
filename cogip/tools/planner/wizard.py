@@ -93,13 +93,13 @@ class GameWizard:
         message = {
             "name": "Game Wizard: Choose Camp",
             "type": "camp",
-            "value": self.game_context.camp.color.name,
+            "value": self.planner.camp.color.name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_camp(self, message: dict[str, Any]):
         value = message["value"]
-        self.game_context.camp.color = Camp.Colors[value]
+        self.planner.camp.color = Camp.Colors[value]
         await self.planner.soft_reset()
         await self.planner.sio_ns.emit("pami_camp", value)
 

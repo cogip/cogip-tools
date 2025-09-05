@@ -161,6 +161,7 @@ class Planner:
         self.sio_ns = sio_events.SioEvents(self)
         self.sio.register_namespace(self.sio_ns)
         self.game_context = GameContext()
+        self.camp = Camp()
         self.process_manager = Manager()
         self.action: actions.Action | None = None
         self.actions = action_classes.get(self.shared_properties.strategy, actions.Actions)(self)
@@ -757,7 +758,7 @@ class Planner:
             text = (
                 f"{'Connected' if self.sio.connected else 'Not connected': <20}"
                 f"{'▶' if self.game_context.playing else '◼'}\n"
-                f"Camp: {self.game_context.camp.color.name}\n"
+                f"Camp: {self.camp.color.name}\n"
                 f"Strategy: {Strategy(self.shared_properties.strategy).name}\n"
                 f"Pose: {pose_current.x},{pose_current.y},{pose_current.O}\n"
                 f"Countdown: {self.game_context.countdown:.2f}"
@@ -900,7 +901,7 @@ class Planner:
             {
                 "name": "Choose Camp",
                 "type": "camp",
-                "value": self.game_context.camp.color.name,
+                "value": self.camp.color.name,
             },
         )
 
@@ -978,12 +979,12 @@ class Planner:
         match name := message.get("name"):
             case "Choose Camp":
                 new_camp = Camp.Colors[value]
-                if self.game_context.camp.color == new_camp:
+                if self.camp.color == new_camp:
                     return
-                previous_camp = self.game_context.camp.color
+                previous_camp = self.camp.color
                 if self.shared_properties.table == TableEnum.Training and new_camp == Camp.Colors.yellow:
                     error_message = "Yellow camp not compatible with training table"
-                    self.game_context.camp.color = previous_camp
+                    self.camp.color = previous_camp
                     logger.warning(f"Wizard: {error_message}")
                     await self.sio_ns.emit(
                         "wizard",
@@ -994,9 +995,9 @@ class Planner:
                         },
                     )
                     return
-                self.game_context.camp.color = new_camp
+                self.camp.color = new_camp
                 await self.soft_reset()
-                logger.info(f"Wizard: New camp: {self.game_context.camp.color.name}")
+                logger.info(f"Wizard: New camp: {self.camp.color.name}")
             case "Choose Strategy":
                 new_strategy = Strategy[value]
                 if self.shared_properties.strategy == new_strategy:
@@ -1040,7 +1041,7 @@ class Planner:
                         f"Table {new_table.name} not compatible "
                         f"with start position {StartPosition(self.shared_properties.start_position).name}"
                     )
-                if new_table == TableEnum.Training and self.game_context.camp.color == Camp.Colors.yellow:
+                if new_table == TableEnum.Training and self.camp.color == Camp.Colors.yellow:
                     error_message = f"Table {new_table.name} not compatible yellow camp"
                 if error_message:
                     self.shared_properties.table = previous_table
