@@ -19,7 +19,6 @@ from cogip.models.artifacts import (
     tribune_positions,
 )
 from cogip.utils.singleton import Singleton
-from .camp import Camp
 from .pose import AdaptedPose, Pose
 from .positions import StartPosition
 from .table import TableEnum
@@ -36,7 +35,6 @@ class GameContext(metaclass=Singleton):
         self.shared_properties = self.shared_memory.get_properties()
         self.game_duration: int = 100
         self.minimum_score: int = 0
-        self.camp = Camp()
         self.reset()
 
         self.tribunes_in_robot = 0
