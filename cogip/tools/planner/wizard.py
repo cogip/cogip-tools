@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
-from cogip.tools.planner.positions import StartPosition
+from cogip.tools.planner.start_positions import StartPositionEnum
 from cogip.tools.planner.table import TableEnum
 from cogip.utils.asyncloop import AsyncLoop
 from .actions import Strategy, action_classes
@@ -107,16 +107,16 @@ class GameWizard:
         message = {
             "name": "Game Wizard: Choose Start Position",
             "type": "choice_integer",
-            "choices": [p.name for p in StartPosition if self.game_context.is_valid_start_position(p)],
-            "value": StartPosition(self.planner.shared_properties.start_position).name,
+            "choices": [p.name for p in StartPositionEnum if self.planner.start_positions.is_valid(p)],
+            "value": StartPositionEnum(self.planner.shared_properties.start_position).name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_start_pose(self, message: dict[str, Any]):
         value = message["value"]
-        start_position = StartPosition[value]
+        start_position = StartPositionEnum[value]
         self.planner.shared_properties.start_position = start_position.val
-        await self.planner.set_pose_start(self.game_context.start_pose.pose)
+        await self.planner.set_pose_start(self.planner.start_positions.get())
 
     async def request_avoidance(self):
         message = {
