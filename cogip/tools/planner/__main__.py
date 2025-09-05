@@ -12,8 +12,8 @@ from . import logger
 from .actions import Strategy
 from .avoidance.avoidance import AvoidanceStrategy
 from .planner import Planner
-from .positions import StartPosition
 from .properties import properties_schema
+from .start_positions import StartPositionEnum
 from .table import TableEnum
 
 
@@ -228,14 +228,14 @@ def main_opt(
         ),
     ] = Strategy.TestVisitStartingAreas.name,
     start_position: Annotated[
-        StartPosition,
+        StartPositionEnum,
         typer.Option(
             "-p",
             "--start-position",
             help="Default start position on startup",
             envvar="PLANNER_START_POSITION",
         ),
-    ] = StartPosition.Bottom.name,
+    ] = StartPositionEnum.Bottom.name,
     avoidance_strategy: Annotated[
         AvoidanceStrategy,
         typer.Option(

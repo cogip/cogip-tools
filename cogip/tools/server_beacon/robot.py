@@ -6,7 +6,7 @@ import socketio.exceptions
 
 from cogip import logger
 from cogip.tools.planner import actions
-from cogip.tools.planner.positions import StartPosition
+from cogip.tools.planner.start_positions import StartPositionEnum
 
 if TYPE_CHECKING:
     from .server import Server
@@ -145,16 +145,16 @@ class Robot:
                         },
                         namespace="/beacon",
                     )
-                    position: StartPosition | None = None
+                    position: StartPositionEnum | None = None
                     match robot_id:
                         case 2:
-                            position = StartPosition.PAMI2
+                            position = StartPositionEnum.PAMI2
                         case 3:
-                            position = StartPosition.PAMI3
+                            position = StartPositionEnum.PAMI3
                         case 4:
-                            position = StartPosition.PAMI4
+                            position = StartPositionEnum.PAMI4
                         case 5:
-                            position = StartPosition.PAMI5
+                            position = StartPositionEnum.PAMI5
 
                     if position:
                         await robot.sio.emit(
