@@ -41,6 +41,7 @@ from .avoidance.avoidance import AvoidanceStrategy
 from .avoidance.process import avoidance_process
 from .camp import Camp
 from .context import GameContext
+from .event_manager import EventManager
 from .positions import StartPosition
 from .properties import properties_schema
 from .scservos import SCServoEnum, SCServos
@@ -176,9 +177,7 @@ class Planner:
         self.blocked_counter: int = 0
         self.controller = self.default_controller
         self.game_wizard = GameWizard(self)
-        self.countdown_task: asyncio.Task | None = None
-        self.blocked_event_task: asyncio.Task | None = None
-        self.new_path_event_task: asyncio.Task | None = None
+        self.event_manager = EventManager(self)
         self.scservos = SCServos(self.scservos_port, scservos_baud_rate)
         self.pami_event = asyncio.Event()
         self.last_starter_event_timestamp: datetime | None = None
@@ -313,17 +312,9 @@ class Planner:
         self.create_shared_memory()
         self.shared_memory.avoidance_exiting = False
         await self.soft_reset()
-        self.blocked_event_task = asyncio.create_task(
-            self.blocked_event_loop(),
-            name="Robot: Task Blocked Event Watcher Loop",
-        )
-        self.new_path_event_task = asyncio.create_task(
-            self.new_path_event_loop(),
-            name="Robot: Task New Path Event Watcher Loop",
-        )
+        await self.event_manager.start_loops()
         await self.sio_ns.emit("starter_changed", self.starter.is_pressed)
         await self.sio_ns.emit("game_reset")
-        await self.countdown_start()
         self.obstacles_updater_loop.start()
         if self.oled_bus and self.oled_address:
             self.oled_update_loop.start()
@@ -340,35 +331,11 @@ class Planner:
         logger.info("Planner: stop")
 
         self.shared_memory.avoidance_exiting = True
-
         await self.sio_ns.emit("stop_video_record")
-
-        await self.countdown_stop()
-
+        await self.event_manager.stop_loops()
         await self.obstacles_updater_loop.stop()
         if self.oled_bus and self.oled_address:
             await self.oled_update_loop.stop()
-
-        if self.blocked_event_task:
-            self.blocked_event_task.cancel()
-            try:
-                await self.blocked_event_task
-            except asyncio.CancelledError:
-                logger.info("Planner: Task Blocked Event Watcher Loop stopped")
-            except Exception as exc:
-                logger.warning(f"Planner: Unexpected exception {exc}")
-        self.blocked_event_task = None
-
-        if self.new_path_event_task:
-            self.new_path_event_task.cancel()
-            try:
-                await self.new_path_event_task
-            except asyncio.CancelledError:
-                logger.info("Planner: Task New Path Event Watcher Loop stopped")
-            except Exception as exc:
-                logger.warning(f"Planner: Unexpected exception {exc}")
-                traceback.print_exc()
-        self.new_path_event_task = None
 
         if self.avoidance_process and self.avoidance_process.is_alive():
             self.avoidance_process.join()
@@ -400,94 +367,6 @@ class Planner:
         self.actions = action_classes.get(Strategy(self.shared_properties.strategy), actions.Actions)(self)
         await self.set_pose_start(self.game_context.start_pose.pose)
         self.pami_event.clear()
-
-    async def blocked_event_loop(self):
-        logger.info("Planner: Task Blocked Event Watcher Loop started")
-        try:
-            while True:
-                await asyncio.to_thread(self.shared_avoidance_blocked_lock.wait_update)
-                if self.sio.connected:
-                    await self.sio_ns.emit("brake")
-                self.blocked_counter += 1
-                if self.blocked_counter > 10:
-                    self.blocked_counter = 0
-                    await self.blocked()
-        except asyncio.CancelledError:
-            logger.info("Planner: Task Blocked Event Watcher Loop cancelled")
-            raise
-        except Exception as exc:  # noqa
-            logger.warning(f"Planner: Task Blocked Event Watcher Loop: Unknown exception {exc}")
-            traceback.print_exc()
-            raise
-
-    async def new_path_event_loop(self):
-        logger.info("Planner: Task New Path Event Watcher Loop started")
-        try:
-            while True:
-                await asyncio.to_thread(self.shared_avoidance_path_lock.wait_update)
-                self.blocked_counter = 0
-                if self.pose_order:
-                    await self.pose_order.act_intermediate_pose()
-        except asyncio.CancelledError:
-            logger.info("Planner: Task New Path Event Watcher Loop cancelled")
-            raise
-        except Exception as exc:  # noqa
-            logger.warning(f"Planner: Task New Path Event Watcher Loop: Unknown exception {exc}")
-            traceback.print_exc()
-            raise
-
-    async def countdown_loop(self):
-        logger.info("Planner: Task Countdown started")
-        try:
-            self.game_context.last_countdown = self.game_context.countdown
-            while True:
-                await asyncio.sleep(0.2)
-
-                if not self.game_context.playing:
-                    continue
-
-                now = datetime.now(UTC)
-                self.game_context.countdown = (
-                    self.game_context.game_duration - (now - self.countdown_start_timestamp).total_seconds()
-                )
-
-                logger.info(f"Planner: countdown = {self.game_context.countdown: 3.2f}")
-                if self.robot_id > 1 and self.game_context.countdown < 15 and self.game_context.last_countdown > 15:
-                    logger.info("Planner: countdown==15: start PAMI")
-                    self.pami_event.set()
-                if self.robot_id == 1 and self.game_context.countdown < 7 and self.game_context.last_countdown > 7:
-                    logger.info("Planner: countdown==7: force blocked")
-                    asyncio.create_task(self.blocked())
-                if self.game_context.countdown < 0 and self.game_context.last_countdown > 0:
-                    logger.info("Planner: countdown==0: final action")
-                    await self.final_action()
-                if self.game_context.countdown < -5 and self.game_context.last_countdown > -5:
-                    await self.sio_ns.emit("stop_video_record")
-                self.game_context.last_countdown = self.game_context.countdown
-        except asyncio.CancelledError:
-            logger.info("Planner: Task Countdown cancelled")
-            raise
-        except Exception as exc:  # noqa
-            logger.warning(f"Planner: Unknown exception {exc}")
-            raise
-
-    async def countdown_start(self):
-        await self.countdown_stop()
-        self.countdown_task = asyncio.create_task(self.countdown_loop())
-
-    async def countdown_stop(self):
-        if self.countdown_task is None:
-            return
-
-        self.countdown_task.cancel()
-        try:
-            await self.countdown_task
-        except asyncio.CancelledError:
-            logger.info("Planner: Task Countdown stopped")
-        except Exception as exc:
-            logger.warning(f"Planner: Unexpected exception {exc}")
-
-        self.countdown_task = None
 
     async def final_action(self):
         if not self.game_context.playing:
