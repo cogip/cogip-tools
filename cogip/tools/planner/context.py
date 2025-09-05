@@ -24,7 +24,7 @@ from . import actions
 from .camp import Camp
 from .pose import AdaptedPose, Pose
 from .positions import StartPosition
-from .table import Table, TableEnum, tables
+from .table import TableEnum
 
 
 class GameContext(metaclass=Singleton):
@@ -42,13 +42,6 @@ class GameContext(metaclass=Singleton):
         self.reset()
 
         self.tribunes_in_robot = 0
-
-    @property
-    def table(self) -> Table:
-        """
-        Selected table.
-        """
-        return tables[TableEnum(self.shared_properties.table)]
 
     @property
     def start_pose(self) -> Pose:
