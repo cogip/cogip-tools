@@ -173,7 +173,7 @@ class Planner:
         self._pose_order: pose.Pose | None = None
         self.pose_reached: bool = True
         self.blocked_counter: int = 0
-        self.controller = self.game_context.default_controller
+        self.controller = self.default_controller
         self.game_wizard = GameWizard(self)
         self.countdown_task: asyncio.Task | None = None
         self.blocked_event_task: asyncio.Task | None = None
@@ -387,7 +387,7 @@ class Planner:
         Only reset context and actions.
         """
         self.game_context.reset()
-        await self.set_controller(self.game_context.default_controller, True)
+        await self.set_controller(self.default_controller, True)
         table = get_table(self.shared_properties.table)
         self.shared_table_limits[0] = table.x_min
         self.shared_table_limits[1] = table.x_max
@@ -510,6 +510,16 @@ class Planner:
         self.last_starter_event_timestamp = datetime.now(UTC)
         if not self.virtual:
             await self.sio_ns.emit("starter_changed", pushed)
+
+    @property
+    def default_controller(self) -> ControllerEnum:
+        match self.shared_properties.strategy:
+            case Strategy.PidAngularSpeedTest:
+                return ControllerEnum.ANGULAR_SPEED_TEST
+            case Strategy.PidLinearSpeedTest:
+                return ControllerEnum.LINEAR_SPEED_TEST
+            case _:
+                return ControllerEnum.QUADPID
 
     async def set_controller(self, new_controller: ControllerEnum, force: bool = False):
         if self.controller == new_controller and not force:
