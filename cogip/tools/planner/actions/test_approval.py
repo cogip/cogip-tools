@@ -35,7 +35,7 @@ class ApprovalActions(Actions):
         self.append(BuildTribuneX1Action(planner, self, ConstructionAreaID.LocalBottomLarge3, 600_000.0))
 
         self.append(WaitAction(planner, self))
-        if planner.shared_properties.table == TableEnum.Training.val:
+        if planner.shared_properties.table == TableEnum.Training:
             self.append(ParkingAction(planner, self, models.Pose(x=-500, y=-750, O=90)))
         else:
             self.append(

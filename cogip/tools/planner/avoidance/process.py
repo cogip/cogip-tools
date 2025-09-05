@@ -68,7 +68,7 @@ def avoidance_process(robot_id: int):
         pose_current = models.PathPose.from_shared(shared_pose_current)
         shared_pose_current_lock.finish_reading()
 
-        if shared_properties.strategy in [Strategy.PidLinearSpeedTest.val, Strategy.PidAngularSpeedTest.val]:
+        if shared_properties.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
             logger.debug("Avoidance: Skip path update (speed test)")
             continue
 
@@ -95,7 +95,7 @@ def avoidance_process(robot_id: int):
 
         # Create dynamic obstacles
         dyn_obstacles: list[SharedObstacleCircle | SharedObstacleRectangle] = []
-        if shared_properties.avoidance_strategy != AvoidanceStrategy.Disabled.val:
+        if shared_properties.avoidance_strategy != AvoidanceStrategy.Disabled:
             # Deep copy of obstacles to not block the shared memory
             shared_obstacles_lock.start_reading()
             for obstacle in shared_circle_obstacles:
@@ -104,7 +104,7 @@ def avoidance_process(robot_id: int):
                 dyn_obstacles.append(SharedObstacleRectangle(obstacle, deep_copy=True))
             shared_obstacles_lock.finish_reading()
 
-        if shared_properties.avoidance_strategy == AvoidanceStrategy.AvoidanceCpp.val:
+        if shared_properties.avoidance_strategy == AvoidanceStrategy.AvoidanceCpp:
             # Recreate obstacles list
             avoidance.cpp_avoidance.clear_dynamic_obstacles()
             for obstacle in dyn_obstacles:
