@@ -66,7 +66,7 @@ class AdaptedPose(Pose):
         """
         Validator to adapt Y depending on the camp at initialization.
         """
-        return Camp().adapt_y(v)
+        return cls._camp.adapt_y(v)
 
     @field_validator("O")
     @classmethod
@@ -74,4 +74,4 @@ class AdaptedPose(Pose):
         """
         Validator to adapt the angle depending on the camp at initialization.
         """
-        return Camp().adapt_angle(v)
+        return cls._camp.adapt_angle(v)
