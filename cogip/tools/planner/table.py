@@ -39,3 +39,9 @@ tables: dict[TableEnum, Table] = {
     TableEnum.Training: table_training,
     TableEnum.Game: table_game,
 }
+
+
+def get_table(table_enum: TableEnum | int) -> Table:
+    if isinstance(table_enum, int):
+        table_enum = TableEnum(table_enum)
+    return tables[table_enum]

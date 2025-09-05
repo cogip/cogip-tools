@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from cogip.tools.planner.actions.actions import Action, Actions
 from cogip.tools.planner.pose import Pose
+from cogip.tools.planner.table import get_table
 
 if TYPE_CHECKING:
     from ..planner import Planner
@@ -20,8 +21,9 @@ class BackAndForthAction(Action):
         self.before_action_func = self.compute_poses
 
     async def compute_poses(self) -> None:
+        table = get_table(self.planner.shared_properties.table)
         x = self.planner.pose_current.x
-        y = self.game_context.table.y_min + self.game_context.table.y_max - self.planner.pose_current.y
+        y = table.y_min + table.y_max - self.planner.pose_current.y
         angle = -self.planner.pose_current.O
         pose1 = Pose(
             x=x,
