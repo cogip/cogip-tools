@@ -25,13 +25,21 @@ class GameContext:
     A class recording the current game context.
     """
 
-    def __init__(self, shared_properties: SharedProperties):
+    def __init__(self, shared_properties: SharedProperties, initialize: bool = True):
         self.shared_properties = shared_properties
-        self.game_duration: int = 100
-        self.minimum_score: int = 0
-        self.reset()
-
-        self.tribunes_in_robot = 0
+        if initialize:
+            self.minimum_score: int = 0
+            self.game_duration: int = 100
+            self.score = self.minimum_score
+            self.tribunes_in_robot = 0
+            self.construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
+            self.opponent_construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
+            self.tribunes: dict[TribuneID, Tribune] = {}
+            self.fixed_obstacles: dict[FixedObstacleID, FixedObstacle] = {}
+            self.positional_actuator_states: dict[PositionalActuatorEnum, PositionalActuator] = {}
+            self.bool_sensor_states: dict[BoolSensorEnum, BoolSensor] = {}
+            self.emulated_actuator_states: set[PositionalActuatorEnum] = {}
+            self.reset()
 
     def reset(self):
         """
@@ -44,6 +52,30 @@ class GameContext:
         self.create_artifacts()
         self.create_fixed_obstacles()
         self.create_actuators_states()
+
+    def deepcopy(self):
+        """
+        Return a deep copy of the GameContext instance.
+        """
+        new_ctx = GameContext(self.shared_properties, initialize=False)
+        new_ctx.game_duration = self.game_duration
+        new_ctx.minimum_score = self.minimum_score
+        new_ctx.score = self.score
+        new_ctx.countdown = self.countdown
+        new_ctx.last_countdown = self.last_countdown
+        new_ctx.tribunes_in_robot = self.tribunes_in_robot
+        new_ctx.construction_areas = {k: v.model_copy() for k, v in self.construction_areas.items()}
+        new_ctx.tribunes = {k: v.model_copy() for k, v in self.tribunes.items()}
+        new_ctx.fixed_obstacles = {k: v.model_copy() for k, v in self.fixed_obstacles.items()}
+        # Do not copy artifacts that are not used in actions but keep the code in comments to no forget
+        # that this copy function is only a partial copy.
+        # new_ctx.opponent_construction_areas = {
+        #     k: v.model_copy(deep=True) for k, v in self.opponent_construction_areas.items()
+        # }
+        # new_ctx.positional_actuator_states = {
+        #     k: v.model_copy(deep=True) for k, v in self.positional_actuator_states.items()
+        # }
+        return new_ctx
 
     def create_artifacts(self):
         # Positions are related to the default camp blue.
