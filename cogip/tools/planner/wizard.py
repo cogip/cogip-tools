@@ -234,7 +234,7 @@ class GameWizard:
             seconds=self.planner.game_context.game_duration + 100
         )
         self.planner.game_context.last_countdown = self.planner.game_context.countdown = -100
-        self.planner.game_context.playing = True
+        self.planner.playing = True
         asyncio.create_task(self.planner.set_pose_reached())
         await self.next()
 
@@ -246,6 +246,7 @@ class GameWizard:
         await self.waiting_start_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
         self.planner.game_context.reset()
+        self.planner.playing = False
         self.planner.shared_properties.strategy = self.game_strategy
         self.planner.actions = action_classes.get(Strategy(self.game_strategy))(self.planner)
         await self.planner.sio_ns.emit("game_start")
