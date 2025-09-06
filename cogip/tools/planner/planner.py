@@ -494,7 +494,7 @@ class Planner:
             await self.next_pose_in_action()
 
             # If no pose left in current action, get and set new action
-            if not self.pose_order and (new_action := self.get_action()):
+            if not self.pose_order and (new_action := self.actions.get_next_action()):
                 await self.set_action(new_action)
                 if not self.pose_order:
                     asyncio.create_task(self.set_pose_reached())
@@ -502,23 +502,6 @@ class Planner:
             logger.warning(f"Planner: Unknown exception {exc}")
             traceback.print_exc()
             raise
-
-    def get_action(self) -> actions.Action | None:
-        """
-        Get a new action for a robot.
-        Simply choose next action in the list for now.
-        """
-        sorted_actions = sorted(
-            [action for action in self.actions if not action.recycled and action.weight() > 0],
-            key=lambda action: action.weight(),
-        )
-
-        if len(sorted_actions) == 0:
-            return None
-
-        action = sorted_actions[-1]
-        self.actions.remove(action)
-        return action
 
     async def set_action(self, action: "actions.Action"):
         """
@@ -536,7 +519,7 @@ class Planner:
         """
         if (current_action := self.action) and current_action.interruptable:
             logger.info("Planner: blocked")
-            if new_action := self.get_action():
+            if new_action := self.actions.get_next_action():
                 await self.set_action(new_action)
             await current_action.recycle()
             self.actions.append(current_action)
