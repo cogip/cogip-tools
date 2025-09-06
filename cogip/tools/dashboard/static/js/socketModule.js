@@ -152,9 +152,9 @@ function createButton(description, cmd, type, socket) {
     "mb-2",
     "bg-zinc-800",
     "text-grey-color",
-    "rounded",
+    "rounded-sm",
     "hover:bg-gray-600",
-    "focus:outline-none"
+    "focus:outline-hidden"
   );
   button.textContent = description; // Set button text
 

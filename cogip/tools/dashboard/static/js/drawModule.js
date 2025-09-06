@@ -269,7 +269,7 @@ export function addNewTab(robot_id) {
   newNavTab.className = "mr-2";
   newNavTab.innerHTML = `
   <button
-    class="inline-block px-4 py-2 text-gray-600 hover:text-red-cogip border-b-2 border-transparent hover:border-red-cogip focus:outline-none"
+    class="inline-block px-4 py-2 text-gray-600 hover:text-red-cogip border-b-2 border-transparent hover:border-red-cogip focus:outline-hidden"
     id="robot${robot_id}-tab"
     data-target="#robot${robot_id}"
     type="button"
