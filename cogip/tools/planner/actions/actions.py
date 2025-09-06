@@ -15,3 +15,19 @@ class Actions(list[Action]):
     def __init__(self, planner: "Planner"):
         super().__init__()
         self.planner = planner
+
+    def get_next_action(self) -> Action | None:
+        """
+        Get a next action of the strategy.
+        """
+        sorted_actions = sorted(
+            [action for action in self if not action.recycled and action.weight() > 0],
+            key=lambda action: action.weight(),
+        )
+
+        if len(sorted_actions) == 0:
+            return None
+
+        action = sorted_actions[-1]
+        self.remove(action)
+        return action
