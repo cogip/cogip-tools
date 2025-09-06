@@ -82,7 +82,7 @@ class DropBannerAction(Action):
         logger.info(f"{self.name}: after_drop")
         await actuators.lift_0(self.planner)
         await asyncio.sleep(1)
-        self.game_context.score += 20
+        self.planner.game_context.score += 20
 
     async def before_step_back(self):
         logger.info(f"{self.name}: before_step_back")

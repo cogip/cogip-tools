@@ -122,7 +122,7 @@ class AlignBottomAction(Action):
             self.planner.countdown_start_timestamp = now
             await self.planner.sio_ns.emit(
                 "start_countdown",
-                (self.planner.robot_id, self.game_context.game_duration, now.isoformat(), "deepskyblue"),
+                (self.planner.robot_id, self.planner.game_context.game_duration, now.isoformat(), "deepskyblue"),
             )
 
     def weight(self) -> float:
