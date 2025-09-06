@@ -6,7 +6,7 @@ from cogip.tools.planner.pose import Pose
 
 if TYPE_CHECKING:
     from ..planner import Planner
-    from .actions import Actions
+    from .strategy import Strategy
 
 
 class Action:
@@ -16,10 +16,10 @@ class Action:
     A function can be executed before the action starts and after it ends.
     """
 
-    def __init__(self, name: str, planner: "Planner", actions: "Actions", interruptable: bool = True):
+    def __init__(self, name: str, planner: "Planner", strategy: "Strategy", interruptable: bool = True):
         self.name = name
         self.planner = planner
-        self.actions = actions
+        self.strategy = strategy
         self.interruptable = interruptable
         self.poses: list[Pose] = []
         self.before_action_func: Callable[[], Awaitable[None]] | None = None
@@ -51,7 +51,7 @@ class Action:
             await self.after_action_func()
 
         # Re-enable all actions after a successful action
-        for action in self.actions:
+        for action in self.strategy:
             action.recycled = False
 
     async def recycle(self):

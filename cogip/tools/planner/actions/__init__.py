@@ -5,16 +5,16 @@ from pathlib import Path
 
 from cogip.utils.argenum import ArgEnum
 from .. import logger
-from .actions import Actions
+from .strategy import Strategy
 
 
 def strip_action_name(name: str) -> str:
-    if name.endswith("Actions"):
-        return name[:-7]
+    if name.endswith("Strategy"):
+        return name[:-8]
     return name
 
 
-actions_found = []
+strategies_found = []
 
 for path in Path(__file__).parent.glob("*.py"):
     if path.name == "__init__.py":
@@ -30,19 +30,19 @@ for path in Path(__file__).parent.glob("*.py"):
         logger.error(
             f"Import error in 'cogip/tools/planner/actions/{module_path.name}': "
             "Modules from the 'cogip.planner.actions' package cannot use relative import "
-            "to allow dynamic discovery of Actions classes."
+            "to allow dynamic discovery of Strategy classes."
         )
         sys.exit(1)
 
     for name, obj in inspect.getmembers(module, inspect.isclass):
-        if issubclass(obj, Actions) and obj is not Actions:
-            actions_found.append(obj)
+        if issubclass(obj, Strategy) and obj is not Strategy:
+            strategies_found.append(obj)
 
-sorted_actions = sorted(actions_found, key=lambda cls: cls.__name__)
-actions_map = {strip_action_name(strategy.__name__): i + 1 for i, strategy in enumerate(sorted_actions)}
+sorted_strategies = sorted(strategies_found, key=lambda cls: cls.__name__)
+strategies_map = {strip_action_name(strategy.__name__): i + 1 for i, strategy in enumerate(sorted_strategies)}
 
-StrategyEnum = ArgEnum("StrategyEnum", actions_map)
+StrategyEnum = ArgEnum("StrategyEnum", strategies_map)
 
-action_classes: dict[StrategyEnum, Actions] = {
-    strategy: actions_class for strategy, actions_class in zip(StrategyEnum, sorted_actions)
+strategy_classes: dict[StrategyEnum, Strategy] = {
+    strategy: strategies_class for strategy, strategies_class in zip(StrategyEnum, sorted_strategies)
 }

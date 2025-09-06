@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from ..planner import Planner
 
 
-class Actions(list[Action]):
+class Strategy(list[Action]):
     """
     List of actions.
     Just inherits from list for now.

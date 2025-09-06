@@ -9,14 +9,14 @@ from cogip.tools.planner.actions.action_capture_tribune import CaptureTribuneAct
 from cogip.tools.planner.actions.action_drop_banner import DropBannerAction
 from cogip.tools.planner.actions.action_parking import ParkingAction
 from cogip.tools.planner.actions.action_wait import WaitAction
-from cogip.tools.planner.actions.actions import Actions
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.table import TableEnum
 
 if TYPE_CHECKING:
     from ..planner import Planner
 
 
-class Game1Actions(Actions):
+class Game1Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
 

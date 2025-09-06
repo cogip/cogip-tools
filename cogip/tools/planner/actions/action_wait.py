@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from cogip.tools.planner import logger
 from cogip.tools.planner.actions.action import Action
-from cogip.tools.planner.actions.actions import Actions
+from cogip.tools.planner.actions.strategy import Strategy
 
 if TYPE_CHECKING:
     from ..planner import Planner
@@ -15,8 +15,8 @@ class WaitAction(Action):
     Reset recycled attribute of all actions at the end.
     """
 
-    def __init__(self, planner: "Planner", actions: "Actions"):
-        super().__init__("Wait action", planner, actions)
+    def __init__(self, planner: "Planner", strategy: "Strategy"):
+        super().__init__("Wait action", planner, strategy)
         self.before_action_func = self.before_wait
         self.after_action_func = self.after_wait
 
@@ -30,7 +30,7 @@ class WaitAction(Action):
         logger.debug(f"Robot {self.planner.robot_id}: WaitAction: after action")
         await asyncio.sleep(2)
 
-        for action in self.actions:
+        for action in self.strategy:
             action.recycled = False
 
-        self.actions.append(WaitAction(self.planner, self.actions))
+        self.strategy.append(WaitAction(self.planner, self.strategy))

@@ -5,7 +5,7 @@ from colorzero import Color
 
 from cogip.tools.planner import logger
 from cogip.tools.planner.actions.action import Action
-from cogip.tools.planner.actions.actions import Actions
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose, set_countdown_color
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.pose import AdaptedPose, Pose
@@ -20,8 +20,8 @@ class Pami2Action(Action):
     PAMI 2 action.
     """
 
-    def __init__(self, planner: "Planner", actions: Actions, *, start_delay: int, wait: bool = True):
-        super().__init__("PAMI 2 action", planner, actions, interruptable=False)
+    def __init__(self, planner: "Planner", strategy: Strategy, *, start_delay: int, wait: bool = True):
+        super().__init__("PAMI 2 action", planner, strategy, interruptable=False)
         self.before_action_func = self.before_action
         self.start_delay = start_delay
         self.wait = wait
@@ -132,7 +132,7 @@ class Pami2Action(Action):
         self.planner.led.color = Color("red")
         await set_countdown_color(self.planner, "red")
         self.planner.flag_motor.on()
-        self.actions.clear()
+        self.strategy.clear()
 
     def weight(self) -> float:
         return 9_999_999.0
@@ -143,8 +143,8 @@ class Pami3Action(Action):
     PAMI 3 action.
     """
 
-    def __init__(self, planner: "Planner", actions: Actions, *, start_delay: int, wait: bool = True):
-        super().__init__("PAMI 3 action", planner, actions, interruptable=False)
+    def __init__(self, planner: "Planner", strategy: Strategy, *, start_delay: int, wait: bool = True):
+        super().__init__("PAMI 3 action", planner, strategy, interruptable=False)
         self.before_action_func = self.before_action
         self.start_delay = start_delay
         self.wait = wait
@@ -233,7 +233,7 @@ class Pami3Action(Action):
         self.planner.led.color = Color("red")
         await set_countdown_color(self.planner, "red")
         self.planner.flag_motor.on()
-        self.actions.clear()
+        self.strategy.clear()
 
     def weight(self) -> float:
         return 9_999_999.0
@@ -244,8 +244,8 @@ class Pami4Action(Action):
     PAMI 4 action.
     """
 
-    def __init__(self, planner: "Planner", actions: Actions, *, start_delay: int, wait: bool = True):
-        super().__init__("PAMI 4 action", planner, actions, interruptable=False)
+    def __init__(self, planner: "Planner", strategy: Strategy, *, start_delay: int, wait: bool = True):
+        super().__init__("PAMI 4 action", planner, strategy, interruptable=False)
         self.before_action_func = self.before_action
         self.start_delay = start_delay
         self.wait = wait
@@ -314,7 +314,7 @@ class Pami4Action(Action):
         self.planner.led.color = Color("red")
         await set_countdown_color(self.planner, "red")
         self.planner.flag_motor.on()
-        self.actions.clear()
+        self.strategy.clear()
 
     def weight(self) -> float:
         return 9_999_999.0
@@ -325,8 +325,8 @@ class Pami5Action(Action):
     PAMI 5 action.
     """
 
-    def __init__(self, planner: "Planner", actions: Actions, start_delay: int, wait: bool = True):
-        super().__init__("PAMI 5 action", planner, actions, interruptable=False)
+    def __init__(self, planner: "Planner", strategy: Strategy, start_delay: int, wait: bool = True):
+        super().__init__("PAMI 5 action", planner, strategy, interruptable=False)
         self.wait = wait
         self.before_action_func = self.before_action
         self.start_delay = start_delay
@@ -388,7 +388,7 @@ class Pami5Action(Action):
         logger.info(f"{self.name}: after_pose2")
         self.planner.led.color = Color("red")
         await set_countdown_color(self.planner, "red")
-        self.actions.clear()
+        self.strategy.clear()
         self.planner.shared_properties.disable_fixed_obstacles = False
         self.planner.flag_motor.on()
 
@@ -396,52 +396,52 @@ class Pami5Action(Action):
         return 9_999_999.0
 
 
-class Pami2Actions(Actions):
+class Pami2Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(Pami2Action(planner, self, start_delay=0))
 
 
-class Pami3Actions(Actions):
+class Pami3Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(Pami3Action(planner, self, start_delay=3))
 
 
-class Pami4Actions(Actions):
+class Pami4Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(Pami4Action(planner, self, start_delay=6))
 
 
-class Pami5Actions(Actions):
+class Pami5Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(Pami5Action(planner, self, start_delay=9))
 
 
-# Standalone actions
+# Standalone strategies
 
 
-class Pami2StandaloneActions(Actions):
+class Pami2StandaloneStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(Pami2Action(planner, self, start_delay=0, wait=False))
 
 
-class Pami3StandaloneActions(Actions):
+class Pami3StandaloneStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(Pami3Action(planner, self, start_delay=0, wait=False))
 
 
-class Pami4StandaloneActions(Actions):
+class Pami4StandaloneStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(Pami4Action(planner, self, start_delay=0, wait=False))
 
 
-class Pami5StandaloneActions(Actions):
+class Pami5StandaloneStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(Pami5Action(planner, self, start_delay=7, wait=False))

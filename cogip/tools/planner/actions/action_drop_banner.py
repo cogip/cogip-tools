@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from cogip.tools.planner import actuators, logger
 from cogip.tools.planner.actions.action import Action
-from cogip.tools.planner.actions.actions import Actions
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.pose import Pose
 
@@ -19,11 +19,11 @@ class DropBannerAction(Action):
     def __init__(
         self,
         planner: "Planner",
-        actions: Actions,
+        strategy: Strategy,
         weight: float = 2000000.0,
     ):
         self.custom_weight = weight
-        super().__init__("Drop banner action", planner, actions)
+        super().__init__("Drop banner action", planner, strategy)
         self.before_action_func = self.before_action
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
