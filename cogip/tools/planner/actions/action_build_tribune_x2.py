@@ -26,7 +26,7 @@ class BuildTribuneX2Action(Action):
         self.custom_weight = weight
         super().__init__(f"BuildTribuneX2 {construction_area_id.name}", planner, actions)
         self.before_action_func = self.before_action
-        self.construction_area = self.game_context.construction_areas[construction_area_id]
+        self.construction_area = self.planner.game_context.construction_areas[construction_area_id]
         self.shift_build = 180
         self.shift_approach = self.shift_build + 150
         self.shift_step_back = self.shift_approach
@@ -35,7 +35,7 @@ class BuildTribuneX2Action(Action):
         self.recycled = True
 
     async def before_action(self):
-        logger.info(f"{self.name}: before_action - tribunes_in_robot={self.game_context.tribunes_in_robot}")
+        logger.info(f"{self.name}: before_action - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
         self.start_pose = self.pose_current
 
         # Approach
@@ -109,7 +109,7 @@ class BuildTribuneX2Action(Action):
         logger.info(f"{self.name}: before_build")
 
     async def after_build(self):
-        logger.info(f"{self.name}: after_build - tribunes_in_robot={self.game_context.tribunes_in_robot}")
+        logger.info(f"{self.name}: after_build - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
         await actuators.tribune_spread(self.planner)
         await asyncio.sleep(0.2)
 
@@ -144,71 +144,71 @@ class BuildTribuneX2Action(Action):
             actuators.arm_right_side(self.planner),
         )
 
-        self.game_context.tribunes_in_robot -= 2
+        self.planner.game_context.tribunes_in_robot -= 2
         self.construction_area.tribune_level += 2
 
     async def before_step_back(self):
         logger.info(f"{self.name}: before_step_back")
 
     async def after_step_back(self):
-        logger.info(f"{self.name}: after_step_back - tribunes_in_robot={self.game_context.tribunes_in_robot}")
+        logger.info(f"{self.name}: after_step_back - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
         self.construction_area.enabled = True
         await asyncio.gather(
             actuators.arm_left_center(self.planner),
             actuators.arm_right_center(self.planner),
             actuators.lift_0(self.planner),
         )
-        self.game_context.score += 12
+        self.planner.game_context.score += 12
 
     def weight(self) -> float:
-        if self.game_context.tribunes_in_robot < 2 or self.construction_area.tribune_level != 0:
+        if self.planner.game_context.tribunes_in_robot < 2 or self.construction_area.tribune_level != 0:
             return 0
 
         if (
             self.construction_area.id == ConstructionAreaID.LocalBottomSmall
-            and self.game_context.tribunes[TribuneID.LocalBottom].enabled
+            and self.planner.game_context.tribunes[TribuneID.LocalBottom].enabled
         ):
             return 0
 
         if (
             self.construction_area.id == ConstructionAreaID.OppositeBottomSmall
-            and self.game_context.tribunes[TribuneID.OppositeBottomSide].enabled
+            and self.planner.game_context.tribunes[TribuneID.OppositeBottomSide].enabled
         ):
             return 0
 
         if (
             self.construction_area.id == ConstructionAreaID.LocalBottomLarge1
-            and self.game_context.construction_areas[ConstructionAreaID.LocalBottomLarge2].enabled
+            and self.planner.game_context.construction_areas[ConstructionAreaID.LocalBottomLarge2].enabled
         ):
             return 0
 
         if (
             self.construction_area.id == ConstructionAreaID.LocalBottomLarge1
-            and self.game_context.construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled
+            and self.planner.game_context.construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled
         ):
             return 0
 
         if (
             self.construction_area.id == ConstructionAreaID.LocalBottomLarge2
-            and self.game_context.construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled
+            and self.planner.game_context.construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled
         ):
             return 0
 
         if (
             self.construction_area.id == ConstructionAreaID.OppositeSideLarge1
-            and self.game_context.construction_areas[ConstructionAreaID.OppositeSideLarge2].enabled
+            and self.planner.game_context.construction_areas[ConstructionAreaID.OppositeSideLarge2].enabled
         ):
             return 0
 
         if (
             self.construction_area.id == ConstructionAreaID.OppositeSideLarge1
-            and self.game_context.construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled
+            and self.planner.game_context.construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled
         ):
             return 0
 
         if (
             self.construction_area.id == ConstructionAreaID.OppositeSideLarge2
-            and self.game_context.construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled
+            and self.planner.game_context.construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled
         ):
             return 0
 

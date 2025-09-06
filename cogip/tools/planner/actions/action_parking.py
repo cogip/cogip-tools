@@ -31,19 +31,19 @@ class ParkingAction(Action):
         self.poses = [self.pose]
 
     def weight(self) -> float:
-        if self.game_context.countdown > 7:
+        if self.planner.game_context.countdown > 7:
             return 0
 
         return 9999000.0
 
     async def before_pose(self):
-        logger.info(f"{self.name}: before_pose - tribunes_in_robot={self.game_context.tribunes_in_robot}")
+        logger.info(f"{self.name}: before_pose - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
         self.planner.pose_order = None
         await self.planner.sio_ns.emit("brake")
         if self.planner.shared_properties.table == TableEnum.Game:
-            self.game_context.fixed_obstacles[FixedObstacleID.PitArea].enabled = True
-            self.game_context.fixed_obstacles[FixedObstacleID.OpponentPitArea].enabled = True
-            self.game_context.fixed_obstacles[FixedObstacleID.PamiStartArea].enabled = False
+            self.planner.game_context.fixed_obstacles[FixedObstacleID.PitArea].enabled = True
+            self.planner.game_context.fixed_obstacles[FixedObstacleID.OpponentPitArea].enabled = True
+            self.planner.game_context.fixed_obstacles[FixedObstacleID.PamiStartArea].enabled = False
 
         await asyncio.gather(
             actuators.magnet_center_right_in(self.planner),
@@ -52,7 +52,7 @@ class ParkingAction(Action):
             actuators.magnet_side_left_in(self.planner),
         )
 
-        if self.game_context.tribunes_in_robot > 0:
+        if self.planner.game_context.tribunes_in_robot > 0:
             await actuators.arms_release(self.planner)
             await asyncio.sleep(0.1)
 

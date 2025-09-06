@@ -33,7 +33,7 @@ class TestTribune2x3Actions(Actions):
 
         self.append(WaitAction(planner, self))
 
-        parking = self.game_context.fixed_obstacles[FixedObstacleID.Backstage]
+        parking = self.planner.game_context.fixed_obstacles[FixedObstacleID.Backstage]
 
         self.append(
             ParkingAction(

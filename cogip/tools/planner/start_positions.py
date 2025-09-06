@@ -26,7 +26,7 @@ class StartPositions:
     def __init__(self, shared_properties: SharedProperties) -> None:
         self.shared_properties = shared_properties
 
-    def get(self, position: StartPositionEnum | int | None) -> models.Pose:
+    def get(self, position: StartPositionEnum | int | None = None) -> models.Pose:
         if position is None:
             position = self.shared_properties.start_position
         if isinstance(position, int):

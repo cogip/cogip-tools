@@ -9,7 +9,6 @@ from cogip.tools.planner.table import TableEnum
 from cogip.utils.asyncloop import AsyncLoop
 from .actions import Strategy, action_classes
 from .camp import Camp
-from .context import GameContext
 
 if TYPE_CHECKING:
     from cogip.tools.planner.planner import Planner
@@ -18,7 +17,6 @@ if TYPE_CHECKING:
 class GameWizard:
     def __init__(self, planner: "Planner"):
         self.planner = planner
-        self.game_context = GameContext()
         self.step = 0
         self.game_strategy = self.planner.shared_properties.strategy
         self.waiting_starter_pressed_loop = AsyncLoop(
@@ -233,10 +231,10 @@ class GameWizard:
         # Make sure no actions are executed during/after calibration by setting the countdown start timestamp
         # far enough in the past (now - game_duration - a margin 100 seconds), so the countdown will always be negative.
         self.planner.countdown_start_timestamp = datetime.now(UTC) - timedelta(
-            seconds=self.game_context.game_duration + 100
+            seconds=self.planner.game_context.game_duration + 100
         )
-        self.game_context.last_countdown = self.game_context.countdown = -100
-        self.game_context.playing = True
+        self.planner.game_context.last_countdown = self.planner.game_context.countdown = -100
+        self.planner.game_context.playing = True
         asyncio.create_task(self.planner.set_pose_reached())
         await self.next()
 
@@ -247,7 +245,7 @@ class GameWizard:
         self.waiting_start_loop.exit = True
         await self.waiting_start_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
-        self.game_context.reset()
+        self.planner.game_context.reset()
         self.planner.shared_properties.strategy = self.game_strategy
         self.planner.actions = action_classes.get(Strategy(self.game_strategy))(self.planner)
         await self.planner.sio_ns.emit("game_start")

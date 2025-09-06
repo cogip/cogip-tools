@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
 import logging
-import os
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -266,9 +265,6 @@ def main_opt(
 ):
     if debug:
         logger.setLevel(logging.DEBUG)
-
-    # Make sure robot ID is also available as environment variable for context creation
-    os.environ["ROBOT_ID"] = str(id)
 
     if not server_url:
         server_url = f"http://localhost:809{id}"
