@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING
 
 from cogip.models.artifacts import ConstructionAreaID, TribuneID
 from cogip.tools.planner import actuators, logger
-from cogip.tools.planner.actions.actions import Action, Actions, get_relative_pose
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.actions import Actions, get_relative_pose
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.pose import Pose
 from cogip.tools.planner.scservos import SCServoEnum

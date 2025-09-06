@@ -36,7 +36,7 @@ from cogip.models.artifacts import ConstructionArea, FixedObstacleID
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from . import actuators, cameras, logger, pose, sio_events
-from .actions import Strategy, action_classes, actions
+from .actions import Strategy, action, action_classes, actions
 from .avoidance.avoidance import AvoidanceStrategy
 from .avoidance.process import avoidance_process
 from .camp import Camp
@@ -165,7 +165,7 @@ class Planner:
         self.camp = Camp()
         self.start_positions = StartPositions(self.shared_properties)
         self.process_manager = Manager()
-        self.action: actions.Action | None = None
+        self.action: action.Action | None = None
         self.actions = action_classes.get(self.shared_properties.strategy, actions.Actions)(self)
         self.obstacles_updater_loop = AsyncLoop(
             "Obstacles updater loop",

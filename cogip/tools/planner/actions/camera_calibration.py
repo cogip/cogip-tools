@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING
 
 from cogip.models.models import Vertex
 from cogip.tools.planner import logger
-from cogip.tools.planner.actions.actions import Action, Actions
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.actions import Actions
 from cogip.tools.planner.cameras import calibrate_camera
 from cogip.tools.planner.pose import Pose
 

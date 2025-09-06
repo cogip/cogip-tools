@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 from colorzero import Color
 
 from cogip.tools.planner import logger
-from cogip.tools.planner.actions.actions import Action, Actions, get_relative_pose, set_countdown_color
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.actions import Actions, get_relative_pose, set_countdown_color
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.pose import AdaptedPose, Pose
 from cogip.tools.planner.table import TableEnum

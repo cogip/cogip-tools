@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 from cogip import models
 from cogip.models.artifacts import FixedObstacleID
 from cogip.tools.planner import actuators, logger
-from cogip.tools.planner.actions.actions import Action, Actions
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.actions import Actions
 from cogip.tools.planner.pose import AdaptedPose
 from cogip.tools.planner.table import TableEnum
 
