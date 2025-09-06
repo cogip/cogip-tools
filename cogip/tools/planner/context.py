@@ -37,7 +37,6 @@ class GameContext:
         """
         Reset the context.
         """
-        self.playing = False
         self.score = self.minimum_score
         self.countdown = self.game_duration
         self.last_countdown = self.game_duration

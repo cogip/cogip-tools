@@ -173,6 +173,7 @@ class Planner:
             self.update_obstacles,
             logger=self.debug,
         )
+        self.playing: bool = False
         self._pose_order: pose.Pose | None = None
         self.pose_reached: bool = True
         self.blocked_counter: int = 0
@@ -356,6 +357,7 @@ class Planner:
         Only reset context and actions.
         """
         self.game_context.reset()
+        self.playing = False
         await self.set_controller(self.default_controller, True)
         table = get_table(self.shared_properties.table)
         self.shared_table_limits[0] = table.x_min
@@ -370,9 +372,9 @@ class Planner:
         self.pami_event.clear()
 
     async def final_action(self):
-        if not self.game_context.playing:
+        if not self.playing:
             return
-        self.game_context.playing = False
+        self.playing = False
         await self.sio_ns.emit("game_end")
         if self.robot_id == 1:
             if self.robot_in_parking():
@@ -454,7 +456,7 @@ class Planner:
             self.action = None
             await action.act_after_action()
 
-        if not self.game_context.playing:
+        if not self.playing:
             return
 
         await self.next_pose()
@@ -637,7 +639,7 @@ class Planner:
             pose_current = self.pose_current
             text = (
                 f"{'Connected' if self.sio.connected else 'Not connected': <20}"
-                f"{'▶' if self.game_context.playing else '◼'}\n"
+                f"{'▶' if self.playing else '◼'}\n"
                 f"Camp: {self.camp.color.name}\n"
                 f"Strategy: {Strategy(self.shared_properties.strategy).name}\n"
                 f"Pose: {pose_current.x},{pose_current.y},{pose_current.O}\n"
@@ -725,11 +727,11 @@ class Planner:
             self.countdown_start_timestamp = datetime.now(UTC)
 
         logger.info(f"Planner: cmd_play({self.countdown_start_timestamp})")
-        if self.game_context.playing:
+        if self.playing:
             return
 
         self.game_context.countdown = self.game_context.game_duration
-        self.game_context.playing = True
+        self.playing = True
         self.led.color = Color("blue")
 
         await self.sio_ns.emit(
@@ -745,7 +747,7 @@ class Planner:
         Stop command from the menu.
         """
         logger.info("Planner: cmd_stop()")
-        self.game_context.playing = False
+        self.playing = False
         await self.sio_ns.emit("stop_video_record")
 
     async def cmd_next(self):
@@ -754,7 +756,7 @@ class Planner:
         Ignored if current pose is not reached for all robots.
         """
         logger.info("Planner: cmd_next()")
-        if self.game_context.playing:
+        if self.playing:
             return
 
         # Check that pose_reached is set
