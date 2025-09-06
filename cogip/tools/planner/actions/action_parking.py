@@ -5,7 +5,7 @@ from cogip import models
 from cogip.models.artifacts import FixedObstacleID
 from cogip.tools.planner import actuators, logger
 from cogip.tools.planner.actions.action import Action
-from cogip.tools.planner.actions.actions import Actions
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.pose import AdaptedPose
 from cogip.tools.planner.table import TableEnum
 
@@ -14,10 +14,9 @@ if TYPE_CHECKING:
 
 
 class ParkingAction(Action):
-    def __init__(self, planner: "Planner", actions: Actions, pose: models.Pose):
-        super().__init__(f"Parking action at ({int(pose.x)}, {int(pose.y)})", planner, actions, interruptable=False)
+    def __init__(self, planner: "Planner", strategy: Strategy, pose: models.Pose):
+        super().__init__(f"Parking action at ({int(pose.x)}, {int(pose.y)})", planner, strategy, interruptable=False)
         self.after_action_func = self.after_action
-        self.actions_backup: Actions = []
         self.interruptable = False
 
         self.pose = AdaptedPose(
@@ -65,4 +64,4 @@ class ParkingAction(Action):
         logger.info(f"{self.name}: after_pose")
 
     async def after_action(self):
-        self.actions.clear()
+        self.strategy.clear()

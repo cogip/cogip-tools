@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from cogip.tools.planner import logger
 from cogip.tools.planner.actions.action import Action
-from cogip.tools.planner.actions.actions import Actions
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.pose import Pose
@@ -16,8 +16,8 @@ class TestSquaresAction(Action):
     Run in square x times.
     """
 
-    def __init__(self, planner: "Planner", actions: Actions, *, count: int, size: int):
-        super().__init__(f"TestSquares action x{count}", planner, actions)
+    def __init__(self, planner: "Planner", strategy: Strategy, *, count: int, size: int):
+        super().__init__(f"TestSquares action x{count}", planner, strategy)
         self.count = count
         self.size = size
         self.interruptable = False
@@ -80,7 +80,7 @@ class TestSquaresAction(Action):
         return 1000000.0
 
 
-class TestSquaresActions(Actions):
+class TestSquaresStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(TestSquaresAction(planner, self, count=5, size=400))
