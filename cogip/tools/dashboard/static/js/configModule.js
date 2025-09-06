@@ -53,7 +53,7 @@ export function openConfigModal(config, send_socket) {
         "border",
         "border-slate-950",
         "use-keyboard-input",
-        "focus:outline-none",
+        "focus:outline-hidden",
         "focus:caret-red-cogip",
         "focus:ring-2",
         "focus:ring-red-cogip"
@@ -82,9 +82,9 @@ export function openConfigModal(config, send_socket) {
         "text-2xl",
         "bg-zinc-800",
         "text-grey-color",
-        "rounded",
+        "rounded-sm",
         "hover:bg-gray-600",
-        "focus:outline-none"
+        "focus:outline-hidden"
       );
       decrementBtn.addEventListener("click", () => {
         let newValue = Math.max(
@@ -98,7 +98,7 @@ export function openConfigModal(config, send_socket) {
 
       const incrementBtn = document.createElement("button");
       incrementBtn.textContent = "+";
-      incrementBtn.classList.add("px-4", "py-2", "text-2xl", "bg-zinc-800", "text-grey-color", "rounded",  "hover:bg-gray-600", "focus:outline-none");
+      incrementBtn.classList.add("px-4", "py-2", "text-2xl", "bg-zinc-800", "text-grey-color", "rounded-sm",  "hover:bg-gray-600", "focus:outline-hidden");
       incrementBtn.addEventListener("click", () => {
         let newValue = Math.min(
           parseFloat(input.value) + (property.multipleOf || 1),
