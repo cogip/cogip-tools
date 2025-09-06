@@ -1,10 +1,8 @@
-import asyncio
 import math
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, final
 
 from cogip import models
-from cogip.tools.planner import logger
 from cogip.tools.planner.pose import Pose
 
 if TYPE_CHECKING:
@@ -65,33 +63,6 @@ class Action:
     @property
     def pose_current(self) -> models.Pose:
         return self.planner.pose_current
-
-
-class WaitAction(Action):
-    """
-    Action used if no other action is available.
-    Reset recycled attribute of all actions at the end.
-    """
-
-    def __init__(self, planner: "Planner", actions: "Actions"):
-        super().__init__("Wait action", planner, actions)
-        self.before_action_func = self.before_wait
-        self.after_action_func = self.after_wait
-
-    def weight(self) -> float:
-        return 1
-
-    async def before_wait(self):
-        logger.debug(f"Robot {self.planner.robot_id}: WaitAction: before action")
-
-    async def after_wait(self):
-        logger.debug(f"Robot {self.planner.robot_id}: WaitAction: after action")
-        await asyncio.sleep(2)
-
-        for action in self.actions:
-            action.recycled = False
-
-        self.actions.append(WaitAction(self.planner, self.actions))
 
 
 class Actions(list[Action]):
