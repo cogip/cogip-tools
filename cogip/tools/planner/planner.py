@@ -161,7 +161,7 @@ class Planner:
         self.sio = socketio.AsyncClient(logger=False)
         self.sio_ns = sio_events.SioEvents(self)
         self.sio.register_namespace(self.sio_ns)
-        self.game_context = GameContext()
+        self.game_context = GameContext(self.shared_properties)
         self.camp = Camp()
         self.start_positions = StartPositions(self.shared_properties)
         self.process_manager = Manager()
@@ -366,7 +366,7 @@ class Planner:
         self.shared_memory.avoidance_has_new_pose_order = False
         self.flag_motor.off()
         self.actions = action_classes.get(Strategy(self.shared_properties.strategy), actions.Actions)(self)
-        await self.set_pose_start(self.start_positions.current_position)
+        await self.set_pose_start(self.start_positions.get())
         self.pami_event.clear()
 
     async def final_action(self):

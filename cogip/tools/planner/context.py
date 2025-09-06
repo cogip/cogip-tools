@@ -1,6 +1,4 @@
-import os
-
-from cogip.cpp.libraries.shared_memory import SharedMemory
+from cogip.cpp.libraries.shared_memory import SharedProperties
 from cogip.models.actuators import (
     BoolSensor,
     BoolSensorEnum,
@@ -18,20 +16,17 @@ from cogip.models.artifacts import (
     construction_area_positions,
     tribune_positions,
 )
-from cogip.utils.singleton import Singleton
 from .pose import AdaptedPose
 from .table import TableEnum
 
 
-class GameContext(metaclass=Singleton):
+class GameContext:
     """
     A class recording the current game context.
     """
 
-    def __init__(self):
-        self.robot_id = int(os.getenv("ROBOT_ID"))
-        self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
-        self.shared_properties = self.shared_memory.get_properties()
+    def __init__(self, shared_properties: SharedProperties):
+        self.shared_properties = shared_properties
         self.game_duration: int = 100
         self.minimum_score: int = 0
         self.reset()
@@ -142,7 +137,7 @@ class GameContext(metaclass=Singleton):
         )
 
         # PAMIs starting area for robot ID 1, the main robot.
-        if self.robot_id == 1:
+        if self.shared_properties.robot_id == 1:
             self.fixed_obstacles[FixedObstacleID.PamiStartArea] = FixedObstacle(
                 **AdaptedPose(x=825, y=-1425).model_dump(),
                 length=150,
@@ -166,7 +161,11 @@ class GameContext(metaclass=Singleton):
                 id=FixedObstacleID.OpponentPitArea,
             )
 
-        if self.robot_id == 1 and self.shared_properties.table == TableEnum.Training or self.robot_id == 5:
+        if (
+            self.shared_properties.robot_id == 1
+            and self.shared_properties.table == TableEnum.Training
+            or self.shared_properties.robot_id == 5
+        ):
             self.fixed_obstacles[FixedObstacleID.Ramp].enabled = False
             self.fixed_obstacles[FixedObstacleID.Scene].enabled = False
             self.fixed_obstacles[FixedObstacleID.Pami5Path].enabled = False

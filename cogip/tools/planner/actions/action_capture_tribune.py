@@ -26,7 +26,7 @@ class CaptureTribuneAction(Action):
         self.custom_weight = weight
         super().__init__(f"CaptureTribune {tribune_id.name}", planner, actions)
         self.before_action_func = self.before_action
-        self.tribune = self.game_context.tribunes[tribune_id]
+        self.tribune = self.planner.game_context.tribunes[tribune_id]
         self.shift_capture = 140
         self.shift_approach = self.shift_capture + 150
         self.shift_step_back = self.shift_capture + 80
@@ -118,7 +118,7 @@ class CaptureTribuneAction(Action):
         logger.info(f"{self.name}: after_capture")
         await actuators.arms_hold2(self.planner)
         await asyncio.sleep(0.1)
-        self.game_context.tribunes_in_robot = 2
+        self.planner.game_context.tribunes_in_robot = 2
 
     async def before_step_back(self):
         logger.info(f"{self.name}: before_step_back")
@@ -127,7 +127,7 @@ class CaptureTribuneAction(Action):
         logger.info(f"{self.name}: after_step_back")
 
     def weight(self) -> float:
-        if not self.tribune.enabled or self.game_context.tribunes_in_robot != 0:
+        if not self.tribune.enabled or self.planner.game_context.tribunes_in_robot != 0:
             return 0
 
         return self.custom_weight
