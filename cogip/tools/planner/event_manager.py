@@ -102,7 +102,7 @@ class EventManager:
             while True:
                 await asyncio.sleep(0.2)
 
-                if not self.planner.game_context.playing:
+                if not self.planner.playing:
                     continue
 
                 now = datetime.now(UTC)
