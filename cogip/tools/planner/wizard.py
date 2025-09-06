@@ -7,7 +7,7 @@ from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.start_positions import StartPositionEnum
 from cogip.tools.planner.table import TableEnum
 from cogip.utils.asyncloop import AsyncLoop
-from .actions import Strategy, action_classes
+from .actions import StrategyEnum, action_classes
 from .camp import Camp
 
 if TYPE_CHECKING:
@@ -132,20 +132,20 @@ class GameWizard:
 
     async def request_strategy(self):
         choices: list[tuple[str, str, str]] = []  # list of (value, category, name). Name can be used for display.
-        for strategy in Strategy:
+        for strategy in StrategyEnum:
             split = re.findall(r"[A-Z][a-z]*|[a-z]+|[0-9]+", strategy.name)
             choices.append((strategy.name, split[0], " ".join(split)))
         message = {
             "name": "Game Wizard: Choose Strategy",
             "type": "choice_str",
             "choices": choices,
-            "value": Strategy(self.planner.shared_properties.strategy).name,
+            "value": StrategyEnum(self.planner.shared_properties.strategy).name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_strategy(self, message: dict[str, Any]):
-        self.game_strategy = Strategy[message["value"]].val
-        self.planner.shared_properties.strategy = Strategy.TestAlignBottomForBanner.val
+        self.game_strategy = StrategyEnum[message["value"]].val
+        self.planner.shared_properties.strategy = StrategyEnum.TestAlignBottomForBanner.val
         await self.planner.soft_reset()
 
     async def request_starter_for_calibration(self):
@@ -248,7 +248,7 @@ class GameWizard:
         self.planner.game_context.reset()
         self.planner.playing = False
         self.planner.shared_properties.strategy = self.game_strategy
-        self.planner.actions = action_classes.get(Strategy(self.game_strategy))(self.planner)
+        self.planner.actions = action_classes.get(StrategyEnum(self.game_strategy))(self.planner)
         await self.planner.sio_ns.emit("game_start")
         await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
         await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())
