@@ -7,7 +7,7 @@ from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.start_positions import StartPositionEnum
 from cogip.tools.planner.table import TableEnum
 from cogip.utils.asyncloop import AsyncLoop
-from .actions import StrategyEnum, action_classes
+from .actions import StrategyEnum, strategy_classes
 from .camp import Camp
 
 if TYPE_CHECKING:
@@ -248,7 +248,7 @@ class GameWizard:
         self.planner.game_context.reset()
         self.planner.playing = False
         self.planner.shared_properties.strategy = self.game_strategy
-        self.planner.actions = action_classes.get(StrategyEnum(self.game_strategy))(self.planner)
+        self.planner.strategy = strategy_classes.get(StrategyEnum(self.game_strategy))(self.planner)
         await self.planner.sio_ns.emit("game_start")
         await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
         await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())

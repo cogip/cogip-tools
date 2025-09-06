@@ -36,7 +36,7 @@ from cogip.models.artifacts import ConstructionArea, FixedObstacleID
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from . import actuators, cameras, logger, pose, sio_events
-from .actions import StrategyEnum, action, action_classes, actions
+from .actions import StrategyEnum, action, strategy, strategy_classes
 from .avoidance.avoidance import AvoidanceStrategy
 from .avoidance.process import avoidance_process
 from .camp import Camp
@@ -77,7 +77,7 @@ class Planner:
         scservos_baud_rate: int,
         disable_fixed_obstacles: bool,
         table: TableEnum,
-        strategy: StrategyEnum,
+        strategy_enum: StrategyEnum,
         start_position: StartPositionEnum,
         avoidance_strategy: AvoidanceStrategy,
         debug: bool,
@@ -107,7 +107,7 @@ class Planner:
             scservos_baud_rate: SC Servos baud rate (usually 921600 or 1000000)
             disable_fixed_obstacles: Disable fixed obstacles. Useful to work on Lidar obstacles and avoidance
             table: Default table on startup
-            strategy: Default strategy on startup
+            strategy_enum: Default strategy on startup
             start_position: Default start position on startup
             debug: enable debug messages
         """
@@ -152,7 +152,7 @@ class Planner:
         self.shared_properties.bypass_detector = bypass_detector
         self.shared_properties.disable_fixed_obstacles = disable_fixed_obstacles
         self.shared_properties.table = table.val
-        self.shared_properties.strategy = strategy.val
+        self.shared_properties.strategy = strategy_enum.val
         self.shared_properties.start_position = start_position.val
         self.shared_properties.avoidance_strategy = avoidance_strategy.val
 
@@ -166,7 +166,7 @@ class Planner:
         self.start_positions = StartPositions(self.shared_properties)
         self.process_manager = Manager()
         self.action: action.Action | None = None
-        self.actions = action_classes.get(self.shared_properties.strategy, actions.Actions)(self)
+        self.strategy = strategy_classes.get(self.shared_properties.strategy, strategy.Strategy)(self)
         self.obstacles_updater_loop = AsyncLoop(
             "Obstacles updater loop",
             obstacle_updater_interval,
@@ -347,14 +347,14 @@ class Planner:
 
     async def reset(self):
         """
-        Reset planner, context, robots and actions.
+        Reset planner, context, robots and strategy.
         """
         await self.stop()
         await self.start()
 
     async def soft_reset(self):
         """
-        Only reset context and actions.
+        Only reset context and strategy.
         """
         self.game_context.reset()
         self.playing = False
@@ -367,7 +367,7 @@ class Planner:
         self.shared_memory.avoidance_has_pose_order = False
         self.shared_memory.avoidance_has_new_pose_order = False
         self.flag_motor.off()
-        self.actions = action_classes.get(StrategyEnum(self.shared_properties.strategy), actions.Actions)(self)
+        self.strategy = strategy_classes.get(StrategyEnum(self.shared_properties.strategy), strategy.Strategy)(self)
         await self.set_pose_start(self.start_positions.get())
         self.pami_event.clear()
 
@@ -494,7 +494,7 @@ class Planner:
             await self.next_pose_in_action()
 
             # If no pose left in current action, get and set new action
-            if not self.pose_order and (new_action := self.actions.get_next_action()):
+            if not self.pose_order and (new_action := self.strategy.get_next_action()):
                 await self.set_action(new_action)
                 if not self.pose_order:
                     asyncio.create_task(self.set_pose_reached())
@@ -503,7 +503,7 @@ class Planner:
             traceback.print_exc()
             raise
 
-    async def set_action(self, action: "actions.Action"):
+    async def set_action(self, action: "action.Action"):
         """
         Set current action.
         """
@@ -519,10 +519,10 @@ class Planner:
         """
         if (current_action := self.action) and current_action.interruptable:
             logger.info("Planner: blocked")
-            if new_action := self.actions.get_next_action():
+            if new_action := self.strategy.get_next_action():
                 await self.set_action(new_action)
             await current_action.recycle()
-            self.actions.append(current_action)
+            self.strategy.append(current_action)
             if not self.pose_order:
                 asyncio.create_task(self.set_pose_reached())
 
@@ -776,9 +776,9 @@ class Planner:
         Send strategy wizard message.
         """
         choices: list[tuple[str, str, str]] = []  # list of (category, value, name). Name can be used for display.
-        for strategy in StrategyEnum:
-            split = re.findall(r"[A-Z][a-z]*|[a-z]+|[0-9]+", strategy.name)
-            choices.append((strategy.name, split[0], " ".join(split)))
+        for strategy_enum in StrategyEnum:
+            split = re.findall(r"[A-Z][a-z]*|[a-z]+|[0-9]+", strategy_enum.name)
+            choices.append((strategy_enum.name, split[0], " ".join(split)))
         await self.sio_ns.emit(
             "wizard",
             {
