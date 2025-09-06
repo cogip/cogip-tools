@@ -36,7 +36,7 @@ from cogip.models.artifacts import ConstructionArea, FixedObstacleID
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from . import actuators, cameras, logger, pose, sio_events
-from .actions import Strategy, action, action_classes, actions
+from .actions import StrategyEnum, action, action_classes, actions
 from .avoidance.avoidance import AvoidanceStrategy
 from .avoidance.process import avoidance_process
 from .camp import Camp
@@ -77,7 +77,7 @@ class Planner:
         scservos_baud_rate: int,
         disable_fixed_obstacles: bool,
         table: TableEnum,
-        strategy: Strategy,
+        strategy: StrategyEnum,
         start_position: StartPositionEnum,
         avoidance_strategy: AvoidanceStrategy,
         debug: bool,
@@ -367,7 +367,7 @@ class Planner:
         self.shared_memory.avoidance_has_pose_order = False
         self.shared_memory.avoidance_has_new_pose_order = False
         self.flag_motor.off()
-        self.actions = action_classes.get(Strategy(self.shared_properties.strategy), actions.Actions)(self)
+        self.actions = action_classes.get(StrategyEnum(self.shared_properties.strategy), actions.Actions)(self)
         await self.set_pose_start(self.start_positions.get())
         self.pami_event.clear()
 
@@ -397,9 +397,9 @@ class Planner:
     @property
     def default_controller(self) -> ControllerEnum:
         match self.shared_properties.strategy:
-            case Strategy.PidAngularSpeedTest:
+            case StrategyEnum.PidAngularSpeedTest:
                 return ControllerEnum.ANGULAR_SPEED_TEST
-            case Strategy.PidLinearSpeedTest:
+            case StrategyEnum.PidLinearSpeedTest:
                 return ControllerEnum.LINEAR_SPEED_TEST
             case _:
                 return ControllerEnum.QUADPID
@@ -480,7 +480,7 @@ class Planner:
             self.blocked_counter = 0
             self.pose_order = pose_order
 
-            if self.shared_properties.strategy in [Strategy.PidLinearSpeedTest, Strategy.PidAngularSpeedTest]:
+            if self.shared_properties.strategy in [StrategyEnum.PidLinearSpeedTest, StrategyEnum.PidAngularSpeedTest]:
                 await self.sio_ns.emit("pose_order", self.pose_order.path_pose.model_dump())
 
     async def next_pose(self):
@@ -624,7 +624,7 @@ class Planner:
                 f"{'Connected' if self.sio.connected else 'Not connected': <20}"
                 f"{'▶' if self.playing else '◼'}\n"
                 f"Camp: {self.camp.color.name}\n"
-                f"Strategy: {Strategy(self.shared_properties.strategy).name}\n"
+                f"Strategy: {StrategyEnum(self.shared_properties.strategy).name}\n"
                 f"Pose: {pose_current.x},{pose_current.y},{pose_current.O}\n"
                 f"Countdown: {self.game_context.countdown:.2f}"
             )
@@ -776,7 +776,7 @@ class Planner:
         Send strategy wizard message.
         """
         choices: list[tuple[str, str, str]] = []  # list of (category, value, name). Name can be used for display.
-        for strategy in Strategy:
+        for strategy in StrategyEnum:
             split = re.findall(r"[A-Z][a-z]*|[a-z]+|[0-9]+", strategy.name)
             choices.append((strategy.name, split[0], " ".join(split)))
         await self.sio_ns.emit(
@@ -785,7 +785,7 @@ class Planner:
                 "name": "Choose Strategy",
                 "type": "choice_str",
                 "choices": choices,
-                "value": Strategy(self.shared_properties.strategy).name,
+                "value": StrategyEnum(self.shared_properties.strategy).name,
             },
         )
 
@@ -864,7 +864,7 @@ class Planner:
                 await self.soft_reset()
                 logger.info(f"Wizard: New camp: {self.camp.color.name}")
             case "Choose Strategy":
-                new_strategy = Strategy[value]
+                new_strategy = StrategyEnum[value]
                 if self.shared_properties.strategy == new_strategy:
                     return
                 self.shared_properties.strategy = new_strategy.val

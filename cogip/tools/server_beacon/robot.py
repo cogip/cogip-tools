@@ -100,16 +100,16 @@ class Robot:
         async def pami_reset():
             for robot_id, robot in self.server.robots.items():
                 if robot.sio.connected:
-                    strategy: actions.Strategy | None = None
+                    strategy: actions.StrategyEnum | None = None
                     match robot_id:
                         case 2:
-                            strategy = actions.Strategy.Pami2
+                            strategy = actions.StrategyEnum.Pami2
                         case 3:
-                            strategy = actions.Strategy.Pami3
+                            strategy = actions.StrategyEnum.Pami3
                         case 4:
-                            strategy = actions.Strategy.Pami4
+                            strategy = actions.StrategyEnum.Pami4
                         case 5:
-                            strategy = actions.Strategy.Pami5
+                            strategy = actions.StrategyEnum.Pami5
 
                     if strategy:
                         await robot.sio.emit(

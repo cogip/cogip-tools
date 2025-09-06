@@ -8,7 +8,7 @@ import typer
 from watchfiles import PythonFilter, run_process
 
 from . import logger
-from .actions import Strategy
+from .actions import StrategyEnum
 from .avoidance.avoidance import AvoidanceStrategy
 from .planner import Planner
 from .properties import properties_schema
@@ -218,14 +218,14 @@ def main_opt(
         ),
     ] = TableEnum.Game.name,
     strategy: Annotated[
-        Strategy,
+        StrategyEnum,
         typer.Option(
             "-s",
             "--strategy",
             help="Default strategy on startup",
             envvar="PLANNER_STRATEGY",
         ),
-    ] = Strategy.TestVisitStartingAreas.name,
+    ] = StrategyEnum.TestVisitStartingAreas.name,
     start_position: Annotated[
         StartPositionEnum,
         typer.Option(
