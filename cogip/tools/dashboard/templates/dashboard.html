@@ -29,7 +29,7 @@
   {% if robot_id == 0 %}
   <ul class="flex flex-wrap border-b border-gray-200" role="tablist">
     <li class="mr-2" role="presentation">
-      <button class="inline-block px-4 py-2 text-red-cogip border-b-2 border-red-cogip active focus:outline-none"
+      <button class="inline-block px-4 py-2 text-red-cogip border-b-2 border-red-cogip active focus:outline-hidden"
         id="beacon-tab" data-target="#beacon" type="button" role="tab" aria-controls="beacon" aria-selected="true">
         Beacon
       </button>
@@ -111,7 +111,7 @@
     <div class="bg-zinc-900 rounded-lg shadow-lg max-w-4xl w-full">
       <div class="p-4 m-auto relative" id="displayFlux">
         <button type="button"
-          class="absolute top-4 right-4 bg-transparent text-grey-color text-2xl leading-none hover:text-gray-400 focus:outline-none"
+          class="absolute top-4 right-4 bg-transparent text-grey-color text-2xl leading-none hover:text-gray-400 focus:outline-hidden"
           aria-label="Close" onclick="closeModal('cameraModal')">&times;</button>
       </div>
     </div>
@@ -142,7 +142,7 @@
         <h5 class="text-lg font-medium text-grey-color " id="configModalTitle"></h5>
         <button type="button" class="text-grey-color text-2xl leading-none hover:text-gray-400" aria-label="Close" onclick="closeModal('configModal')">&times;</button>
       </div>
-      <div id="configModalBody" class="m-4 text-center overflow-y-auto max-h-[22rem]">
+      <div id="configModalBody" class="m-4 text-center overflow-y-auto max-h-88">
       </div>
     </div>
   </div>

@@ -37,5 +37,4 @@ module.exports = {
     "./cogip/tools/**/templates/*.html",
   ],
   safelist: ["bg-camp-1", "bg-camp-2", "border-camp-1", "border-camp-2"],
-  plugins: ["postcss-import", "tailwindcss", "autoprefixer"],
 };
