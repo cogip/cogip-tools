@@ -28,10 +28,14 @@ class CaptureTribuneAction(Action):
         self.custom_weight = weight
         super().__init__(f"CaptureTribune {tribune_id.name}", planner, strategy)
         self.before_action_func = self.before_action
-        self.tribune = self.planner.game_context.tribunes[tribune_id]
+        self.tribune_id = tribune_id
         self.shift_capture = 140
         self.shift_approach = self.shift_capture + 150
         self.shift_step_back = self.shift_capture + 80
+
+    @property
+    def tribune(self) -> artifacts.Tribune:
+        return self.planner.game_context.tribunes[self.tribune_id]
 
     async def recycle(self):
         self.tribune.enabled = True
@@ -73,15 +77,15 @@ class CaptureTribuneAction(Action):
 
         if (
             (
-                self.tribune.id == artifacts.TribuneID.LocalCenter
+                self.tribune_id == artifacts.TribuneID.LocalCenter
                 and self.planner.shared_properties.table == TableEnum.Training
             )
-            or self.tribune.id == artifacts.TribuneID.LocalTop
-            or self.tribune.id == artifacts.TribuneID.LocalTopSide
-            or self.tribune.id == artifacts.TribuneID.LocalBottomSide
-            or self.tribune.id == artifacts.TribuneID.OppositeTop
-            or self.tribune.id == artifacts.TribuneID.OppositeTopSide
-            or self.tribune.id == artifacts.TribuneID.OppositeBottomSide
+            or self.tribune_id == artifacts.TribuneID.LocalTop
+            or self.tribune_id == artifacts.TribuneID.LocalTopSide
+            or self.tribune_id == artifacts.TribuneID.LocalBottomSide
+            or self.tribune_id == artifacts.TribuneID.OppositeTop
+            or self.tribune_id == artifacts.TribuneID.OppositeTopSide
+            or self.tribune_id == artifacts.TribuneID.OppositeBottomSide
         ):
             # Step back
             pose = Pose(

@@ -1,7 +1,7 @@
 import asyncio
 from typing import TYPE_CHECKING
 
-from cogip.models.artifacts import ConstructionAreaID, TribuneID
+from cogip.models.artifacts import ConstructionArea, ConstructionAreaID, TribuneID
 from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
@@ -28,10 +28,14 @@ class BuildTribuneX1Action(Action):
         self.custom_weight = weight
         super().__init__(f"BuildTribuneX1 {construction_area_id.name}", planner, strategy)
         self.before_action_func = self.before_action
-        self.construction_area = self.planner.game_context.construction_areas[construction_area_id]
+        self.construction_area_id = construction_area_id
         self.shift_build = 180
         self.shift_approach = self.shift_build + 150
         self.shift_step_back = self.shift_approach
+
+    @property
+    def construction_area(self) -> ConstructionArea:
+        return self.planner.game_context.construction_areas[self.construction_area_id]
 
     async def recycle(self):
         self.recycled = True
