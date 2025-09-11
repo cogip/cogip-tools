@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING
 
 from cogip.tools.planner.actions.action_align import AlignBottomForBannerAction
-from cogip.tools.planner.actions.actions import Actions
+from cogip.tools.planner.actions.strategy import Strategy
 
 if TYPE_CHECKING:
     from ..planner import Planner
 
 
-class TestAlignBottomForBannerActions(Actions):
+class TestAlignBottomForBannerStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(AlignBottomForBannerAction(planner, self))

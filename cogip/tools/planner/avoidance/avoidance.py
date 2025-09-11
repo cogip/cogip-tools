@@ -19,7 +19,7 @@ class Avoidance:
 
     def check_recompute(self, pose_current: models.PathPose, goal: models.PathPose) -> bool:
         match self.shared_properties.avoidance_strategy:
-            case AvoidanceStrategy.AvoidanceCpp.val:
+            case AvoidanceStrategy.AvoidanceCpp:
                 return self.cpp_avoidance.check_recompute(
                     SharedCoord(x=pose_current.x, y=pose_current.y),
                     SharedCoord(x=goal.x, y=goal.y),
@@ -33,7 +33,7 @@ class Avoidance:
         goal: models.PathPose,
     ) -> list[models.PathPose]:
         match self.shared_properties.avoidance_strategy:
-            case AvoidanceStrategy.Disabled.val:
+            case AvoidanceStrategy.Disabled:
                 path = [pose_current.model_copy(), goal.model_copy()]
             case _:
                 path = []
@@ -60,6 +60,6 @@ class Avoidance:
                     path.append(goal.model_copy())
                 else:
                     path = []
-                if self.shared_properties.avoidance_strategy == AvoidanceStrategy.StopAndGo.val and len(path) > 2:
+                if self.shared_properties.avoidance_strategy == AvoidanceStrategy.StopAndGo and len(path) > 2:
                     path = []
         return path

@@ -8,13 +8,14 @@ from cogip.tools.planner.actions.action_build_tribune_x2 import BuildTribuneX2Ac
 from cogip.tools.planner.actions.action_build_tribune_x3 import BuildTribuneX3Action
 from cogip.tools.planner.actions.action_capture_tribune import CaptureTribuneAction
 from cogip.tools.planner.actions.action_parking import ParkingAction
-from cogip.tools.planner.actions.actions import Actions, WaitAction
+from cogip.tools.planner.actions.action_wait import WaitAction
+from cogip.tools.planner.actions.strategy import Strategy
 
 if TYPE_CHECKING:
     from ..planner import Planner
 
 
-class TestTribune2x3Actions(Actions):
+class TestTribune2x3Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
 
@@ -33,7 +34,7 @@ class TestTribune2x3Actions(Actions):
 
         self.append(WaitAction(planner, self))
 
-        parking = self.game_context.fixed_obstacles[FixedObstacleID.Backstage]
+        parking = self.planner.game_context.fixed_obstacles[FixedObstacleID.Backstage]
 
         self.append(
             ParkingAction(

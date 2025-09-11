@@ -7,14 +7,15 @@ from cogip.tools.planner.actions.action_build_tribune_x2 import BuildTribuneX2Ac
 from cogip.tools.planner.actions.action_capture_tribune import CaptureTribuneAction
 from cogip.tools.planner.actions.action_drop_banner import DropBannerAction
 from cogip.tools.planner.actions.action_parking import ParkingAction
-from cogip.tools.planner.actions.actions import Actions, WaitAction
+from cogip.tools.planner.actions.action_wait import WaitAction
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.table import TableEnum
 
 if TYPE_CHECKING:
     from ..planner import Planner
 
 
-class ApprovalActions(Actions):
+class ApprovalStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
 
@@ -35,7 +36,7 @@ class ApprovalActions(Actions):
         self.append(BuildTribuneX1Action(planner, self, ConstructionAreaID.LocalBottomLarge3, 600_000.0))
 
         self.append(WaitAction(planner, self))
-        if planner.shared_properties.table == TableEnum.Training.val:
+        if planner.shared_properties.table == TableEnum.Training:
             self.append(ParkingAction(planner, self, models.Pose(x=-500, y=-750, O=90)))
         else:
             self.append(

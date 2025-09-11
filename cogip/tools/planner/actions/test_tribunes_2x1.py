@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING
 from cogip.models.artifacts import ConstructionAreaID, TribuneID
 from cogip.tools.planner.actions.action_build_tribune_x1 import BuildTribuneX1Action
 from cogip.tools.planner.actions.action_capture_tribune import CaptureTribuneAction
-from cogip.tools.planner.actions.actions import Actions
+from cogip.tools.planner.actions.strategy import Strategy
 
 if TYPE_CHECKING:
     from ..planner import Planner
 
 
-class TestTribune2x1Actions(Actions):
+class TestTribune2x1Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(CaptureTribuneAction(planner, self, TribuneID.LocalBottom, 2_000_000.0))

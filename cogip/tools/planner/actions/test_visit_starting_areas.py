@@ -1,9 +1,10 @@
 from functools import partial
 from typing import TYPE_CHECKING
 
-from cogip.tools.planner.actions.actions import Action, Actions
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.pose import Pose
-from cogip.tools.planner.positions import StartPosition
+from cogip.tools.planner.start_positions import StartPositionEnum
 
 if TYPE_CHECKING:
     from ..planner import Planner
@@ -14,19 +15,19 @@ class VisitStartingAreasAction(Action):
     Action that goes from the starting position to the next one.
     """
 
-    def __init__(self, planner: "Planner", actions: Actions):
-        super().__init__("VisitStartingAreas action", planner, actions)
+    def __init__(self, planner: "Planner", strategy: Strategy):
+        super().__init__("VisitStartingAreas action", planner, strategy)
         self.before_action_func = self.compute_poses
 
     async def compute_poses(self) -> None:
-        start_positions = [p.name for p in StartPosition if self.game_context.is_valid_start_position(p)]
+        start_positions = [p.name for p in StartPositionEnum if self.planner.start_positions.is_valid(p)]
         start_positions_count = len(start_positions)
         default_start_position_index = 0
         for i in range(start_positions_count):
-            start_position = StartPosition((i + 1) % start_positions_count + 1)
-            if start_position.val == self.planner.shared_properties.start_position:
+            start_position = StartPositionEnum((i + 1) % start_positions_count + 1)
+            if start_position == self.planner.shared_properties.start_position:
                 default_start_position_index = i
-            pose = self.game_context.start_poses[start_position]
+            pose = self.planner.start_positions.get(start_position)
             new_pose = Pose(x=pose.x, y=pose.y, O=pose.O, max_speed_linear=66, max_speed_angular=66)
             new_pose.after_pose_func = partial(self.append_pose, new_pose)
             self.poses.append(new_pose)
@@ -42,7 +43,7 @@ class VisitStartingAreasAction(Action):
         return 1000000.0
 
 
-class TestVisitStartingAreasActions(Actions):
+class TestVisitStartingAreasStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(VisitStartingAreasAction(planner, self))

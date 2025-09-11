@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum
 
 
@@ -17,3 +18,11 @@ class ArgEnum(Enum):
     @property
     def value(self):
         return self.name
+
+    def __eq__(self, other: ArgEnum | int | str) -> bool:
+        if isinstance(other, int | str):
+            return self.val == other
+        return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(self.val)

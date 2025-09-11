@@ -1,6 +1,4 @@
-import os
-
-from cogip.cpp.libraries.shared_memory import SharedMemory
+from cogip.cpp.libraries.shared_memory import SharedProperties
 from cogip.models.actuators import (
     BoolSensor,
     BoolSensorEnum,
@@ -18,126 +16,66 @@ from cogip.models.artifacts import (
     construction_area_positions,
     tribune_positions,
 )
-from cogip.tools.copilot.controller import ControllerEnum
-from cogip.utils.singleton import Singleton
-from . import actions
-from .camp import Camp
-from .pose import AdaptedPose, Pose
-from .positions import StartPosition
-from .table import Table, TableEnum, tables
+from .pose import AdaptedPose
+from .table import TableEnum
 
 
-class GameContext(metaclass=Singleton):
+class GameContext:
     """
     A class recording the current game context.
     """
 
-    def __init__(self):
-        self.robot_id = int(os.getenv("ROBOT_ID"))
-        self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
-        self.shared_properties = self.shared_memory.get_properties()
-        self.game_duration: int = 100
-        self.minimum_score: int = 0
-        self.camp = Camp()
-        self.reset()
-
-        self.tribunes_in_robot = 0
-
-    @property
-    def table(self) -> Table:
-        """
-        Selected table.
-        """
-        return tables[TableEnum(self.shared_properties.table)]
-
-    @property
-    def start_pose(self) -> Pose:
-        """
-        Start pose.
-        """
-        return self.start_poses[StartPosition(self.shared_properties.start_position)]
+    def __init__(self, shared_properties: SharedProperties, initialize: bool = True):
+        self.shared_properties = shared_properties
+        if initialize:
+            self.minimum_score: int = 0
+            self.game_duration: int = 100
+            self.score = self.minimum_score
+            self.tribunes_in_robot = 0
+            self.construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
+            self.opponent_construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
+            self.tribunes: dict[TribuneID, Tribune] = {}
+            self.fixed_obstacles: dict[FixedObstacleID, FixedObstacle] = {}
+            self.positional_actuator_states: dict[PositionalActuatorEnum, PositionalActuator] = {}
+            self.bool_sensor_states: dict[BoolSensorEnum, BoolSensor] = {}
+            self.emulated_actuator_states: set[PositionalActuatorEnum] = {}
+            self.reset()
 
     def reset(self):
         """
         Reset the context.
         """
-        self.playing = False
         self.score = self.minimum_score
         self.countdown = self.game_duration
         self.last_countdown = self.game_duration
         self.tribunes_in_robot = 0
-        self.create_start_poses()
         self.create_artifacts()
         self.create_fixed_obstacles()
         self.create_actuators_states()
 
-    @property
-    def default_controller(self) -> ControllerEnum:
-        match self.shared_properties.strategy:
-            case actions.Strategy.PidAngularSpeedTest.val:
-                return ControllerEnum.ANGULAR_SPEED_TEST
-            case actions.Strategy.PidLinearSpeedTest.val:
-                return ControllerEnum.LINEAR_SPEED_TEST
-            case _:
-                return ControllerEnum.QUADPID
-
-    def create_start_poses(self):
-        self.start_poses = {
-            StartPosition.Bottom: AdaptedPose(
-                x=-550 - self.shared_properties.robot_length / 2,
-                y=-100 - self.shared_properties.robot_width / 2,
-                O=0,
-            ),
-            StartPosition.Top: AdaptedPose(
-                x=550 + self.shared_properties.robot_length / 2,
-                y=-900 - self.shared_properties.robot_width / 2,
-                O=180,
-            ),
-            StartPosition.Opposite: AdaptedPose(
-                x=-350 + self.shared_properties.robot_width / 2,
-                y=1050 + self.shared_properties.robot_length / 2,
-                O=-90,
-            ),
-            StartPosition.PAMI2: AdaptedPose(
-                x=550 + 100 * 0.5,
-                y=-1350 - self.shared_properties.robot_length / 2,
-                O=90,
-            ),
-            StartPosition.PAMI3: AdaptedPose(
-                x=550 + 100 * 1.5,
-                y=-1350 - self.shared_properties.robot_length / 2,
-                O=90,
-            ),
-            StartPosition.PAMI4: AdaptedPose(
-                x=550 + 100 * 2.5,
-                y=-1350 - self.shared_properties.robot_length / 2,
-                O=90,
-            ),
-            StartPosition.PAMI5: AdaptedPose(
-                x=550 + 100 * 3.5,
-                y=-1350 - self.shared_properties.robot_length / 2,
-                O=90,
-            ),
-        }
-
-        # Adapt poses for training table
-        if self.shared_properties.table == TableEnum.Training.val:
-            self.start_poses[StartPosition.Top].x -= 1000
-            self.start_poses[StartPosition.PAMI2].x -= 1000
-            self.start_poses[StartPosition.PAMI3].x -= 1000
-            self.start_poses[StartPosition.PAMI4].x -= 1000
-            self.start_poses[StartPosition.PAMI5].x -= 1000
-
-    def is_valid_start_position(self, position: StartPosition) -> bool:
-        if self.shared_properties.table == TableEnum.Training.val and position == StartPosition.Opposite:
-            return False
-        if self.robot_id == 1 and position not in [
-            StartPosition.Top,
-            StartPosition.Bottom,
-            StartPosition.Opposite,
-        ]:
-            return False
-        return True
+    def deepcopy(self):
+        """
+        Return a deep copy of the GameContext instance.
+        """
+        new_ctx = GameContext(self.shared_properties, initialize=False)
+        new_ctx.game_duration = self.game_duration
+        new_ctx.minimum_score = self.minimum_score
+        new_ctx.score = self.score
+        new_ctx.countdown = self.countdown
+        new_ctx.last_countdown = self.last_countdown
+        new_ctx.tribunes_in_robot = self.tribunes_in_robot
+        new_ctx.construction_areas = {k: v.model_copy() for k, v in self.construction_areas.items()}
+        new_ctx.tribunes = {k: v.model_copy() for k, v in self.tribunes.items()}
+        new_ctx.fixed_obstacles = {k: v.model_copy() for k, v in self.fixed_obstacles.items()}
+        # Do not copy artifacts that are not used in actions but keep the code in comments to no forget
+        # that this copy function is only a partial copy.
+        # new_ctx.opponent_construction_areas = {
+        #     k: v.model_copy(deep=True) for k, v in self.opponent_construction_areas.items()
+        # }
+        # new_ctx.positional_actuator_states = {
+        #     k: v.model_copy(deep=True) for k, v in self.positional_actuator_states.items()
+        # }
+        return new_ctx
 
     def create_artifacts(self):
         # Positions are related to the default camp blue.
@@ -158,7 +96,7 @@ class GameContext(metaclass=Singleton):
 
         self.opponent_construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled = False
         self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
-        if self.shared_properties.table == TableEnum.Training.val:
+        if self.shared_properties.table == TableEnum.Training:
             self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge1].enabled = False
             self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge2].enabled = False
             self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
@@ -168,7 +106,7 @@ class GameContext(metaclass=Singleton):
             adapted_pose = AdaptedPose(**tribune.model_dump())
             self.tribunes[id] = Tribune(**adapted_pose.model_dump(), id=id)
 
-        if self.shared_properties.table == TableEnum.Training.val:
+        if self.shared_properties.table == TableEnum.Training:
             self.tribunes[TribuneID.LocalTop] = self.tribunes[TribuneID.LocalTopTraining].model_copy(
                 update={"id": TribuneID.LocalTop}
             )
@@ -230,7 +168,7 @@ class GameContext(metaclass=Singleton):
         )
 
         # PAMIs starting area for robot ID 1, the main robot.
-        if self.robot_id == 1:
+        if self.shared_properties.robot_id == 1:
             self.fixed_obstacles[FixedObstacleID.PamiStartArea] = FixedObstacle(
                 **AdaptedPose(x=825, y=-1425).model_dump(),
                 length=150,
@@ -254,12 +192,16 @@ class GameContext(metaclass=Singleton):
                 id=FixedObstacleID.OpponentPitArea,
             )
 
-        if self.robot_id == 1 and self.shared_properties.table == TableEnum.Training.val or self.robot_id == 5:
+        if (
+            self.shared_properties.robot_id == 1
+            and self.shared_properties.table == TableEnum.Training
+            or self.shared_properties.robot_id == 5
+        ):
             self.fixed_obstacles[FixedObstacleID.Ramp].enabled = False
             self.fixed_obstacles[FixedObstacleID.Scene].enabled = False
             self.fixed_obstacles[FixedObstacleID.Pami5Path].enabled = False
 
-        if self.shared_properties.table == TableEnum.Training.val:
+        if self.shared_properties.table == TableEnum.Training:
             for obstacle in self.fixed_obstacles.values():
                 obstacle.x -= 1000
 

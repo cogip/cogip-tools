@@ -4,12 +4,11 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
-from cogip.tools.planner.positions import StartPosition
+from cogip.tools.planner.start_positions import StartPositionEnum
 from cogip.tools.planner.table import TableEnum
 from cogip.utils.asyncloop import AsyncLoop
-from .actions import Strategy, action_classes
+from .actions import StrategyEnum, strategy_classes
 from .camp import Camp
-from .context import GameContext
 
 if TYPE_CHECKING:
     from cogip.tools.planner.planner import Planner
@@ -18,7 +17,6 @@ if TYPE_CHECKING:
 class GameWizard:
     def __init__(self, planner: "Planner"):
         self.planner = planner
-        self.game_context = GameContext()
         self.step = 0
         self.game_strategy = self.planner.shared_properties.strategy
         self.waiting_starter_pressed_loop = AsyncLoop(
@@ -93,13 +91,13 @@ class GameWizard:
         message = {
             "name": "Game Wizard: Choose Camp",
             "type": "camp",
-            "value": self.game_context.camp.color.name,
+            "value": self.planner.camp.color.name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_camp(self, message: dict[str, Any]):
         value = message["value"]
-        self.game_context.camp.color = Camp.Colors[value]
+        self.planner.camp.color = Camp.Colors[value]
         await self.planner.soft_reset()
         await self.planner.sio_ns.emit("pami_camp", value)
 
@@ -107,16 +105,16 @@ class GameWizard:
         message = {
             "name": "Game Wizard: Choose Start Position",
             "type": "choice_integer",
-            "choices": [p.name for p in StartPosition if self.game_context.is_valid_start_position(p)],
-            "value": StartPosition(self.planner.shared_properties.start_position).name,
+            "choices": [p.name for p in StartPositionEnum if self.planner.start_positions.is_valid(p)],
+            "value": StartPositionEnum(self.planner.shared_properties.start_position).name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_start_pose(self, message: dict[str, Any]):
         value = message["value"]
-        start_position = StartPosition[value]
+        start_position = StartPositionEnum[value]
         self.planner.shared_properties.start_position = start_position.val
-        await self.planner.set_pose_start(self.game_context.start_pose.pose)
+        await self.planner.set_pose_start(self.planner.start_positions.get())
 
     async def request_avoidance(self):
         message = {
@@ -134,20 +132,20 @@ class GameWizard:
 
     async def request_strategy(self):
         choices: list[tuple[str, str, str]] = []  # list of (value, category, name). Name can be used for display.
-        for strategy in Strategy:
+        for strategy in StrategyEnum:
             split = re.findall(r"[A-Z][a-z]*|[a-z]+|[0-9]+", strategy.name)
             choices.append((strategy.name, split[0], " ".join(split)))
         message = {
             "name": "Game Wizard: Choose Strategy",
             "type": "choice_str",
             "choices": choices,
-            "value": Strategy(self.planner.shared_properties.strategy).name,
+            "value": StrategyEnum(self.planner.shared_properties.strategy).name,
         }
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_strategy(self, message: dict[str, Any]):
-        self.game_strategy = Strategy[message["value"]].val
-        self.planner.shared_properties.strategy = Strategy.TestAlignBottomForBanner.val
+        self.game_strategy = StrategyEnum[message["value"]].val
+        self.planner.shared_properties.strategy = StrategyEnum.TestAlignBottomForBanner.val
         await self.planner.soft_reset()
 
     async def request_starter_for_calibration(self):
@@ -233,10 +231,10 @@ class GameWizard:
         # Make sure no actions are executed during/after calibration by setting the countdown start timestamp
         # far enough in the past (now - game_duration - a margin 100 seconds), so the countdown will always be negative.
         self.planner.countdown_start_timestamp = datetime.now(UTC) - timedelta(
-            seconds=self.game_context.game_duration + 100
+            seconds=self.planner.game_context.game_duration + 100
         )
-        self.game_context.last_countdown = self.game_context.countdown = -100
-        self.game_context.playing = True
+        self.planner.game_context.last_countdown = self.planner.game_context.countdown = -100
+        self.planner.playing = True
         asyncio.create_task(self.planner.set_pose_reached())
         await self.next()
 
@@ -247,9 +245,10 @@ class GameWizard:
         self.waiting_start_loop.exit = True
         await self.waiting_start_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
-        self.game_context.reset()
+        self.planner.game_context.reset()
+        self.planner.playing = False
         self.planner.shared_properties.strategy = self.game_strategy
-        self.planner.actions = action_classes.get(Strategy(self.game_strategy))(self.planner)
+        self.planner.strategy = strategy_classes.get(StrategyEnum(self.game_strategy))(self.planner)
         await self.planner.sio_ns.emit("game_start")
         await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
         await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())

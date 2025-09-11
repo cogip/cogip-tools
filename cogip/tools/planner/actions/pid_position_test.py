@@ -2,7 +2,8 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 from cogip.models import models
-from cogip.tools.planner.actions.actions import Action, Actions
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.pose import Pose
 
 if TYPE_CHECKING:
@@ -18,8 +19,8 @@ class LinearPositionTestAction(Action):
     Do it in loop.
     """
 
-    def __init__(self, planner: "Planner", actions: Actions):
-        super().__init__("LinearPositionTest action", planner, actions)
+    def __init__(self, planner: "Planner", strategy: Strategy):
+        super().__init__("LinearPositionTest action", planner, strategy)
         self.distance = 750
         self.linear_speed = 66
         self.angular_speed = 66
@@ -52,7 +53,7 @@ class LinearPositionTestAction(Action):
         return 1000000.0
 
 
-class PidLinearPositionTestActions(Actions):
+class PidLinearPositionTestStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(LinearPositionTestAction(planner, self))
@@ -67,8 +68,8 @@ class AngularPositionTestAction(Action):
     Do it in loop.
     """
 
-    def __init__(self, planner: "Planner", actions: Actions):
-        super().__init__("AngularPositionTest action", planner, actions)
+    def __init__(self, planner: "Planner", strategy: Strategy):
+        super().__init__("AngularPositionTest action", planner, strategy)
         self.angular_distance = 180
         self.linear_speed = 66
         self.angular_speed = 66
@@ -101,7 +102,7 @@ class AngularPositionTestAction(Action):
         return 1000000.0
 
 
-class PidAngularPositionTestActions(Actions):
+class PidAngularPositionTestStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(AngularPositionTestAction(planner, self))
