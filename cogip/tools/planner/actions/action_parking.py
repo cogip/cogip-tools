@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from cogip import models
 from cogip.models.artifacts import FixedObstacleID
-from cogip.tools.planner import actuators, logger
+from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.pose import AdaptedPose
@@ -37,7 +37,7 @@ class ParkingAction(Action):
         return 9999000.0
 
     async def before_pose(self):
-        logger.info(f"{self.name}: before_pose - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
+        self.logger.info(f"{self.name}: before_pose - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
         self.planner.pose_order = None
         await self.planner.sio_ns.emit("brake")
         if self.planner.shared_properties.table == TableEnum.Game:
@@ -61,7 +61,7 @@ class ParkingAction(Action):
         await actuators.lift_140(self.planner)
 
     async def after_pose(self):
-        logger.info(f"{self.name}: after_pose")
+        self.logger.info(f"{self.name}: after_pose")
 
     async def after_action(self):
         self.strategy.clear()

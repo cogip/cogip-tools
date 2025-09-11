@@ -2,7 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models.artifacts import ConstructionAreaID, TribuneID
-from cogip.tools.planner import actuators, logger
+from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose
@@ -37,7 +37,9 @@ class BuildTribuneX1Action(Action):
         self.recycled = True
 
     async def before_action(self):
-        logger.info(f"{self.name}: before_action - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
+        self.logger.info(
+            f"{self.name}: before_action - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}"
+        )
         self.start_pose = self.pose_current
 
         # Approach
@@ -65,7 +67,7 @@ class BuildTribuneX1Action(Action):
             )
             self.poses.append(approach_pose)
         else:
-            logger.info(f"{self.name}: skip approach (diff = {diff})")
+            self.logger.info(f"{self.name}: skip approach (diff = {diff})")
             await self.before_approach()
             await self.after_approach()
 
@@ -101,13 +103,13 @@ class BuildTribuneX1Action(Action):
         self.poses.append(step_back_pose)
 
     async def before_approach(self):
-        logger.info(f"{self.name}: before_approach")
+        self.logger.info(f"{self.name}: before_approach")
 
     async def after_approach(self):
-        logger.info(f"{self.name}: after_approach")
+        self.logger.info(f"{self.name}: after_approach")
 
     async def after_build(self):
-        logger.info(f"{self.name}: after_build - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
+        self.logger.info(f"{self.name}: after_build - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
         if self.planner.game_context.tribunes_in_robot == 2:
             # await actuators.tribune_spread(self.planner)
             await actuators.arm_left_side(self.planner, 1500)
@@ -150,10 +152,12 @@ class BuildTribuneX1Action(Action):
         self.construction_area.tribune_level += 1
 
     async def before_step_back(self):
-        logger.info(f"{self.name}: before_step_back")
+        self.logger.info(f"{self.name}: before_step_back")
 
     async def after_step_back(self):
-        logger.info(f"{self.name}: after_step_back - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
+        self.logger.info(
+            f"{self.name}: after_step_back - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}"
+        )
         self.construction_area.enabled = True
         if self.planner.game_context.tribunes_in_robot == 1:
             await asyncio.gather(

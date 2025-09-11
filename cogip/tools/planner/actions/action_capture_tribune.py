@@ -2,7 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models import artifacts
-from cogip.tools.planner import actuators, logger
+from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose
@@ -100,14 +100,14 @@ class CaptureTribuneAction(Action):
             self.poses.append(pose)
 
     async def before_approach(self):
-        logger.info(f"{self.name}: before_approach")
+        self.logger.info(f"{self.name}: before_approach")
         await actuators.arms_close(self.planner)
 
     async def after_approach(self):
-        logger.info(f"{self.name}: after_approach")
+        self.logger.info(f"{self.name}: after_approach")
 
     async def before_capture(self):
-        logger.info(f"{self.name}: before_capture")
+        self.logger.info(f"{self.name}: before_capture")
         self.tribune.enabled = False
         await actuators.lift_0(self.planner)
         await asyncio.gather(
@@ -117,16 +117,16 @@ class CaptureTribuneAction(Action):
         await asyncio.sleep(0.2)  # Make sure the obstacle is removed from avoidance
 
     async def after_capture(self):
-        logger.info(f"{self.name}: after_capture")
+        self.logger.info(f"{self.name}: after_capture")
         await actuators.arms_hold2(self.planner)
         await asyncio.sleep(0.1)
         self.planner.game_context.tribunes_in_robot = 2
 
     async def before_step_back(self):
-        logger.info(f"{self.name}: before_step_back")
+        self.logger.info(f"{self.name}: before_step_back")
 
     async def after_step_back(self):
-        logger.info(f"{self.name}: after_step_back")
+        self.logger.info(f"{self.name}: after_step_back")
 
     def weight(self) -> float:
         if not self.tribune.enabled or self.planner.game_context.tribunes_in_robot != 0:
