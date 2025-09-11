@@ -2,7 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models.artifacts import ConstructionAreaID, TribuneID
-from cogip.tools.planner import actuators, logger
+from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose
@@ -41,11 +41,13 @@ class BuildTribuneX3Action(Action):
         self.recycled = True
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
-        logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
+        self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
-        logger.info(f"{self.name}: before_action - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
+        self.logger.info(
+            f"{self.name}: before_action - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}"
+        )
         self.avoidance_backup = AvoidanceStrategy(self.planner.shared_properties.avoidance_strategy)
         self.start_pose = self.pose_current
 
@@ -144,18 +146,20 @@ class BuildTribuneX3Action(Action):
         self.poses.append(step_back_x3_pose)
 
     async def before_approach_x2(self):
-        logger.info(f"{self.name}: before_approach_x2")
+        self.logger.info(f"{self.name}: before_approach_x2")
 
     async def after_approach_x2(self):
-        logger.info(f"{self.name}: after_approach_x2")
+        self.logger.info(f"{self.name}: after_approach_x2")
         self.construction_area.enabled = False
 
     async def before_build_x2(self):
-        logger.info(f"{self.name}: before_build_x2")
+        self.logger.info(f"{self.name}: before_build_x2")
         self.set_avoidance(AvoidanceStrategy.Disabled)
 
     async def after_build_x2(self):
-        logger.info(f"{self.name}: after_build_x2 - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
+        self.logger.info(
+            f"{self.name}: after_build_x2 - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}"
+        )
         await actuators.lift_5(self.planner)
         await asyncio.sleep(0.2)
 
@@ -202,15 +206,15 @@ class BuildTribuneX3Action(Action):
         await asyncio.sleep(0.5)
 
     async def before_step_back_x2(self):
-        logger.info(f"{self.name}: before_step_back_x2")
+        self.logger.info(f"{self.name}: before_step_back_x2")
 
     async def after_step_back_x2(self):
-        logger.info(f"{self.name}: after_step_back_x2")
+        self.logger.info(f"{self.name}: after_step_back_x2")
         await actuators.lift_0(self.planner)
         await asyncio.sleep(1)
 
     async def before_approach_x3(self):
-        logger.info(f"{self.name}: before_approach_x3")
+        self.logger.info(f"{self.name}: before_approach_x3")
         await actuators.arm_right_front(self.planner)
         await actuators.arm_left_front(self.planner)
         await actuators.magnet_side_right_in(self.planner)
@@ -219,15 +223,15 @@ class BuildTribuneX3Action(Action):
         await actuators.magnet_center_right_out(self.planner)
 
     async def after_approach_x3(self):
-        logger.info(f"{self.name}: after_approach_x3")
+        self.logger.info(f"{self.name}: after_approach_x3")
         await actuators.lift_140(self.planner)
         await asyncio.sleep(1.2)
 
     async def before_build_x3(self):
-        logger.info(f"{self.name}: before_build_x3")
+        self.logger.info(f"{self.name}: before_build_x3")
 
     async def after_build_x3(self):
-        logger.info(f"{self.name}: after_build_x3")
+        self.logger.info(f"{self.name}: after_build_x3")
         await actuators.lift_125(self.planner)
         await asyncio.sleep(0.2)
 
@@ -237,10 +241,12 @@ class BuildTribuneX3Action(Action):
         )
 
     async def before_step_back_x3(self):
-        logger.info(f"{self.name}: before_step_back_x3")
+        self.logger.info(f"{self.name}: before_step_back_x3")
 
     async def after_step_back_x3(self):
-        logger.info(f"{self.name}: after_step_back - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
+        self.logger.info(
+            f"{self.name}: after_step_back - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}"
+        )
         self.construction_area.enabled = True
         await asyncio.gather(
             actuators.arm_left_center(self.planner),

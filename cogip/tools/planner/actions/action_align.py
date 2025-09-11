@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from cogip import models
-from cogip.tools.planner import actuators, logger
+from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
@@ -35,7 +35,7 @@ class AlignBottomAction(Action):
         self.before_action_func = self.init_poses
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
-        logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
+        self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def init_poses(self):
@@ -93,11 +93,11 @@ class AlignBottomAction(Action):
         self.poses.append(pose)
 
     async def before_align_back(self):
-        logger.info(f"{self.name}: before_align_back")
+        self.logger.info(f"{self.name}: before_align_back")
         self.set_avoidance(AvoidanceStrategy.Disabled)
 
     async def after_align_back(self):
-        logger.info(f"{self.name}: after_align_back")
+        self.logger.info(f"{self.name}: after_align_back")
         current_pose = models.Pose(
             x=-1000 + self.planner.shared_properties.robot_length / 2,
             y=self.start_pose.y,
@@ -107,16 +107,16 @@ class AlignBottomAction(Action):
         await asyncio.sleep(1)
 
     async def before_step_forward(self):
-        logger.info(f"{self.name}: before_step_forward")
+        self.logger.info(f"{self.name}: before_step_forward")
 
     async def after_step_forward(self):
-        logger.info(f"{self.name}: after_step_forward")
+        self.logger.info(f"{self.name}: after_step_forward")
 
     async def before_final_pose(self):
-        logger.info(f"{self.name}: before_final_pose")
+        self.logger.info(f"{self.name}: before_final_pose")
 
     async def after_final_pose(self):
-        logger.info(f"{self.name}: after_final_pose")
+        self.logger.info(f"{self.name}: after_final_pose")
         self.set_avoidance(self.avoidance_backup)
         if self.reset_countdown:
             now = datetime.now(UTC)
@@ -147,7 +147,7 @@ class AlignBottomForBannerAction(AlignBottomAction):
         self.after_action_func = self.after_action
 
     async def after_action(self):
-        logger.info("AlignBottomForBannerAction: after_action.")
+        self.logger.info("AlignBottomForBannerAction: after_action.")
         await asyncio.gather(
             actuators.arm_left_side(self.planner),
             actuators.arm_right_side(self.planner),

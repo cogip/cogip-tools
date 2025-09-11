@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 from colorzero import Color
 
-from cogip.tools.planner import logger
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose, set_countdown_color
@@ -27,7 +26,7 @@ class Pami2Action(Action):
         self.wait = wait
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
-        logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
+        self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
@@ -100,7 +99,7 @@ class Pami2Action(Action):
             final_pose.y = -180
 
     async def before_pose0(self):
-        logger.info(f"{self.name}: before_pose0")
+        self.logger.info(f"{self.name}: before_pose0")
         self.set_avoidance(AvoidanceStrategy.Disabled)
         self.planner.led.color = Color("lightblue")
         await set_countdown_color(self.planner, "orange")
@@ -109,26 +108,26 @@ class Pami2Action(Action):
         await set_countdown_color(self.planner, "green")
 
     async def after_pose0(self):
-        logger.info(f"{self.name}: after_pose0")
+        self.logger.info(f"{self.name}: after_pose0")
         self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
 
     async def before_pose1(self):
-        logger.info(f"{self.name}: before_pose1")
+        self.logger.info(f"{self.name}: before_pose1")
 
     async def after_pose1(self):
-        logger.info(f"{self.name}: after_pose1")
+        self.logger.info(f"{self.name}: after_pose1")
 
     async def before_pose2(self):
-        logger.info(f"{self.name}: before_pose2")
+        self.logger.info(f"{self.name}: before_pose2")
 
     async def after_pose2(self):
-        logger.info(f"{self.name}: after_pose2")
+        self.logger.info(f"{self.name}: after_pose2")
 
     async def before_final(self):
-        logger.info(f"{self.name}: before_final")
+        self.logger.info(f"{self.name}: before_final")
 
     async def after_final(self):
-        logger.info(f"{self.name}: after_final")
+        self.logger.info(f"{self.name}: after_final")
         self.planner.led.color = Color("red")
         await set_countdown_color(self.planner, "red")
         self.planner.flag_motor.on()
@@ -150,7 +149,7 @@ class Pami3Action(Action):
         self.wait = wait
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
-        logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
+        self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
@@ -207,7 +206,7 @@ class Pami3Action(Action):
             final_pose.x -= 1000
 
     async def before_pose1(self):
-        logger.info(f"{self.name}: before_pose1")
+        self.logger.info(f"{self.name}: before_pose1")
         self.set_avoidance(AvoidanceStrategy.Disabled)
         self.planner.led.color = Color("lightblue")
         await set_countdown_color(self.planner, "orange")
@@ -216,20 +215,20 @@ class Pami3Action(Action):
         await set_countdown_color(self.planner, "green")
 
     async def after_pose1(self):
-        logger.info(f"{self.name}: after_pose1")
+        self.logger.info(f"{self.name}: after_pose1")
         self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
 
     async def before_pose2(self):
-        logger.info(f"{self.name}: before_pose2")
+        self.logger.info(f"{self.name}: before_pose2")
 
     async def after_pose2(self):
-        logger.info(f"{self.name}: after_pose2")
+        self.logger.info(f"{self.name}: after_pose2")
 
     async def before_final(self):
-        logger.info(f"{self.name}: before_final")
+        self.logger.info(f"{self.name}: before_final")
 
     async def after_final(self):
-        logger.info(f"{self.name}: after_final")
+        self.logger.info(f"{self.name}: after_final")
         self.planner.led.color = Color("red")
         await set_countdown_color(self.planner, "red")
         self.planner.flag_motor.on()
@@ -251,7 +250,7 @@ class Pami4Action(Action):
         self.wait = wait
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
-        logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
+        self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
@@ -294,7 +293,7 @@ class Pami4Action(Action):
             final_pose.x -= 1000
 
     async def before_pose1(self):
-        logger.info(f"{self.name}: before_pose1")
+        self.logger.info(f"{self.name}: before_pose1")
         self.set_avoidance(AvoidanceStrategy.Disabled)
         self.planner.led.color = Color("lightblue")
         await set_countdown_color(self.planner, "orange")
@@ -303,14 +302,14 @@ class Pami4Action(Action):
         await set_countdown_color(self.planner, "green")
 
     async def after_pose1(self):
-        logger.info(f"{self.name}: after_pose1")
+        self.logger.info(f"{self.name}: after_pose1")
         self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
 
     async def before_final(self):
-        logger.info(f"{self.name}: before_final")
+        self.logger.info(f"{self.name}: before_final")
 
     async def after_final(self):
-        logger.info(f"{self.name}: after_final")
+        self.logger.info(f"{self.name}: after_final")
         self.planner.led.color = Color("red")
         await set_countdown_color(self.planner, "red")
         self.planner.flag_motor.on()
@@ -370,7 +369,7 @@ class Pami5Action(Action):
         self.poses.append(pose2)
 
     async def before_pose1(self):
-        logger.info(f"{self.name}: before_pose1")
+        self.logger.info(f"{self.name}: before_pose1")
         self.set_avoidance(AvoidanceStrategy.Disabled)
         self.planner.led.color = Color("lightblue")
         await set_countdown_color(self.planner, "orange")
@@ -379,13 +378,13 @@ class Pami5Action(Action):
         await set_countdown_color(self.planner, "green")
 
     async def after_pose1(self):
-        logger.info(f"{self.name}: after_pose1")
+        self.logger.info(f"{self.name}: after_pose1")
 
     async def before_pose2(self):
-        logger.info(f"{self.name}: before_pose2")
+        self.logger.info(f"{self.name}: before_pose2")
 
     async def after_pose2(self):
-        logger.info(f"{self.name}: after_pose2")
+        self.logger.info(f"{self.name}: after_pose2")
         self.planner.led.color = Color("red")
         await set_countdown_color(self.planner, "red")
         self.strategy.clear()

@@ -2,7 +2,6 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models.models import Vertex
-from cogip.tools.planner import logger
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.cameras import calibrate_camera
@@ -122,16 +121,16 @@ class CameraCalibrationAction(Action):
         y = 0
         z = 0
         for i, p in enumerate(self.camera_positions):
-            logger.info(f"Camera position {i: 2d}: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
+            self.logger.info(f"Camera position {i: 2d}: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
             x += p.x
             y += p.y
             z += p.z
 
         if n := len(self.camera_positions):
             p = Vertex(x=x / n, y=y / n, z=z / n)
-            logger.info(f"=> Camera position mean: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
+            self.logger.info(f"=> Camera position mean: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
         else:
-            logger.warning("No camera position found")
+            self.logger.warning("No camera position found")
 
     def weight(self) -> float:
         return 1000000.0

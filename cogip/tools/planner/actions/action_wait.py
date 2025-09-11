@@ -1,7 +1,6 @@
 import asyncio
 from typing import TYPE_CHECKING
 
-from cogip.tools.planner import logger
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 
@@ -25,10 +24,10 @@ class WaitAction(Action):
         return 1
 
     async def before_wait(self):
-        logger.debug(f"Robot {self.planner.robot_id}: WaitAction: before action")
+        self.logger.debug(f"Robot {self.planner.robot_id}: WaitAction: before action")
 
     async def after_wait(self):
-        logger.debug(f"Robot {self.planner.robot_id}: WaitAction: after action")
+        self.logger.debug(f"Robot {self.planner.robot_id}: WaitAction: after action")
         await asyncio.sleep(self.delay_seconds)
 
         for action in self.strategy:
