@@ -1,3 +1,5 @@
+import asyncio
+import math
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, final
 
@@ -66,3 +68,47 @@ class Action:
     @property
     def pose_current(self) -> models.Pose:
         return self.planner.pose_current
+
+    async def evaluate(self):
+        # Average robot speed in mm/s.
+        # This is just an empirical value found by testing that gives a good enough
+        # estimation of the time needed to perform the action.
+        # This could be improved later by using target speed and acceleration.
+        average_speed = 100
+
+        await self.act_before_action()
+
+        # Update countdown
+        self.planner.game_context.countdown -= asyncio.sleep.total_sleep
+        asyncio.sleep.reset()
+
+        while len(self.poses) and self.planner.game_context.countdown > 0:
+            pose = self.poses.pop(0)
+
+            await pose.act_before_pose()
+            await pose.act_after_pose()
+
+            # Update countdown
+            distance = math.dist(
+                (self.planner.pose_current.x, self.planner.pose_current.y),
+                (pose.x, pose.y),
+            )
+            self.planner.game_context.countdown -= asyncio.sleep.total_sleep + distance / average_speed
+            asyncio.sleep.reset()
+
+            # Update pose_current
+            self.planner.pose_current.x = pose.x
+            self.planner.pose_current.y = pose.y
+            self.planner.pose_current.O = pose.O
+
+        await self.act_after_action()
+
+        # Update countdown
+        self.planner.game_context.countdown -= asyncio.sleep.total_sleep
+        asyncio.sleep.reset()
+
+    def __str__(self) -> str:
+        return f"Action[0x{id(self):x}]({self.name})"
+
+    def __repr__(self) -> str:
+        return str(self)
