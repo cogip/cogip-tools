@@ -2,6 +2,7 @@ from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, final
 
 from cogip import models
+from cogip.tools.planner import logger
 from cogip.tools.planner.pose import Pose
 
 if TYPE_CHECKING:
@@ -15,6 +16,8 @@ class Action:
     It contains a list of Pose to reach in order.
     A function can be executed before the action starts and after it ends.
     """
+
+    logger = logger
 
     def __init__(self, name: str, planner: "Planner", strategy: "Strategy", interruptable: bool = True):
         self.name = name

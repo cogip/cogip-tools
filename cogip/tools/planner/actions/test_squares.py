@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from cogip.tools.planner import logger
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose
@@ -24,7 +23,7 @@ class TestSquaresAction(Action):
         self.before_action_func = self.before_action
 
     async def before_action(self):
-        logger.info(f"{self.name}: before_action")
+        self.logger.info(f"{self.name}: before_action")
         self.planner.shared_properties.avoidance_strategy = AvoidanceStrategy.Disabled.val
         start_pose = self.pose_current
         linear_speed = 50
