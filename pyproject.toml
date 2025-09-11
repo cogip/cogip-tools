@@ -31,7 +31,7 @@ dependencies = [
     "pydantic==2.9.2",
     "pydantic_settings==2.5.2",
     "pyserial==3.5",
-    "py-spy==0.3.14",
+    "py-spy==0.4.1",
     "python-can==4.3.1",
     "python-dotenv==1.0.0",
     "python-engineio==4.8.0",
