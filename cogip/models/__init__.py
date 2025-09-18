@@ -8,6 +8,7 @@ from .models import (  # noqa
     Obstacle,
     PathPose,
     Pose,
+    PowerSupplyStatus,
     RobotState,
     ShellMenu,
     Vertex,

@@ -37,6 +37,9 @@ actuator_init_uuid: int = 0x2005
 reset_uuid: int = 0x3001
 copilot_connected_uuid: int = 0x3002
 copilot_disconnected_uuid: int = 0x3003
+power_rails_status_uuid: int = 0x3004
+emergency_stop_status_uuid: int = 0x3005
+power_supply_request_uuid: int = 0x3006
 # Game: 0x4000 - 0x4FFF
 game_start_uuid: int = 0x4001
 game_end_uuid: int = 0x4002

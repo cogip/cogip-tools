@@ -345,3 +345,22 @@ class CameraExtrinsicParameters(BaseModel):
     @property
     def tvec(self) -> ArrayLike:
         return np.array([self.x, self.y, self.z])
+
+
+class PowerSupplyStatus(BaseModel):
+    """
+    Model representing the status of power supply board GPIO signals.
+
+    Attributes:
+        p3V3_pgood: 3.3V power good status
+        p5V0_pgood: 5.0V power good status
+        p7V5_pgood: 7.5V power good status
+        pxVx_pgood: Variable voltage power good status
+        emergency_stop: Emergency stop button status (True = released, False = engaged)
+    """
+
+    p3V3_pgood: bool = False
+    p5V0_pgood: bool = False
+    p7V5_pgood: bool = False
+    pxVx_pgood: bool = False
+    emergency_stop: bool = False
