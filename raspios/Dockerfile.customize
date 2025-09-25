@@ -6,14 +6,14 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get -y clean
 # Install all required Debian packages
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-        make build-essential libssl-dev zlib1g-dev libbz2-dev \
-        libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
-        libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev \
-        git swig cmake pkg-config \
+        libssl-dev zlib1g-dev libbz2-dev \
+        libreadline-dev libsqlite3-dev llvm libncurses5-dev \
+        libncursesw5-dev tk-dev libffi-dev liblzma-dev \
+        git swig cmake \
         cpufreqd cpufrequtils \
         openocd picocom \
         xserver-xorg-video-all xserver-xorg-input-all xserver-xorg-core xinit x11-xserver-utils chromium-browser unclutter \
-        systemd-resolved systemd-timesyncd \
+        systemd-resolved \
         i2c-tools libi2c-dev libserial-dev \
         cockpit dnsmasq iptables wait-for-it ifmetric can-utils \
         libinput-tools libegl1-mesa libgles2-mesa mesa-utils mesa-utils-bin \
@@ -49,7 +49,6 @@ RUN systemctl disable networking \
  && systemctl disable NetworkManager-wait-online.service \
  && systemctl enable systemd-networkd \
  && systemctl enable systemd-resolved \
- && systemctl enable systemd-timesyncd \
  && systemctl enable wpa_supplicant@wlan0.service \
  && systemctl disable systemd-networkd-wait-online.service
 
@@ -121,6 +120,8 @@ COPY raspios/overlay-rootfs-beacon/ /
 RUN sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf && \
     chmod +x /etc/rc.local
 
+RUN apt-get install -y --no-install-recommends ntp
+
 RUN systemctl enable ntp \
  && systemctl enable cogip-server-beacon \
  && systemctl enable cogip-dashboard
@@ -128,8 +129,11 @@ RUN systemctl enable ntp \
 
 FROM common AS robot
 
+RUN apt-get install -y --no-install-recommends systemd-timesyncd
+
 # Enable COGIP services
-RUN systemctl enable openocd \
+RUN systemctl enable systemd-timesyncd \
+ && systemctl enable openocd \
  && systemctl enable cogip-server \
  && systemctl enable cogip-dashboard \
  && systemctl enable cogip-planner \
