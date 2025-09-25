@@ -59,7 +59,7 @@ dev = [
     "pre-commit==4.0.1",
     "pymdown-extensions==10.9",
     "PySide6==6.6.1",
-    "ruff==0.8.0",
+    "ruff==0.14.0",
     "toposort==1.10"
 ]
 
