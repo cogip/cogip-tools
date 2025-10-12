@@ -85,6 +85,7 @@ NB_MODULE(shared_memory, m) {
         .def_rw("strategy", &shared_properties_t::strategy, "Strategy ID")
         .def_rw("start_position", &shared_properties_t::start_position, "Start position ID")
         .def_rw("avoidance_strategy", &shared_properties_t::avoidance_strategy, "Avoidance strategy ID")
+        .def_rw("goap_depth", &shared_properties_t::goap_depth, "Depth of the GOAP search tree, 0 to disable GOAP")
         .def("__repr__", [](const shared_properties_t& properties) {
            std::ostringstream oss;
            oss << properties;

@@ -35,6 +35,7 @@ typedef struct shared_properties_t {
     std::uint8_t strategy;  ///< Strategy ID
     std::uint8_t start_position;  ///< Start position ID
     std::uint8_t avoidance_strategy;  ///< Avoidance strategy ID
+    std::uint8_t goap_depth;  ///< Depth of the GOAP search tree, 0 to disable GOAP
 } shared_properties_t;
 
 /// Overloads the stream insertion operator for `shared_properties_t`.
@@ -58,6 +59,7 @@ inline std::ostream& operator<<(std::ostream& os, const shared_properties_t& dat
        << "strategy=" << static_cast<int>(data.strategy) << ", "
        << "start_position=" << static_cast<int>(data.start_position) << ", "
        << "avoidance_strategy=" << static_cast<int>(data.avoidance_strategy) << ", "
+       << "goap_depth=" << static_cast<int>(data.goap_depth) << ", "
        << ")";
     return os;
 }

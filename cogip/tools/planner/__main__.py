@@ -244,6 +244,17 @@ def main_opt(
             envvar="PLANNER_AVOIDANCE_STRATEGY",
         ),
     ] = AvoidanceStrategy.AvoidanceCpp.name,
+    goap_depth: Annotated[
+        int,
+        typer.Option(
+            "-gd",
+            "--goap-depth",
+            min=properties["goap_depth"]["minimum"],
+            max=properties["goap_depth"]["maximum"],
+            help=properties["goap_depth"]["description"],
+            envvar="PLANNER_GOAP_DEPTH",
+        ),
+    ] = properties["goap_depth"]["default"],
     reload: Annotated[
         bool,
         typer.Option(
@@ -294,6 +305,7 @@ def main_opt(
         strategy,
         start_position,
         avoidance_strategy,
+        goap_depth,
         debug,
     )
 

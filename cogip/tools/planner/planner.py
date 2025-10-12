@@ -80,6 +80,7 @@ class Planner:
         strategy_enum: StrategyEnum,
         start_position: StartPositionEnum,
         avoidance_strategy: AvoidanceStrategy,
+        goap_depth: int,
         debug: bool,
     ):
         """
@@ -109,6 +110,8 @@ class Planner:
             table: Default table on startup
             strategy_enum: Default strategy on startup
             start_position: Default start position on startup
+            avoidance_strategy: Default avoidance strategy on startup
+            goap_depth: Depth of the GOAP search tree
             debug: enable debug messages
         """
         self.robot_id = robot_id
@@ -155,6 +158,7 @@ class Planner:
         self.shared_properties.strategy = strategy_enum.val
         self.shared_properties.start_position = start_position.val
         self.shared_properties.avoidance_strategy = avoidance_strategy.val
+        self.shared_properties.goap_depth = goap_depth
 
         self.virtual = platform.machine() != "aarch64"
         self.retry_connection = True
@@ -494,7 +498,7 @@ class Planner:
             await self.next_pose_in_action()
 
             # If no pose left in current action, get and set new action
-            if not self.pose_order and (new_action := self.strategy.get_next_action()):
+            if not self.pose_order and (new_action := await self.strategy.get_next_action()):
                 await self.set_action(new_action)
                 if not self.pose_order:
                     asyncio.create_task(self.set_pose_reached())
@@ -519,7 +523,7 @@ class Planner:
         """
         if (current_action := self.action) and current_action.interruptable:
             logger.info("Planner: blocked")
-            if new_action := self.strategy.get_next_action():
+            if new_action := await self.strategy.get_next_action():
                 await self.set_action(new_action)
             await current_action.recycle()
             self.strategy.append(current_action)
