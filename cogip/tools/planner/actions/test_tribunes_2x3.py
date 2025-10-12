@@ -8,7 +8,6 @@ from cogip.tools.planner.actions.action_build_tribune_x2 import BuildTribuneX2Ac
 from cogip.tools.planner.actions.action_build_tribune_x3 import BuildTribuneX3Action
 from cogip.tools.planner.actions.action_capture_tribune import CaptureTribuneAction
 from cogip.tools.planner.actions.action_parking import ParkingAction
-from cogip.tools.planner.actions.action_wait import WaitAction
 from cogip.tools.planner.actions.strategy import Strategy
 
 if TYPE_CHECKING:
@@ -18,6 +17,8 @@ if TYPE_CHECKING:
 class TestTribune2x3Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
+        self.goap_allowed = True
+        self.can_wait = True
 
         self.append(AlignBottomAction(planner, self, reset_countdown=True, weight=3_000_000.0))
 
@@ -31,8 +32,6 @@ class TestTribune2x3Strategy(Strategy):
         self.append(BuildTribuneX3Action(planner, self, ConstructionAreaID.LocalBottomLarge1, 1_800_000.0))
         self.append(BuildTribuneX3Action(planner, self, ConstructionAreaID.LocalBottomSmall, 1_700_000.0))
         self.append(BuildTribuneX2Action(planner, self, ConstructionAreaID.LocalBottomLarge2, 1_600_000.0))
-
-        self.append(WaitAction(planner, self))
 
         parking = self.planner.game_context.fixed_obstacles[FixedObstacleID.Backstage]
 

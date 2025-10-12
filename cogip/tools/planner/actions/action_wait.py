@@ -2,10 +2,10 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.tools.planner.actions.action import Action
-from cogip.tools.planner.actions.strategy import Strategy
 
 if TYPE_CHECKING:
     from ..planner import Planner
+    from .strategy import Strategy
 
 
 class WaitAction(Action):
@@ -32,5 +32,3 @@ class WaitAction(Action):
 
         for action in self.strategy:
             action.recycled = False
-
-        self.strategy.append(WaitAction(self.planner, self.strategy, self.delay_seconds))
