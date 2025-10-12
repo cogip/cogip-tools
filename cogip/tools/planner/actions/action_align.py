@@ -148,12 +148,10 @@ class AlignBottomForBannerAction(AlignBottomAction):
 
     async def after_action(self):
         self.logger.info("AlignBottomForBannerAction: after_action.")
-        await asyncio.gather(
-            actuators.arm_left_side(self.planner),
-            actuators.arm_right_side(self.planner),
-            actuators.magnet_center_right_in(self.planner),
-            actuators.magnet_center_left_in(self.planner),
-            actuators.magnet_side_right_in(self.planner),
-            actuators.magnet_side_left_in(self.planner),
-            actuators.lift_125(self.planner),
-        )
+        await actuators.arm_left_side(self.planner)
+        await actuators.arm_right_side(self.planner)
+        await actuators.magnet_center_right_in(self.planner)
+        await actuators.magnet_center_left_in(self.planner)
+        await actuators.magnet_side_right_in(self.planner)
+        await actuators.magnet_side_left_in(self.planner)
+        await actuators.lift_125(self.planner)

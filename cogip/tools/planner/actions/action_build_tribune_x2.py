@@ -131,10 +131,8 @@ class BuildTribuneX2Action(Action):
         self.planner.scservos.set(SCServoEnum.ARM_LEFT, 703)
         await asyncio.sleep(0.2)
 
-        await asyncio.gather(
-            actuators.magnet_side_left_in(self.planner),
-            actuators.magnet_side_right_in(self.planner),
-        )
+        await actuators.magnet_side_left_in(self.planner)
+        await actuators.magnet_side_right_in(self.planner)
         await asyncio.sleep(0.2)
 
         await actuators.lift_125(self.planner)
@@ -146,11 +144,9 @@ class BuildTribuneX2Action(Action):
         await actuators.arms_release(self.planner)
         await asyncio.sleep(0.1)
 
-        await asyncio.gather(
-            actuators.arms_close(self.planner),
-            actuators.arm_left_side(self.planner),
-            actuators.arm_right_side(self.planner),
-        )
+        await actuators.arms_close(self.planner)
+        await actuators.arm_left_side(self.planner)
+        await actuators.arm_right_side(self.planner)
 
         self.planner.game_context.tribunes_in_robot -= 2
         self.construction_area.tribune_level += 2
@@ -163,11 +159,9 @@ class BuildTribuneX2Action(Action):
             f"{self.name}: after_step_back - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}"
         )
         self.construction_area.enabled = True
-        await asyncio.gather(
-            actuators.arm_left_center(self.planner),
-            actuators.arm_right_center(self.planner),
-            actuators.lift_0(self.planner),
-        )
+        await actuators.arm_left_center(self.planner)
+        await actuators.arm_right_center(self.planner)
+        await actuators.lift_0(self.planner)
         self.planner.game_context.score += 12
 
     def weight(self) -> float:
