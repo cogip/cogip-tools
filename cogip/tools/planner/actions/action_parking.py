@@ -45,12 +45,10 @@ class ParkingAction(Action):
             self.planner.game_context.fixed_obstacles[FixedObstacleID.OpponentPitArea].enabled = True
             self.planner.game_context.fixed_obstacles[FixedObstacleID.PamiStartArea].enabled = False
 
-        await asyncio.gather(
-            actuators.magnet_center_right_in(self.planner),
-            actuators.magnet_center_left_in(self.planner),
-            actuators.magnet_side_right_in(self.planner),
-            actuators.magnet_side_left_in(self.planner),
-        )
+            await actuators.magnet_center_right_in(self.planner)
+            await actuators.magnet_center_left_in(self.planner)
+            await actuators.magnet_side_right_in(self.planner)
+            await actuators.magnet_side_left_in(self.planner)
 
         if self.planner.game_context.tribunes_in_robot > 0:
             await actuators.arms_release(self.planner)

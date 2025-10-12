@@ -70,14 +70,12 @@ class DropBannerAction(Action):
     async def before_drop(self):
         self.logger.info(f"{self.name}: before_drop")
         self.set_avoidance(AvoidanceStrategy.Disabled)
-        await asyncio.gather(
-            actuators.arm_left_side(self.planner),
-            actuators.arm_right_side(self.planner),
-            actuators.magnet_center_right_in(self.planner),
-            actuators.magnet_center_left_in(self.planner),
-            actuators.magnet_side_right_in(self.planner),
-            actuators.magnet_side_left_in(self.planner),
-        )
+        await actuators.arm_left_side(self.planner)
+        await actuators.arm_right_side(self.planner)
+        await actuators.magnet_center_right_in(self.planner)
+        await actuators.magnet_center_left_in(self.planner)
+        await actuators.magnet_side_right_in(self.planner)
+        await actuators.magnet_side_left_in(self.planner)
 
     async def after_drop(self):
         self.logger.info(f"{self.name}: after_drop")
@@ -91,10 +89,8 @@ class DropBannerAction(Action):
     async def after_step_back(self):
         self.logger.info(f"{self.name}: after_step_back")
         self.set_avoidance(self.avoidance_backup)
-        await asyncio.gather(
-            actuators.arm_left_center(self.planner),
-            actuators.arm_right_center(self.planner),
-        )
+        await actuators.arm_left_center(self.planner)
+        await actuators.arm_right_center(self.planner)
 
     def weight(self) -> float:
         return self.custom_weight

@@ -114,10 +114,8 @@ class CaptureTribuneAction(Action):
         self.logger.info(f"{self.name}: before_capture")
         self.tribune.enabled = False
         await actuators.lift_0(self.planner)
-        await asyncio.gather(
-            actuators.tribune_grab(self.planner),
-            actuators.arms_open(self.planner),
-        )
+        await actuators.tribune_grab(self.planner)
+        await actuators.arms_open(self.planner)
         await asyncio.sleep(0.2)  # Make sure the obstacle is removed from avoidance
 
     async def after_capture(self):

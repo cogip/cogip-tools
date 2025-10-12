@@ -187,10 +187,8 @@ class BuildTribuneX3Action(Action):
         self.planner.scservos.set(SCServoEnum.ARM_LEFT, 703)
         await asyncio.sleep(0.2)
 
-        await asyncio.gather(
-            actuators.magnet_side_left_in(self.planner),
-            actuators.magnet_side_right_in(self.planner),
-        )
+        await actuators.magnet_side_left_in(self.planner)
+        await actuators.magnet_side_right_in(self.planner)
         await asyncio.sleep(0.2)
 
         await actuators.lift_125(self.planner)
@@ -202,11 +200,9 @@ class BuildTribuneX3Action(Action):
         await actuators.arms_release(self.planner)
         await asyncio.sleep(0.2)
 
-        await asyncio.gather(
-            actuators.arms_close(self.planner),
-            actuators.arm_left_side(self.planner),
-            actuators.arm_right_side(self.planner),
-        )
+        await actuators.arms_close(self.planner)
+        await actuators.arm_left_side(self.planner)
+        await actuators.arm_right_side(self.planner)
         await asyncio.sleep(0.5)
 
     async def before_step_back_x2(self):
@@ -239,10 +235,8 @@ class BuildTribuneX3Action(Action):
         await actuators.lift_125(self.planner)
         await asyncio.sleep(0.2)
 
-        await asyncio.gather(
-            actuators.magnet_center_left_in(self.planner),
-            actuators.magnet_center_right_in(self.planner),
-        )
+        await actuators.magnet_center_left_in(self.planner)
+        await actuators.magnet_center_right_in(self.planner)
 
     async def before_step_back_x3(self):
         self.logger.info(f"{self.name}: before_step_back_x3")
@@ -252,11 +246,9 @@ class BuildTribuneX3Action(Action):
             f"{self.name}: after_step_back - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}"
         )
         self.construction_area.enabled = True
-        await asyncio.gather(
-            actuators.arm_left_center(self.planner),
-            actuators.arm_right_center(self.planner),
-            actuators.lift_0(self.planner),
-        )
+        await actuators.arm_left_center(self.planner)
+        await actuators.arm_right_center(self.planner)
+        await actuators.lift_0(self.planner)
         self.planner.game_context.tribunes_in_robot -= 2
         self.construction_area.tribune_level += 2
         self.planner.game_context.score += 24
