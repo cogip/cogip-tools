@@ -74,5 +74,13 @@ properties_schema = {
             "type": "boolean",
             "default": True,
         },
+        "goap_depth": {
+            "title": "GOAP Depth",
+            "description": "Depth of the GOAP search tree, 0 to disable GOAP",
+            "type": "integer",
+            "maximum": 255,
+            "minimum": 0,
+            "default": 0,
+        },
     },
 }

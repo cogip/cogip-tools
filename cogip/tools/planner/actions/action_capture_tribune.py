@@ -2,8 +2,10 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models import artifacts
-from cogip.tools.planner import actuators, logger
-from cogip.tools.planner.actions.actions import Action, Actions, get_relative_pose
+from cogip.tools.planner import actuators
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.strategy import Strategy
+from cogip.tools.planner.actions.utils import get_relative_pose
 from cogip.tools.planner.pose import Pose
 from cogip.tools.planner.table import TableEnum
 
@@ -19,17 +21,21 @@ class CaptureTribuneAction(Action):
     def __init__(
         self,
         planner: "Planner",
-        actions: Actions,
+        strategy: Strategy,
         tribune_id: artifacts.TribuneID,
         weight: float = 2000000.0,
     ):
         self.custom_weight = weight
-        super().__init__(f"CaptureTribune {tribune_id.name}", planner, actions)
+        super().__init__(f"CaptureTribune {tribune_id.name}", planner, strategy)
         self.before_action_func = self.before_action
-        self.tribune = self.game_context.tribunes[tribune_id]
+        self.tribune_id = tribune_id
         self.shift_capture = 140
         self.shift_approach = self.shift_capture + 150
         self.shift_step_back = self.shift_capture + 80
+
+    @property
+    def tribune(self) -> artifacts.Tribune:
+        return self.planner.game_context.tribunes[self.tribune_id]
 
     async def recycle(self):
         self.tribune.enabled = True
@@ -71,15 +77,15 @@ class CaptureTribuneAction(Action):
 
         if (
             (
-                self.tribune.id == artifacts.TribuneID.LocalCenter
-                and self.planner.shared_properties.table == TableEnum.Training.val
+                self.tribune_id == artifacts.TribuneID.LocalCenter
+                and self.planner.shared_properties.table == TableEnum.Training
             )
-            or self.tribune.id == artifacts.TribuneID.LocalTop
-            or self.tribune.id == artifacts.TribuneID.LocalTopSide
-            or self.tribune.id == artifacts.TribuneID.LocalBottomSide
-            or self.tribune.id == artifacts.TribuneID.OppositeTop
-            or self.tribune.id == artifacts.TribuneID.OppositeTopSide
-            or self.tribune.id == artifacts.TribuneID.OppositeBottomSide
+            or self.tribune_id == artifacts.TribuneID.LocalTop
+            or self.tribune_id == artifacts.TribuneID.LocalTopSide
+            or self.tribune_id == artifacts.TribuneID.LocalBottomSide
+            or self.tribune_id == artifacts.TribuneID.OppositeTop
+            or self.tribune_id == artifacts.TribuneID.OppositeTopSide
+            or self.tribune_id == artifacts.TribuneID.OppositeBottomSide
         ):
             # Step back
             pose = Pose(
@@ -98,36 +104,34 @@ class CaptureTribuneAction(Action):
             self.poses.append(pose)
 
     async def before_approach(self):
-        logger.info(f"{self.name}: before_approach")
+        self.logger.info(f"{self.name}: before_approach")
         await actuators.arms_close(self.planner)
 
     async def after_approach(self):
-        logger.info(f"{self.name}: after_approach")
+        self.logger.info(f"{self.name}: after_approach")
 
     async def before_capture(self):
-        logger.info(f"{self.name}: before_capture")
+        self.logger.info(f"{self.name}: before_capture")
         self.tribune.enabled = False
         await actuators.lift_0(self.planner)
-        await asyncio.gather(
-            actuators.tribune_grab(self.planner),
-            actuators.arms_open(self.planner),
-        )
+        await actuators.tribune_grab(self.planner)
+        await actuators.arms_open(self.planner)
         await asyncio.sleep(0.2)  # Make sure the obstacle is removed from avoidance
 
     async def after_capture(self):
-        logger.info(f"{self.name}: after_capture")
+        self.logger.info(f"{self.name}: after_capture")
         await actuators.arms_hold2(self.planner)
         await asyncio.sleep(0.1)
-        self.game_context.tribunes_in_robot = 2
+        self.planner.game_context.tribunes_in_robot = 2
 
     async def before_step_back(self):
-        logger.info(f"{self.name}: before_step_back")
+        self.logger.info(f"{self.name}: before_step_back")
 
     async def after_step_back(self):
-        logger.info(f"{self.name}: after_step_back")
+        self.logger.info(f"{self.name}: after_step_back")
 
     def weight(self) -> float:
-        if not self.tribune.enabled or self.game_context.tribunes_in_robot != 0:
+        if not self.tribune.enabled or self.planner.game_context.tribunes_in_robot != 0:
             return 0
 
         return self.custom_weight

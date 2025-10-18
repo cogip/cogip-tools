@@ -2,8 +2,8 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models.models import Vertex
-from cogip.tools.planner import logger
-from cogip.tools.planner.actions.actions import Action, Actions
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.cameras import calibrate_camera
 from cogip.tools.planner.pose import Pose
 
@@ -17,8 +17,8 @@ class CameraCalibrationAction(Action):
     camera extrinsic parameters (ie, the position of the camera relative to the robot center).
     """
 
-    def __init__(self, planner: "Planner", actions: Actions):
-        super().__init__("CameraCalibration action", planner, actions)
+    def __init__(self, planner: "Planner", strategy: Strategy):
+        super().__init__("CameraCalibration action", planner, strategy)
         self.camera_positions: list[Vertex] = []
         self.after_action_func = self.print_camera_positions
 
@@ -121,22 +121,22 @@ class CameraCalibrationAction(Action):
         y = 0
         z = 0
         for i, p in enumerate(self.camera_positions):
-            logger.info(f"Camera position {i: 2d}: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
+            self.logger.info(f"Camera position {i: 2d}: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
             x += p.x
             y += p.y
             z += p.z
 
         if n := len(self.camera_positions):
             p = Vertex(x=x / n, y=y / n, z=z / n)
-            logger.info(f"=> Camera position mean: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
+            self.logger.info(f"=> Camera position mean: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
         else:
-            logger.warning("No camera position found")
+            self.logger.warning("No camera position found")
 
     def weight(self) -> float:
         return 1000000.0
 
 
-class CameraCalibrationActions(Actions):
+class CameraCalibrationStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(CameraCalibrationAction(planner, self))

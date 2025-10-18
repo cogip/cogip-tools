@@ -3,8 +3,9 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from cogip import models
-from cogip.tools.planner import actuators, logger
-from cogip.tools.planner.actions.actions import Action, Actions
+from cogip.tools.planner import actuators
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.pose import AdaptedPose, Pose
 
@@ -21,7 +22,7 @@ class AlignBottomAction(Action):
     def __init__(
         self,
         planner: "Planner",
-        actions: Actions,
+        strategy: Strategy,
         *,
         final_pose: models.Pose = Pose(x=-750, y=-250, O=0),
         reset_countdown=False,
@@ -30,11 +31,11 @@ class AlignBottomAction(Action):
         self.final_pose = final_pose
         self.reset_countdown = reset_countdown
         self.custom_weight = weight
-        super().__init__("Align Bottom action", planner, actions)
+        super().__init__("Align Bottom action", planner, strategy)
         self.before_action_func = self.init_poses
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
-        logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
+        self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def init_poses(self):
@@ -92,11 +93,11 @@ class AlignBottomAction(Action):
         self.poses.append(pose)
 
     async def before_align_back(self):
-        logger.info(f"{self.name}: before_align_back")
+        self.logger.info(f"{self.name}: before_align_back")
         self.set_avoidance(AvoidanceStrategy.Disabled)
 
     async def after_align_back(self):
-        logger.info(f"{self.name}: after_align_back")
+        self.logger.info(f"{self.name}: after_align_back")
         current_pose = models.Pose(
             x=-1000 + self.planner.shared_properties.robot_length / 2,
             y=self.start_pose.y,
@@ -106,23 +107,23 @@ class AlignBottomAction(Action):
         await asyncio.sleep(1)
 
     async def before_step_forward(self):
-        logger.info(f"{self.name}: before_step_forward")
+        self.logger.info(f"{self.name}: before_step_forward")
 
     async def after_step_forward(self):
-        logger.info(f"{self.name}: after_step_forward")
+        self.logger.info(f"{self.name}: after_step_forward")
 
     async def before_final_pose(self):
-        logger.info(f"{self.name}: before_final_pose")
+        self.logger.info(f"{self.name}: before_final_pose")
 
     async def after_final_pose(self):
-        logger.info(f"{self.name}: after_final_pose")
+        self.logger.info(f"{self.name}: after_final_pose")
         self.set_avoidance(self.avoidance_backup)
         if self.reset_countdown:
             now = datetime.now(UTC)
             self.planner.countdown_start_timestamp = now
             await self.planner.sio_ns.emit(
                 "start_countdown",
-                (self.planner.robot_id, self.game_context.game_duration, now.isoformat(), "deepskyblue"),
+                (self.planner.robot_id, self.planner.game_context.game_duration, now.isoformat(), "deepskyblue"),
             )
 
     def weight(self) -> float:
@@ -133,12 +134,12 @@ class AlignBottomForBannerAction(AlignBottomAction):
     def __init__(
         self,
         planner: "Planner",
-        actions: Actions,
+        strategy: Strategy,
         weight: float = 2000000.0,
     ):
         super().__init__(
             planner,
-            actions,
+            strategy,
             final_pose=models.Pose(x=-1000 + 220, y=-50 - 450 / 2, O=180),
             reset_countdown=False,
             weight=weight,
@@ -146,13 +147,11 @@ class AlignBottomForBannerAction(AlignBottomAction):
         self.after_action_func = self.after_action
 
     async def after_action(self):
-        logger.info("AlignBottomForBannerAction: after_action.")
-        await asyncio.gather(
-            actuators.arm_left_side(self.planner),
-            actuators.arm_right_side(self.planner),
-            actuators.magnet_center_right_in(self.planner),
-            actuators.magnet_center_left_in(self.planner),
-            actuators.magnet_side_right_in(self.planner),
-            actuators.magnet_side_left_in(self.planner),
-            actuators.lift_125(self.planner),
-        )
+        self.logger.info("AlignBottomForBannerAction: after_action.")
+        await actuators.arm_left_side(self.planner)
+        await actuators.arm_right_side(self.planner)
+        await actuators.magnet_center_right_in(self.planner)
+        await actuators.magnet_center_left_in(self.planner)
+        await actuators.magnet_side_right_in(self.planner)
+        await actuators.magnet_side_left_in(self.planner)
+        await actuators.lift_125(self.planner)

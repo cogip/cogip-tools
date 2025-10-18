@@ -1,8 +1,9 @@
 import asyncio
 from typing import TYPE_CHECKING
 
-from cogip.tools.planner import actuators, logger
-from cogip.tools.planner.actions.actions import Action, Actions
+from cogip.tools.planner import actuators
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.pose import Pose
 
@@ -18,19 +19,19 @@ class DropBannerAction(Action):
     def __init__(
         self,
         planner: "Planner",
-        actions: Actions,
+        strategy: Strategy,
         weight: float = 2000000.0,
     ):
         self.custom_weight = weight
-        super().__init__("Drop banner action", planner, actions)
+        super().__init__("Drop banner action", planner, strategy)
         self.before_action_func = self.before_action
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
-        logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
+        self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def before_action(self):
-        logger.info(f"{self.name}: before_action")
+        self.logger.info(f"{self.name}: before_action")
         self.avoidance_backup = AvoidanceStrategy(self.planner.shared_properties.avoidance_strategy)
 
         # On start, the robot is facing the back of the table
@@ -67,33 +68,29 @@ class DropBannerAction(Action):
         self.poses.append(step_back_pose)
 
     async def before_drop(self):
-        logger.info(f"{self.name}: before_drop")
+        self.logger.info(f"{self.name}: before_drop")
         self.set_avoidance(AvoidanceStrategy.Disabled)
-        await asyncio.gather(
-            actuators.arm_left_side(self.planner),
-            actuators.arm_right_side(self.planner),
-            actuators.magnet_center_right_in(self.planner),
-            actuators.magnet_center_left_in(self.planner),
-            actuators.magnet_side_right_in(self.planner),
-            actuators.magnet_side_left_in(self.planner),
-        )
+        await actuators.arm_left_side(self.planner)
+        await actuators.arm_right_side(self.planner)
+        await actuators.magnet_center_right_in(self.planner)
+        await actuators.magnet_center_left_in(self.planner)
+        await actuators.magnet_side_right_in(self.planner)
+        await actuators.magnet_side_left_in(self.planner)
 
     async def after_drop(self):
-        logger.info(f"{self.name}: after_drop")
+        self.logger.info(f"{self.name}: after_drop")
         await actuators.lift_0(self.planner)
         await asyncio.sleep(1)
-        self.game_context.score += 20
+        self.planner.game_context.score += 20
 
     async def before_step_back(self):
-        logger.info(f"{self.name}: before_step_back")
+        self.logger.info(f"{self.name}: before_step_back")
 
     async def after_step_back(self):
-        logger.info(f"{self.name}: after_step_back")
+        self.logger.info(f"{self.name}: after_step_back")
         self.set_avoidance(self.avoidance_backup)
-        await asyncio.gather(
-            actuators.arm_left_center(self.planner),
-            actuators.arm_right_center(self.planner),
-        )
+        await actuators.arm_left_center(self.planner)
+        await actuators.arm_right_center(self.planner)
 
     def weight(self) -> float:
         return self.custom_weight

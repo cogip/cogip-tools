@@ -6,7 +6,7 @@ import socketio.exceptions
 
 from cogip import logger
 from cogip.tools.planner import actions
-from cogip.tools.planner.positions import StartPosition
+from cogip.tools.planner.start_positions import StartPositionEnum
 
 if TYPE_CHECKING:
     from .server import Server
@@ -100,16 +100,16 @@ class Robot:
         async def pami_reset():
             for robot_id, robot in self.server.robots.items():
                 if robot.sio.connected:
-                    strategy: actions.Strategy | None = None
+                    strategy: actions.StrategyEnum | None = None
                     match robot_id:
                         case 2:
-                            strategy = actions.Strategy.Pami2
+                            strategy = actions.StrategyEnum.Pami2
                         case 3:
-                            strategy = actions.Strategy.Pami3
+                            strategy = actions.StrategyEnum.Pami3
                         case 4:
-                            strategy = actions.Strategy.Pami4
+                            strategy = actions.StrategyEnum.Pami4
                         case 5:
-                            strategy = actions.Strategy.Pami5
+                            strategy = actions.StrategyEnum.Pami5
 
                     if strategy:
                         await robot.sio.emit(
@@ -145,16 +145,16 @@ class Robot:
                         },
                         namespace="/beacon",
                     )
-                    position: StartPosition | None = None
+                    position: StartPositionEnum | None = None
                     match robot_id:
                         case 2:
-                            position = StartPosition.PAMI2
+                            position = StartPositionEnum.PAMI2
                         case 3:
-                            position = StartPosition.PAMI3
+                            position = StartPositionEnum.PAMI3
                         case 4:
-                            position = StartPosition.PAMI4
+                            position = StartPositionEnum.PAMI4
                         case 5:
-                            position = StartPosition.PAMI5
+                            position = StartPositionEnum.PAMI5
 
                     if position:
                         await robot.sio.emit(

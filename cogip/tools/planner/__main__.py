@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
 import logging
-import os
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -9,11 +8,11 @@ import typer
 from watchfiles import PythonFilter, run_process
 
 from . import logger
-from .actions import Strategy
+from .actions import StrategyEnum
 from .avoidance.avoidance import AvoidanceStrategy
 from .planner import Planner
-from .positions import StartPosition
 from .properties import properties_schema
+from .start_positions import StartPositionEnum
 from .table import TableEnum
 
 
@@ -219,23 +218,23 @@ def main_opt(
         ),
     ] = TableEnum.Game.name,
     strategy: Annotated[
-        Strategy,
+        StrategyEnum,
         typer.Option(
             "-s",
             "--strategy",
             help="Default strategy on startup",
             envvar="PLANNER_STRATEGY",
         ),
-    ] = Strategy.TestVisitStartingAreas.name,
+    ] = StrategyEnum.TestVisitStartingAreas.name,
     start_position: Annotated[
-        StartPosition,
+        StartPositionEnum,
         typer.Option(
             "-p",
             "--start-position",
             help="Default start position on startup",
             envvar="PLANNER_START_POSITION",
         ),
-    ] = StartPosition.Bottom.name,
+    ] = StartPositionEnum.Bottom.name,
     avoidance_strategy: Annotated[
         AvoidanceStrategy,
         typer.Option(
@@ -245,6 +244,17 @@ def main_opt(
             envvar="PLANNER_AVOIDANCE_STRATEGY",
         ),
     ] = AvoidanceStrategy.AvoidanceCpp.name,
+    goap_depth: Annotated[
+        int,
+        typer.Option(
+            "-gd",
+            "--goap-depth",
+            min=properties["goap_depth"]["minimum"],
+            max=properties["goap_depth"]["maximum"],
+            help=properties["goap_depth"]["description"],
+            envvar="PLANNER_GOAP_DEPTH",
+        ),
+    ] = properties["goap_depth"]["default"],
     reload: Annotated[
         bool,
         typer.Option(
@@ -266,9 +276,6 @@ def main_opt(
 ):
     if debug:
         logger.setLevel(logging.DEBUG)
-
-    # Make sure robot ID is also available as environment variable for context creation
-    os.environ["ROBOT_ID"] = str(id)
 
     if not server_url:
         server_url = f"http://localhost:809{id}"
@@ -298,6 +305,7 @@ def main_opt(
         strategy,
         start_position,
         avoidance_strategy,
+        goap_depth,
         debug,
     )
 

@@ -1,8 +1,10 @@
 from functools import partial
 from typing import TYPE_CHECKING
 
-from cogip.tools.planner.actions.actions import Action, Actions
+from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.pose import Pose
+from cogip.tools.planner.table import get_table
 
 if TYPE_CHECKING:
     from ..planner import Planner
@@ -15,13 +17,14 @@ class BackAndForthAction(Action):
     The robot will go from the current position to its opposite position in loop.
     """
 
-    def __init__(self, planner: "Planner", actions: Actions):
-        super().__init__("BackAndForth action", planner, actions)
+    def __init__(self, planner: "Planner", strategy: Strategy):
+        super().__init__("BackAndForth action", planner, strategy)
         self.before_action_func = self.compute_poses
 
     async def compute_poses(self) -> None:
+        table = get_table(self.planner.shared_properties.table)
         x = self.planner.pose_current.x
-        y = self.game_context.table.y_min + self.game_context.table.y_max - self.planner.pose_current.y
+        y = table.y_min + table.y_max - self.planner.pose_current.y
         angle = -self.planner.pose_current.O
         pose1 = Pose(
             x=x,
@@ -43,7 +46,7 @@ class BackAndForthAction(Action):
         return 1000000.0
 
 
-class TestBackAndForthActions(Actions):
+class TestBackAndForthStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(BackAndForthAction(planner, self))
