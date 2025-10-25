@@ -4,6 +4,7 @@ import traceback
 from typing import Any
 
 import socketio
+import systemd.daemon
 from pydantic import ValidationError
 from socketio.exceptions import ConnectionRefusedError
 from uvicorn.main import Server as UvicornServer
@@ -16,6 +17,14 @@ from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacl
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.utils.asyncloop import AsyncLoop
 from . import context, logger, namespaces
+
+
+def notify_systemd():
+    logger.info("Server startup complete. Notifying systemd.")
+    try:
+        systemd.daemon.notify("READY=1")
+    except Exception as exc:  # noqa
+        logger.error(f"Failed to notify systemd: {exc}")
 
 
 class Server:
@@ -71,7 +80,7 @@ class Server:
             logger=False,
             engineio_logger=False,
         )
-        self.app = socketio.ASGIApp(self.sio)
+        self.app = socketio.ASGIApp(self.sio, on_startup=notify_systemd)
         self.sio.register_namespace(namespaces.DashboardNamespace(self))
         self.sio.register_namespace(namespaces.MonitorNamespace(self))
         self.sio.register_namespace(namespaces.CopilotNamespace(self))

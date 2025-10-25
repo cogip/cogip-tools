@@ -1,14 +1,14 @@
 [Unit]
-Description=COGIP Beacon Server
+Description=COGIP Beaconcam
 
-Wants=network.target
-After=syslog.target network-online.target
+After=cogip-server-beacon.service
+BindsTo=cogip-server-beacon.service
 
 [Service]
 Type=simple
 Restart=on-failure
 WorkingDirectory=/opt
-ExecStart=uv run cogip-server-beacon
+ExecStart=uv run cogip-beaconcam
 RestartSec=5
 EnvironmentFile=/etc/environment
 StandardOutput=null

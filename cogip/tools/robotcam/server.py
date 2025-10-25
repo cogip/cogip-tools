@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from datetime import datetime
 from multiprocessing.shared_memory import SharedMemory
 from pathlib import Path
@@ -7,6 +8,7 @@ import cv2
 import cv2.typing
 import numpy as np
 import polling2
+import systemd.daemon
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from uvicorn.main import Server as UvicornServer
@@ -29,6 +31,23 @@ from cogip.tools.camera.utils import (
 from .settings import Settings
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Handle application startup and shutdown events.
+    """
+    logger.info("Robotcam server starting up...")
+    try:
+        systemd.daemon.notify("READY=1")
+        logger.info("Systemd notified: READY=1")
+    except Exception as e:
+        logger.error(f"Failed to notify systemd: {e}")
+
+    yield
+
+    logger.info("Robotcam server shutting down...")
+
+
 class CameraServer:
     """
     Camera web server.
@@ -49,7 +68,7 @@ class CameraServer:
         self.settings = Settings()
         CameraServer._exiting = False
 
-        self.app = FastAPI(title="COGIP Robot Camera Streamer", debug=False)
+        self.app = FastAPI(title="COGIP Robot Camera Streamer", lifespan=lifespan, debug=False)
         self.register_endpoints()
 
         UvicornServer.handle_exit = self.handle_exit

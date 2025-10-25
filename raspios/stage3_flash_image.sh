@@ -9,8 +9,12 @@ case ${ROBOT_ID} in
         DOCKER_TAG=beacon
         HOSTNAME=beacon
         ;;
-    *) # Robots
+    1) # Robot
         DOCKER_TAG=robot
+        HOSTNAME=robot${ROBOT_ID}
+        ;;
+    [2-9]) # PAMIs
+        DOCKER_TAG=pami
         HOSTNAME=robot${ROBOT_ID}
         ;;
 esac

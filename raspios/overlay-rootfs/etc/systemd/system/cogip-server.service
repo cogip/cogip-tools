@@ -2,18 +2,19 @@
 Description=COGIP Server
 
 Wants=network.target
-After=syslog.target network-online.target
+After=network.target
 
 [Service]
-Type=simple
+Type=notify
 Restart=on-failure
 WorkingDirectory=/opt
 ExecStartPre=/bin/sh -c 'rm -rf /dev/shm/*'
-ExecStart=uv run cogip-server
+ExecStart=/opt/.venv/bin/python -m cogip.tools.server
 RestartSec=5
 EnvironmentFile=/etc/environment
 StandardOutput=null
 StandardError=null
+KillSignal=SIGKILL
 
 [Install]
 WantedBy=multi-user.target

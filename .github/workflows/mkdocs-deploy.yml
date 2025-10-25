@@ -11,7 +11,7 @@ jobs:
       - name: Install Debian dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -qq libegl1
+          sudo apt-get install -qq libegl1 libsystemd-dev
 
       - name: Git checkout
         uses: actions/checkout@v4

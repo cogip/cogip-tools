@@ -1,6 +1,6 @@
 #!/bin/bash
 
-/usr/bin/chromium-browser http://localhost:808${ROBOT_ID} \
+/usr/bin/chromium http://localhost:808ROBOT_ID \
     --no-sandbox \
     --disable-setuid-sandbox \
     --enable-features=UseOzonePlatform \

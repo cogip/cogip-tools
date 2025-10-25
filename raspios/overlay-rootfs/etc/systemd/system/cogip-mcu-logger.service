@@ -2,7 +2,7 @@
 Description=COGIP MCU Logger
 
 Wants=network.target
-After=syslog.target network-online.target
+After=network.target
 
 [Service]
 Type=simple

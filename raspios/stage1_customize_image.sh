@@ -5,3 +5,4 @@ source ${SCRIPT_DIR}/common.sh
 
 DOCKER_BUILDKIT=1 docker build --progress plain .. -f Dockerfile.customize --target beacon -t cogip/raspios:beacon
 DOCKER_BUILDKIT=1 docker build --progress plain .. -f Dockerfile.customize --target robot -t cogip/raspios:robot
+DOCKER_BUILDKIT=1 docker build --progress plain .. -f Dockerfile.customize --target robot -t cogip/raspios:pami

@@ -1,16 +1,15 @@
 [Unit]
 Description=COGIP Detector
 
-Wants=network.target
 After=cogip-server.service
-Requires=cogip-robotcam.service
 BindsTo=cogip-server.service
 
 [Service]
-Type=simple
+Type=notify
 Restart=on-failure
 WorkingDirectory=/opt
-ExecStart=uv run cogip-detector
+ExecStartPre=/opt/.venv/bin/python /opt/.venv/lib/python3.13/site-packages/cogip/tools/detector/check_lidar_status.py
+ExecStart=/opt/.venv/bin/python -m cogip.tools.detector
 RestartSec=5
 EnvironmentFile=/etc/environment
 StandardOutput=null

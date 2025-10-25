@@ -275,6 +275,7 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "sentry-sdk" },
     { name = "shapely" },
+    { name = "systemd-python" },
     { name = "toposort" },
     { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
@@ -331,6 +332,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = "~=1.6.1" },
     { name = "sentry-sdk", specifier = "==1.39.1" },
     { name = "shapely", specifier = "~=2.1" },
+    { name = "systemd-python", specifier = "==235" },
     { name = "toposort", specifier = "==1.10" },
     { name = "typer", specifier = "==0.15.1" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.24.0.post1" },
@@ -1909,6 +1911,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/4b/cb/244daf0d7be450809
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/0f/64baf7a06492e8c12f5c4b49db286787a7255195df496fc21f5fd9eecffa/starlette-0.40.0-py3-none-any.whl", hash = "sha256:c494a22fae73805376ea6bf88439783ecfba9aac88a43911b48c653437e784c4", size = 73303 },
 ]
+
+[[package]]
+name = "systemd-python"
+version = "235"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/9e/ab4458e00367223bda2dd7ccf0849a72235ee3e29b36dce732685d9b7ad9/systemd-python-235.tar.gz", hash = "sha256:4e57f39797fd5d9e2d22b8806a252d7c0106c936039d1e71c8c6b8008e695c0a", size = 61677 }
 
 [[package]]
 name = "threadpoolctl"
