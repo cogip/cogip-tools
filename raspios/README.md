@@ -24,7 +24,7 @@ See [Docker installation instructions](https://docs.docker.com/engine/install/).
 
 ```
 $ sudo apt-get install binfmt-support qemu-user-static zerofree
-$ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+$ docker run --rm --privileged tonistiigi/binfmt --install all
 ```
 
 ## Configuration

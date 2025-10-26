@@ -6,7 +6,7 @@ build-backend = "scikit_build_core.build"
 name = "cogip-tools"
 authors = [{name = "COGIP Team", email = "cogip35@gmail.com"}]
 version = "1.0.0"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 license = {file = "LICENSE"}
 dependencies = [
     "aiohttp==3.10.10",
@@ -24,15 +24,16 @@ dependencies = [
     "matplotlib~=3.9.3",
     "more_itertools==10.1.0",
     "nanobind~=2.5.0",
-    "numpy<2",
-    "opencv-contrib-python==4.10.0.84",
+    "numpy>=2",
+    "opencv-contrib-python~=4.12.0.88",
+    "opencv-python~=4.12.0.88",
     "polling2==0.5.0",
     "protobuf==3.20.3",
     "pydantic==2.9.2",
     "pydantic_settings==2.5.2",
     "pyserial==3.5",
     "py-spy==0.4.1",
-    "python-can==4.3.1",
+    "python-can==4.6.1",
     "python-dotenv==1.0.0",
     "python-engineio==4.8.0",
     "python-socketio==5.10.0",
@@ -59,7 +60,7 @@ dev = [
     "mkdocstrings[python]==0.25.2",
     "pre-commit==4.0.1",
     "pymdown-extensions==10.9",
-    "PySide6==6.6.1",
+    "PySide6==6.10.0",
     "ruff==0.14.0",
     "toposort==1.10"
 ]
@@ -96,7 +97,7 @@ python-preference = "only-managed"
 [tool.scikit-build]
 logging.level = "DEBUG"
 build-dir = "build/{wheel_tag}"
-wheel.py-api = "cp312"
+wheel.py-api = "cp313"
 build.verbose = true
 editable.verbose = true
 install.strip = false
@@ -147,7 +148,7 @@ lint.select = [
 ]
 line-length = 120
 indent-width = 4
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.lint.isort]
 no-lines-before = ["future", "standard-library", "local-folder"]
