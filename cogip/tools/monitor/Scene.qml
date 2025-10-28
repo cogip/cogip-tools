@@ -16,7 +16,7 @@ Item {
     property alias orderRobotNode: view.orderRobotNode
     property alias rectangleObstacles: view.rectangleObstacles
     property var robotPathPoints: []
-    readonly property string tableGroundTexture: "../../../assets/table2025.webp"
+    readonly property string tableGroundTexture: "../../../assets/table2026.webp"
     property alias virtualDetector: view.virtualDetector
     property alias virtualPlanner: view.virtualPlanner
 
