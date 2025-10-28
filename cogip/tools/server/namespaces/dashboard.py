@@ -103,4 +103,4 @@ class DashboardNamespace(socketio.AsyncNamespace):
         """
         logger.info(f"[dashboard => planner] Starter changed: {pushed}")
         await self.emit("starter_changed", pushed, namespace="/planner")
-        await self.emit("starter_changed", (self.context.robot_id, pushed), namespace="/dashboard", skip_sid=[sid])
+        await self.emit("starter_changed", pushed, namespace="/dashboard", skip_sid=[sid])

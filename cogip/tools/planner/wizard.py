@@ -104,7 +104,7 @@ class GameWizard:
     async def request_start_pose(self):
         message = {
             "name": "Game Wizard: Choose Start Position",
-            "type": "choice_integer",
+            "type": "choice_str",
             "choices": [p.name for p in StartPositionEnum if self.planner.start_positions.is_valid(p)],
             "value": StartPositionEnum(self.planner.shared_properties.start_position).name,
         }

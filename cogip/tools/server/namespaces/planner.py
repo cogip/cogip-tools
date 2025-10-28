@@ -87,7 +87,7 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         Callback on starter_pushed message.
         """
-        await self.emit("starter_changed", (self.context.robot_id, pushed), namespace="/dashboard")
+        await self.emit("starter_changed", pushed, namespace="/dashboard")
 
     async def on_close_wizard(self, sid):
         """

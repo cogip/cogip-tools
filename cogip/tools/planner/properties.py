@@ -4,7 +4,7 @@ properties_schema = {
     "sio_event": "config_updated",
     "properties": {
         "robot_width": {
-            "title": "Robot_width",
+            "title": "Robot Width",
             "description": "Width of the robot (mm)",
             "type": "integer",
             "maximum": 1000,

@@ -267,7 +267,7 @@
         .on("obstacles", function (robot_id, msg) {
           drawModule.updateObstacles(robot_id, msg);
         })
-        .on("starter_changed", function(robot_id, pushed) {
+        .on("starter_changed", function(pushed) {
           document.querySelector("#starter input").checked = pushed;
         })
         .on('config', function(msg) {

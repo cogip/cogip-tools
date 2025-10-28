@@ -3,7 +3,9 @@
 The `Monitor` is used to monitor the robot behavior during the game.
 
 It communicates on the `/monitor` and `/dashboard` namespaces of the SocketIO server
-running on the central beacon over Wifi.
+from the `cogip-server` tool.
+
+In emulation mode, it also uses Shared Memory to write Lidar data and read dynamic obstacles.
 
 Only one `Monitor` can be connected to the SocketIO server at the same time.
 
@@ -13,25 +15,19 @@ The monitor provides a graphical interface, featuring:
 
   * a 3D view of the table and the robot
 
-  * a menu giving access to the planner menu and firmware's shell menu
+  * a menu giving access to the tools menus
 
-  * a button to add obstacles (in grey), move and resize them
+  * a button to add virtual obstacles (in orange) which can be moved and resized
 
-  * save and load obstacles using JSON files
+  * save and load virtual obstacles using JSON files
 
-  * visualization of ToF (red dots) and LIDAR (blue dots) sensors detections
+  * visualization of LIDAR (red dots) sensors detections
 
-  * visualization of obstacles detected using the Lidar (in transparent red)
-
-  * charts window to visualize calibration data
-
-  * dashboard window to visualize the `Dashboard`
+  * visualization of fix and dynamic obstacles (in transparent red)
 
   * different artifacts depending of current game rules
 
 ![GUI Overview](../img/cogip-monitor-gui.png)
-
-![Charts View](../img/cogip-monitor-charts.png)
 
 ## Data Flow
 
