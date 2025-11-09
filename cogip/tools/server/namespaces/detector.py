@@ -1,6 +1,7 @@
 from typing import Any
 
 import socketio
+from socketio.exceptions import ConnectionRefusedError
 
 from .. import logger, server
 from ..context import Context
