@@ -25,12 +25,15 @@ class MonitorNamespace(socketio.AsyncNamespace):
 
     async def on_connected(self, sid):
         logger.info("Monitor connected.")
-        await self.emit(
-            "add_robot",
-            (self.context.robot_id, self.context.virtual_planner, self.context.virtual_detector),
-            namespace="/monitor",
-        )
+        if self.context.planner_sid and self.context.detector_sid and not self.context.robot_added:
+            await self.emit(
+                "add_robot",
+                (self.context.robot_id, self.context.virtual_planner, self.context.virtual_detector),
+                namespace="/monitor",
+            )
+            self.context.robot_added = True
 
     def on_disconnect(self, sid):
         self.context.monitor_sid = None
+        self.context.robot_added = False
         logger.info("Monitor disconnected.")

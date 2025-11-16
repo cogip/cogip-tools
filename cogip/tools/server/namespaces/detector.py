@@ -28,6 +28,13 @@ class DetectorNamespace(socketio.AsyncNamespace):
     async def on_connected(self, sid, virtual: bool):
         logger.info(f"Detector connected (virtual={virtual}).")
         self.context.virtual_detector = virtual
+        if self.context.planner_sid and self.context.monitor_sid and not self.context.robot_added:
+            await self.emit(
+                "add_robot",
+                (self.context.robot_id, self.context.virtual_planner, self.context.virtual_detector),
+                namespace="/monitor",
+            )
+            self.context.robot_added = True
 
     async def on_disconnect(self, sid):
         self.context.detector_sid = None
