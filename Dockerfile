@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS uv_base
+FROM ubuntu:25.10 AS uv_base
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
@@ -34,6 +34,7 @@ RUN apt-get update && \
     apt-get install -y \
         cmake \
         swig \
+        libfontconfig1 \
         libgl1 \
         libglib2.0-0 \
         libegl1 \
@@ -86,7 +87,7 @@ RUN apt-get update && \
 CMD ["sleep", "infinity"]
 
 
-FROM debian:12 AS build_wheel
+FROM debian:13 AS build_wheel
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
