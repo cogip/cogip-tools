@@ -11,7 +11,7 @@ RUN apt-get update \
 WORKDIR /src
 
 # Install uv
-RUN curl -LsSf https://astral.sh/uv/0.6.6/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+RUN curl -LsSf https://astral.sh/uv/0.9.15/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
 
 # Install Python in /opt so regular users can use it
 ENV UV_PYTHON_INSTALL_DIR=/opt/python
@@ -99,7 +99,7 @@ RUN apt-get update \
 WORKDIR /src
 
 # Install uv
-RUN curl -LsSf https://astral.sh/uv/0.6.6/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+RUN curl -LsSf https://astral.sh/uv/0.9.15/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
 ENV UV_PYTHON_INSTALL_DIR=/opt/python
 ENV PATH="/src/.venv/bin:${PATH}"
 
