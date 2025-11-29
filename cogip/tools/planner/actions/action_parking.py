@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from cogip import models
 from cogip.models.artifacts import FixedObstacleID
+from cogip.models.models import MotionDirection
 from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
@@ -23,7 +24,7 @@ class ParkingAction(Action):
             **pose.model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
-            allow_reverse=True,
+            motion_direction=MotionDirection.BIDIRECTIONAL,
             bypass_final_orientation=False,
             before_pose_func=self.before_pose,
             after_pose_func=self.after_pose,

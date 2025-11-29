@@ -148,7 +148,7 @@ def avoidance_process(robot_id: int):
         last_pose_current = pose_current.pose
 
         for p in path:
-            p.allow_reverse = pose_order.allow_reverse
+            p.motion_direction = pose_order.motion_direction
             p.timeout_ms = pose_order.timeout_ms
             p.max_speed_linear = pose_order.max_speed_linear
             p.max_speed_angular = pose_order.max_speed_angular
