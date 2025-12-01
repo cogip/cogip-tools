@@ -44,6 +44,21 @@ class PBCom:
         self.messages_received = asyncio.Queue()  # Queue for messages received
         self.messages_to_send = asyncio.Queue()  # Queue for messages waiting to be sent
 
+    def register_message_handler(self, uuid: int, handler: Callable) -> None:
+        """
+        Register a message handler at runtime.
+
+        Args:
+            uuid: The message UUID to handle.
+            handler: The async callable to handle the message.
+
+        Raises:
+            ValueError: If a handler for this UUID is already registered.
+        """
+        if uuid in self.message_handlers:
+            raise ValueError(f"Handler for UUID 0x{uuid:04x} is already registered")
+        self.message_handlers[uuid] = handler
+
     async def run(self):
         """
         Start PBCom.
@@ -73,7 +88,7 @@ class PBCom:
                 uuid, encoded_payload = await self.messages_received.get()
                 request_handler = self.message_handlers.get(uuid)
                 if not request_handler:
-                    logger.warning(f"No handler found for message uuid '{uuid}'")
+                    logger.warning(f"No handler found for message uuid '0x{uuid:04x}'")
                 else:
                     if not encoded_payload:
                         await request_handler()
@@ -128,7 +143,7 @@ class PBCom:
         try:
             while True:
                 uuid, pb_message = await self.messages_to_send.get()
-                logger.info(f"Send 0x{uuid:4x}:\n{pb_message}")
+                logger.info(f"Send 0x{uuid:04x}:\n{pb_message}")
                 if pb_message:
                     response_serialized = await self.loop.run_in_executor(None, pb_message.SerializeToString)
                     response_base64 = await self.loop.run_in_executor(None, base64.encodebytes, response_serialized)
