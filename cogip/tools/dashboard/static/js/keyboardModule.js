@@ -142,7 +142,7 @@ export const virtualKeyboard = {
         "bg-custom-button",
         "rounded-md",
         "border-none",
-        "outline-none",
+        "outline-hidden",
         "text-red-cogip",
         "cursor-pointer",
       ]);

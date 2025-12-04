@@ -77,7 +77,7 @@ function createCloseButton() {
   closeButton.innerHTML = "&times;"; // Close icon
   setAttributes(closeButton, {
     class:
-      "absolute top-3 right-3 text-grey-color text-3xl leading-none hover:text-gray-400 focus:outline-none",
+      "absolute top-3 right-3 text-grey-color text-3xl leading-none hover:text-gray-400 focus:outline-hidden",
     "aria-label": "Close",
     id: "closeButton",
     type: "button",
@@ -320,7 +320,7 @@ function configureChoiceInput(typeInput, value, choices) {
           isActive
             ? "border-red-cogip text-red-cogip"
             : " text-gray-600 border-transparent"
-        } hover:border-red-cogip hover:text-red-cogip focus:outline-none`,
+        } hover:border-red-cogip hover:text-red-cogip focus:outline-hidden`,
       });
       tabButton.textContent = tab;
       tabContainer.appendChild(tabButton);
@@ -443,7 +443,7 @@ function configureCampInput(value) {
   const listCamp = ["yellow", "blue"];
   listCamp.forEach((camp) => {
     const isActive =
-      camp === value ? "active shadow-inner shadow-black outline-none" : "";
+      camp === value ? "active shadow-inner shadow-black outline-hidden" : "";
     const button = createCampButton(camp, isActive); // Create camp buttons
     campZone.appendChild(button);
   });
@@ -468,7 +468,7 @@ function createCampButton(camp, isActive) {
   // Event listener to activate and deactivate buttons
   button.addEventListener("click", function () {
     deactivateSiblings(this); // Deactivate sibling buttons
-    this.classList.add("active", "shadow-inner", "shadow-black", "outline-none");
+    this.classList.add("active", "shadow-inner", "shadow-black", "outline-hidden");
   });
 
   return button;
@@ -481,7 +481,7 @@ function deactivateSiblings(button) {
       "active",
       "shadow-inner",
       "shadow-black",
-      "outline-none"
+      "outline-hidden"
     )
   );
 }
@@ -490,7 +490,7 @@ function deactivateSiblings(button) {
 function configureTextInput(wizardInput, value) {
   wizardInput.setAttribute(
     "class",
-    "text-grey-color bg-black rounded-md border border-slate-950 use-keyboard-input focus:outline-none focus:caret-red-cogip focus:ring-2 focus:ring-red-cogip"
+    "text-grey-color bg-black rounded-md border border-slate-950 use-keyboard-input focus:outline-hidden focus:caret-red-cogip focus:ring-2 focus:ring-red-cogip"
   );
   wizardInput.value = value; // Set input value
   wizardInput.style.display = "inline"; // Display the input
