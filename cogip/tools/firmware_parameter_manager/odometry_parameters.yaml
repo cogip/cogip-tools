@@ -1,0 +1,30 @@
+parameters:
+  - name: qdec_left_polarity
+    value:
+      type: float
+      content: 0.0
+
+  - name: qdec_right_polarity
+    value:
+      type: float
+      content: 0.0
+
+  - name: left_wheel_diameter_mm
+    value:
+      type: float
+      content: 0.0
+
+  - name: right_wheel_diameter_mm
+    value:
+      type: float
+      content: 0.0
+
+  - name: encoder_wheels_distance_mm
+    value:
+      type: float
+      content: 0.0
+
+  - name: encoder_wheels_resolution_pulses
+    value:
+      type: float
+      content: 0.0

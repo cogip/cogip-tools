@@ -87,6 +87,7 @@ cogip-ydlidar-g2 = "cogip.tools.ydlidar_g2.__main__:main"
 cogip-cpp-shm-example = "cogip.tools.cpp_shm_example.__main__:main"
 cogip-scservo = "cogip.tools.scservo.__main__:main"
 cogip-mcu-logger = "cogip.tools.mcu_logger.__main__:main"
+cogip-firmware-parameter-manager = "cogip.tools.firmware_parameter_manager.__main__:main"
 
 [tool.uv]
 python-preference = "only-managed"
