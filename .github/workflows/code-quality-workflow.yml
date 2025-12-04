@@ -13,5 +13,21 @@ jobs:
   ruff:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6.0.1
       - uses: chartboost/ruff-action@v1
+
+  qmllint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6.0.1
+      - uses: actions/setup-python@v6.1.0
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: pip install PySide6
+      - name: Run qmllint
+        run: pyside6-qmllint cogip/tools/monitor/*.qml
+      - name: Check qml format
+        run: |
+          pyside6-qmlformat --inplace cogip/tools/monitor/*.qml
+          git diff --exit-code

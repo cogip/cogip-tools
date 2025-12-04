@@ -7,3 +7,17 @@ repos:
     - id: ruff
     # Run the formatter.
     - id: ruff-format
+
+- repo: local
+  hooks:
+    - id: qmllint
+      name: QML Lint
+      entry: pyside6-qmllint
+      language: system
+      files: ^cogip/tools/monitor/.*\.qml$
+
+    - id: qmlformat
+      name: QML Format
+      entry: pyside6-qmlformat --inplace
+      language: system
+      files: ^cogip/tools/monitor/.*\.qml$
