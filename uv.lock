@@ -348,7 +348,7 @@ requires-dist = [
     { name = "luma-oled", specifier = "==3.13.0" },
     { name = "matplotlib", specifier = "~=3.9.3" },
     { name = "more-itertools", specifier = "==10.1.0" },
-    { name = "nanobind", specifier = "~=2.5.0" },
+    { name = "nanobind", specifier = "~=2.9.0" },
     { name = "numpy", specifier = ">=2" },
     { name = "opencv-contrib-python", specifier = "~=4.12.0.88" },
     { name = "opencv-python", specifier = "~=4.12.0.88" },
@@ -1253,11 +1253,11 @@ wheels = [
 
 [[package]]
 name = "nanobind"
-version = "2.5.0"
+version = "2.9.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/20/fa/8e5930837f9b08202c4e566cf529480b0c3266e88f39723388baf8c69700/nanobind-2.5.0.tar.gz", hash = "sha256:cc8412e94acffa20a369191382bcdbb6fbfb302e475e87cacff9516d51023a15", size = 962802, upload-time = "2025-02-02T05:20:32.571Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/48/edccb2ec318dee2f979765ca8e565e867569522bb55ad384d57b01c3da03/nanobind-2.9.2.tar.gz", hash = "sha256:e7608472de99d375759814cab3e2c94aba3f9ec80e62cfef8ced495ca5c27d6e", size = 984270, upload-time = "2025-09-04T12:52:45.322Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/9e/dadc3831f40e22c1b3925f07894646ada7906ef5b48db5c5eb2b03ca9faa/nanobind-2.5.0-py3-none-any.whl", hash = "sha256:e1e5c816e5d10f0b252d82ba7f769f0f6679f5e043cf406aec3d9e184bf2a60d", size = 236912, upload-time = "2025-02-02T05:20:30.349Z" },
+    { url = "https://files.pythonhosted.org/packages/05/20/f8944f162df48a20f8f533f4e4faed63891aa368ceca8cc8b32d4c785ed4/nanobind-2.9.2-py3-none-any.whl", hash = "sha256:c37957ffd5eac7eda349cff3622ecd32e5ee1244ecc912c99b5bc8188bafd16e", size = 243830, upload-time = "2025-09-04T12:52:43.652Z" },
 ]
 
 [[package]]

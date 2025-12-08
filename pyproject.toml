@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "cython", "cython-cmake", "nanobind"]
+requires = ["scikit-build-core", "cython", "cython-cmake", "nanobind~=2.9.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -24,7 +24,7 @@ dependencies = [
     "luma.oled==3.13.0",
     "matplotlib~=3.9.3",
     "more_itertools==10.1.0",
-    "nanobind~=2.5.0",
+    "nanobind~=2.9.0",
     "numpy>=2",
     "opencv-contrib-python~=4.12.0.88",
     "opencv-python~=4.12.0.88",
