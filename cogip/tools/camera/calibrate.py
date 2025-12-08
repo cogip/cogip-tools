@@ -8,7 +8,8 @@ import typer
 
 from . import logger
 from .arguments import CameraName, VideoCodec
-from .utils import get_camera_intrinsic_params_filename, save_camera_intrinsic_params
+from .camera import RPiCamera, USBCamera
+from .utils import save_camera_intrinsic_params
 
 
 def cmd_calibrate(
@@ -43,28 +44,28 @@ def cmd_calibrate(
             help="Camera frame width",
             envvar="CAMERA_WIDTH",
         ),
-    ] = 640,
+    ] = 1920,
     camera_height: Annotated[
         int,
         typer.Option(
             help="Camera frame height",
             envvar="CAMERA_HEIGHT",
         ),
-    ] = 480,
+    ] = 1080,
     charuco_rows: Annotated[
         int,
         typer.Option(
             help="Number of rows on the Charuco board",
             envvar="CAMERA_CHARUCO_ROWS",
         ),
-    ] = 13,
+    ] = 8,
     charuco_cols: Annotated[
         int,
         typer.Option(
             help="Number of columns on the Charuco board",
             envvar="CAMERA_CHARUCO_COLS",
         ),
-    ] = 8,
+    ] = 13,
     charuco_marker_length: Annotated[
         int,
         typer.Option(
@@ -85,28 +86,32 @@ def cmd_calibrate(
             help="Use Charuco boards compatible with OpenCV < 4.6",
             envvar="CAMERA_CHARUCO_LEGACY",
         ),
-    ] = False,
+    ] = True,
 ):
     """Calibrate camera using images captured by the 'capture' command"""
     obj = ctx.ensure_object(dict)
     debug = obj.get("debug", False)
     capture_path = Path(__file__).parent  # Directory to store captured frames
     capture_path /= f"cameras/{id}/{camera_name.name}_{camera_codec.name}_{camera_width}x{camera_height}/images"
-    params_filename = get_camera_intrinsic_params_filename(id, camera_name, camera_codec, camera_width, camera_height)
 
     if not capture_path.exists():
         logger.error(f"Captured images directory not found: {capture_path}")
         return
 
+    if camera_name == CameraName.rpicam:
+        CameraClass = RPiCamera
+    else:
+        CameraClass = USBCamera
+    camera = CameraClass(id, camera_name, camera_codec, camera_width, camera_height)
+
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     board = cv2.aruco.CharucoBoard(
-        (charuco_rows, charuco_cols),
+        (charuco_cols, charuco_rows),
         charuco_square_length,
         charuco_marker_length,
         aruco_dict,
     )
-    if charuco_legacy:
-        board.setLegacyPattern(True)
+    board.setLegacyPattern(charuco_legacy)
 
     captured_images = list(capture_path.glob("image_*.jpg"))
     if (nb_img := len(captured_images)) < 10:
@@ -150,5 +155,5 @@ def cmd_calibrate(
     logger.debug("- dist coefs:")
     logger.debug(dist_coefs)
 
-    save_camera_intrinsic_params(camera_matrix, dist_coefs, params_filename)
-    logger.info(f"Calibration parameters stored in: {params_filename}")
+    save_camera_intrinsic_params(camera_matrix, dist_coefs, camera.intrinsic_params_filename)
+    logger.info(f"Calibration parameters stored in: {camera.intrinsic_params_filename}")

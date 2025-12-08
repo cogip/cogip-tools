@@ -10,10 +10,9 @@ from numpy.typing import ArrayLike
 from cogip.models import CameraExtrinsicParameters, Pose, Vertex
 from . import logger
 from .arguments import CameraName, VideoCodec
+from .camera import RPiCamera, USBCamera
 from .utils import (
     R_flip,
-    get_camera_extrinsic_params_filename,
-    get_camera_intrinsic_params_filename,
     load_camera_extrinsic_params,
     load_camera_intrinsic_params,
     rotate_2d,
@@ -40,10 +39,10 @@ marker_sizes: dict[int, float] = {
     9: 70.0,
     10: 70.0,
     # Table markers
-    20: 100.0,  # Back/Left    500/750
-    21: 100.0,  # Back/Right   500/-750
-    22: 100.0,  # Front/Left   -500/750
-    23: 100.0,  # Front/Right  -500/-750
+    20: 100.0,  # Back/Left    400/900
+    21: 100.0,  # Back/Right   400/-900
+    22: 100.0,  # Front/Left   -400/900
+    23: 100.0,  # Front/Right  -400/-900
 }
 
 table_markers_positions = {
@@ -119,7 +118,7 @@ def get_robot_position(n: int) -> Pose | None:
                 O=90,
             )
 
-    logger.error("Unknown robot position: {n}")
+    logger.error(f"Unknown robot position: {n}")
 
     return None
 
@@ -155,14 +154,14 @@ def cmd_detect(
             help="Camera frame width",
             envvar="CAMERA_WIDTH",
         ),
-    ] = 640,
+    ] = 1920,
     camera_height: Annotated[
         int,
         typer.Option(
             help="Camera frame height",
             envvar="CAMERA_HEIGHT",
         ),
-    ] = 480,
+    ] = 1080,
     robot_position: Annotated[
         Optional[int],  # noqa
         typer.Option(
@@ -180,58 +179,52 @@ def cmd_detect(
         logger.error(f"Camera not found: {camera_name.val}")
         return
 
+    if camera_name == CameraName.rpicam:
+        CameraClass = RPiCamera
+    else:
+        CameraClass = USBCamera
+    camera = CameraClass(id, camera_name, camera_codec, camera_width, camera_height)
+    camera.open()
+
     # Load intrinsic parameters (mandatory)
-    intrinsic_params_filename = get_camera_intrinsic_params_filename(
-        id, camera_name, camera_codec, camera_width, camera_height
-    )
-
-    if not intrinsic_params_filename.exists():
-        logger.error(f"Intrinsic parameters file not found: {intrinsic_params_filename}")
-        return
-
-    camera_matrix, dist_coefs = load_camera_intrinsic_params(intrinsic_params_filename)
+    if not camera.intrinsic_params_filename.exists():
+        logger.warning(f"Intrinsic parameters file not found: {camera.intrinsic_params_filename}")
+        camera_matrix, dist_coefs = None, None
+    else:
+        camera_matrix, dist_coefs = load_camera_intrinsic_params(camera.intrinsic_params_filename)
 
     # Load extrinsic parameters (optional)
-    extrinsic_params_filename = get_camera_extrinsic_params_filename(
-        id, camera_name, camera_codec, camera_width, camera_height
-    )
-
-    if not extrinsic_params_filename.exists():
-        logger.warning(f"Extrinsic parameters file not found: {extrinsic_params_filename}")
-        return
-
-    extrinsic_params = load_camera_extrinsic_params(extrinsic_params_filename)
+    if not camera.extrinsic_params_filename.exists():
+        logger.warning(f"Extrinsic parameters file not found: {camera.extrinsic_params_filename}")
+        extrinsic_params = None
+    else:
+        extrinsic_params = load_camera_extrinsic_params(camera.extrinsic_params_filename)
 
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     parameters = cv2.aruco.DetectorParameters()
     detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
 
-    cap = cv2.VideoCapture(str(camera_name.val), apiPreference=cv2.CAP_V4L2)
-    fourcc = cv2.VideoWriter_fourcc(*camera_codec.val)
-    ret = cap.set(cv2.CAP_PROP_FOURCC, fourcc)
-    if not ret:
-        logger.warning(f"Video codec {camera_codec.val} not supported")
-
-    ret = cap.set(cv2.CAP_PROP_FRAME_WIDTH, camera_width)
-    if not ret:
-        logger.warning(f"Frame width {camera_width} not supported")
-
-    ret = cap.set(cv2.CAP_PROP_FRAME_HEIGHT, camera_height)
-    if not ret:
-        logger.warning(f"Frame height {camera_height} not supported")
-
-    cv2.namedWindow("Marker Detection", cv2.WINDOW_NORMAL | cv2.WINDOW_GUI_EXPANDED)
+    cv2.namedWindow("Marker Detection", cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty("Marker Detection", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     while True:
-        _, frame = cap.read()
+        frame, stream_frame = camera.read()
+        if frame is None:
+            continue
 
-        dst = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        if len(frame.shape) == 2:
+            dst = frame
+        else:
+            dst = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        if stream_frame is None:
+            if len(frame.shape) == 2:
+                stream_frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+            else:
+                stream_frame = frame
 
         # Detect marker corners
         marker_corners, marker_ids, _ = detector.detectMarkers(dst)
-
-        # Draw detected markers
-        cv2.aruco.drawDetectedMarkers(frame, marker_corners, marker_ids)
 
         # Classify detected markers by id and size
         corners_by_id = {}
@@ -248,57 +241,77 @@ def cmd_detect(
                     corners_by_size[size] = []
                 corners_by_size[size].append((id[0], corners))
 
-        # Handle table markers
-        table_markers = {
-            id: corners[0]  # There can be only one marker of each id
-            for id, corners in corners_by_id.items()
-            if id in [20, 21, 22, 23]
-        }
-        handle_table_markers(
-            table_markers,
-            camera_matrix,
-            dist_coefs,
-            get_robot_position(robot_position),
-        )
+        if robot_position is not None and camera_matrix is not None and dist_coefs is not None:
+            # Handle table markers
+            table_markers = {
+                id: corners[0]  # There can be only one marker of each id
+                for id, corners in corners_by_id.items()
+                if id in [20, 21, 22, 23]
+            }
+            handle_table_markers(
+                table_markers,
+                camera_matrix,
+                dist_coefs,
+                get_robot_position(robot_position),
+            )
 
-        # Handle solar panel markers
-        solar_panel_markers = []
-        if 47 in corners_by_id:
-            solar_panel_markers = corners_by_id[47]
-        get_solar_panel_positions(
-            solar_panel_markers,
-            camera_matrix,
-            dist_coefs,
-            extrinsic_params,
-            get_robot_position(robot_position),
-        )
+        if (
+            robot_position is not None
+            and extrinsic_params is not None
+            and camera_matrix is not None
+            and dist_coefs is not None
+        ):
+            # Handle solar panel markers
+            solar_panel_markers = []
+            if 47 in corners_by_id:
+                solar_panel_markers = corners_by_id[47]
+            get_solar_panel_positions(
+                solar_panel_markers,
+                camera_matrix,
+                dist_coefs,
+                extrinsic_params,
+                get_robot_position(robot_position),
+            )
 
         if marker_ids is not None:
             # Draw all markers borders
-            cv2.aruco.drawDetectedMarkers(frame, marker_corners, marker_ids)
+            for i, corners in enumerate(marker_corners):
+                cv2.polylines(stream_frame, [corners[0].astype(np.int32)], True, (255, 0, 255), 10)
+                cv2.putText(
+                    stream_frame,
+                    str(marker_ids[i][0]),
+                    tuple(corners[0][0].astype(int)),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.0,
+                    (255, 0, 255),
+                    2,
+                )
 
             # Draw all markers axes
-            for id, corner in zip(marker_ids, marker_corners):
-                marker_id = id[0]
-                if marker_id not in marker_sizes:
-                    logger.warning(f"Unknown marker found: {marker_id}")
-                    continue
+            if camera_matrix is not None and dist_coefs is not None:
+                for id, corner in zip(marker_ids, marker_corners):
+                    marker_id = id[0]
+                    if marker_id not in marker_sizes:
+                        logger.warning(f"Unknown marker found: {marker_id}")
+                        continue
 
-                _, rvec, tvec = cv2.solvePnP(
-                    get_marker_points(marker_sizes[marker_id]),
-                    corner,
-                    camera_matrix,
-                    dist_coefs,
-                    False,
-                    cv2.SOLVEPNP_IPPE_SQUARE,
-                )
-                cv2.drawFrameAxes(frame, camera_matrix, dist_coefs, rvec, tvec, 50)
+                    _, rvec, tvec = cv2.solvePnP(
+                        get_marker_points(marker_sizes[marker_id]),
+                        corner,
+                        camera_matrix,
+                        dist_coefs,
+                        False,
+                        cv2.SOLVEPNP_IPPE_SQUARE,
+                    )
+                    cv2.drawFrameAxes(stream_frame, camera_matrix, dist_coefs, rvec, tvec, 50, 5)
 
-        cv2.imshow("Marker Detection", frame)
+        cv2.imshow("Marker Detection", stream_frame)
 
         k = cv2.waitKey(1)
         if k == exit_key:
             break
+
+    camera.close()
 
 
 def handle_table_markers(

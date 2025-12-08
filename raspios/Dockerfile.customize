@@ -17,7 +17,8 @@ RUN apt-get update \
         dnsmasq iptables wait-for-it ifmetric can-utils \
         libinput-tools libegl1 libgles2 mesa-utils mesa-utils-bin \
         weston rsyslog xwayland libsystemd-dev \
-        swig liblgpio-dev
+        swig liblgpio-dev \
+        python3-libcamera python3-kms++ libcap-dev
 
 RUN apt-get purge -y --auto-remove network-manager cloud-init apparmor avahi-daemon
 

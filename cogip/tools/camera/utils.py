@@ -5,7 +5,6 @@ import cv2.typing
 import numpy as np
 
 from cogip.models import CameraExtrinsicParameters
-from .arguments import CameraName, VideoCodec
 
 #
 # Utility functions to handle rotation matrices
@@ -83,19 +82,6 @@ def wrap_to_pi(angle: float) -> float:
 #
 
 
-def get_camera_intrinsic_params_filename(
-    robot_id: int,
-    name: CameraName,
-    codec: VideoCodec,
-    width: int,
-    height: int,
-) -> Path:
-    """Get parameters filename based on current package path and camera parameters"""
-    params_filename = Path(__file__).parent
-    params_filename /= f"cameras/{robot_id}/{name.name}_{codec.name}_{width}x{height}/intrinsic_params.yaml"
-    return params_filename
-
-
 def save_camera_intrinsic_params(camera_matrix: cv2.typing.MatLike, dist_coefs: cv2.typing.MatLike, path: Path):
     """Save the camera matrix and the distortion coefficients to given path/file."""
     cv_file = cv2.FileStorage(str(path), cv2.FILE_STORAGE_WRITE)
@@ -110,25 +96,12 @@ def load_camera_intrinsic_params(path: Path) -> tuple[cv2.typing.MatLike, cv2.ty
     camera_matrix = cv_file.getNode("K").mat()
     dist_coefs = cv_file.getNode("D").mat()
     cv_file.release()
-    return [camera_matrix, dist_coefs]
-
-
-def get_camera_extrinsic_params_filename(
-    robot_id: int,
-    name: CameraName,
-    codec: VideoCodec,
-    width: int,
-    height: int,
-) -> Path:
-    """Get parameters filename based on current package path and camera parameters"""
-    params_filename = Path(__file__).parent
-    params_filename /= f"cameras/{robot_id}/{name.name}_{codec.name}_{width}x{height}/extrinsic_params.json"
-    return params_filename
+    return camera_matrix, dist_coefs
 
 
 def save_camera_extrinsic_params(params: CameraExtrinsicParameters, path: Path):
     """Save the camera position relative to robot center to given path/file."""
-    path.write_text(CameraExtrinsicParameters.model_dump_json(indent=2))
+    path.write_text(params.model_dump_json(indent=2))
 
 
 def load_camera_extrinsic_params(path: Path) -> CameraExtrinsicParameters:

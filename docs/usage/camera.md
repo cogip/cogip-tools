@@ -18,6 +18,8 @@ Options:
 Commands:
   calibrate  Calibrate camera using images captured by the 'capture' command
   capture    Capture images to be used by the 'calibrate' command
+  charuco    Display charuco board to check if is corresponds to the board used for calibration
+  detect     Detect Aruco tags and estimate their positions
   info       Get properties of connected cameras
 ```
 
@@ -37,6 +39,10 @@ Usage: cogip-camera info [OPTIONS]
   Get properties of connected cameras
 
 Options:
+  -i, --id INTEGER RANGE          Robot ID.
+                                  env var: ROBOT_ID, CAMERA_ID
+                                  default: 1, x>=0
+
   --camera-name [hbv|sonix]   Name of the camera (all if not specified)
                               env var: CAMERA_NAME
 
@@ -46,13 +52,51 @@ Options:
 
   --camera-width INTEGER      Camera frame width
                               env var: CAMERA_WIDTH
-                              default: 640
+                              default: 1920
 
   --camera-height INTEGER     Camera frame height
                               env var: CAMERA_HEIGHT
-                              default: 480
+                              default: 1080
 
   --help                      Show this message and exit.
+```
+
+## Charuco Command
+
+Display charuco board to check if is corresponds to the board used for calibration.
+Same parameters must be used with the `capture` and `calibrate` commands.
+
+```bash
+$ cogip-camera charuco --help
+Usage: cogip-camera charuco [OPTIONS]
+
+  Display charuco board to check if is corresponds to the board used for calibration
+
+Options:
+  --charuco-rows INTEGER          Number of rows on the Charuco board
+                                  env var: CAMERA_CHARUCO_ROWS
+                                  default: 8
+
+  --charuco-cols INTEGER          Number of columns on the Charuco board
+                                  env var: CAMERA_CHARUCO_COLS
+                                  default: 13
+
+  --charuco-marker-length INTEGER
+                                  Length of an Aruco marker on the Charuco board (in mm)
+                                  env var: CAMERA_CHARUCO_MARKER_LENGTH
+                                  default: 23
+
+  --charuco-square-length INTEGER
+                                  Length of a square in the Charuco board (in mm)
+                                  env var: CAMERA_CHARUCO_SQUARE_LENGTH
+                                  default: 30
+
+  --charuco-legacy / --no-charuco-legacy
+                                  Use Charuco boards compatible with OpenCV < 4.6
+                                  env var: CAMERA_CHARUCO_LEGACY
+                                  default: no-charuco-legacy
+
+  --help                          Show this message and exit.
 ```
 
 ## Capture Command
@@ -93,11 +137,11 @@ Options:
 
   --camera-width INTEGER          Camera frame width
                                   env var: CAMERA_WIDTH
-                                  default: 640
+                                  default: 1920
 
   --camera-height INTEGER         Camera frame height
                                   env var: CAMERA_HEIGHT
-                                  default: 480
+                                  default: 1080
 
   --max-frames INTEGER            Maximum number of frames to read before exiting
                                   env var: CAMERA_MAX_FRAMES
@@ -128,7 +172,7 @@ Options:
   --charuco-legacy / --no-charuco-legacy
                                   Use Charuco boards compatible with OpenCV < 4.6
                                   env var: CAMERA_CHARUCO_LEGACY
-                                  default: no-charuco-legacy
+                                  default: charuco-legacy
 
   --help                          Show this message and exit.
 ```
@@ -160,11 +204,11 @@ Options:
 
   --camera-width INTEGER          Camera frame width
                                   env var: CAMERA_WIDTH
-                                  default: 640
+                                  default: 1920
 
   --camera-height INTEGER         Camera frame height
                                   env var: CAMERA_HEIGHT
-                                  default: 480
+                                  default: 1080
 
   --charuco-rows INTEGER          Number of rows on the Charuco board
                                   env var: CAMERA_CHARUCO_ROWS
@@ -187,7 +231,44 @@ Options:
   --charuco-legacy / --no-charuco-legacy
                                   Use Charuco boards compatible with OpenCV < 4.6
                                   env var: CAMERA_CHARUCO_LEGACY
-                                  default: no-charuco-legacy
+                                  default: charuco-legacy
+
+  --help                          Show this message and exit.
+```
+
+## Detect Command
+
+Detect Aruco tags and estimate their positions.
+
+```bash
+$ cogip-camera detect --help
+Usage: cogip-camera detect [OPTIONS]
+
+  Detect Aruco tags and estimate their positions
+
+Options:
+  -i, --id INTEGER RANGE          Robot ID.
+                                  env var: ROBOT_ID, CAMERA_ID
+                                  default: 1, x>=0
+
+  --camera-name [hbv|sonix]       Name of the camera
+                                  env var: CAMERA_NAME
+                                  default: hbv
+
+  --camera-codec [mjpg|yuyv]      Camera video codec
+                                  env var: CAMERA_CODEC
+                                  default: yuyv
+
+  --camera-width INTEGER          Camera frame width
+                                  env var: CAMERA_WIDTH
+                                  default: 1920
+
+  --camera-height INTEGER         Camera frame height
+                                  env var: CAMERA_HEIGHT
+                                  default: 1080
+
+  --robot-position INTEGER        Define the robot position
+                                  env var: CAMERA_ROBOT_POSITION
 
   --help                          Show this message and exit.
 ```
