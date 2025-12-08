@@ -16,7 +16,8 @@ RUN apt-get update \
         i2c-tools libi2c-dev libserial-dev \
         dnsmasq iptables wait-for-it ifmetric can-utils \
         libinput-tools libegl1 libgles2 mesa-utils mesa-utils-bin \
-        weston rsyslog xwayland libsystemd-dev
+        weston rsyslog xwayland libsystemd-dev \
+        swig liblgpio-dev
 
 RUN apt-get purge -y --auto-remove network-manager cloud-init apparmor avahi-daemon
 
