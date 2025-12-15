@@ -51,6 +51,7 @@ Item {
         id: view
 
         property var circleObstacles: []
+        property string granaryTextureSource: "../../../assets/granary.webp"
         property string groundTextureSource: sceneRoot.tableGroundTexture
         property int lidarRayBatch: 360
         property int lidarRayCount: 360
@@ -395,6 +396,68 @@ Item {
                 id: table
 
                 objectName: "table"
+            }
+
+            Model {
+                id: granary
+
+                objectName: "Granary"
+                position: Qt.vector3d(775, 0, 27.5)
+                scale: Qt.vector3d(4.5, 18, 0.55)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#96643f"
+                    }
+                ]
+            }
+
+            Model {
+                id: granaryLeftBorder
+
+                objectName: "GranaryLeftBorder"
+                position: Qt.vector3d(775, 892.5, 62.5)
+                scale: Qt.vector3d(4.5, 0.15, 0.15)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#96643f"
+                    }
+                ]
+            }
+
+            Model {
+                id: granaryRightBorder
+
+                objectName: "GranaryRightBorder"
+                position: Qt.vector3d(775, -892.5, 62.5)
+                scale: Qt.vector3d(4.5, 0.15, 0.15)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#96643f"
+                    }
+                ]
+            }
+
+            Model {
+                id: granaryGround
+
+                objectName: "granaryGround"
+                position: Qt.vector3d(775, 0, 56)
+                scale: Qt.vector3d(4.5, 18, 0.55)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.granaryTextureSource
+                        }
+                    }
+                ]
             }
 
             Components.Polyline3D {
