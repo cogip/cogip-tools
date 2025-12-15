@@ -64,7 +64,6 @@ RUN group_exists=$(getent group ${GID} || true) && echo $group_exists \
 
 ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
 ADD cogip /src/cogip
-RUN uv sync
 
 CMD ["sleep", "infinity"]
 
