@@ -107,6 +107,19 @@ class SioEvents(socketio.AsyncClientNamespace):
         start_pose.copy_pb(pb_start_pose)
         await self.copilot.pbcom.send_can_message(copilot.pose_start_uuid, pb_start_pose)
 
+    async def on_pose_order(self, data: dict[str, Any]):
+        """
+        Callback on pose order (from planner).
+        Forward to mcu-firmware.
+        """
+        logger.info(f"[SIO] Pose order: {data}")
+        pose_order = models.PathPose.model_validate(data)
+        if self.copilot.id > 1:
+            pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
+        pb_pose_order = PB_PathPose()
+        pose_order.copy_pb(pb_pose_order)
+        await self.copilot.pbcom.send_can_message(copilot.pose_order_uuid, pb_pose_order)
+
     async def on_actuators_start(self):
         """
         Callback on actuators_start (from dashboard).
