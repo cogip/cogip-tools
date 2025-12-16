@@ -23,3 +23,9 @@ from .models import (  # noqa
     ShellMenu,
     Vertex,
 )
+from .odometry_calibration import (  # noqa
+    CalibrationResult,
+    CalibrationState,
+    EncoderDeltas,
+    OdometryParameters,
+)
