@@ -49,6 +49,7 @@ dependencies = [
     "scikit-learn~=1.6.1",
     "watchfiles==0.24.0",
     "websocket-client==1.7.0",
+    "rich==14.2.0",
 ]
 
 [dependency-groups]
