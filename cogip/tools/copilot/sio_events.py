@@ -6,8 +6,17 @@ import socketio
 from pydantic import TypeAdapter
 
 from cogip import models
+from cogip.models import FirmwareParameter
 from cogip.models.actuators import ActuatorCommand, PositionalActuatorCommand
-from cogip.protobuf import PB_ActuatorCommand, PB_Controller, PB_PathPose, PB_Pid_Id, PB_PidEnum
+from cogip.protobuf import (
+    PB_ActuatorCommand,
+    PB_Controller,
+    PB_ParameterGetRequest,
+    PB_ParameterSetRequest,
+    PB_PathPose,
+    PB_Pid_Id,
+    PB_PidEnum,
+)
 from . import copilot, logger
 from .menu import menu
 
@@ -183,3 +192,45 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         logger.info("[SIO] Brake")
         await self.copilot.pbcom.send_can_message(copilot.brake_uuid, None)
+
+    async def on_get_parameter_value(self, data: dict[str, Any]):
+        """
+        Callback on get_parameter_value.
+        Forward to firmware.
+        """
+        logger.info(f"[SIO] Get parameter: {data}")
+
+        parameter = FirmwareParameter.model_validate(data)
+        pb_get_request = PB_ParameterGetRequest()
+        parameter.pb_copy(pb_get_request)
+
+        await self.copilot.pbcom.send_can_message(copilot.parameter_get_uuid, pb_get_request)
+
+    async def on_set_parameter_value(self, data: dict[str, Any]):
+        """
+        Callback on set_parameter_value.
+        Forward to firmware.
+        """
+        logger.info(f"[SIO] Set parameter: {data}")
+
+        parameter = FirmwareParameter.model_validate(data)
+        pb_set_request = PB_ParameterSetRequest()
+        parameter.pb_copy(pb_set_request)
+
+        await self.copilot.pbcom.send_can_message(copilot.parameter_set_uuid, pb_set_request)
+
+    async def on_telemetry_enable(self, data: dict[str, Any] | None = None):
+        """
+        Callback on telemetry enable message.
+        Forward to firmware.
+        """
+        logger.info("[SIO] Telemetry enable")
+        await self.copilot.pbcom.send_can_message(copilot.telemetry_enable_uuid, None)
+
+    async def on_telemetry_disable(self, data: dict[str, Any] | None = None):
+        """
+        Callback on telemetry disable message.
+        Forward to firmware.
+        """
+        logger.info("[SIO] Telemetry disable")
+        await self.copilot.pbcom.send_can_message(copilot.telemetry_disable_uuid, None)

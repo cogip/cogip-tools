@@ -10,7 +10,16 @@ from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.models import PoseOrderList as SharedPoseOrderList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models.actuators import ActuatorsKindEnum
-from cogip.protobuf import PB_ActuatorState, PB_PathPose, PB_Pid, PB_PidEnum, PB_Pose, PB_State
+from cogip.protobuf import (
+    PB_ActuatorState,
+    PB_ParameterGetResponse,
+    PB_ParameterSetResponse,
+    PB_PathPose,
+    PB_Pid,
+    PB_PidEnum,
+    PB_Pose,
+    PB_State,
+)
 from . import logger
 from .pbcom import PBCom, pb_exception_handler
 from .pid import Pid
@@ -37,6 +46,10 @@ actuator_init_uuid: int = 0x2005
 reset_uuid: int = 0x3001
 copilot_connected_uuid: int = 0x3002
 copilot_disconnected_uuid: int = 0x3003
+parameter_set_uuid: int = 0x3004
+parameter_set_response_uuid: int = 0x3005
+parameter_get_uuid: int = 0x3006
+parameter_get_response_uuid: int = 0x3007
 # Game: 0x4000 - 0x4FFF
 game_start_uuid: int = 0x4001
 game_end_uuid: int = 0x4002
@@ -88,6 +101,8 @@ class Copilot:
             actuator_state_uuid: self.handle_actuator_state,
             pid_uuid: self.handle_pid,
             blocked_uuid: self.handle_blocked,
+            parameter_get_response_uuid: self.handle_parameter_get_response,
+            parameter_set_response_uuid: self.handle_parameter_set_response,
         }
 
         self.pbcom = PBCom(can_channel, can_bitrate, canfd_data_bitrate, pb_message_handlers)
@@ -282,6 +297,52 @@ class Copilot:
         logger.info("[CAN] Received blocked")
         if self.sio_events.connected:
             await self.sio_events.emit("blocked")
+
+    @pb_exception_handler
+    async def handle_parameter_get_response(self, message: bytes | None = None):
+        """
+        Handle parameter get response from firmware.
+
+        Forward response to the firmware_parameter_manager.
+        """
+        pb_response = PB_ParameterGetResponse()
+
+        if message:
+            await self.loop.run_in_executor(None, pb_response.ParseFromString, message)
+
+        response = MessageToDict(
+            pb_response,
+            always_print_fields_with_no_presence=True,
+            preserving_proto_field_name=True,
+            use_integers_for_enums=True,
+        )
+        logger.info(f"[CAN] get_response: {response}")
+
+        if self.sio_events.connected:
+            await self.sio_events.emit("get_parameter_response", response)
+
+    @pb_exception_handler
+    async def handle_parameter_set_response(self, message: bytes | None = None):
+        """
+        Handle parameter set response from firmware.
+
+        Forward response to the firmware_parameter_manager.
+        """
+        pb_response = PB_ParameterSetResponse()
+
+        if message:
+            await self.loop.run_in_executor(None, pb_response.ParseFromString, message)
+
+        response = MessageToDict(
+            pb_response,
+            always_print_fields_with_no_presence=True,
+            preserving_proto_field_name=True,
+            use_integers_for_enums=True,
+        )
+        logger.info(f"[CAN] set_response: {response}")
+
+        if self.sio_events.connected:
+            await self.sio_events.emit("set_parameter_response", response)
 
     async def new_path_event_loop(self):
         """

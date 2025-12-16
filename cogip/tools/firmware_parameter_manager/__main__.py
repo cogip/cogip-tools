@@ -1,16 +1,23 @@
 import asyncio
 from typing import Annotated
 
+import socketio
 import typer
 import yaml
 
-from cogip.models.firmware_parameter import FirmwareParametersGroup
-from cogip.tools.copilot.pbcom import PBCom
+from cogip.models import FirmwareParametersGroup
 from cogip.tools.firmware_parameter_manager.firmware_parameter_manager import FirmwareParameterManager
 
 
-async def main_async(pbcom: PBCom, manager: FirmwareParameterManager):
-    pbcom_task = asyncio.create_task(pbcom.run())
+async def main_async(server_url: str, parameters_group: FirmwareParametersGroup):
+    """
+    CLI utility to test firmware parameter communication.
+    Creates its own Socket.IO client to host the FirmwareParameterManager.
+    """
+    sio = socketio.AsyncClient(logger=False)
+    manager = FirmwareParameterManager(sio=sio, parameter_group=parameters_group)
+
+    await sio.connect(server_url, namespaces=[manager.namespace])
 
     print("Firmware parameter values before reading from firmware:")
     for param in manager.parameter_group:
@@ -18,49 +25,39 @@ async def main_async(pbcom: PBCom, manager: FirmwareParameterManager):
     print()
 
     for param in manager.parameter_group:
-        await manager.get_parameter_value(param.name)
+        try:
+            await manager.get_parameter_value(param.name)
+        except TimeoutError:
+            print(f"  {param.name:.<40} TIMEOUT")
 
     print("Firmware parameter values after reading from firmware:")
     for param in manager.parameter_group:
         print(f"  {param.name:.<40} {param.value}")
     print()
 
-    try:
-        pbcom_task.cancel()
-        await pbcom_task
-    except asyncio.CancelledError:
-        pass
+    manager.cleanup()
+    await sio.disconnect()
 
 
 def main_opt(
     *,
-    can_channel: Annotated[
-        str,
+    server_url: Annotated[
+        str | None,
         typer.Option(
-            "-cc",
-            "--can-channel",
-            help="CAN channel connected to STM32 modules",
-            envvar="PARAMETER_CAN_CHANNEL",
+            help="Socket.IO Server URL",
+            envvar="COGIP_SOCKETIO_SERVER_URL",
         ),
-    ] = "can0",
-    can_bitrate: Annotated[
+    ] = None,
+    robot_id: Annotated[
         int,
         typer.Option(
-            "-b",
-            "--can-bitrate",
-            help="CAN bitrate",
-            envvar="PARAMETER_CAN_BITRATE",
+            "-i",
+            "--id",
+            min=1,
+            help="Robot ID.",
+            envvar=["ROBOT_ID"],
         ),
-    ] = 500000,
-    can_data_bitrate: Annotated[
-        int,
-        typer.Option(
-            "-B",
-            "--data-bitrate",
-            help="CAN FD data bitrate",
-            envvar="PARAMETER_CANFD_DATA_BITRATE",
-        ),
-    ] = 1000000,
+    ] = 1,
     parameters: Annotated[
         typer.FileText,
         typer.Option(
@@ -71,13 +68,13 @@ def main_opt(
         ),
     ],
 ):
+    if not server_url:
+        server_url = f"http://localhost:809{robot_id}"
+
     parameters_data = yaml.safe_load(parameters)
     parameters_group = FirmwareParametersGroup.model_validate(parameters_data["parameters"])
 
-    pbcom = PBCom(can_channel, can_bitrate, can_data_bitrate, message_handlers={})
-    manager = FirmwareParameterManager(pbcom, parameters_group)
-
-    asyncio.run(main_async(pbcom, manager))
+    asyncio.run(main_async(server_url, parameters_group))
 
 
 def main():
