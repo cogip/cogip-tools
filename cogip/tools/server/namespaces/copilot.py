@@ -126,3 +126,10 @@ class CopilotNamespace(socketio.AsyncNamespace):
         logger.info(f"[copilot => parameters] Set response: {response}")
         await self.emit("set_parameter_response", response, namespace="/parameters")
 
+    async def on_telemetry_data(self, sid, telemetry: dict[str, Any]) -> None:
+        """
+        Callback on telemetry_data message from copilot.
+        Forward to telemetry clients.
+        """
+        logger.debug(f"[copilot => telemetry] Telemetry Data: {telemetry}")
+        await self.emit("telemetry_data", telemetry, namespace="/telemetry")
