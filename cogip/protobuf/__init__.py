@@ -16,3 +16,4 @@ from .PB_Pid_pb2 import PB_Pid, PB_Pid_Id  # noqa
 from .PB_PidEnum_pb2 import PB_PidEnum  # noqa
 from .PB_Controller_pb2 import PB_ControllerEnum, PB_Controller  # noqa
 from .PB_ParameterCommands_pb2 import PB_ParameterGetRequest, PB_ParameterSetRequest, PB_ParameterGetResponse, PB_ParameterSetResponse, PB_ParameterStatus  # noqa
+from .PB_Telemetry_pb2 import PB_TelemetryData
