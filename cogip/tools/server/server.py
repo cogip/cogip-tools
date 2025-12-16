@@ -90,6 +90,7 @@ class Server:
         self.sio.register_namespace(namespaces.BeaconNamespace(self))
         self.sio.register_namespace(namespaces.FirmwareParametersNamespace(self))
         self.sio.register_namespace(namespaces.FirmwareTelemetryNamespace(self))
+        self.sio.register_namespace(namespaces.FirmwareCalibrationNamespace(self))
 
         self.dashboard_updater_loop.start()
 
