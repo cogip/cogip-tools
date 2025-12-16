@@ -109,3 +109,20 @@ class CopilotNamespace(socketio.AsyncNamespace):
         """
         logger.info("[copilot => planner] Game end.")
         await self.emit("game_end", namespace="/planner")
+
+    async def on_get_parameter_response(self, sid, response: dict[str, Any]) -> None:
+        """
+        Callback on get_parameter_response message from copilot.
+        Forward to firmware parameter manager.
+        """
+        logger.info(f"[copilot => parameters] Get response: {response}")
+        await self.emit("get_parameter_response", response, namespace="/parameters")
+
+    async def on_set_parameter_response(self, sid, response: dict[str, Any]) -> None:
+        """
+        Callback on set_parameter_response message from copilot.
+        Forward to firmware parameter manager.
+        """
+        logger.info(f"[copilot => parameters] Set response: {response}")
+        await self.emit("set_parameter_response", response, namespace="/parameters")
+
