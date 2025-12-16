@@ -56,6 +56,8 @@ class CopilotNamespace(socketio.AsyncNamespace):
         """
         logger.info("[copilot => planner] Pose reached.")
         await self.emit("pose_reached", namespace="/planner")
+        if self.context.calibration_sid:
+            await self.emit("pose_reached", namespace="/calibration")
 
     async def on_intermediate_pose_reached(self, sid) -> None:
         """
