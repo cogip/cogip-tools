@@ -1,0 +1,38 @@
+# Odometry Calibration Parameter Definitions
+#
+# This file defines the mandatory parameters required by the calibration tool
+# and their types to ensure compatibility with firmware parameters.
+#
+# Note: The 'content' values are left at 0 and are unused. Only the parameter
+# names and types matter for this definition file.
+
+parameters:
+  - name: qdec_left_polarity
+    value:
+      type: float
+      content: 0.0
+
+  - name: qdec_right_polarity
+    value:
+      type: float
+      content: 0.0
+
+  - name: left_wheel_diameter_mm
+    value:
+      type: float
+      content: 0.0
+
+  - name: right_wheel_diameter_mm
+    value:
+      type: float
+      content: 0.0
+
+  - name: encoder_wheels_distance_mm
+    value:
+      type: float
+      content: 0.0
+
+  - name: encoder_wheels_resolution_pulses
+    value:
+      type: float
+      content: 0.0
