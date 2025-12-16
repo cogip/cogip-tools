@@ -88,6 +88,7 @@ class Server:
         self.sio.register_namespace(namespaces.PlannerNamespace(self))
         self.sio.register_namespace(namespaces.RobotcamNamespace(self))
         self.sio.register_namespace(namespaces.BeaconNamespace(self))
+        self.sio.register_namespace(namespaces.FirmwareParametersNamespace(self))
 
         self.dashboard_updater_loop.start()
 
