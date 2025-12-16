@@ -19,6 +19,7 @@ from cogip.protobuf import (
     PB_PidEnum,
     PB_Pose,
     PB_State,
+    PB_TelemetryData,
 )
 from . import logger
 from .pbcom import PBCom, pb_exception_handler
@@ -50,6 +51,9 @@ parameter_set_uuid: int = 0x3004
 parameter_set_response_uuid: int = 0x3005
 parameter_get_uuid: int = 0x3006
 parameter_get_response_uuid: int = 0x3007
+telemetry_enable_uuid: int = 0x3008
+telemetry_disable_uuid: int = 0x3009
+telemetry_data_uuid: int = 0x300A
 # Game: 0x4000 - 0x4FFF
 game_start_uuid: int = 0x4001
 game_end_uuid: int = 0x4002
@@ -103,6 +107,7 @@ class Copilot:
             blocked_uuid: self.handle_blocked,
             parameter_get_response_uuid: self.handle_parameter_get_response,
             parameter_set_response_uuid: self.handle_parameter_set_response,
+            telemetry_data_uuid: self.handle_telemetry_data,
         }
 
         self.pbcom = PBCom(can_channel, can_bitrate, canfd_data_bitrate, pb_message_handlers)
@@ -343,6 +348,29 @@ class Copilot:
 
         if self.sio_events.connected:
             await self.sio_events.emit("set_parameter_response", response)
+
+    @pb_exception_handler
+    async def handle_telemetry_data(self, message: bytes | None = None):
+        """
+        Handle parameter telemetry data from firmware.
+
+        Forward response to the TODO:
+        """
+        pb_telemetry = PB_TelemetryData()
+
+        if message:
+            await self.loop.run_in_executor(None, pb_telemetry.ParseFromString, message)
+
+        telemetry = MessageToDict(
+            pb_telemetry,
+            always_print_fields_with_no_presence=True,
+            preserving_proto_field_name=True,
+            use_integers_for_enums=True,
+        )
+        logger.debug(f"[CAN] telemetry data: {telemetry}")
+
+        if self.sio_events.connected:
+            await self.sio_events.emit("telemetry_data", telemetry)
 
     async def new_path_event_loop(self):
         """
