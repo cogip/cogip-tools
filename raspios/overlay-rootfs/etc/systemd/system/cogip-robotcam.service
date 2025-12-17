@@ -1,14 +1,17 @@
 [Unit]
 Description=COGIP Robotcam
 
-Wants=network.target
-After=syslog.target network-online.target cogip-detector.service
+# cogip-detector and cogip-robotcam are both using a USB device (e.g., Lidar and Camera),
+# ensure detector starts first to avoid device contention.
+After=cogip-detector.service
+# A start failure of detector must not prevent robotcam from starting.
+Wants=cogip-detector.service
 
 [Service]
-Type=simple
+Type=notify
 Restart=on-failure
 WorkingDirectory=/opt
-ExecStart=uv run cogip-robotcam
+ExecStart=/opt/.venv/bin/python -m cogip.tools.robotcam
 RestartSec=5
 EnvironmentFile=/etc/environment
 StandardOutput=null

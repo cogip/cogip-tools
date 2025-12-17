@@ -1,0 +1,25 @@
+[Unit]
+Description=Weston Compositor
+# Ensures Weston only starts AFTER the dashboard is ready
+After=cogip-dashboard.service
+# Binds Weston to the dashboard service. If dashboard fails, Weston won't start.
+# If dashboard stops, stop Weston too.
+BindsTo=cogip-dashboard.service
+
+[Service]
+User=root
+Group=tty
+RuntimeDirectory=weston
+RuntimeDirectoryMode=0700
+Environment=XDG_RUNTIME_DIR=/run/weston
+ExecStart=/usr/bin/weston --backend=drm-backend.so
+StandardInput=tty
+TTYPath=/dev/tty7
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=graphical.target

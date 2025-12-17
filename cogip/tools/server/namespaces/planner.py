@@ -1,6 +1,7 @@
 from typing import Any
 
 import socketio
+from socketio.exceptions import ConnectionRefusedError
 
 from .. import logger, server
 from ..context import Context
@@ -29,6 +30,13 @@ class PlannerNamespace(socketio.AsyncNamespace):
         self.context.virtual_planner = virtual
         if self.context.copilot_sid:
             await self.emit("copilot_connected", namespace="/planner")
+        if self.context.monitor_sid and self.context.detector_sid and not self.context.robot_added:
+            await self.emit(
+                "add_robot",
+                (self.context.robot_id, self.context.virtual_planner, self.context.virtual_detector),
+                namespace="/monitor",
+            )
+            self.context.robot_added = True
 
     def on_disconnect(self, sid):
         self.context.planner_sid = None
@@ -79,7 +87,7 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         Callback on starter_pushed message.
         """
-        await self.emit("starter_changed", (self.context.robot_id, pushed), namespace="/dashboard")
+        await self.emit("starter_changed", pushed, namespace="/dashboard")
 
     async def on_close_wizard(self, sid):
         """

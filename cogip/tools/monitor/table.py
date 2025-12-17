@@ -1,35 +1,11 @@
-from pathlib import Path
-
-from PySide6.Qt3DCore import Qt3DCore
-from PySide6.Qt3DRender import Qt3DRender
-
-from .asset import AssetEntity
-from .sensor import Sensor
+from PySide6.QtCore import QObject
 
 
-class TableEntity(AssetEntity):
-    """
-    The table entity.
-
-    Attributes:
-        asset_path: Path of the asset file
-    """
-
-    asset_path: Path = Path("assets/table2025.dae")
-
-    def __init__(self, parent: Qt3DCore.QEntity | None = None):
-        """
-        Class constructor.
-
-        Inherits [AssetEntity][cogip.tools.monitor.asset.AssetEntity].
-        """
-        super().__init__(self.asset_path, parent=parent)
-        self._parent = parent
-
-        # Create a layer used by sensors to activate detection on the table borders
-        self.layer = Qt3DRender.QLayer(self)
-        self.layer.setRecursive(True)
-        self.layer.setEnabled(True)
-        self.addComponent(self.layer)
-
-        Sensor.add_obstacle(self)
+class Table:
+    def __init__(self, root: QObject):
+        self.root = root
+        self.node = self.root.findChild(QObject, "Scene")
+        self.models = [m for m in self.node.children() if m.metaObject().className() == "QQuick3DModel"]
+        for model in self.models:
+            model.setObjectName(f"table_{model.objectName()}")
+            model.setProperty("pickable", True)

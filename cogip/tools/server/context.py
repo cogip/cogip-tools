@@ -24,6 +24,7 @@ class Context(metaclass=Singleton):
         virtual:            Whether robot is virtual or not
         virtual_planner:    Whether planner is virtual or not
         virtual_detector:   Whether detector is virtual or not
+        robot_added:        Whether robot has been added or not
     """
 
     robot_id: int | None = None
@@ -39,3 +40,4 @@ class Context(metaclass=Singleton):
     virtual = platform.machine() != "aarch64"
     virtual_planner = False
     virtual_detector = False
+    robot_added = False

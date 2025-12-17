@@ -969,22 +969,22 @@ class Planner:
                 message = {
                     "name": "Wizard Test Choice Integer",
                     "type": "choice_integer",
-                    "choices": [1, 2, 3],
+                    "choices": list(range(1, 21)),
                     "value": 2,
                 }
             case "wizard_choice_floating":
                 message = {
                     "name": "Wizard Test Choice Float",
                     "type": "choice_floating",
-                    "choices": [1.1, 2.2, 3.3],
+                    "choices": list([x * 1.1 for x in range(1, 21)]),
                     "value": 2.2,
                 }
             case "wizard_choice_str":
                 message = {
                     "name": "Wizard Test Choice String",
                     "type": "choice_str",
-                    "choices": ["one", "two", "three"],
-                    "value": "two",
+                    "choices": list([f"item{i}" for i in range(1, 21)]),
+                    "value": "item2",
                 }
             case "wizard_choice_str_group":
                 message = {
@@ -1001,7 +1001,7 @@ class Planner:
                 message = {
                     "name": "Wizard Test Select Integer",
                     "type": "select_integer",
-                    "choices": [1, 2, 3],
+                    "choices": list(range(1, 21)),
                     "value": [1, 3],
                 }
             case "wizard_select_floating":

@@ -31,8 +31,7 @@ Options:
 The list of commands to send is provided using a YAML file.
 
 The commands are defined in `cogip/models/actuators.py`,
-like [ServoCommand][cogip.models.actuators.ServoCommand]
-and [PositionalActuatorCommand][cogip.models.actuators.PositionalActuatorCommand].
+like [PositionalActuatorCommand][cogip.models.actuators.PositionalActuatorCommand].
 
 Enum attributes can be specified by their name or value.
 

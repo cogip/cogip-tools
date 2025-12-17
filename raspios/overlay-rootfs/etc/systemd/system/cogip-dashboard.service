@@ -1,13 +1,14 @@
 [Unit]
 Description=COGIP Dashboard
 
-Wants=network.target
+After=cogip-server.service
+BindsTo=cogip-server.service
 
 [Service]
-Type=simple
+Type=notify
 Restart=on-failure
 WorkingDirectory=/opt
-ExecStart=uv run cogip-dashboard
+ExecStart=/opt/.venv/bin/python -m cogip.tools.dashboard
 RestartSec=5
 EnvironmentFile=/etc/environment
 StandardOutput=null

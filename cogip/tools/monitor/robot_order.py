@@ -1,35 +1,29 @@
-from PySide6 import QtCore, QtGui
-from PySide6.Qt3DCore import Qt3DCore
-from PySide6.Qt3DExtras import Qt3DExtras
-from PySide6.Qt3DRender import Qt3DRender
+from PySide6.QtCore import QObject
+from PySide6.QtGui import QColor, QVector3D
+
+from cogip.models import models
 
 
-class RobotOrderEntity(Qt3DCore.QEntity):
-    """
-    A robot entity to display to order position.
+class RobotOrder:
+    def __init__(self, root: QObject, robot_id: int):
+        self.root = root
+        self.robot_id = robot_id
 
-    Attributes:
-        color: Robot color
-    """
+        principled_materials = [
+            m for m in self.root.children() if m.metaObject().className() == "QQuick3DPrincipledMaterial"
+        ]
+        for mat in principled_materials:
+            mat.setProperty("baseColor", QColor(144, 238, 144, 150))  # RGBA: light green
 
-    color: QtGui.QColor = QtGui.QColor.fromRgb(10, 77, 18, 100)
+        self.node = self.root.findChild(QObject, "Scene")
+        self.models = [m for m in self.node.children() if m.metaObject().className() == "QQuick3DModel"]
+        for model in self.models:
+            model.setObjectName(f"robot_order_{model.objectName()}")
 
-    def __init__(self, parent: Qt3DCore.QEntity, robot_id: int = 1):
+    def set_pose_order(self, order: models.Pose) -> None:
         """
-        Class constructor.
+        Update pose order.
         """
-        super().__init__(parent)
-
-        mesh = Qt3DRender.QMesh(self)
-        mesh.setSource(QtCore.QUrl(f"file:assets/{'robot' if robot_id == 1 else 'pami'}2025.stl"))
-
-        self.transform = Qt3DCore.QTransform(self)
-
-        self.material = Qt3DExtras.QDiffuseSpecularMaterial(self)
-        self.material.setShininess(1.0)
-        self.material.setDiffuse(self.color)
-        self.material.setSpecular(self.color)
-
-        self.addComponent(mesh)
-        self.addComponent(self.transform)
-        self.addComponent(self.material)
+        self.root.setProperty("x", order.x)
+        self.root.setProperty("y", order.y)
+        self.root.setProperty("eulerRotation", QVector3D(0, 0, order.O))

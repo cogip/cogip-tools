@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import AnyHttpUrl, Field, FilePath, ValidationInfo, field_validator
+from pydantic import AnyHttpUrl, Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from cogip.tools.camera.arguments import (
@@ -49,6 +49,18 @@ class Settings(BaseSettings):
             description="Camera frame height",
         ),
     ] = 480
+    stream_width: Annotated[
+        int,
+        Field(
+            description="Stream frame width",
+        ),
+    ] = 640
+    stream_height: Annotated[
+        int,
+        Field(
+            description="Stream frame height",
+        ),
+    ] = 480
     camera_codec: Annotated[
         VideoCodecLiteral,
         Field(
@@ -56,18 +68,6 @@ class Settings(BaseSettings):
             validate_default=True,
         ),
     ] = VideoCodec.yuyv.name
-    camera_intrinsic_params: Annotated[
-        FilePath | None,
-        Field(
-            description="Camera intrinsic parameters",
-        ),
-    ] = None
-    camera_extrinsic_params: Annotated[
-        FilePath | None,
-        Field(
-            description="Camera extrinsic parameters",
-        ),
-    ] = None
     nb_workers: Annotated[
         int,
         Field(

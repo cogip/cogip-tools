@@ -160,7 +160,7 @@ class PathPose(Pose):
         Copy data in a Protobuf message.
 
         Arguments:
-            pb_path_pose: Protobuf message to fill
+            shared_pose_order: Protobuf message to fill
         """
         if shared_pose_order is None:
             return
@@ -181,7 +181,7 @@ class PathPose(Pose):
         Create a PathPose from a SharedPoseOrder.
 
         Arguments:
-            shared_pose_order: SharedPoseOrder to convert
+            shared_pose: SharedPoseOrder to convert
 
         Returns:
             A PathPose instance with the data from the SharedPoseOrder.

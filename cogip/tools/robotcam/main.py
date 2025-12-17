@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 
 import uvicorn
 
+from .app import app, server
 from .camera import CameraHandler
 from .settings import Settings
 
 
-def start_camera_handler():
-    camera = CameraHandler()
+def start_camera_handler(frame_queue: Queue, stream_queue: Queue):
+    camera = CameraHandler(frame_queue, stream_queue)
     camera.camera_handler()
 
 
@@ -21,13 +22,18 @@ def main() -> None:
     """
     settings = Settings()
 
+    frame_queue = Queue(maxsize=1)
+    stream_queue = Queue(maxsize=1)
+
+    server.set_queues(frame_queue, stream_queue)
+
     # Start Camera handler process
-    p = Process(target=start_camera_handler)
+    p = Process(target=start_camera_handler, args=(frame_queue, stream_queue))
     p.start()
 
     # Start web server
     uvicorn.run(
-        "cogip.tools.robotcam.app:app",
+        app,
         host="0.0.0.0",
         port=8100 + settings.id,
         workers=settings.nb_workers,
@@ -35,3 +41,4 @@ def main() -> None:
     )
 
     p.terminate()
+    p.join()

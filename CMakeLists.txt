@@ -12,7 +12,7 @@ endif()
 # Python packages
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(
-  Python 3.12
+  Python 3.13
   REQUIRED COMPONENTS Interpreter Development.Module
   OPTIONAL_COMPONENTS Development.SABIModule
 )

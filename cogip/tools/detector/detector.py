@@ -3,8 +3,10 @@ import threading
 import time
 
 import numpy as np
+import serial
 import socketio
 import socketio.exceptions
+import systemd.daemon
 from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 from sklearn.cluster import DBSCAN
@@ -69,6 +71,19 @@ class Detector:
             gui: Enable GUI
             web: Enable data display on a web server
         """
+        if lidar_port:
+            try:
+                ser = serial.Serial(lidar_port, timeout=0.1)
+                ser.close()
+                logger.info(f"Lidar check SUCCESS on {lidar_port}.")
+            except serial.SerialException as exc:
+                # Failed to open port. Device not connected or permission error.
+                logger.error(f"Lidar check FAILED on {lidar_port}: {exc}")
+                os._exit(1)
+            except Exception as exc:
+                logger.error(f"Lidar check FAILED on {lidar_port} with unexpected error: {exc}")
+                os._exit(1)
+
         self.robot_id = robot_id
         self.server_url = server_url
         self.lidar_port = lidar_port
@@ -324,6 +339,13 @@ class Detector:
             if not res:
                 logger.error("Error: Lidar not started.")
                 os._exit(1)
+
+            try:
+                systemd.daemon.notify("READY=1")
+                logger.info("Systemd notified: READY=1")
+            except Exception as e:
+                logger.error(f"Failed to notify systemd: {e}")
+
             logger.info("Lidar started.")
 
     def stop_lidar(self):

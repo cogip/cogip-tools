@@ -1,17 +1,17 @@
-FROM ubuntu:24.04 AS uv_base
+FROM ubuntu:25.10 AS uv_base
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 
 RUN apt-get update \
  && apt-get -y dist-upgrade --auto-remove --purge \
- && apt-get -y install curl wait-for-it git socat g++ pkg-config libserial-dev gosu \
+ && apt-get -y install curl wait-for-it git socat g++ pkg-config libserial-dev gosu libsystemd-dev swig liblgpio-dev python3-libcamera libcap-dev \
  && apt-get -y clean
 
 WORKDIR /src
 
 # Install uv
-RUN curl -LsSf https://astral.sh/uv/0.6.6/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+RUN curl -LsSf https://astral.sh/uv/0.9.15/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
 
 # Install Python in /opt so regular users can use it
 ENV UV_PYTHON_INSTALL_DIR=/opt/python
@@ -34,6 +34,7 @@ RUN apt-get update && \
     apt-get install -y \
         cmake \
         swig \
+        libfontconfig1 \
         libgl1 \
         libglib2.0-0 \
         libegl1 \
@@ -63,7 +64,6 @@ RUN group_exists=$(getent group ${GID} || true) && echo $group_exists \
 
 ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
 ADD cogip /src/cogip
-RUN uv sync
 
 CMD ["sleep", "infinity"]
 
@@ -86,7 +86,7 @@ RUN apt-get update && \
 CMD ["sleep", "infinity"]
 
 
-FROM debian:12 AS build_wheel
+FROM debian:13 AS build_wheel
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
@@ -99,7 +99,7 @@ RUN apt-get update \
 WORKDIR /src
 
 # Install uv
-RUN curl -LsSf https://astral.sh/uv/0.6.6/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+RUN curl -LsSf https://astral.sh/uv/0.9.15/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
 ENV UV_PYTHON_INSTALL_DIR=/opt/python
 ENV PATH="/src/.venv/bin:${PATH}"
 

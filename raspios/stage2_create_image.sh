@@ -49,7 +49,7 @@ case ${ROBOT_ID} in
         PLANNER_OBSTACLE_BB_MARGIN=${ROBOT_PLANNER_OBSTACLE_BB_MARGIN}
         ;;
     [2-9]) # PAMIs
-        DOCKER_TAG=robot
+        DOCKER_TAG=pami
         ROBOT_WIDTH=${PAMI_WIDTH}
         ROBOT_LENGTH=${PAMI_LENGTH}
         DETECTOR_LIDAR_PORT=${PAMI_DETECTOR_LIDAR_PORT}
@@ -198,7 +198,6 @@ case ${ROBOT_ID} in
         sudo sed -i "s/# PLANNER_FLAG_MOTOR_PIN=/PLANNER_FLAG_MOTOR_PIN=${PAMI_FLAG_MOTOR_PIN}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_OLED_BUS=/PLANNER_OLED_BUS=${PAMI_OLED_BUS}/" ${MOUNT_DIR}/etc/environment
         sudo sed -i "s/# PLANNER_OLED_ADDRESS=/PLANNER_OLED_ADDRESS=${PAMI_OLED_ADDRESS}/" ${MOUNT_DIR}/etc/environment
-        sudo rm -f ${MOUNT_DIR}/root/.bash_profile
         ;;
 esac
 

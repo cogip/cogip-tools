@@ -1,18 +1,19 @@
 import signal
 import time
 from datetime import datetime
-from multiprocessing.shared_memory import SharedMemory
+from multiprocessing import Queue
 from pathlib import Path
+from queue import Empty, Full
 from threading import Thread
 from time import sleep
 
 import cv2
-import numpy as np
 import polling2
 import socketio
 
 from cogip import logger
 from cogip.tools.camera.arguments import CameraName, VideoCodec
+from cogip.tools.camera.camera import RPiCamera, USBCamera
 from .settings import Settings
 
 
@@ -27,32 +28,36 @@ class CameraHandler:
     Handle camera initialization.
     """
 
-    _camera_capture: cv2.VideoCapture = None  # OpenCV video capture
-    _last_frame: SharedMemory = None  # Last generated frame to stream on web server
     _frame_rate: float = 10  # Number of images processed by seconds
     _exiting: bool = False  # Exit requested if True
 
-    def __init__(self):
+    def __init__(self, frame_queue: Queue, stream_queue: Queue):
         """
         Class constructor.
 
         Create SocketIO client and connect to server.
         """
         self.settings = Settings()
-        signal.signal(signal.SIGTERM, self.exit_handler)
-
+        self.frame_queue = frame_queue
+        self.stream_queue = stream_queue
+        self.camera: RPiCamera | USBCamera | None = None
         self.record_filename: Path | None = None
         self.record_writer: cv2.VideoWriter | None = None
 
-        self.sio = socketio.Client(logger=False, engineio_logger=False)
+        self.sio = socketio.Client(logger=False, engineio_logger=False, handle_sigint=False)
         self.register_sio_events()
+
+        signal.signal(signal.SIGTERM, self.exit_handler)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         Thread(
             target=lambda: polling2.poll(
                 self.sio_connect,
                 step=1,
                 ignore_exceptions=(socketio.exceptions.ConnectionError),
                 poll_forever=True,
-            )
+            ),
+            daemon=True,
         ).start()
 
     @staticmethod
@@ -60,6 +65,8 @@ class CameraHandler:
         """
         Function called when TERM signal is received.
         """
+        if CameraHandler._exiting:
+            return
         CameraHandler._exiting = True
         raise ExitSignal()
 
@@ -81,74 +88,42 @@ class CameraHandler:
         """
         Initialize camera.
         """
-        camera_name = CameraName[self.settings.camera_name].val
-        if not camera_name.exists():
-            logger.error(f"Camera not found: {camera_name}")
+        camera_name = CameraName[self.settings.camera_name]
+        camera_codec = VideoCodec[self.settings.camera_codec]
+        camera_path: Path = camera_name.val
+
+        if not camera_path.exists():
+            logger.error(f"Camera not found: {camera_path}")
             return
 
-        self._camera_capture = cv2.VideoCapture(str(camera_name), cv2.CAP_V4L2)
-        if not self._camera_capture.isOpened():
-            logger.error(f"Camera handler: Cannot open camera device {camera_name}")
-            self._camera_capture.release()
-            self._camera_capture = None
-            return
+        if camera_name == CameraName.rpicam:
+            CameraClass = RPiCamera
+        else:
+            CameraClass = USBCamera
+        self.camera = CameraClass(
+            self.settings.id,
+            camera_name,
+            camera_codec,
+            self.settings.camera_width,
+            self.settings.camera_height,
+            self.settings.stream_width,
+            self.settings.stream_height,
+        )
 
-        camera_codec = VideoCodec[self.settings.camera_codec].val
-
-        fourcc = cv2.VideoWriter_fourcc(*camera_codec)
-        ret = self._camera_capture.set(cv2.CAP_PROP_FOURCC, fourcc)
-        if not ret:
-            logger.warning(f"Video codec {camera_codec} not supported")
-
-        ret = self._camera_capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.settings.camera_width)
-        if not ret:
-            logger.warning(f"Frame width {self.settings.camera_width} not supported")
-
-        ret = self._camera_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.settings.camera_height)
-        if not ret:
-            logger.warning(f"Frame height {self.settings.camera_height} not supported")
+        self.camera.open()
 
     def close_camera(self) -> None:
         """
         Release camera device.
         """
-        if self._camera_capture:
+        if self.camera:
             try:
-                self._camera_capture.release()
+                self.camera.close()
                 logger.info("Camera handler: Camera closed.")
             except Exception as exc:  # noqa
                 logger.info("Camera handler: Failed to release camera: {exc}")
 
-        self._camera_capture = None
-
-    def open_last_frame(self, size: int) -> None:
-        """
-        Open the shared memory used to exchange last frame with the server.
-
-        Arguments:
-            size: Size of the shared memory
-        """
-        if not self._last_frame:
-            try:
-                self._last_frame = SharedMemory(name="last_frame", create=True, size=size)
-                logger.info("Camera handler: shared memory for last_frame created.")
-            except FileExistsError as exc:
-                logger.warning(f"Camera handler: Failed to create shared memory for last_frame: {exc}")
-                self._last_frame = None
-
-    def close_last_frame(self) -> None:
-        """
-        Close last frame shared memory.
-        """
-        if self._last_frame:
-            try:
-                self._last_frame.close()
-                self._last_frame.unlink()
-                logger.info("Camera handler: Shared memory for last frame closed.")
-            except Exception as exc:
-                logger.info(f"Camera handler: Failed to close shared memory for last frame: {exc}")
-
-        self._last_frame = None
+        self.camera = None
 
     def camera_handler(self) -> None:
         """
@@ -160,10 +135,10 @@ class CameraHandler:
             while not self._exiting:
                 start = time.time()
 
-                if not self._camera_capture:
+                if not self.camera:
                     self.open_camera()
 
-                if not self._camera_capture:
+                if not self.camera:
                     logger.warning("Camera handler: Failed to open camera, retry in 1s.")
                     sleep(1)
                     continue
@@ -186,44 +161,70 @@ class CameraHandler:
                     wait = interval - duration
                     time.sleep(wait)
 
-        except (KeyboardInterrupt, ExitSignal):
-            pass
+        except ExitSignal:
+            CameraHandler._exiting = True
 
         logger.info("Camera handler: Exiting.")
 
-        self.close_last_frame()
         self.close_camera()
         if self.sio.connected:
             self.sio.disconnect()
+
+        if self.frame_queue:
+            self.frame_queue.cancel_join_thread()
+        if self.stream_queue:
+            self.stream_queue.cancel_join_thread()
 
     def process_image(self) -> None:
         """
         Read one frame from camera, process it, send samples to cogip-server
         and generate image to stream.
         """
-        image_color: np.ndarray
-        ret, image_color = self._camera_capture.read()
-        if not ret:
+        image_main, image_stream = self.camera.read()
+        if image_main is None:
             raise Exception("Camera handler: Cannot read frame.")
 
-        image_stream: np.ndarray = image_color
-
-        # Encode the frame in BMP format (larger but faster than JPEG)
-        encoded_image: np.ndarray
-        ret, encoded_image = cv2.imencode(".bmp", image_stream)
+        # Encode the frame in JPEG format
+        ret, encoded_image = cv2.imencode(".jpg", image_main, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
         if not ret:
             raise Exception("Can't encode frame.")
 
-        # frame = (b'--frame\r\n' b'Content-Type: image/bmp\r\n\r\n' + encoded_image.tobytes() + b'\r\n')
-        frame = encoded_image.tobytes()
-        self.open_last_frame(len(frame))
+        frame_data = encoded_image.tobytes()
 
-        if self._last_frame:
-            self._last_frame.buf[0 : len(frame)] = frame
+        if self.frame_queue:
+            if self.frame_queue.full():
+                try:
+                    self.frame_queue.get_nowait()
+                except Empty:
+                    pass
+            try:
+                self.frame_queue.put_nowait(frame_data)
+            except Full:
+                pass
+
+        if image_stream is not None:
+            ret, encoded_stream = cv2.imencode(".jpg", image_stream, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+            if ret:
+                stream_frame_data = encoded_stream.tobytes()
+
+                if self.stream_queue:
+                    if self.stream_queue.full():
+                        try:
+                            self.stream_queue.get_nowait()
+                        except Exception:
+                            pass
+                    try:
+                        self.stream_queue.put_nowait(stream_frame_data)
+                    except Full:
+                        pass
 
         if self.record_writer:
-            self.record_writer.write(image_stream)
+            if len(image_main.shape) == 2:
+                image_record = cv2.cvtColor(image_main, cv2.COLOR_GRAY2BGR)
+            else:
+                image_record = image_main
+            self.record_writer.write(image_record)
 
     def start_video_record(self):
         if self.record_writer:
@@ -239,7 +240,7 @@ class CameraHandler:
         logger.info(f"Start recording video in {self.record_filename}")
         self.record_writer = cv2.VideoWriter(
             str(self.record_filename),
-            cv2.VideoWriter_fourcc(*"mp4v"),
+            cv2.VideoWriter.fourcc(*"mp4v"),
             self._frame_rate,
             (self.settings.camera_width, self.settings.camera_height),
         )

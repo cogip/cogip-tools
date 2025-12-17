@@ -1,6 +1,7 @@
 from typing import Any
 
 import socketio
+from socketio.exceptions import ConnectionRefusedError
 
 from cogip import models
 from .. import logger, server
