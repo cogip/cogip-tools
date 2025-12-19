@@ -3,6 +3,7 @@ import QtQuick.Window
 import QtQuick3D
 import "." as Components
 import "artifacts" as Artifacts
+import "cursor.mesh"
 import "pami.mesh"
 import "robot.mesh"
 import "table.mesh"
@@ -52,6 +53,7 @@ Item {
         id: view
 
         property var circleObstacles: []
+        property string cursorTextureSource: "../../../assets/cursor.webp"
         property string granaryTextureSource: "../../../assets/granary.webp"
         property string groundTextureSource: sceneRoot.tableGroundTexture
         property int lidarRayBatch: 360
@@ -66,6 +68,8 @@ Item {
         property var orderRobotNode: null
         property var rectangleObstacles: []
         property var robotPathPoints: []
+        property string thermometerBlueTextureSource: "../../../assets/thermometer_blue.webp"
+        property string thermometerYellowTextureSource: "../../../assets/thermometer_yellow.webp"
         property var view3DBackend: null
         property bool virtualDetector: false
         property bool virtualPlanner: false
@@ -585,6 +589,94 @@ Item {
                     DefaultMaterial {
                         diffuseMap: Texture {
                             source: view.granaryTextureSource
+                        }
+                    }
+                ]
+            }
+
+            Model {
+                id: thermometerBlue
+
+                eulerRotation: Qt.vector3d(0, -90, -90)
+                objectName: "thermometerBlue"
+                position: Qt.vector3d(-1022.1, -800, 24)
+                scale: Qt.vector3d(14, 0.7, 1)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.thermometerBlueTextureSource
+                        }
+                    }
+                ]
+            }
+
+            Model {
+                id: thermometerYellow
+
+                eulerRotation: Qt.vector3d(0, -90, -90)
+                objectName: "thermometerYellow"
+                position: Qt.vector3d(-1022.1, 800, 24)
+                scale: Qt.vector3d(14, 0.7, 1)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.thermometerYellowTextureSource
+                        }
+                    }
+                ]
+            }
+
+            Cursor {
+                id: cursorBlue
+
+                eulerRotation: Qt.vector3d(0, 0, 180)
+                objectName: "cursorBlue"
+                position: Qt.vector3d(-1023.5, -1250, 66)
+            }
+
+            Cursor {
+                id: cursorYellow
+
+                eulerRotation: Qt.vector3d(0, 0, 180)
+                objectName: "cursorYellow"
+                position: Qt.vector3d(-1023.5, 1250, 66)
+            }
+
+            Model {
+                id: cursorTextureBlue
+
+                eulerRotation: Qt.vector3d(0, -90, -90)
+                objectName: "cursorTextureBlue"
+                position: Qt.vector3d(-1040, 1250, 66)
+                scale: Qt.vector3d(1, 1.05, 1)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.cursorTextureSource
+                        }
+                    }
+                ]
+            }
+
+            Model {
+                id: cursorTextureYellow
+
+                eulerRotation: Qt.vector3d(0, -90, -90)
+                objectName: "cursorTextureYellow"
+                position: Qt.vector3d(-1040, -1250, 66)
+                scale: Qt.vector3d(1, 1.05, 1)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.cursorTextureSource
                         }
                     }
                 ]
