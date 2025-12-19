@@ -1,6 +1,7 @@
 import asyncio
 from typing import TYPE_CHECKING
 
+from cogip.models.models import MotionDirection
 from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
@@ -44,7 +45,7 @@ class DropBannerAction(Action):
             O=self.start_pose.O,
             max_speed_linear=10,
             max_speed_angular=10,
-            allow_reverse=False,
+            motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_anti_blocking=False,
             timeout_ms=0,
             bypass_final_orientation=False,
@@ -60,7 +61,7 @@ class DropBannerAction(Action):
             O=self.start_pose.O,
             max_speed_linear=50,
             max_speed_angular=50,
-            allow_reverse=True,
+            motion_direction=MotionDirection.BIDIRECTIONAL,
             bypass_final_orientation=True,
             before_pose_func=self.before_step_back,
             after_pose_func=self.after_step_back,

@@ -26,7 +26,7 @@ PoseOrder::PoseOrder(
     double angle,
     std::uint8_t max_speed_linear,
     std::uint8_t max_speed_angular,
-    bool allow_reverse,
+    MotionDirection motion_direction,
     bool bypass_anti_blocking,
     bool bypass_final_orientation,
     std::uint32_t timeout_ms,
@@ -42,7 +42,7 @@ PoseOrder::PoseOrder(
     data_->angle = angle;
     data_->max_speed_linear = max_speed_linear;
     data_->max_speed_angular = max_speed_angular;
-    data_->allow_reverse = allow_reverse;
+    data_->motion_direction = motion_direction;
     data_->bypass_anti_blocking = bypass_anti_blocking;
     data_->bypass_final_orientation = bypass_final_orientation;
     data_->timeout_ms = timeout_ms;

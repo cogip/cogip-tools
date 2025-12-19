@@ -37,7 +37,7 @@ public:
         double angle=0.0,                     ///< [in] orientation
         std::uint8_t max_speed_linear=66,     ///< [in] Maximum linear speed for the pose (in percent of the robot max speed).
         std::uint8_t max_speed_angular=66,    ///< [in] Maximum linear speed for the pose (in percent of the robot max speed).
-        bool allow_reverse=true,              ///< [in] True if the pose allows reverse movement, false otherwise.
+        MotionDirection motion_direction=MotionDirection::bidirectional,  ///< [in] Motion direction mode.
         bool bypass_anti_blocking=false,      ///< [in] True if the pose bypasses anti-blocking, false otherwise.
         bool bypass_final_orientation=false,  ///< [in] True if the pose bypasses final orientation, false otherwise.
         std::uint32_t timeout_ms=0,           ///< [in] Timeout in milliseconds for the pose to be reached.
@@ -91,13 +91,13 @@ public:
         std::uint8_t max_speed_angular  ///< [in] new maximum angular speed for the pose (in percent of the robot max speed)
     ) { data_->max_speed_angular = max_speed_angular; }
 
-    /// Return true if the pose allows reverse movement, false otherwise.
-    bool allow_reverse(void) const { return data_->allow_reverse; }
+    /// Return motion direction mode.
+    MotionDirection motion_direction(void) const { return data_->motion_direction; }
 
-    /// Set whether the pose allows reverse movement.
-    void set_allow_reverse(
-        bool allow_reverse  ///< [in] true if the pose allows reverse movement, false otherwise
-    ) { data_->allow_reverse = allow_reverse; }
+    /// Set motion direction mode.
+    void set_motion_direction(
+        MotionDirection motion_dir  ///< [in] motion direction mode (bidirectional, forward_only, or backward_only)
+    ) { data_->motion_direction = motion_dir; }
 
     /// Return true if the pose bypasses anti-blocking, false otherwise.
     bool bypass_anti_blocking(void) const { return data_->bypass_anti_blocking; }
@@ -148,9 +148,9 @@ inline std::ostream& operator<<(std::ostream& os, PoseOrder data) {
        << "x=" << data.x() << ", "
        << "y=" << data.y() << ", "
        << "angle=" << data.angle() << ", "
-       << "max_speed_linear=" << data.max_speed_linear() << ", "
-       << "max_speed_angular=" << data.max_speed_angular() << ", "
-       << "allow_reverse=" << data.allow_reverse() << ", "
+       << "max_speed_linear=" << static_cast<int>(data.max_speed_linear()) << ", "
+       << "max_speed_angular=" << static_cast<int>(data.max_speed_angular()) << ", "
+       << "motion_direction=" << static_cast<int>(data.motion_direction()) << ", "
        << "bypass_anti_blocking=" << data.bypass_anti_blocking() << ", "
        << "bypass_final_orientation=" << data.bypass_final_orientation() << ", "
        << "timeout_ms=" << data.timeout_ms() << ", "

@@ -14,7 +14,7 @@ void PoseOrderList::append(
     double angle,
     std::uint8_t max_speed_linear,
     std::uint8_t max_speed_angular,
-    bool allow_reverse,
+    MotionDirection motion_direction,
     bool bypass_anti_blocking,
     bool bypass_final_orientation,
     std::uint32_t timeout_ms,
@@ -29,7 +29,7 @@ void PoseOrderList::append(
     list_->elems[list_->count].angle = angle;
     list_->elems[list_->count].max_speed_linear = max_speed_linear;
     list_->elems[list_->count].max_speed_angular = max_speed_angular;
-    list_->elems[list_->count].allow_reverse = allow_reverse;
+    list_->elems[list_->count].motion_direction = motion_direction;
     list_->elems[list_->count].bypass_anti_blocking = bypass_anti_blocking;
     list_->elems[list_->count].bypass_final_orientation = bypass_final_orientation;
     list_->elems[list_->count].timeout_ms = timeout_ms;
@@ -44,7 +44,7 @@ void PoseOrderList::set(
     double angle,
     std::uint8_t max_speed_linear,
     std::uint8_t max_speed_angular,
-    bool allow_reverse,
+    MotionDirection motion_direction,
     bool bypass_anti_blocking,
     bool bypass_final_orientation,
     std::uint32_t timeout_ms,
@@ -58,7 +58,7 @@ void PoseOrderList::set(
     list_->elems[index].angle = angle;
     list_->elems[index].max_speed_linear = max_speed_linear;
     list_->elems[index].max_speed_angular = max_speed_angular;
-    list_->elems[index].allow_reverse = allow_reverse;
+    list_->elems[index].motion_direction = motion_direction;
     list_->elems[index].bypass_anti_blocking = bypass_anti_blocking;
     list_->elems[index].bypass_final_orientation = bypass_final_orientation;
     list_->elems[index].timeout_ms = timeout_ms;

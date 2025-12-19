@@ -17,6 +17,13 @@ namespace cogip {
 
 namespace models {
 
+/// Motion direction mode for path navigation.
+enum class MotionDirection : std::uint8_t {
+    bidirectional = 0,  ///< Robot can move forward or backward (choose optimal)
+    forward_only = 1,   ///< Force forward motion only
+    backward_only = 2   ///< Force backward motion only
+};
+
 /// Represents a pose in 2D space with an orientation.
 typedef struct {
     double x;      ///< X-coordinate of the pose.
@@ -24,7 +31,7 @@ typedef struct {
     double angle;  ///< Orientation angle of the pose in degrees.
     std::uint8_t max_speed_linear; ///< Maximum linear speed for the pose (in percent of the robot max speed).
     std::uint8_t max_speed_angular; ///< Maximum linear speed for the pose (in percent of the robot max speed).
-    bool allow_reverse; ///< True if the pose allows reverse movement, false otherwise.
+    MotionDirection motion_direction; ///< Motion direction mode (bidirectional, forward_only, or backward_only).
     bool bypass_anti_blocking; ///< True if the pose bypasses anti-blocking, false otherwise.
     bool bypass_final_orientation; ///< True if the pose bypasses final orientation, false otherwise.
     std::uint32_t timeout_ms; ///< Timeout in milliseconds for the pose to be reached.
@@ -41,9 +48,9 @@ inline std::ostream& operator<<(std::ostream& os, const pose_order_t& data) {
        << "x=" << data.x << ", "
        << "y=" << data.y << ", "
        << "angle=" << data.angle << ", "
-       << "max_speed_linear=" << data.max_speed_linear << ", "
-       << "max_speed_angular=" << data.max_speed_angular << ", "
-       << "allow_reverse=" << data.allow_reverse << ", "
+       << "max_speed_linear=" << static_cast<int>(data.max_speed_linear) << ", "
+       << "max_speed_angular=" << static_cast<int>(data.max_speed_angular) << ", "
+       << "motion_direction=" << static_cast<int>(data.motion_direction) << ", "
        << "bypass_anti_blocking=" << data.bypass_anti_blocking << ", "
        << "bypass_final_orientation=" << data.bypass_final_orientation << ", "
        << "timeout_ms=" << data.timeout_ms << ", "

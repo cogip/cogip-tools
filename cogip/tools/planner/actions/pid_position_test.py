@@ -2,6 +2,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 from cogip.models import models
+from cogip.models.models import MotionDirection
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.pose import Pose
@@ -24,15 +25,12 @@ class LinearPositionTestAction(Action):
         self.distance = 750
         self.linear_speed = 66
         self.angular_speed = 66
-        self.allow_reverse = True
+        self.motion_direction = MotionDirection.BIDIRECTIONAL
         self.before_action_func = self.init_start_position
         self.pose_init = models.Pose(
             x=-500,
             y=-300,
             O=-90,
-            max_speed_linear=self.linear_speed,
-            max_speed_angular=self.angular_speed,
-            allow_reverse=self.allow_reverse,
         )
         self.pose_start = Pose(**self.pose_init.model_dump())
         self.pose_start.after_pose_func = partial(self.append_pose, self.pose_start)
@@ -73,15 +71,12 @@ class AngularPositionTestAction(Action):
         self.angular_distance = 180
         self.linear_speed = 66
         self.angular_speed = 66
-        self.allow_reverse = True
+        self.motion_direction = MotionDirection.BIDIRECTIONAL
         self.before_action_func = self.init_start_position
         self.pose_init = models.Pose(
             x=-500,
             y=-300,
             O=-90,
-            max_speed_linear=self.linear_speed,
-            max_speed_angular=self.angular_speed,
-            allow_reverse=self.allow_reverse,
         )
         self.pose_start = Pose(**self.pose_init.model_dump())
         self.pose_start.after_pose_func = partial(self.append_pose, self.pose_start)

@@ -2,6 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models import artifacts
+from cogip.models.models import MotionDirection
 from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
@@ -53,7 +54,7 @@ class CaptureTribuneAction(Action):
             ).model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
-            allow_reverse=True,
+            motion_direction=MotionDirection.BIDIRECTIONAL,
             before_pose_func=self.before_approach,
             after_pose_func=self.after_approach,
         )
@@ -68,7 +69,7 @@ class CaptureTribuneAction(Action):
             ).model_dump(),
             max_speed_linear=20,
             max_speed_angular=20,
-            allow_reverse=False,
+            motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
             before_pose_func=self.before_capture,
             after_pose_func=self.after_capture,
@@ -96,7 +97,7 @@ class CaptureTribuneAction(Action):
                 ).model_dump(),
                 max_speed_linear=50,
                 max_speed_angular=50,
-                allow_reverse=True,
+                motion_direction=MotionDirection.BIDIRECTIONAL,
                 bypass_final_orientation=False,
                 before_pose_func=self.before_step_back,
                 after_pose_func=self.after_step_back,

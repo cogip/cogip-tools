@@ -170,7 +170,7 @@ class Copilot:
 
         pose = MessageToDict(
             pb_pose,
-            including_default_value_fields=True,
+            always_print_fields_with_no_presence=True,
             preserving_proto_field_name=True,
             use_integers_for_enums=True,
         )
@@ -191,7 +191,7 @@ class Copilot:
 
         state = MessageToDict(
             pb_state,
-            including_default_value_fields=True,
+            always_print_fields_with_no_presence=True,
             preserving_proto_field_name=True,
             use_integers_for_enums=True,
         )
@@ -211,7 +211,7 @@ class Copilot:
         kind = pb_actuator_state.WhichOneof("type")
         actuator_state = MessageToDict(
             getattr(pb_actuator_state, kind),
-            including_default_value_fields=True,
+            always_print_fields_with_no_presence=True,
             preserving_proto_field_name=True,
             use_integers_for_enums=True,
         )
@@ -296,7 +296,7 @@ class Copilot:
                     continue
                 pose_order = models.PathPose.from_shared(self.shared_avoidance_path[0])
                 if self.id > 1:
-                    pose_order.allow_reverse = False
+                    pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
                 pb_pose_order = PB_PathPose()
                 pose_order.copy_pb(pb_pose_order)
                 await self.pbcom.send_can_message(pose_order_uuid, pb_pose_order)

@@ -8,6 +8,7 @@ an exception being raised if impossible.
 """
 
 import math
+from enum import IntEnum
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -16,6 +17,14 @@ from pydantic import BaseModel
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.models import PoseOrder as SharedPoseOrder
 from cogip.protobuf import PB_PathPose
+
+
+class MotionDirection(IntEnum):
+    """Motion direction mode for path navigation."""
+
+    BIDIRECTIONAL = 0  # Robot can move forward or backward (choose optimal)
+    FORWARD_ONLY = 1  # Force forward motion only
+    BACKWARD_ONLY = 2  # Force backward motion only
 
 
 class MenuEntry(BaseModel):
@@ -118,7 +127,7 @@ class PathPose(Pose):
         O: 0-orientation
         max_speed_linear: max linear speed in percentage of the robot max linear speed
         max_speed_angular: max angular speed in percentage of the robot max angular speed
-        allow_reverse: reverse mode
+        motion_direction: motion direction mode (bidirectional, forward_only, or backward_only)
         bypass_anti_blocking: send pose_reached if robot is blocked
         timeout_ms: max time is milliseconds to reach the pose, the robot stops if timeout is reached, 0 for no timeout
         bypass_final_orientation: do not set orientation pose order
@@ -127,7 +136,7 @@ class PathPose(Pose):
 
     max_speed_linear: int = 66
     max_speed_angular: int = 66
-    allow_reverse: bool = True
+    motion_direction: MotionDirection = MotionDirection.BIDIRECTIONAL
     bypass_anti_blocking: bool = False
     timeout_ms: int = 0
     bypass_final_orientation: bool = False
@@ -149,7 +158,7 @@ class PathPose(Pose):
         pb_path_pose.pose.O = int(self.O)  # noqa
         pb_path_pose.max_speed_ratio_linear = self.max_speed_linear
         pb_path_pose.max_speed_ratio_angular = self.max_speed_angular
-        pb_path_pose.allow_reverse = self.allow_reverse
+        pb_path_pose.motion_direction = self.motion_direction.value
         pb_path_pose.bypass_anti_blocking = self.bypass_anti_blocking
         pb_path_pose.timeout_ms = self.timeout_ms
         pb_path_pose.bypass_final_orientation = self.bypass_final_orientation
@@ -169,7 +178,7 @@ class PathPose(Pose):
         shared_pose_order.angle = int(self.O)  # noqa
         shared_pose_order.max_speed_linear = self.max_speed_linear
         shared_pose_order.max_speed_angular = self.max_speed_angular
-        shared_pose_order.allow_reverse = self.allow_reverse
+        shared_pose_order.motion_direction = self.motion_direction.value
         shared_pose_order.bypass_anti_blocking = self.bypass_anti_blocking
         shared_pose_order.bypass_final_orientation = self.bypass_final_orientation
         shared_pose_order.timeout_ms = self.timeout_ms
@@ -194,7 +203,7 @@ class PathPose(Pose):
         if isinstance(shared_pose, SharedPoseOrder):
             path_pose.max_speed_linear = shared_pose.max_speed_linear
             path_pose.max_speed_angular = shared_pose.max_speed_angular
-            path_pose.allow_reverse = shared_pose.allow_reverse
+            path_pose.motion_direction = shared_pose.motion_direction
             path_pose.bypass_anti_blocking = shared_pose.bypass_anti_blocking
             path_pose.timeout_ms = shared_pose.timeout_ms
             path_pose.bypass_final_orientation = shared_pose.bypass_final_orientation

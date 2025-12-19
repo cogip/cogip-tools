@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from cogip.models.models import MotionDirection
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose
@@ -37,7 +38,7 @@ class TestSquaresAction(Action):
             ).model_dump(),
             max_speed_linear=linear_speed,
             max_speed_angular=angular_speed,
-            allow_reverse=False,
+            motion_direction=MotionDirection.FORWARD_ONLY,
         )
 
         pose2 = Pose(
@@ -48,7 +49,7 @@ class TestSquaresAction(Action):
             ).model_dump(),
             max_speed_linear=linear_speed,
             max_speed_angular=angular_speed,
-            allow_reverse=False,
+            motion_direction=MotionDirection.FORWARD_ONLY,
         )
 
         pose3 = Pose(
@@ -59,14 +60,14 @@ class TestSquaresAction(Action):
             ).model_dump(),
             max_speed_linear=linear_speed,
             max_speed_angular=angular_speed,
-            allow_reverse=False,
+            motion_direction=MotionDirection.FORWARD_ONLY,
         )
 
         pose4 = Pose(
             **start_pose.model_dump(),
             max_speed_linear=linear_speed,
             max_speed_angular=angular_speed,
-            allow_reverse=False,
+            motion_direction=MotionDirection.FORWARD_ONLY,
         )
 
         for i in range(self.count):

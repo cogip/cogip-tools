@@ -2,6 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models.artifacts import ConstructionArea, ConstructionAreaID, TribuneID
+from cogip.models.models import MotionDirection
 from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
@@ -64,7 +65,7 @@ class BuildTribuneX3Action(Action):
             ).model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
-            allow_reverse=True,
+            motion_direction=MotionDirection.BIDIRECTIONAL,
             before_pose_func=self.before_approach_x2,
             after_pose_func=self.after_approach_x2,
         )
@@ -79,7 +80,7 @@ class BuildTribuneX3Action(Action):
             ).model_dump(),
             max_speed_linear=80,
             max_speed_angular=80,
-            allow_reverse=False,
+            motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
             before_pose_func=self.before_build_x2,
             after_pose_func=self.after_build_x2,
@@ -95,7 +96,7 @@ class BuildTribuneX3Action(Action):
             ).model_dump(),
             max_speed_linear=50,
             max_speed_angular=50,
-            allow_reverse=True,
+            motion_direction=MotionDirection.BIDIRECTIONAL,
             before_pose_func=self.before_step_back_x2,
             after_pose_func=self.after_step_back_x2,
         )
@@ -110,7 +111,7 @@ class BuildTribuneX3Action(Action):
             ).model_dump(),
             max_speed_linear=20,
             max_speed_angular=20,
-            allow_reverse=False,
+            motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
             before_pose_func=self.before_approach_x3,
             after_pose_func=self.after_approach_x3,
@@ -126,7 +127,7 @@ class BuildTribuneX3Action(Action):
             ).model_dump(),
             max_speed_linear=20,
             max_speed_angular=20,
-            allow_reverse=False,
+            motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
             before_pose_func=self.before_build_x3,
             after_pose_func=self.after_build_x3,
@@ -143,7 +144,7 @@ class BuildTribuneX3Action(Action):
             max_speed_linear=50,
             max_speed_angular=50,
             bypass_final_orientation=False,
-            allow_reverse=True,
+            motion_direction=MotionDirection.BIDIRECTIONAL,
             before_pose_func=self.before_step_back_x3,
             after_pose_func=self.after_step_back_x3,
         )
