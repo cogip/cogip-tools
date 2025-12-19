@@ -307,6 +307,10 @@ Item {
             view.updateMonitorObstacles();
         }
 
+        function openNinjaManualDialog() {
+            ninjaManualWindow.showPanel();
+        }
+
         function openObstacleConfig(obstacle) {
             obstacleWindow.showPanel(obstacle);
         }
@@ -867,6 +871,19 @@ Item {
             }
 
             Pami {
+                id: ninjaManual
+
+                property bool dragging: false
+                property var windowSettings: null
+
+                eulerRotation.z: 180
+                objectName: "ninjaManual"
+                x: 955
+                y: 0
+                z: 55
+            }
+
+            Pami {
                 id: pamiManual
 
                 property bool dragging: false
@@ -914,6 +931,8 @@ Item {
                     lastY = mouse.y;
                     if (draggedObject === robotManual && robotManualWindow.visible) {
                         robotManualWindow.syncFromRobot();
+                    } else if (draggedObject === ninjaManual && ninjaManualWindow.visible) {
+                        ninjaManualWindow.syncFromNinja();
                     } else if (draggedObject === pamiManual && pamiManualWindow.visible) {
                         pamiManualWindow.syncFromPami();
                     } else if (obstacleWindow.visible && obstacleWindow.obstacle === draggedObject) {
@@ -961,6 +980,12 @@ Item {
                         clickPressY = mouse.y;
                         break;
                     }
+                    if (hitNode.objectName === "ninjaManual") {
+                        clickCandidate = ninjaManual;
+                        clickPressX = mouse.x;
+                        clickPressY = mouse.y;
+                        break;
+                    }
                     if (hitNode.objectName === "pamiManual") {
                         clickCandidate = pamiManual;
                         clickPressX = mouse.x;
@@ -984,6 +1009,8 @@ Item {
                     draggedObject = null;
                 } else if (clickCandidate === robotManual && mouse.button === Qt.LeftButton) {
                     view.openRobotManualDialog();
+                } else if (clickCandidate === ninjaManual && mouse.button === Qt.LeftButton) {
+                    view.openNinjaManualDialog();
                 } else if (clickCandidate === pamiManual && mouse.button === Qt.LeftButton) {
                     view.openPamiManualDialog();
                 } else if (clickCandidate && clickCandidate.objectName && clickCandidate.objectName.indexOf("obstacle_") === 0 && mouse.button === Qt.LeftButton) {
@@ -999,6 +1026,14 @@ Item {
             parentWindow: view.Window.window
             robot: robotManual
             settings: robotManual.windowSettings
+        }
+
+        NinjaManualWindow {
+            id: ninjaManualWindow
+
+            ninja: ninjaManual
+            parentWindow: view.Window.window
+            settings: ninjaManual.windowSettings
         }
 
         PamiManualWindow {
