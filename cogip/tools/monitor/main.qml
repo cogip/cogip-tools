@@ -257,7 +257,7 @@ ApplicationWindow {
     palette.text: "#ffffff"
     palette.window: "#2a2a2a"
     palette.windowText: "#ffffff"
-    title: "COGIP Monitor 2"
+    title: "COGIP Monitor"
     visible: true
     width: 1280
 
