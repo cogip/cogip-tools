@@ -115,6 +115,10 @@ class View3DBackend(QObject):
             self.root.setProperty("rectangleObstacles", [])
             self.root.setProperty("circleObstacles", [])
 
+    def handle_pose_current(self, pose_current: models.Pose) -> None:
+        if self.live_robot and not self.virtual_planner:
+            self.live_robot.update_pose_current_from_model(pose_current)
+
     def handle_robot_path(self, path: list[models.Pose]) -> None:
         if len(path) <= 1:
             if self.view_item is not None:
