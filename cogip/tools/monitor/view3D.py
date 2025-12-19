@@ -8,6 +8,7 @@ from PySide6.QtQml import QmlElement
 
 from cogip.models import models
 from . import logger
+from .artifacts.artifacts import add_artifacts
 from .obstacle import ObstacleStorage, ObstacleWindowSettings
 from .pami_manual import PamiManual
 from .robot import Robot
@@ -44,6 +45,7 @@ class View3DBackend(QObject):
         if signal and isinstance(signal, QtSignal):
             signal.connect(self.handle_order_robot_node_changed)
         self.handle_order_robot_node_changed()
+        add_artifacts(self.root)
 
     def __del__(self):
         try:

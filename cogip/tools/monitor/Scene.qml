@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick3D
 import "." as Components
+import "artifacts" as Artifacts
 import "pami.mesh"
 import "robot.mesh"
 import "table.mesh"
@@ -70,6 +71,79 @@ Item {
         property bool virtualPlanner: false
 
         signal postLidarUpdate
+
+        function addCrateBlue(x, y, z, rotZ) {
+            var crate = crateBlueComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCrateEmpty(x, y, z, rotX, rotZ) {
+            var crateEmpty = crateEmptyComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.x": rotX,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCrateYellow(x, y, z, rotZ) {
+            var crate = crateYellowComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesBBBB(x, y, z, rotZ) {
+            var cratesBBBB = cratesBBBBComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesEEE(x, y, z, rotZ) {
+            var cratesEEE = cratesEEEComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesYB(x, y, z, rotZ) {
+            var cratesYB = cratesYBComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesYBYB(x, y, z, rotZ) {
+            var cratesYBYB = cratesYBYBComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesYYYY(x, y, z, rotZ) {
+            var cratesYYYY = cratesYYYYComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
 
         function addOrderRobotInstance(robotId) {
             const component = robotId === 1 ? orderRobotComponent : orderPamiComponent;
@@ -349,6 +423,62 @@ Item {
             id: orderPamiComponent
 
             Pami {
+            }
+        }
+
+        Component {
+            id: crateBlueComponent
+
+            Artifacts.CrateBlue {
+            }
+        }
+
+        Component {
+            id: crateYellowComponent
+
+            Artifacts.CrateYellow {
+            }
+        }
+
+        Component {
+            id: crateEmptyComponent
+
+            Artifacts.CrateEmpty {
+            }
+        }
+
+        Component {
+            id: cratesYBComponent
+
+            Artifacts.CratesYB {
+            }
+        }
+
+        Component {
+            id: cratesYBYBComponent
+
+            Artifacts.CratesYBYB {
+            }
+        }
+
+        Component {
+            id: cratesBBBBComponent
+
+            Artifacts.CratesBBBB {
+            }
+        }
+
+        Component {
+            id: cratesYYYYComponent
+
+            Artifacts.CratesYYYY {
+            }
+        }
+
+        Component {
+            id: cratesEEEComponent
+
+            Artifacts.CratesEEE {
             }
         }
 
