@@ -9,6 +9,7 @@ from PySide6.QtQml import QmlElement
 from cogip.models import models
 from . import logger
 from .artifacts.artifacts import add_artifacts
+from .ninja_manual import NinjaManual
 from .obstacle import ObstacleStorage, ObstacleWindowSettings
 from .pami_manual import PamiManual
 from .robot import Robot
@@ -30,6 +31,7 @@ class View3DBackend(QObject):
         self.virtual_detector: bool | None = None
         self.view_item = self.root.findChild(QObject, "view") if self.root else None
         self.robot_manual = RobotManual(self.root.findChild(QObject, "robotManual"))
+        self.ninja_manual = NinjaManual(self.root.findChild(QObject, "ninjaManual"))
         self.pami_manual = PamiManual(self.root.findChild(QObject, "pamiManual"))
         self.obstacle_window_settings = ObstacleWindowSettings()
         self.root.setProperty("obstacleSettings", self.obstacle_window_settings)
