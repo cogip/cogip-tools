@@ -1,6 +1,7 @@
 import os
 import threading
 import time
+from pathlib import Path
 
 import numpy as np
 import serial
@@ -42,7 +43,7 @@ class Detector:
         self,
         robot_id: int,
         server_url: str,
-        lidar_port: str | None,
+        lidar_port: Path | None,
         min_distance: int,
         max_distance: int,
         min_intensity: int,
@@ -73,7 +74,7 @@ class Detector:
         """
         if lidar_port:
             try:
-                ser = serial.Serial(lidar_port, timeout=0.1)
+                ser = serial.Serial(str(lidar_port), timeout=0.1)
                 ser.close()
                 logger.info(f"Lidar check SUCCESS on {lidar_port}.")
             except serial.SerialException as exc:
