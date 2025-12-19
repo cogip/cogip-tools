@@ -357,6 +357,13 @@ Item {
             eulerRotation.y: 45
         }
 
+        DirectionalLight {
+            castsShadow: false
+            color: "#808080"
+            eulerRotation.x: -45
+            eulerRotation.y: -45
+        }
+
         PerspectiveCamera {
             id: cameraNode
 
