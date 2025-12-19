@@ -128,8 +128,14 @@ def cmd_calibrate(
         if char_corners is None or len(char_corners) == 0:
             logger.info(f"{im}: KO")
             continue
-        logger.info(f"{im}: OK")
+
         frame_obj_points, frame_img_points = board.matchImagePoints(char_corners, char_ids)
+
+        if len(frame_obj_points) < 4:
+            logger.info(f"{im}: KO (not enough points: {len(frame_obj_points)})")
+            continue
+
+        logger.info(f"{im}: OK ({len(frame_obj_points)} points)")
         object_points.append(frame_obj_points)
         image_points.append(frame_img_points)
 
