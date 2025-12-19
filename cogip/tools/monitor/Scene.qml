@@ -6,6 +6,7 @@ import "artifacts" as Artifacts
 import "cursor.mesh"
 import "pami.mesh"
 import "robot.mesh"
+import "robots"
 import "table.mesh"
 
 Item {

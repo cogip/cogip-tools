@@ -5,8 +5,8 @@ from PySide6.QtCore import SignalInstance as QtSignalInstance
 from PySide6.QtGui import QVector3D
 from PySide6.QtQml import QJSValue, QJSValueIterator
 
-from . import logger
-from .shared_memory import SharedMemoryManager
+from .. import logger
+from ..shared_memory import SharedMemoryManager
 
 
 class Robot:
