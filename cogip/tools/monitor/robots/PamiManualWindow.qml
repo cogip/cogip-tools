@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
 import QtQuick3D
+import ".."
 
 Window {
     id: pamiManualWindow

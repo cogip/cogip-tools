@@ -9,12 +9,12 @@ from PySide6.QtQml import QmlElement
 from cogip.models import models
 from . import logger
 from .artifacts.artifacts import add_artifacts
-from .ninja_manual import NinjaManual
 from .obstacle import ObstacleStorage, ObstacleWindowSettings
-from .pami_manual import PamiManual
-from .robot import Robot
-from .robot_manual import RobotManual
-from .robot_order import RobotOrder
+from .robots.ninja_manual import NinjaManual
+from .robots.pami_manual import PamiManual
+from .robots.robot import Robot
+from .robots.robot_manual import RobotManual
+from .robots.robot_order import RobotOrder
 from .shared_memory import SharedMemoryManager
 
 QML_IMPORT_NAME = "View3DBackend"
