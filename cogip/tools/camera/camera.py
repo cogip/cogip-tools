@@ -54,6 +54,7 @@ class USBCamera(Camera):
         self.camera: cv2.VideoCapture | None = None
         params_path = Path(__file__).parent / "cameras" / str(robot_id)
         params_path /= f"{name.name}_{codec.name}_{width}x{height}"
+        self.capture_path = params_path / "images"
         self.intrinsic_params_filename = params_path / "intrinsic_params.yaml"
         self.extrinsic_params_filename = params_path / "extrinsic_params.yaml"
 
@@ -144,6 +145,7 @@ class RPiCamera(Camera):
         self.camera_type = Path(name.val).read_text().partition(" ")[0]
         params_path = Path(__file__).parent / "cameras" / str(robot_id)
         params_path /= f"{name.name}-{self.camera_type}_{codec.name}_{width}x{height}"
+        self.capture_path = params_path / "images"
         self.intrinsic_params_filename = params_path / "intrinsic_params.yaml"
         self.extrinsic_params_filename = params_path / "extrinsic_params.yaml"
 
