@@ -1,0 +1,108 @@
+"""
+PID Calibration Models
+
+Data types, enums, and dataclasses for the PID calibration tool.
+"""
+
+from dataclasses import dataclass
+from enum import Enum
+
+from cogip.tools.copilot.controller import ControllerEnum
+
+
+class PidType(Enum):
+    """Types of PID controllers."""
+
+    LINEAR_POSE = (1, "Linear Pose", "Position control (distance)")
+    ANGULAR_POSE = (2, "Angular Pose", "Position control (rotation)")
+    LINEAR_SPEED = (3, "Linear Speed", "Velocity control (linear)")
+    ANGULAR_SPEED = (4, "Angular Speed", "Velocity control (angular)")
+
+    def __init__(self, index: int, label: str, description: str):
+        self.index = index
+        self.label = label
+        self.description = description
+
+    @classmethod
+    def from_index(cls, index: int) -> "PidType":
+        """Get PidType by its index number."""
+        for pid_type in cls:
+            if pid_type.index == index:
+                return pid_type
+        raise ValueError(f"Invalid PID type index: {index}")
+
+    @classmethod
+    def choices(cls) -> list[str]:
+        """Return list of valid index choices as strings."""
+        return [str(pid_type.index) for pid_type in cls]
+
+    @classmethod
+    def table_rows(cls) -> list[tuple[str, str, str]]:
+        """Return table rows: (index, label, description)."""
+        return [(str(pt.index), pt.label, pt.description) for pt in cls]
+
+    @property
+    def controller(self) -> ControllerEnum:
+        """Return the controller to use for this PID type."""
+        controller_map = {
+            PidType.LINEAR_POSE: ControllerEnum.QUADPID_FEEDFORWARD,
+            PidType.ANGULAR_POSE: ControllerEnum.QUADPID_FEEDFORWARD,
+            PidType.LINEAR_SPEED: ControllerEnum.LINEAR_SPEED_TUNING,
+            PidType.ANGULAR_SPEED: ControllerEnum.ANGULAR_SPEED_TUNING,
+        }
+        return controller_map[self]
+
+
+class TelemetryType(Enum):
+    """
+    Telemetry types for PID visualization.
+
+    Each type has: (telemetry_key, label)
+    """
+
+    # Linear telemetry
+    LINEAR_SPEED_ORDER = ("linear_speed_order", "Order")
+    LINEAR_CURRENT_SPEED = ("linear_current_speed", "Current Speed")
+    LINEAR_FEEDFORWARD_VELOCITY = ("linear_feedforward_velocity", "Feedforward")
+    LINEAR_SPEED_COMMAND = ("linear_speed_command", "Command")
+
+    # Angular telemetry
+    ANGULAR_SPEED_ORDER = ("angular_speed_order", "Order")
+    ANGULAR_CURRENT_SPEED = ("angular_current_speed", "Current Speed")
+    ANGULAR_FEEDFORWARD_VELOCITY = ("angular_feedforward_velocity", "Feedforward")
+    ANGULAR_SPEED_COMMAND = ("angular_speed_command", "Command")
+
+    def __init__(self, telemetry_key: str, label: str):
+        self.telemetry_key = telemetry_key
+        self.label = label
+
+    @classmethod
+    def for_pid_type(cls, pid_type: PidType) -> list["TelemetryType"]:
+        """Return relevant telemetry types for a given PID type."""
+        if pid_type in (PidType.LINEAR_POSE, PidType.LINEAR_SPEED):
+            return [
+                cls.LINEAR_SPEED_ORDER,
+                cls.LINEAR_CURRENT_SPEED,
+                cls.LINEAR_FEEDFORWARD_VELOCITY,
+                cls.LINEAR_SPEED_COMMAND,
+            ]
+        else:
+            return [
+                cls.ANGULAR_SPEED_ORDER,
+                cls.ANGULAR_CURRENT_SPEED,
+                cls.ANGULAR_FEEDFORWARD_VELOCITY,
+                cls.ANGULAR_SPEED_COMMAND,
+            ]
+
+
+@dataclass
+class PidGains:
+    """PID gains (Kp, Ki, Kd) for a single controller."""
+
+    kp: float = 0.0
+    ki: float = 0.0
+    kd: float = 0.0
+
+    def copy(self) -> "PidGains":
+        """Create a copy of the gains."""
+        return PidGains(kp=self.kp, ki=self.ki, kd=self.kd)
