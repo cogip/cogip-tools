@@ -19,6 +19,8 @@ Item {
     property alias orderRobotNode: view.orderRobotNode
     property alias rectangleObstacles: view.rectangleObstacles
     property var robotPathPoints: []
+    property bool showLivePip: false
+    property bool showManualPip: false
     readonly property string tableGroundTexture: "../../../assets/table2026.webp"
     property alias virtualDetector: view.virtualDetector
     property alias virtualPlanner: view.virtualPlanner
@@ -165,7 +167,7 @@ Item {
                 orderRobotNode.destroy();
                 orderRobotNode = null;
             }
-            const node = component.createObject(sceneGroup, {
+            const node = component.createObject(orderRobotGroup, {
                 objectName: expectedName
             });
             if (!node) {
@@ -411,6 +413,16 @@ Item {
             id: liveRobotComponent
 
             Robot {
+                property alias camera: liveRobotCamera
+
+                PerspectiveCamera {
+                    id: liveRobotCamera
+
+                    eulerRotation.y: -45
+                    eulerRotation.z: -90
+                    objectName: "robotCamera"
+                    position: Qt.vector3d(120, 0, 350)
+                }
             }
         }
 
@@ -862,6 +874,7 @@ Item {
             Robot {
                 id: robotManual
 
+                property alias camera: robotManualCamera
                 property bool dragging: false
                 property var windowSettings: null
 
@@ -869,6 +882,15 @@ Item {
                 objectName: "robotManual"
                 x: 1200
                 y: 1200
+
+                PerspectiveCamera {
+                    id: robotManualCamera
+
+                    eulerRotation.y: -45
+                    eulerRotation.z: -90
+                    objectName: "robotCamera"
+                    position: Qt.vector3d(120, 0, 350)
+                }
             }
 
             Pami {
@@ -1052,6 +1074,15 @@ Item {
             settings: view.obstacleSettings
         }
 
+        Node {
+            id: orderRobotGroup
+
+            eulerRotation: sceneGroup.eulerRotation
+            position: sceneGroup.position
+            scale: sceneGroup.scale
+            visible: !sceneRoot.showLivePip && !sceneRoot.showManualPip
+        }
+
         Timer {
             id: lidarTimer
 
@@ -1084,6 +1115,56 @@ Item {
                     event.accepted = true;
                 }
             }
+        }
+    }
+
+    View3D {
+        id: pipView
+
+        anchors.margins: 20
+        anchors.right: parent.right
+        anchors.top: parent.top
+        camera: view.liveRobotNode ? view.liveRobotNode.camera : null
+        height: 240
+        importScene: sceneGroup
+        visible: sceneRoot.showLivePip && view.liveRobotNode
+        width: 320
+
+        environment: SceneEnvironment {
+            backgroundMode: SceneEnvironment.Color
+            clearColor: "black"
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            border.color: "white"
+            border.width: 2
+            color: "transparent"
+        }
+    }
+
+    View3D {
+        id: manualPipView
+
+        anchors.bottom: parent.bottom
+        anchors.margins: 20
+        anchors.right: parent.right
+        camera: robotManual.camera
+        height: 240
+        importScene: sceneGroup
+        visible: sceneRoot.showManualPip
+        width: 320
+
+        environment: SceneEnvironment {
+            backgroundMode: SceneEnvironment.Color
+            clearColor: "black"
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            border.color: "white"
+            border.width: 2
+            color: "transparent"
         }
     }
 }

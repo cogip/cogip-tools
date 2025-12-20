@@ -320,6 +320,64 @@ ApplicationWindow {
 
                 onToggled: scene.groundTextureSource = checked ? scene.gridGroundTexture : scene.tableGroundTexture
             }
+
+            Switch {
+                id: livePipSwitch
+
+                checked: scene.showLivePip
+                text: "Live Cam"
+
+                indicator: Rectangle {
+                    border.color: livePipSwitch.checked ? "#353535" : "#888888"
+                    color: livePipSwitch.checked ? "#888888" : "#353535"
+                    implicitHeight: 18
+                    implicitWidth: 32
+                    radius: 13
+                    x: livePipSwitch.leftPadding
+                    y: parent.height / 2 - height / 2
+
+                    Rectangle {
+                        border.color: livePipSwitch.checked ? "#888888" : "#353535"
+                        color: livePipSwitch.checked ? "#353535" : "#888888"
+                        height: 14
+                        radius: 13
+                        width: 14
+                        x: livePipSwitch.checked ? parent.width - width - 2 : 2
+                        y: 2
+                    }
+                }
+
+                onToggled: scene.showLivePip = checked
+            }
+
+            Switch {
+                id: manualPipSwitch
+
+                checked: scene.showManualPip
+                text: "Manual Cam"
+
+                indicator: Rectangle {
+                    border.color: manualPipSwitch.checked ? "#353535" : "#888888"
+                    color: manualPipSwitch.checked ? "#888888" : "#353535"
+                    implicitHeight: 18
+                    implicitWidth: 32
+                    radius: 13
+                    x: manualPipSwitch.leftPadding
+                    y: parent.height / 2 - height / 2
+
+                    Rectangle {
+                        border.color: manualPipSwitch.checked ? "#888888" : "#353535"
+                        color: manualPipSwitch.checked ? "#353535" : "#888888"
+                        height: 14
+                        radius: 13
+                        width: 14
+                        x: manualPipSwitch.checked ? parent.width - width - 2 : 2
+                        y: 2
+                    }
+                }
+
+                onToggled: scene.showManualPip = checked
+            }
         }
     }
     menuBar: MenuBar {
