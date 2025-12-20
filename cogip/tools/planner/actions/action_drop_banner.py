@@ -2,7 +2,6 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models.models import MotionDirection
-from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
@@ -71,16 +70,9 @@ class DropBannerAction(Action):
     async def before_drop(self):
         self.logger.info(f"{self.name}: before_drop")
         self.set_avoidance(AvoidanceStrategy.Disabled)
-        await actuators.arm_left_side(self.planner)
-        await actuators.arm_right_side(self.planner)
-        await actuators.magnet_center_right_in(self.planner)
-        await actuators.magnet_center_left_in(self.planner)
-        await actuators.magnet_side_right_in(self.planner)
-        await actuators.magnet_side_left_in(self.planner)
 
     async def after_drop(self):
         self.logger.info(f"{self.name}: after_drop")
-        await actuators.lift_0(self.planner)
         await asyncio.sleep(1)
         self.planner.game_context.score += 20
 
@@ -90,8 +82,6 @@ class DropBannerAction(Action):
     async def after_step_back(self):
         self.logger.info(f"{self.name}: after_step_back")
         self.set_avoidance(self.avoidance_backup)
-        await actuators.arm_left_center(self.planner)
-        await actuators.arm_right_center(self.planner)
 
     def weight(self) -> float:
         return self.custom_weight
