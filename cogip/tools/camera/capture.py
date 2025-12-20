@@ -28,7 +28,7 @@ def cmd_capture(
             help="Name of the camera",
             envvar="CAMERA_NAME",
         ),
-    ] = CameraName.hbv.name,
+    ] = CameraName.rpicam.name,
     camera_codec: Annotated[
         VideoCodec,
         typer.Option(
@@ -42,14 +42,14 @@ def cmd_capture(
             help="Camera frame width",
             envvar="CAMERA_WIDTH",
         ),
-    ] = 1920,
+    ] = 728,
     camera_height: Annotated[
         int,
         typer.Option(
             help="Camera frame height",
             envvar="CAMERA_HEIGHT",
         ),
-    ] = 1080,
+    ] = 544,
     max_frames: Annotated[
         int,
         typer.Option(

@@ -44,14 +44,14 @@ def cmd_info(
             help="Camera frame width",
             envvar="CAMERA_WIDTH",
         ),
-    ] = 1920,
+    ] = 728,
     camera_height: Annotated[
         int,
         typer.Option(
             help="Camera frame height",
             envvar="CAMERA_HEIGHT",
         ),
-    ] = 1080,
+    ] = 544,
 ):
     """Get properties of connected cameras"""
     obj = ctx.ensure_object(dict)

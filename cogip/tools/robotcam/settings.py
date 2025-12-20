@@ -36,31 +36,31 @@ class Settings(BaseSettings):
             description="Name of the camera",
             validate_default=True,
         ),
-    ] = CameraName.hbv.name
+    ] = CameraName.rpicam.name
     camera_width: Annotated[
         int,
         Field(
             description="Camera frame width",
         ),
-    ] = 640
+    ] = 728
     camera_height: Annotated[
         int,
         Field(
             description="Camera frame height",
         ),
-    ] = 480
+    ] = 544
     stream_width: Annotated[
         int,
         Field(
             description="Stream frame width",
         ),
-    ] = 640
+    ] = 728
     stream_height: Annotated[
         int,
         Field(
             description="Stream frame height",
         ),
-    ] = 480
+    ] = 544
     camera_codec: Annotated[
         VideoCodecLiteral,
         Field(

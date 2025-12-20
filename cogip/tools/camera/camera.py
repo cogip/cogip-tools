@@ -158,7 +158,7 @@ class RPiCamera(Camera):
         self.camera = Picamera2()
         config = self.camera.create_preview_configuration(
             main={
-                "format": "YUV420",
+                "format": "RGB888",
                 "size": (self.width, self.height),
             },
             lores={
@@ -177,15 +177,15 @@ class RPiCamera(Camera):
         lores = request.make_array("lores")
         request.release()
 
-        # Extract Y plane (grayscale) from YUV420
-        if main is not None and main.shape[0] == self.height * 3 // 2:
-            main = main[: self.height, : self.width]
+        # main is RGB888 (for display)
+        stream_frame = main
 
-        # Convert lores from YUV420 to BGR
+        # lores is YUV420 (for detection). Extract Y plane.
+        frame = None
         if lores is not None and lores.shape[0] == self.stream_height * 3 // 2:
-            lores = cv2.cvtColor(lores[:, : self.stream_width], cv2.COLOR_YUV2BGR_I420)
+            frame = lores[: self.stream_height, : self.stream_width]
 
-        return main, lores
+        return frame, stream_frame
 
     @final
     def close(self):
