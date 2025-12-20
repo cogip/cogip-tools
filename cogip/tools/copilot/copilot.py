@@ -317,7 +317,7 @@ class Copilot:
 
         response = MessageToDict(
             pb_response,
-            including_default_value_fields=True,
+            #including_default_value_fields=True,
             preserving_proto_field_name=True,
             use_integers_for_enums=True,
         )
@@ -340,7 +340,7 @@ class Copilot:
 
         response = MessageToDict(
             pb_response,
-            including_default_value_fields=True,
+            #including_default_value_fields=True,
             preserving_proto_field_name=True,
             use_integers_for_enums=True,
         )
@@ -363,7 +363,7 @@ class Copilot:
 
         telemetry = MessageToDict(
             pb_telemetry,
-            including_default_value_fields=True,
+            #including_default_value_fields=True,
             preserving_proto_field_name=True,
             use_integers_for_enums=True,
         )
