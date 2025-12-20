@@ -1,0 +1,60 @@
+parameters:
+  - name: linear_pose_pid_kp
+    value:
+      type: float
+      content: 0.0
+
+  - name: linear_pose_pid_ki
+    value:
+      type: float
+      content: 0.0
+
+  - name: linear_pose_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  - name: angular_pose_pid_kp
+    value:
+      type: float
+      content: 0.0
+
+  - name: angular_pose_pid_ki
+    value:
+      type: float
+      content: 0.0
+
+  - name: angular_pose_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  - name: linear_speed_pid_kp
+    value:
+      type: float
+      content: 0.0
+
+  - name: linear_speed_pid_ki
+    value:
+      type: float
+      content: 0.0
+
+  - name: linear_speed_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  - name: angular_speed_pid_kp
+    value:
+      type: float
+      content: 0.0
+
+  - name: angular_speed_pid_ki
+    value:
+      type: float
+      content: 0.0
+
+  - name: angular_speed_pid_kd
+    value:
+      type: float
+      content: 0.0
