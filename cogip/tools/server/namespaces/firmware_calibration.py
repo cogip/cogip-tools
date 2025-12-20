@@ -47,3 +47,11 @@ class FirmwareCalibrationNamespace(socketio.AsyncNamespace):
         logger.info(f"[calibration => copilot] Pose order: {pose}")
         await self.emit("pose_order", pose, namespace="/copilot")
         await self.emit("pose_order", (self.context.robot_id, pose), namespace="/dashboard")
+
+    async def on_set_controller(self, sid, controller: int):
+        """
+        Callback on set_controller message.
+        Forward to copilot.
+        """
+        logger.info(f"[calibration => copilot] controller: {controller}")
+        await self.emit("set_controller", controller, namespace="/copilot")
