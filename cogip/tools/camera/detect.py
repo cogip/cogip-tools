@@ -179,6 +179,19 @@ def cmd_detect(
 
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     parameters = cv2.aruco.DetectorParameters()
+
+    # Speed optimizations
+    # Use a single window size for adaptive thresholding to avoid multiple passes
+    parameters.adaptiveThreshWinSizeMin = 13
+    parameters.adaptiveThreshWinSizeMax = 13
+    parameters.adaptiveThreshWinSizeStep = 1
+
+    # Reduce accuracy of polygonal approximation (faster contour processing)
+    parameters.polygonalApproxAccuracyRate = 0.05  # Default 0.03
+
+    # Disable corner refinement if not strictly necessary (SUBPIX is slow)
+    parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_NONE
+
     detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
 
     cv2.namedWindow("Marker Detection", cv2.WINDOW_NORMAL)

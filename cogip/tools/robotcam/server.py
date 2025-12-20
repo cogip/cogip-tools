@@ -95,7 +95,22 @@ class CameraServer:
         else:
             self.extrinsic_params = load_camera_extrinsic_params(self.camera.extrinsic_params_filename)
 
-        self.detector = cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100))
+        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+        parameters = cv2.aruco.DetectorParameters()
+
+        # Speed optimizations
+        # Use a single window size for adaptive thresholding to avoid multiple passes
+        parameters.adaptiveThreshWinSizeMin = 13
+        parameters.adaptiveThreshWinSizeMax = 13
+        parameters.adaptiveThreshWinSizeStep = 1
+
+        # Reduce accuracy of polygonal approximation (faster contour processing)
+        parameters.polygonalApproxAccuracyRate = 0.05  # Default 0.03
+
+        # Disable corner refinement if not strictly necessary (SUBPIX is slow)
+        parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_NONE
+
+        self.detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
 
     def set_queues(self, frame_queue: Queue, stream_queue: Queue):
         self.frame_queue = frame_queue
