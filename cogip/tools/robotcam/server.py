@@ -187,6 +187,33 @@ class CameraServer:
             stream = self.camera_streamer() if self.last_stream_frame else ""
             return StreamingResponse(stream, media_type="multipart/x-mixed-replace;boundary=frame")
 
+        @self.app.get("/detect", status_code=200)
+        def detect() -> list[dict]:
+            start_time = time.time()
+            if self.last_frame is None:
+                raise HTTPException(status_code=503, detail="Camera not ready")
+
+            jpg_as_np = np.frombuffer(self.last_frame, dtype=np.uint8)
+            frame = cv2.imdecode(jpg_as_np, flags=cv2.IMREAD_UNCHANGED)
+
+            if len(frame.shape) == 2:
+                dst = frame
+            else:
+                dst = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            # Detect marker corners
+            marker_corners, marker_ids, _ = self.detector.detectMarkers(dst)
+
+            results = []
+            if marker_ids is not None:
+                for id, corners in zip(marker_ids, marker_corners):
+                    results.append({"id": int(id[0]), "corners": corners[0].tolist()})
+
+            duration = time.time() - start_time
+            logger.info(f"Detect endpoint took {duration:.3f}s")
+
+            return results
+
         @self.app.get("/snapshot", status_code=200)
         def snapshot():
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
