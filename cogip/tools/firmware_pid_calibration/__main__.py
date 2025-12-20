@@ -9,6 +9,7 @@ by communicating with the firmware via SocketIO through cogip-server.
 from __future__ import annotations
 import asyncio
 import logging
+import os
 from importlib.resources import files
 from typing import Annotated
 
@@ -63,7 +64,8 @@ def main_opt(
         logger.setLevel(logging.DEBUG)
 
     if not server_url:
-        server_url = f"http://localhost:809{robot_id}"
+        host = os.environ.get("COGIP_SERVER_HOST", "localhost")
+        server_url = f"http://{host}:809{robot_id}"
 
     # Load bundled parameters definition YAML
     params_resource = files("cogip.tools.firmware_pid_calibration").joinpath("pid_parameters.yaml")
@@ -74,7 +76,6 @@ def main_opt(
 
     if graph:
         # Use qasync to integrate Qt with asyncio
-        import os
         import sys
 
         from PySide6.QtWidgets import QApplication

@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import Annotated
 
 import socketio
@@ -82,7 +83,8 @@ def main_opt(
     ] = 10.0,
 ):
     if not server_url:
-        server_url = f"http://localhost:809{robot_id}"
+        host = os.environ.get("COGIP_SERVER_HOST", "localhost")
+        server_url = f"http://{host}:809{robot_id}"
 
     asyncio.run(main_async(server_url, duration))
 

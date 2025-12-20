@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import Annotated
 
 import socketio
@@ -69,7 +70,8 @@ def main_opt(
     ],
 ):
     if not server_url:
-        server_url = f"http://localhost:809{robot_id}"
+        host = os.environ.get("COGIP_SERVER_HOST", "localhost")
+        server_url = f"http://{host}:809{robot_id}"
 
     parameters_data = yaml.safe_load(parameters)
     parameters_group = FirmwareParametersGroup.model_validate(parameters_data["parameters"])
