@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from cogip import models
 from cogip.models.models import MotionDirection
-from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
@@ -149,10 +148,3 @@ class AlignBottomForBannerAction(AlignBottomAction):
 
     async def after_action(self):
         self.logger.info("AlignBottomForBannerAction: after_action.")
-        await actuators.arm_left_side(self.planner)
-        await actuators.arm_right_side(self.planner)
-        await actuators.magnet_center_right_in(self.planner)
-        await actuators.magnet_center_left_in(self.planner)
-        await actuators.magnet_side_right_in(self.planner)
-        await actuators.magnet_side_left_in(self.planner)
-        await actuators.lift_125(self.planner)
