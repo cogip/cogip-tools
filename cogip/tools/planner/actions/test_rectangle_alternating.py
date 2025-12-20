@@ -25,10 +25,10 @@ class TestRectangleAlternatingAction(Action):
     def __init__(self, planner: "Planner", strategy: Strategy):
         super().__init__("TestRectangleAlternating", planner, strategy)
         # Coordinates fit within training table: x=[-1000, 0], y=[-1500, 0]
-        self.start_x = -900
-        self.start_y = -1400
-        self.width = 800
-        self.height = 800
+        self.start_x = -800
+        self.start_y = -1200
+        self.width = 500
+        self.height = 500
         self.angle = 0
         self.linear_speed = 50
         self.angular_speed = 50
