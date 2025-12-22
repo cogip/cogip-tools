@@ -19,6 +19,7 @@ from cogip.protobuf import (
     PB_ParameterSetResponse,
     PB_ParameterStatus,
 )
+from cogip.utils.fnv1a import fnv1a_hash
 
 
 class FirmwareParameterValidationFailed(Exception):
@@ -39,32 +40,6 @@ class FirmwareParameterNotFound(Exception):
     """
 
     pass
-
-
-def fnv1a_hash(string: str) -> int:
-    """Compute FNV-1a hash of a string.
-
-    Args:
-        string: The string to hash
-
-    Returns:
-        The 32-bit hash value as an unsigned integer
-
-    Example:
-        >>> hex(fnv1a_hash("parameter"))
-        '0x100b'
-    """
-    # FNV-1a constants
-    FNV_OFFSET_BASIS = 0x811C9DC5
-    FNV_PRIME = 0x01000193
-
-    hash_value = FNV_OFFSET_BASIS
-
-    for byte in string.encode("utf-8"):
-        hash_value ^= byte
-        hash_value = (hash_value * FNV_PRIME) & 0xFFFFFFFF  # Keep it 32-bit
-
-    return hash_value
 
 
 class FirmwareParameterBase(BaseModel):

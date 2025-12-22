@@ -6,8 +6,17 @@ import socketio
 from pydantic import TypeAdapter
 
 from cogip import models
+from cogip.models import FirmwareParameter
 from cogip.models.actuators import ActuatorCommand, PositionalActuatorCommand
-from cogip.protobuf import PB_ActuatorCommand, PB_Controller, PB_PathPose, PB_Pid_Id, PB_PidEnum
+from cogip.protobuf import (
+    PB_ActuatorCommand,
+    PB_Controller,
+    PB_ParameterGetRequest,
+    PB_ParameterSetRequest,
+    PB_PathPose,
+    PB_Pid_Id,
+    PB_PidEnum,
+)
 from . import copilot, logger
 from .menu import menu
 
@@ -98,6 +107,19 @@ class SioEvents(socketio.AsyncClientNamespace):
         start_pose.copy_pb(pb_start_pose)
         await self.copilot.pbcom.send_can_message(copilot.pose_start_uuid, pb_start_pose)
 
+    async def on_pose_order(self, data: dict[str, Any]):
+        """
+        Callback on pose order (from planner).
+        Forward to mcu-firmware.
+        """
+        logger.info(f"[SIO] Pose order: {data}")
+        pose_order = models.PathPose.model_validate(data)
+        if self.copilot.id > 1:
+            pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
+        pb_pose_order = PB_PathPose()
+        pose_order.copy_pb(pb_pose_order)
+        await self.copilot.pbcom.send_can_message(copilot.pose_order_uuid, pb_pose_order)
+
     async def on_actuators_start(self):
         """
         Callback on actuators_start (from dashboard).
@@ -183,3 +205,45 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         logger.info("[SIO] Brake")
         await self.copilot.pbcom.send_can_message(copilot.brake_uuid, None)
+
+    async def on_get_parameter_value(self, data: dict[str, Any]):
+        """
+        Callback on get_parameter_value.
+        Forward to firmware.
+        """
+        logger.info(f"[SIO] Get parameter: {data}")
+
+        parameter = FirmwareParameter.model_validate(data)
+        pb_get_request = PB_ParameterGetRequest()
+        parameter.pb_copy(pb_get_request)
+
+        await self.copilot.pbcom.send_can_message(copilot.parameter_get_uuid, pb_get_request)
+
+    async def on_set_parameter_value(self, data: dict[str, Any]):
+        """
+        Callback on set_parameter_value.
+        Forward to firmware.
+        """
+        logger.info(f"[SIO] Set parameter: {data}")
+
+        parameter = FirmwareParameter.model_validate(data)
+        pb_set_request = PB_ParameterSetRequest()
+        parameter.pb_copy(pb_set_request)
+
+        await self.copilot.pbcom.send_can_message(copilot.parameter_set_uuid, pb_set_request)
+
+    async def on_telemetry_enable(self, data: dict[str, Any] | None = None):
+        """
+        Callback on telemetry enable message.
+        Forward to firmware.
+        """
+        logger.info("[SIO] Telemetry enable")
+        await self.copilot.pbcom.send_can_message(copilot.telemetry_enable_uuid, None)
+
+    async def on_telemetry_disable(self, data: dict[str, Any] | None = None):
+        """
+        Callback on telemetry disable message.
+        Forward to firmware.
+        """
+        logger.info("[SIO] Telemetry disable")
+        await self.copilot.pbcom.send_can_message(copilot.telemetry_disable_uuid, None)
