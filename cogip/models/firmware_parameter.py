@@ -1,3 +1,4 @@
+from functools import cache
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -41,8 +42,12 @@ class FirmwareParameterNotFound(Exception):
     pass
 
 
+@cache
 def fnv1a_hash(string: str) -> int:
     """Compute FNV-1a hash of a string.
+
+    Results are cached to avoid recomputing hashes for previously seen strings,
+    since parameter names are typically accessed repeatedly.
 
     Args:
         string: The string to hash
