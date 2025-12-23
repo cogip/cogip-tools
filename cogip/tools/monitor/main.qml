@@ -451,6 +451,7 @@ ApplicationWindow {
             Layout.fillHeight: true
             Layout.fillWidth: true
             objectName: "Scene"
+            socketClient: window.socketClient
         }
     }
 

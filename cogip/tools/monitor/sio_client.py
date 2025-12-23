@@ -65,9 +65,13 @@ class SocketioClient(QtCore.QObject):
         """
         super().__init__()
 
-        self.url = url
+        self._url = url
         self.sio = socketio.Client()
         self.register_events()
+
+    @QtCore.Property(str, constant=True)
+    def url(self) -> str:
+        return self._url
 
     def start(self):
         """
@@ -81,7 +85,7 @@ class SocketioClient(QtCore.QObject):
     def try_connect(self):
         while self.retry_connection:
             try:
-                self.sio.connect(self.url, namespaces=["/monitor", "/dashboard"])
+                self.sio.connect(self._url, namespaces=["/monitor", "/dashboard"])
             except ConnectionError as ex:
                 logger.error(str(ex))
                 time.sleep(2)

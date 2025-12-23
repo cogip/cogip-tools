@@ -1,3 +1,4 @@
+import QtMultimedia
 import QtQuick
 import QtQuick.Window
 import QtQuick3D
@@ -21,7 +22,24 @@ Item {
     property var robotPathPoints: []
     property bool showLivePip: false
     property bool showManualPip: false
+    property var socketClient
     readonly property string tableGroundTexture: "../../../assets/table2026.webp"
+    property string videoStreamUrl: {
+        if (!socketClient || !view.liveRobotNode || !view.view3DBackend)
+            return "";
+        var url = socketClient.url;
+        if (!url)
+            return "";
+        var parts = url.split("://");
+        var hostname;
+        if (parts.length > 1) {
+            hostname = parts[1].split(":")[0];
+        } else {
+            hostname = url.split(":")[0];
+        }
+        var robotId = view.view3DBackend.robotId;
+        return "http://" + hostname + ":810" + robotId;
+    }
     property alias virtualDetector: view.virtualDetector
     property alias virtualPlanner: view.virtualPlanner
 
@@ -1127,13 +1145,36 @@ Item {
         camera: view.liveRobotNode ? view.liveRobotNode.camera : null
         height: 240
         importScene: sceneGroup
-        visible: sceneRoot.showLivePip && view.liveRobotNode
+        visible: sceneRoot.showLivePip && view.liveRobotNode && view.virtualPlanner
         width: 320
 
         environment: SceneEnvironment {
             backgroundMode: SceneEnvironment.Color
             clearColor: "black"
         }
+
+        Rectangle {
+            anchors.fill: parent
+            border.color: "white"
+            border.width: 2
+            color: "transparent"
+        }
+    }
+
+    MediaPlayer {
+        id: player
+
+        audioOutput: null
+        autoPlay: true
+        source: (sceneRoot.showLivePip && !view.virtualPlanner) ? sceneRoot.videoStreamUrl : ""
+        videoOutput: videoOutput
+    }
+
+    VideoOutput {
+        id: videoOutput
+
+        anchors.fill: pipView
+        visible: sceneRoot.showLivePip && !view.virtualPlanner && sceneRoot.videoStreamUrl !== ""
 
         Rectangle {
             anchors.fill: parent
