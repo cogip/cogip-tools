@@ -13,19 +13,19 @@ using namespace std;
 
 namespace ydlidar {
 
-YDLidar::YDLidar(float (*external_lidar_data)[3]) :
+YDLidar::YDLidar(double (*external_lidar_data)[3]) :
     lidar_data_(external_lidar_data),
     external_data_(external_lidar_data != nullptr) {
     if (!external_data_) {
         // Allocate memory if external pointer is not provided
-        lidar_data_ = new float[MAX_DATA_COUNT][3]();
+        lidar_data_ = new double[MAX_DATA_COUNT][3]();
     }
 
     commonInit();
 }
 
-YDLidar::YDLidar(nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_raw_points) :
-    lidar_data_(reinterpret_cast<float(*)[3]>(external_lidar_raw_points.data())),
+YDLidar::YDLidar(nb::ndarray<double, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_raw_points) :
+    lidar_data_(reinterpret_cast<double(*)[3]>(external_lidar_raw_points.data())),
     external_data_(true) {
     if (!lidar_data_) {
         throw std::runtime_error("Failed to initialize from external NumPy array.");
@@ -277,6 +277,11 @@ void YDLidar::updateSharedMemory() {
         }
         size_t index = 0;
         for (auto point : scan.points) {
+            if (index >= MAX_DATA_COUNT - 1) {
+                std::cerr << "[YDLidar] Warning: Scan data exceeds buffer size (" << MAX_DATA_COUNT << "). Truncating." << std::endl;
+                break;
+            }
+
             lidar_data_[index][0] = point.angle;
             lidar_data_[index][1] = point.range;
             lidar_data_[index][2] = point.intensity;

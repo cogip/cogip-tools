@@ -28,7 +28,7 @@ NB_MODULE(lidar_ld19, m) {
 
     nb::class_<LDLidarDriver>(m, "LDLidarDriver")
         .def(nb::init<>(), "Constructor that internally manages memory")
-        .def(nb::init<nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>>>(),
+        .def(nb::init<nb::ndarray<double, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>>>(),
              "Constructor accepting nanobind::ndarray",
              "external_lidar_data"_a
         )
@@ -48,9 +48,9 @@ NB_MODULE(lidar_ld19, m) {
         )
         .def(
             "get_lidar_data",
-            [](const LDLidarDriver &self) -> nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> {
+            [](const LDLidarDriver &self) -> nb::ndarray<double, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> {
                 const auto &points = self.getLidarData();
-                return nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>>((void *)points);
+                return nb::ndarray<double, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>>((void *)points);
             },
             nb::rv_policy::reference_internal
         )
