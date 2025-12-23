@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from PySide6.QtCore import Q_ARG, Property, QMetaObject, QObject, Qt
 from PySide6.QtCore import Signal as QtSignal
 from PySide6.QtCore import Slot as QtSlot
 from PySide6.QtQml import QmlElement
@@ -23,10 +23,12 @@ QML_IMPORT_MAJOR_VERSION = 1
 
 @QmlElement
 class View3DBackend(QObject):
+    robotIdChanged = QtSignal()
+
     def __init__(self, root: QObject):
         super().__init__()
+        self._robot_id: int | None = None
         self.root = root
-        self.robot_id: int | None = None
         self.virtual_planner: bool | None = None
         self.virtual_detector: bool | None = None
         self.view_item = self.root.findChild(QObject, "view") if self.root else None
@@ -49,6 +51,10 @@ class View3DBackend(QObject):
         self.handle_order_robot_node_changed()
         add_artifacts(self.root)
 
+    @Property(int, notify=robotIdChanged)
+    def robotId(self) -> int:
+        return self._robot_id if self._robot_id is not None else -1
+
     def __del__(self):
         try:
             self.shm.set_scene(None, None)
@@ -61,7 +67,8 @@ class View3DBackend(QObject):
         if not self.root:
             logger.warning("View3D root not available for add_robot")
             return
-        self.robot_id = robot_id
+        self._robot_id = robot_id
+        self.robotIdChanged.emit()
         self.virtual_planner = virtual_planner
         self.virtual_detector = virtual_detector
         self.root.setProperty("virtualDetector", virtual_detector)
@@ -87,6 +94,8 @@ class View3DBackend(QObject):
         if not self.root:
             logger.warning("View3D root not available for del_robot")
             return
+        self._robot_id = None
+        self.robotIdChanged.emit()
         logger.info("Removing robot %s", robot_id)
         QMetaObject.invokeMethod(
             self.root,
@@ -101,7 +110,6 @@ class View3DBackend(QObject):
             Q_ARG("QVariant", int(robot_id)),
         )
         self.shm.disconnect()
-        self.robot_id = None
         self.virtual_planner = None
         self.virtual_detector = None
         self.root.setProperty("virtualDetector", False)
@@ -151,14 +159,14 @@ class View3DBackend(QObject):
             self.live_robot = None
             return
 
-        if self.robot_id is None:
+        if self._robot_id is None:
             logger.warning("Live robot node available but robot metadata is missing")
             return
 
         if self.live_robot and self.live_robot.root is node:
             return
 
-        self.live_robot = Robot(node, self.view_item, self.robot_id, self.virtual_planner, self.virtual_detector)
+        self.live_robot = Robot(node, self.view_item, self._robot_id, self.virtual_planner, self.virtual_detector)
         logger.info("Live robot instance initialized")
 
     def handle_order_robot_node_changed(self) -> None:
@@ -169,14 +177,14 @@ class View3DBackend(QObject):
             self.order_robot = None
             return
 
-        if self.robot_id is None:
+        if self._robot_id is None:
             logger.warning("Order robot node available but robot metadata is missing")
             return
 
         if self.order_robot and self.order_robot.root is node:
             return
 
-        self.order_robot = RobotOrder(node, self.robot_id)
+        self.order_robot = RobotOrder(node, self._robot_id)
         logger.info("Order robot instance initialized")
 
     @QtSlot("QVariant")

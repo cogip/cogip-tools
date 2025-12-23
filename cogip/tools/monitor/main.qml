@@ -325,6 +325,7 @@ ApplicationWindow {
                 id: livePipSwitch
 
                 checked: scene.showLivePip
+                enabled: scene.robotId <= 1
                 text: "Live Cam"
 
                 indicator: Rectangle {
@@ -451,6 +452,7 @@ ApplicationWindow {
             Layout.fillHeight: true
             Layout.fillWidth: true
             objectName: "Scene"
+            socketClient: window.socketClient
         }
     }
 
