@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import httpx
 
-from cogip.models import Pose, Vertex
+from cogip.models import CameraExtrinsicParameters, Pose
 from . import logger
 from .camp import Camp
 
@@ -21,7 +21,7 @@ async def snapshot():
             logger.error(f"Request snapshot: HTTP Exception: {exc}")
 
 
-async def calibrate_camera(planner: "Planner") -> Vertex | None:
+async def calibrate_camera(planner: "Planner") -> CameraExtrinsicParameters | None:
     async with httpx.AsyncClient() as client:
         try:
             port = 8100 + planner.robot_id
@@ -32,7 +32,7 @@ async def calibrate_camera(planner: "Planner") -> Vertex | None:
             if response.status_code != 200:
                 logger.warning(f"Request camera_calibration: Failed: {response.status_code}: {response.text}")
                 return None
-            return Vertex.model_validate(response.json())
+            return CameraExtrinsicParameters.model_validate(response.json())
         except httpx.HTTPError as exc:
             logger.error(f"Request camera_calibration: HTTP Exception: {exc}")
             return None

@@ -16,17 +16,20 @@ from fastapi.responses import StreamingResponse
 from uvicorn.main import Server as UvicornServer
 
 from cogip import logger
-from cogip.models import CameraExtrinsicParameters, Pose, Vertex
+from cogip.models import CameraExtrinsicParameters, Pose
 from cogip.tools.camera.arguments import CameraName, VideoCodec
 from cogip.tools.camera.camera import RPiCamera, SimCamera, USBCamera
 from cogip.tools.camera.detect import (
     get_camera_position_in_robot,
     get_camera_position_on_table,
+    # get_solar_panel_positions,
 )
 from cogip.tools.camera.utils import (
+    R_flip,
+    euler_angles_to_rotation_matrix,
     load_camera_extrinsic_params,
     load_camera_intrinsic_params,
-    rotate_2d,
+    rotation_matrix_to_euler_angles,
 )
 from .settings import Settings
 
@@ -231,7 +234,7 @@ class CameraServer:
             cv2.imwrite(str(record_filename), frame)
 
         @self.app.get("/camera_calibration", status_code=200)
-        def camera_calibration(x: float, y: float, angle: float) -> Vertex:
+        def camera_calibration(x: float, y: float, angle: float) -> CameraExtrinsicParameters:
             if self.last_frame is None:
                 raise HTTPException(status_code=503, detail="Camera not ready")
 
@@ -270,7 +273,7 @@ class CameraServer:
                 raise HTTPException(status_code=404, detail="No table marker found")
 
             # Compute camera position on table
-            table_camera_tvec, table_camera_angle = get_camera_position_on_table(
+            table_camera_tvec, table_camera_rvec_degrees = get_camera_position_on_table(
                 table_markers,
                 self.camera_matrix,
                 self.dist_coefs,
@@ -280,7 +283,7 @@ class CameraServer:
             camera_position = get_camera_position_in_robot(
                 robot_pose,
                 table_camera_tvec,
-                table_camera_angle,
+                table_camera_rvec_degrees,
             )
 
             return camera_position
@@ -326,20 +329,43 @@ class CameraServer:
                 raise HTTPException(status_code=503, detail="Camera intrinsic parameters not loaded")
 
             # Compute camera position on table
-            camera_tvec, camera_angle = get_camera_position_on_table(
+            camera_tvec, camera_rvec_degrees = get_camera_position_on_table(
                 table_markers,
                 self.camera_matrix,
                 self.dist_coefs,
             )
 
             # Compute robot position on table
-            delta_tvec = np.array([self.extrinsic_params.x, self.extrinsic_params.y])
-            camera_tvec_rotated = rotate_2d(camera_tvec[0:2], -camera_angle)
-            robot_tvec_rotated = camera_tvec_rotated + delta_tvec
-            robot_tvec = rotate_2d(robot_tvec_rotated, camera_angle)
-            camera_angle_degrees = np.rad2deg(camera_angle)
-            logger.info(
-                "Robot position: "
-                f"X={robot_tvec[0]:.0f} Y={robot_tvec[1]:.0f} Z={camera_tvec[2]:.0f} Angle={camera_angle_degrees:.0f}"
+
+            # 1. Camera in Table frame (Transformation T_ct)
+            # Reconstruct rotation matrix from Euler angles (applying R_flip to match convention)
+            R_ct_flipped = euler_angles_to_rotation_matrix(np.deg2rad(camera_rvec_degrees))
+            R_ct = R_flip @ R_ct_flipped
+            T_ct = camera_tvec
+
+            # 2. Camera in Robot frame (Transformation T_cr)
+            # Reconstruct rotation matrix from extrinsic parameters
+            rvec_cr_degrees = np.array(
+                [self.extrinsic_params.roll, self.extrinsic_params.pitch, self.extrinsic_params.yaw]
             )
-            return Pose(x=robot_tvec[0], y=robot_tvec[1], z=camera_tvec[2], O=camera_angle_degrees)
+            R_cr_flipped = euler_angles_to_rotation_matrix(np.deg2rad(rvec_cr_degrees))
+            R_cr = R_flip @ R_cr_flipped
+            T_cr = np.array([self.extrinsic_params.x, self.extrinsic_params.y, self.extrinsic_params.z])
+
+            # 3. Robot in Table frame (Transformation T_rt)
+            # T_rt = T_ct * T_cr^(-1)
+            # Rotation: R_rt = R_ct * R_cr.T
+            R_rt = R_ct @ R_cr.T
+
+            # Position: T_rt = T_ct - R_rt * T_cr
+            T_rt = T_ct - R_rt @ T_cr
+
+            # Extract robot angle (yaw) from R_rt
+            rvec_rt = rotation_matrix_to_euler_angles(R_rt)
+            rvec_rt_degrees = np.rad2deg(rvec_rt)
+            robot_angle_degrees = rvec_rt_degrees[2]  # Yaw
+
+            logger.info(
+                f"Robot position: X={T_rt[0]:.0f} Y={T_rt[1]:.0f} Z={T_rt[2]:.0f} Angle={robot_angle_degrees:.0f}"
+            )
+            return Pose(x=T_rt[0], y=T_rt[1], z=T_rt[2], O=robot_angle_degrees)
