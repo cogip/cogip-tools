@@ -17,6 +17,7 @@ Item {
     readonly property string gridGroundTexture: "../../../assets/grid_plain.webp"
     property alias groundTextureSource: view.groundTextureSource
     property alias liveRobotNode: view.liveRobotNode
+    property alias obstacleSettings: view.obstacleSettings
     property alias orderRobotNode: view.orderRobotNode
     property alias rectangleObstacles: view.rectangleObstacles
     property int robotId: view.view3DBackend ? view.view3DBackend.robotId : 0
@@ -60,6 +61,16 @@ Item {
             return view.exportObstacles();
         }
         return [];
+    }
+
+    function grabPipView() {
+        if (pipView && pipView.grabToImage) {
+            pipView.grabToImage(function (result) {
+                if (view && view.view3DBackend) {
+                    view.view3DBackend.process_grab_result(result);
+                }
+            });
+        }
     }
 
     function importObstacles(list) {
@@ -1147,6 +1158,7 @@ Item {
         camera: (view.liveRobotNode && view.liveRobotNode.camera) ? view.liveRobotNode.camera : null
         height: 240
         importScene: sceneGroup
+        objectName: "pipView"
         visible: sceneRoot.showLivePip && view.liveRobotNode && view.virtualPlanner
         width: 320
 

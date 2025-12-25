@@ -139,6 +139,10 @@ x-robot: &robot
     DETECTOR_CLUSTER_MIN_SAMPLES:
     DETECTOR_CLUSTER_EPS:
     DETECTOR_WEB:
+    ROBOTCAM_CAMERA_NAME: simcam
+    ROBOTCAM_CAMERA_CODEC: mjpg
+    ROBOTCAM_CAMERA_WIDTH: 640
+    ROBOTCAM_CAMERA_HEIGHT: 480
   command:
     - /bin/sh
     - -x
@@ -151,6 +155,7 @@ x-robot: &robot
       gosu $${UID}:$${GID} uv run --no-sync cogip-copilot -b 500000 -B 1000000 &
       gosu $${UID}:$${GID} uv run --no-sync cogip-detector &
       gosu $${UID}:$${GID} uv run --no-sync cogip-dashboard &
+      if [ "$${ROBOT_ID}" -eq 1 ]; then gosu $${UID}:$${GID} uv run --no-sync cogip-robotcam & fi
       sleep infinity
   stop_signal: SIGKILL
 

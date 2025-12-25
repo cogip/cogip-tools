@@ -13,7 +13,7 @@ import socketio
 
 from cogip import logger
 from cogip.tools.camera.arguments import CameraName, VideoCodec
-from cogip.tools.camera.camera import RPiCamera, USBCamera
+from cogip.tools.camera.camera import Camera, RPiCamera, SimCamera, USBCamera
 from .settings import Settings
 
 
@@ -40,7 +40,7 @@ class CameraHandler:
         self.settings = Settings()
         self.frame_queue = frame_queue
         self.stream_queue = stream_queue
-        self.camera: RPiCamera | USBCamera | None = None
+        self.camera: Camera | None = None
         self.record_filename: Path | None = None
         self.record_writer: cv2.VideoWriter | None = None
 
@@ -98,6 +98,8 @@ class CameraHandler:
 
         if camera_name == CameraName.rpicam:
             CameraClass = RPiCamera
+        elif camera_name == CameraName.simcam:
+            CameraClass = SimCamera
         else:
             CameraClass = USBCamera
         self.camera = CameraClass(

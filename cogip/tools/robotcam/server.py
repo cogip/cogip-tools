@@ -18,7 +18,7 @@ from uvicorn.main import Server as UvicornServer
 from cogip import logger
 from cogip.models import CameraExtrinsicParameters, Pose, Vertex
 from cogip.tools.camera.arguments import CameraName, VideoCodec
-from cogip.tools.camera.camera import RPiCamera, USBCamera
+from cogip.tools.camera.camera import RPiCamera, SimCamera, USBCamera
 from cogip.tools.camera.detect import (
     get_camera_position_in_robot,
     get_camera_position_on_table,
@@ -68,6 +68,8 @@ class CameraServer:
 
         if self.settings.camera_name == CameraName.rpicam.name:
             CameraClass = RPiCamera
+        elif self.settings.camera_name == CameraName.simcam.name:
+            CameraClass = SimCamera
         else:
             CameraClass = USBCamera
         self.camera = CameraClass(
