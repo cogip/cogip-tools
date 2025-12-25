@@ -22,7 +22,6 @@ from cogip.tools.camera.camera import RPiCamera, USBCamera
 from cogip.tools.camera.detect import (
     get_camera_position_in_robot,
     get_camera_position_on_table,
-    get_solar_panel_positions,
 )
 from cogip.tools.camera.utils import (
     load_camera_extrinsic_params,
@@ -241,53 +240,6 @@ class CameraServer:
             )
 
             return camera_position
-
-        @self.app.get("/solar_panels", status_code=200)
-        def solar_panels(x: float, y: float, angle: float) -> dict[int, float]:
-            if self.last_frame is None:
-                raise HTTPException(status_code=503, detail="Camera not ready")
-
-            jpg_as_np = np.frombuffer(self.last_frame, dtype=np.uint8)
-            frame = cv2.imdecode(jpg_as_np, flags=cv2.IMREAD_UNCHANGED)
-
-            if len(frame.shape) == 2:
-                dst = frame
-                frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-            else:
-                dst = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            # Detect marker corners
-            marker_corners, marker_ids, rejected = self.detector.detectMarkers(dst)
-
-            # Draw detected markers
-            cv2.aruco.drawDetectedMarkers(frame, marker_corners, marker_ids)
-
-            # Record image
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            basename = f"robot{self.settings.id}-{timestamp}-panels"
-            record_filename = self.records_dir / f"{basename}.jpg"
-            cv2.imwrite(str(record_filename), frame)
-
-            if marker_ids is None:
-                return {}
-
-            robot_pose = Pose(x=x, y=y, O=angle)
-
-            # Keep solar panel markers only
-            solar_panel_markers = [corners for id, corners in zip(marker_ids, marker_corners) if id[0] == 47]
-
-            if len(solar_panel_markers) == 0:
-                return {}
-
-            panels = get_solar_panel_positions(
-                solar_panel_markers,
-                self.camera_matrix,
-                self.dist_coefs,
-                self.extrinsic_params,
-                robot_pose,
-            )
-
-            return panels
 
         @self.app.get("/robot_position", status_code=200)
         def robot_position() -> Pose:
