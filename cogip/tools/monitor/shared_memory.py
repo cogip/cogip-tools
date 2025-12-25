@@ -33,6 +33,8 @@ class SharedMemoryManager(metaclass=Singleton):
         self.shared_obstacles_lock: WritePriorityLock | None = None
         self.shared_monitor_obstacles: SharedCircleList | None = None
         self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
+        self.shared_sim_camera_data: NDArray | None = None
+        self.shared_sim_camera_data_lock: WritePriorityLock | None = None
         self.update_obstacles_timer: QTimer | None = None
         self.view_item: QObject | None = None
         self.scene_root: QObject | None = None
@@ -56,6 +58,8 @@ class SharedMemoryManager(metaclass=Singleton):
             self.shared_rectangle_obstacles = self.shared_memory.get_rectangle_obstacles()
             self.shared_obstacles_lock = self.shared_memory.get_lock(LockName.Obstacles)
             self.shared_obstacles_lock.register_consumer()
+            self.shared_sim_camera_data = self.shared_memory.get_sim_camera_data()
+            self.shared_sim_camera_data_lock = self.shared_memory.get_lock(LockName.SimCameraData)
             if self.update_obstacles_timer is None:
                 self.update_obstacles_timer = QTimer()
                 self.update_obstacles_timer.setInterval(100)
@@ -78,6 +82,8 @@ class SharedMemoryManager(metaclass=Singleton):
 
     def disconnect(self) -> None:
         logger.info(f"Disconnecting from shared memory for robot {self.robot_id}")
+        self.shared_sim_camera_data_lock = None
+        self.shared_sim_camera_data = None
         self.shared_monitor_obstacles_lock = None
         self.shared_monitor_obstacles = None
         self.shared_obstacles_lock = None

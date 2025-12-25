@@ -83,8 +83,9 @@ def main_opt(
         sys.exit(-1)
 
     root: QWindow = engine.rootObjects()[0]
-    view3d_qml = root.findChild(QObject, "view")
-    view3d_backend = View3DBackend(view3d_qml)
+    scene_qml = root.findChild(QObject, "Scene")
+    view3d_backend = View3DBackend(scene_qml)
+    view3d_qml = scene_qml.findChild(QObject, "view")
     view3d_qml.setProperty("view3DBackend", view3d_backend)
     root.setProperty("isConnected", False)
     root.setProperty("starterChecked", False)
