@@ -579,6 +579,36 @@ Item {
             }
 
             Model {
+                id: trainingLeftBorder
+
+                objectName: "TrainingLeftBorder"
+                position: Qt.vector3d(-500, 22, 35)
+                scale: Qt.vector3d(10, 0.22, 0.7)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#ffeacc61"
+                    }
+                ]
+            }
+
+            Model {
+                id: trainingTopBorder
+
+                objectName: "TrainingTopBorder"
+                position: Qt.vector3d(22, -750, 35)
+                scale: Qt.vector3d(0.22, 15, 0.7)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#ffeacc61"
+                    }
+                ]
+            }
+
+            Model {
                 id: granary
 
                 objectName: "Granary"
