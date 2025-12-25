@@ -22,20 +22,20 @@ uint64_t getSystemTimeStamp() {
 
 bool LDLidarDriver::is_ok_ = false;
 
-LDLidarDriver::LDLidarDriver(float (*external_lidar_data)[3]):
+LDLidarDriver::LDLidarDriver(double (*external_lidar_data)[3]):
     lidar_data_(external_lidar_data),
     external_data_(external_lidar_data != nullptr)
 {
     if (!external_data_) {
         // Allocate memory if external pointer is not provided
-        lidar_data_ = new float[MAX_DATA_COUNT][3]();
+        lidar_data_ = new double[MAX_DATA_COUNT][3]();
     }
 
     commonInit();
 }
 
-LDLidarDriver::LDLidarDriver(nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_raw_points):
-    lidar_data_(reinterpret_cast<float(*)[3]>(external_lidar_raw_points.data())),
+LDLidarDriver::LDLidarDriver(nb::ndarray<double, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_raw_points):
+    lidar_data_(reinterpret_cast<double(*)[3]>(external_lidar_raw_points.data())),
     external_data_(true)
 {
     if (!lidar_data_) {

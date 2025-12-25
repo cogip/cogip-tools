@@ -44,6 +44,7 @@ NB_MODULE(shared_memory, m) {
         .value("Obstacles", LockName::Obstacles)
         .value("AvoidanceBlocked", LockName::AvoidanceBlocked)
         .value("AvoidancePath", LockName::AvoidancePath)
+        .value("SimCameraData", LockName::SimCameraData)
     ;
 
     nb::class_<WritePriorityLock>(m, "WritePriorityLock")
@@ -150,6 +151,14 @@ NB_MODULE(shared_memory, m) {
              "Get PoseOrder object wrapping the shared memory avoidance_pose_order structure.")
         .def("get_avoidance_path", &SharedMemory::getAvoidancePath, nb::rv_policy::reference_internal,
              "Get PoseOrderList object wrapping the shared memory avoidance_path structure.")
+        .def("get_sim_camera_data",
+             [](SharedMemory &self) -> nb::ndarray<uint8_t, nb::numpy, nb::shape<SIM_CAMERA_HEIGHT, SIM_CAMERA_WIDTH, 4>> {
+                 auto &data = self.getSimCameraData();
+                 return nb::ndarray<uint8_t, nb::numpy, nb::shape<SIM_CAMERA_HEIGHT, SIM_CAMERA_WIDTH, 4>>((void *)data);
+             },
+             nb::rv_policy::reference_internal,
+             "Get the simulated camera data in RGBA format from shared memory ."
+        )
     ;
 
 }

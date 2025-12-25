@@ -21,6 +21,8 @@ namespace cogip {
 namespace shared_memory {
 
 constexpr std::size_t MAX_LIDAR_DATA_COUNT = 1024;
+constexpr std::size_t SIM_CAMERA_WIDTH = 640;
+constexpr std::size_t SIM_CAMERA_HEIGHT = 480;
 
 /// Represents shared data in shared memory.
 typedef struct {
@@ -40,6 +42,7 @@ typedef struct {
     models::pose_order_t avoidance_new_pose_order;  ///< New pose order for the avoidance process
     models::pose_order_t avoidance_pose_order;  ///< Current pose order for the avoidance process
     models::pose_order_list_t avoidance_path;  ///< Path for the avoidance process
+    uint8_t sim_camera_data[SIM_CAMERA_WIDTH * SIM_CAMERA_HEIGHT * 4];  ///< Simulated camera data in RGBA format
 } shared_data_t;
 
 /// Overloads the stream insertion operator for `shared_data_t`.
@@ -62,7 +65,8 @@ enum class LockName {
     MonitorObstacles,  ///< Lock for the obstacles from the monitor.
     Obstacles,    ///< Lock for the circle obstacles from planner.
     AvoidanceBlocked,  ///< Lock blocked event from avoidance.
-    AvoidancePath      ///< Lock for the new avoidance path event from avoidance.
+    AvoidancePath,     ///< Lock for the new avoidance path event from avoidance.
+    SimCameraData      ///< Lock for the simulated camera data.
 };
 
 /// Maps `LockName` enum values to their corresponding string representations.
@@ -76,6 +80,7 @@ static std::map<LockName, std::string> lock2str = {
     { LockName::Obstacles, "Obstacles" },
     { LockName::AvoidanceBlocked, "AvoidanceBlocked" },
     { LockName::AvoidancePath, "AvoidancePath" },
+    { LockName::SimCameraData, "SimCameraData" },
 };
 
 } // namespace shared_memory

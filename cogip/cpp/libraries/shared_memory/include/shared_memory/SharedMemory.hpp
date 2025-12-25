@@ -104,6 +104,9 @@ public:
     /// Retrieves a pointer to the shared memory avoidance_path structure.
     models::PoseOrderList* getAvoidancePath() { return avoidance_path_; }
 
+    /// Retrieves a reference to the simulated camera data in RGBA format.
+    uint8_t (&getSimCameraData())[SIM_CAMERA_WIDTH * SIM_CAMERA_HEIGHT * 4] { return data_->sim_camera_data; }
+
 private:
     std::string name_;     ///< Unique name of the shared memory segment.
     bool owner_;           ///< Indicates whether this instance owns the shared memory.

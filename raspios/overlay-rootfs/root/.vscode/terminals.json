@@ -22,6 +22,10 @@
             "command": "journalctl -fu cogip-dashboard"
         },
         {
+            "name": "Robotcam",
+            "command": "journalctl -fu cogip-robotcam"
+        },
+        {
             "name": "MCU",
             "command": "journalctl -fu cogip-mcu-logger"
         }

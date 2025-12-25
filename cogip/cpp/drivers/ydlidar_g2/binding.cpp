@@ -17,7 +17,7 @@ NB_MODULE(ydlidar_g2, m) {
 
     nb::class_<YDLidar>(m, "YDLidar")
         .def(nb::init<>(), "Constructor that internally manages memory")
-        .def(nb::init<nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>>>(),
+        .def(nb::init<nb::ndarray<double, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>>>(),
             "Constructor accepting nanobind::ndarray",
             "external_lidar_data"_a
         )

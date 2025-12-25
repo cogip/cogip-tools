@@ -15,29 +15,11 @@ def upper_snake_to_title(string: str):
 class SCServoEnum(IntEnum):
     """Enum defining SC Servo IDs"""
 
-    MAGNET_SIDE_RIGHT = 1
-    ARM_RIGHT = 2
-    MAGNET_CENTER_RIGHT = 3
-    MAGNET_CENTER_LEFT = 4
-    ARM_LEFT = 5
-    MAGNET_SIDE_LEFT = 6
-    ARM_GRIP_LEFT = 7
-    ARM_GRIP_RIGHT = 8
-    GRIP_RIGHT = 9
-    GRIP_LEFT = 10
+    UNUSED = 0
 
 
 class SCServosProperties(BaseModel):
-    MAGNET_SIDE_RIGHT: Annotated[int, Field(ge=1, le=1000)] = 1
-    ARM_RIGHT: Annotated[int, Field(ge=1, le=1000)] = 1
-    MAGNET_CENTER_RIGHT: Annotated[int, Field(ge=1, le=1000)] = 1
-    MAGNET_CENTER_LEFT: Annotated[int, Field(ge=1, le=1000)] = 1
-    ARM_LEFT: Annotated[int, Field(ge=1, le=1000)] = 1
-    MAGNET_SIDE_LEFT: Annotated[int, Field(ge=1, le=1000)] = 1
-    ARM_GRIP_LEFT: Annotated[int, Field(ge=1, le=1000)] = 1
-    ARM_GRIP_RIGHT: Annotated[int, Field(ge=1, le=1000)] = 1
-    GRIP_RIGHT: Annotated[int, Field(ge=1, le=1000)] = 1
-    GRIP_LEFT: Annotated[int, Field(ge=1, le=1000)] = 1
+    UNUSED: Annotated[int, Field(ge=1, le=1000)] = 1
 
 
 class SCServos:

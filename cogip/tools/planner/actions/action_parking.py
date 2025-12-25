@@ -1,10 +1,8 @@
-import asyncio
 from typing import TYPE_CHECKING
 
 from cogip import models
 from cogip.models.artifacts import FixedObstacleID
 from cogip.models.models import MotionDirection
-from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.pose import AdaptedPose
@@ -45,19 +43,6 @@ class ParkingAction(Action):
             self.planner.game_context.fixed_obstacles[FixedObstacleID.PitArea].enabled = True
             self.planner.game_context.fixed_obstacles[FixedObstacleID.OpponentPitArea].enabled = True
             self.planner.game_context.fixed_obstacles[FixedObstacleID.PamiStartArea].enabled = False
-
-            await actuators.magnet_center_right_in(self.planner)
-            await actuators.magnet_center_left_in(self.planner)
-            await actuators.magnet_side_right_in(self.planner)
-            await actuators.magnet_side_left_in(self.planner)
-
-        if self.planner.game_context.tribunes_in_robot > 0:
-            await actuators.arms_release(self.planner)
-            await asyncio.sleep(0.1)
-
-        await actuators.arms_close(self.planner)
-
-        await actuators.lift_140(self.planner)
 
     async def after_pose(self):
         self.logger.info(f"{self.name}: after_pose")

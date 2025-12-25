@@ -27,10 +27,10 @@ uint64_t getSystemTimeStamp();
 class LDLidarDriver {
 public:
     /// Constructor with optional external memory pointer
-    explicit LDLidarDriver(float (*external_lidar_data)[3] = nullptr);
+    explicit LDLidarDriver(double (*external_lidar_data)[3] = nullptr);
 
     /// Constructor accepting a nanobind::ndarray
-    explicit LDLidarDriver(nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_data);
+    explicit LDLidarDriver(nb::ndarray<double, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_data);
 
     ~LDLidarDriver();
 
@@ -89,7 +89,7 @@ public:
     void setMaxDistance(uint16_t max_distance) { max_distance_ = max_distance; }
 
     /// Get pointer to internal lidar points
-    const float (&getLidarData() const)[3] { return *lidar_data_; }
+    const double (&getLidarData() const)[3] { return *lidar_data_; }
 
     /// Get Lidar spin speed (Hz)
     double getSpeed() const { return (speed_ / 360.0); };
@@ -135,7 +135,7 @@ private:
     uint8_t lidar_error_code_;
     bool is_frame_ready_;
     bool external_data_;      ///< Flag to indicate if memory is externally managed
-    float (*lidar_data_)[3];  ///< Pointer to lidar data memory
+    double (*lidar_data_)[3];  ///< Pointer to lidar data memory
     cogip::shared_memory::WritePriorityLock *data_write_lock_;
     uint8_t min_intensity_;
     uint16_t timestamp_;

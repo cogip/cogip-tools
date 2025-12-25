@@ -30,6 +30,8 @@ class SocketioClient(QtCore.QObject):
             Qt signal emitted to add a new robot
         signal_del_robot:
             Qt signal emitted to remove a robot
+        signal_pose_current:
+            Qt signal emitted on pose current update
         signal_robot_path:
             Qt signal emitted on robot path update
         signal_tool_menu:
@@ -46,6 +48,7 @@ class SocketioClient(QtCore.QObject):
     signal_exit: QtSignal = QtSignal()
     signal_add_robot: QtSignal = QtSignal(int, bool, bool)
     signal_del_robot: QtSignal = QtSignal(int)
+    signal_pose_current: QtSignal = QtSignal(models.Pose)
     signal_robot_path: QtSignal = QtSignal(list)
     signal_tool_menu: QtSignal = QtSignal(models.ShellMenu)
     signal_config_request: QtSignal = QtSignal(dict)
@@ -62,9 +65,13 @@ class SocketioClient(QtCore.QObject):
         """
         super().__init__()
 
-        self.url = url
+        self._url = url
         self.sio = socketio.Client()
         self.register_events()
+
+    @QtCore.Property(str, constant=True)
+    def url(self) -> str:
+        return self._url
 
     def start(self):
         """
@@ -78,7 +85,7 @@ class SocketioClient(QtCore.QObject):
     def try_connect(self):
         while self.retry_connection:
             try:
-                self.sio.connect(self.url, namespaces=["/monitor", "/dashboard"])
+                self.sio.connect(self._url, namespaces=["/monitor", "/dashboard"])
             except ConnectionError as ex:
                 logger.error(str(ex))
                 time.sleep(2)
@@ -210,6 +217,17 @@ class SocketioClient(QtCore.QObject):
             Remove a robot.
             """
             self.signal_del_robot.emit(robot_id)
+
+        @self.sio.on("pose_current", namespace="/dashboard")
+        def on_pose_current(robot_id: int, data: list[dict[str, float]]) -> None:
+            """
+            Callback on pose current message.
+            """
+            try:
+                pose_current = models.Pose(**data)
+                self.signal_pose_current.emit(pose_current)
+            except ValidationError as exc:
+                logger.warning("Failed to decode pose current: %s", exc)
 
         @self.sio.on("path", namespace="/dashboard")
         def on_path(robot_id: int, data: list[dict[str, float]]) -> None:

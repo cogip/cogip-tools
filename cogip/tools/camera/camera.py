@@ -6,6 +6,7 @@ import cv2
 import cv2.typing
 from linuxpy.video import device
 
+from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from . import logger
 from .arguments import CameraName, VideoCodec
 
@@ -54,8 +55,9 @@ class USBCamera(Camera):
         self.camera: cv2.VideoCapture | None = None
         params_path = Path(__file__).parent / "cameras" / str(robot_id)
         params_path /= f"{name.name}_{codec.name}_{width}x{height}"
+        self.capture_path = params_path / "images"
         self.intrinsic_params_filename = params_path / "intrinsic_params.yaml"
-        self.extrinsic_params_filename = params_path / "extrinsic_params.yaml"
+        self.extrinsic_params_filename = params_path / "extrinsic_params.json"
 
     @final
     def open(self):
@@ -144,8 +146,9 @@ class RPiCamera(Camera):
         self.camera_type = Path(name.val).read_text().partition(" ")[0]
         params_path = Path(__file__).parent / "cameras" / str(robot_id)
         params_path /= f"{name.name}-{self.camera_type}_{codec.name}_{width}x{height}"
+        self.capture_path = params_path / "images"
         self.intrinsic_params_filename = params_path / "intrinsic_params.yaml"
-        self.extrinsic_params_filename = params_path / "extrinsic_params.yaml"
+        self.extrinsic_params_filename = params_path / "extrinsic_params.json"
 
     @final
     def open(self):
@@ -156,7 +159,7 @@ class RPiCamera(Camera):
         self.camera = Picamera2()
         config = self.camera.create_preview_configuration(
             main={
-                "format": "YUV420",
+                "format": "RGB888",
                 "size": (self.width, self.height),
             },
             lores={
@@ -175,15 +178,15 @@ class RPiCamera(Camera):
         lores = request.make_array("lores")
         request.release()
 
-        # Extract Y plane (grayscale) from YUV420
-        if main is not None and main.shape[0] == self.height * 3 // 2:
-            main = main[: self.height, : self.width]
+        # main is RGB888 (for display)
+        stream_frame = main
 
-        # Convert lores from YUV420 to BGR
+        # lores is YUV420 (for detection). Extract Y plane.
+        frame = None
         if lores is not None and lores.shape[0] == self.stream_height * 3 // 2:
-            lores = cv2.cvtColor(lores[:, : self.stream_width], cv2.COLOR_YUV2BGR_I420)
+            frame = lores[: self.stream_height, : self.stream_width]
 
-        return main, lores
+        return frame, stream_frame
 
     @final
     def close(self):
@@ -224,3 +227,50 @@ class RPiCamera(Camera):
 
         picam2.close()
         logger.info("")
+
+
+class SimCamera(Camera):
+    def __init__(
+        self,
+        robot_id: int,
+        name: CameraName,
+        codec: VideoCodec,
+        width: int,
+        height: int,
+        stream_width: int | None = None,
+        stream_height: int | None = None,
+    ):
+        super().__init__(robot_id, name, codec, width, height, stream_width, stream_height)
+        self.shared_memory: SharedMemory | None = None
+        self.shared_sim_camera_data_lock: WritePriorityLock | None = None
+        params_path = Path(__file__).parent / "cameras" / str(robot_id)
+        params_path /= f"{name.name}_{codec.name}_{width}x{height}"
+        self.capture_path = params_path / "images"
+        self.intrinsic_params_filename = params_path / "intrinsic_params.yaml"
+        self.extrinsic_params_filename = params_path / "extrinsic_params.json"
+
+    @final
+    def open(self):
+        self.shared_memory = SharedMemory(f"cogip_{self.robot_id}")
+        self.shared_sim_camera_data = self.shared_memory.get_sim_camera_data()
+        self.shared_sim_camera_data_lock = self.shared_memory.get_lock(LockName.SimCameraData)
+
+    @final
+    def read(self) -> tuple[cv2.typing.MatLike | None, cv2.typing.MatLike | None]:
+        # Copy and convert RGBA -> BGR for OpenCV
+        self.shared_sim_camera_data_lock.start_reading()
+        frame = cv2.cvtColor(self.shared_sim_camera_data, cv2.COLOR_RGBA2BGR)
+        self.shared_sim_camera_data_lock.finish_reading()
+
+        if self.width != self.stream_width or self.height != self.stream_height:
+            stream_frame = cv2.resize(frame, (self.stream_width, self.stream_height))
+        else:
+            stream_frame = frame
+
+        return frame, stream_frame
+
+    @final
+    def close(self):
+        self.shared_sim_camera_data_lock = None
+        self.shared_sim_camera_data = None
+        self.shared_memory = None

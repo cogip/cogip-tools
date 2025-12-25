@@ -817,7 +817,7 @@ class Planner:
             "wizard",
             {
                 "name": "Choose Start Position",
-                "type": "choice_integer",
+                "type": "choice_str",
                 "choices": [p.name for p in StartPositionEnum if self.start_positions.is_valid(p)],
                 "value": StartPositionEnum(self.shared_properties.start_position).name,
             },
