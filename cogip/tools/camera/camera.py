@@ -57,7 +57,7 @@ class USBCamera(Camera):
         params_path /= f"{name.name}_{codec.name}_{width}x{height}"
         self.capture_path = params_path / "images"
         self.intrinsic_params_filename = params_path / "intrinsic_params.yaml"
-        self.extrinsic_params_filename = params_path / "extrinsic_params.yaml"
+        self.extrinsic_params_filename = params_path / "extrinsic_params.json"
 
     @final
     def open(self):
@@ -148,7 +148,7 @@ class RPiCamera(Camera):
         params_path /= f"{name.name}-{self.camera_type}_{codec.name}_{width}x{height}"
         self.capture_path = params_path / "images"
         self.intrinsic_params_filename = params_path / "intrinsic_params.yaml"
-        self.extrinsic_params_filename = params_path / "extrinsic_params.yaml"
+        self.extrinsic_params_filename = params_path / "extrinsic_params.json"
 
     @final
     def open(self):

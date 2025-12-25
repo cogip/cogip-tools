@@ -1,7 +1,7 @@
 import asyncio
 from typing import TYPE_CHECKING
 
-from cogip.models.models import Vertex
+from cogip.models.models import CameraExtrinsicParameters
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.cameras import calibrate_camera
@@ -19,13 +19,13 @@ class CameraCalibrationAction(Action):
 
     def __init__(self, planner: "Planner", strategy: Strategy):
         super().__init__("CameraCalibration action", planner, strategy)
-        self.camera_positions: list[Vertex] = []
+        self.camera_positions: list[CameraExtrinsicParameters] = []
         self.after_action_func = self.print_camera_positions
 
         self.poses.append(
             Pose(
-                x=-220,
-                y=-(1500 - 450 + self.planner.shared_properties.robot_width / 2),
+                x=-500,
+                y=-1200,
                 O=90,
                 max_speed_linear=66,
                 max_speed_angular=66,
@@ -35,9 +35,9 @@ class CameraCalibrationAction(Action):
 
         self.poses.append(
             Pose(
-                x=-220,
-                y=-800,
-                O=160,
+                x=-240,
+                y=-1200,
+                O=130,
                 max_speed_linear=66,
                 max_speed_angular=66,
                 after_pose_func=self.calibrate_camera,
@@ -46,9 +46,9 @@ class CameraCalibrationAction(Action):
 
         self.poses.append(
             Pose(
-                x=-220,
-                y=-540,
-                O=-160,
+                x=-240,
+                y=-570,
+                O=-130,
                 max_speed_linear=66,
                 max_speed_angular=66,
                 after_pose_func=self.calibrate_camera,
@@ -57,8 +57,8 @@ class CameraCalibrationAction(Action):
 
         self.poses.append(
             Pose(
-                x=-260,
-                y=-320,
+                x=-240,
+                y=-440,
                 O=-130,
                 max_speed_linear=66,
                 max_speed_angular=66,
@@ -69,7 +69,7 @@ class CameraCalibrationAction(Action):
         self.poses.append(
             Pose(
                 x=-500,
-                y=-320,
+                y=-420,
                 O=-90,
                 max_speed_linear=66,
                 max_speed_angular=66,
@@ -79,8 +79,8 @@ class CameraCalibrationAction(Action):
 
         self.poses.append(
             Pose(
-                x=-710,
-                y=-460,
+                x=-610,
+                y=-510,
                 O=-70,
                 max_speed_linear=66,
                 max_speed_angular=66,
@@ -90,8 +90,8 @@ class CameraCalibrationAction(Action):
 
         self.poses.append(
             Pose(
-                x=-810,
-                y=-760,
+                x=-710,
+                y=-910,
                 O=0,
                 max_speed_linear=66,
                 max_speed_angular=66,
@@ -101,8 +101,8 @@ class CameraCalibrationAction(Action):
 
         self.poses.append(
             Pose(
-                x=-(1000 - 450 + self.planner.shared_properties.robot_width / 2),
-                y=-(1500 - 450 + self.planner.shared_properties.robot_width / 2),
+                x=-610,
+                y=-1250,
                 O=90,
                 max_speed_linear=66,
                 max_speed_angular=66,
@@ -111,24 +111,36 @@ class CameraCalibrationAction(Action):
         )
 
     async def calibrate_camera(self):
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
         if pose := await calibrate_camera(self.planner):
             self.camera_positions.append(pose)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.2)
 
     async def print_camera_positions(self):
         x = 0
         y = 0
         z = 0
+        roll = 0
+        pitch = 0
+        yaw = 0
         for i, p in enumerate(self.camera_positions):
-            self.logger.info(f"Camera position {i: 2d}: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
+            self.logger.info(
+                f"Camera position {i: 2d}: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}"
+                f" Roll={p.roll:.0f} Pitch={p.pitch:.0f} Yaw={p.yaw:.0f}"
+            )
             x += p.x
             y += p.y
             z += p.z
+            roll += p.roll
+            pitch += p.pitch
+            yaw += p.yaw
 
         if n := len(self.camera_positions):
-            p = Vertex(x=x / n, y=y / n, z=z / n)
-            self.logger.info(f"=> Camera position mean: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}")
+            p = CameraExtrinsicParameters(x=x / n, y=y / n, z=z / n, roll=roll / n, pitch=pitch / n, yaw=yaw / n)
+            self.logger.info(
+                f"=> Camera position mean: X={p.x:.0f} Y={p.y:.0f} Z={p.z:.0f}"
+                f" Roll={p.roll:.0f} Pitch={p.pitch:.0f} Yaw={p.yaw:.0f}"
+            )
         else:
             self.logger.warning("No camera position found")
 
