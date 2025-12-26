@@ -234,7 +234,7 @@ def main_opt(
             help="Default start position on startup",
             envvar="PLANNER_START_POSITION",
         ),
-    ] = StartPositionEnum.Bottom.name,
+    ] = StartPositionEnum.Top.name,
     avoidance_strategy: Annotated[
         AvoidanceStrategy,
         typer.Option(
