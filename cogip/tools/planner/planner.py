@@ -30,7 +30,6 @@ from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCi
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, SharedProperties, WritePriorityLock
 from cogip.models.actuators import ActuatorState
-from cogip.models.artifacts import ConstructionArea
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from . import actuators, cameras, logger, pose, sio_events
@@ -560,37 +559,8 @@ class Planner:
             if not self.shared_properties.disable_fixed_obstacles:
                 if self.robot_id == 1:
                     # Add artifact obstacles
-                    construction_areas: list[ConstructionArea] = list(
-                        self.game_context.construction_areas.values()
-                    ) + list(self.game_context.opponent_construction_areas.values())
-                    for construction_area in construction_areas:
-                        if not construction_area.enabled:
-                            continue
-                        if not table.contains(construction_area, margin):
-                            continue
-                        self.shared_rectangle_obstacles.append(
-                            x=construction_area.x,
-                            y=construction_area.y,
-                            angle=construction_area.O,
-                            length_x=construction_area.length + self.shared_properties.robot_width,
-                            length_y=construction_area.width + self.shared_properties.robot_width,
-                            bounding_box_margin=margin,
-                            id=construction_area.id.value,
-                        )
-                    for tribune in self.game_context.tribunes.values():
-                        if not tribune.enabled:
-                            continue
-                        if not table.contains(tribune, margin):
-                            continue
-                        self.shared_rectangle_obstacles.append(
-                            x=tribune.x,
-                            y=tribune.y,
-                            angle=tribune.O,
-                            length_x=tribune.width + self.shared_properties.robot_width,
-                            length_y=tribune.length + self.shared_properties.robot_width,
-                            bounding_box_margin=margin,
-                            id=tribune.id.value,
-                        )
+                    # (keep placeholder for future artifact obstacles)
+                    pass
 
                 # Add fixed obstacles
                 for fixed_obstacle in self.game_context.fixed_obstacles.values():
