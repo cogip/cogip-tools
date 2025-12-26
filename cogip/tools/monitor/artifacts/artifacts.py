@@ -1,5 +1,6 @@
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 
+from cogip.models.artifacts import collection_areas
 from .. import logger
 
 
@@ -56,19 +57,7 @@ def add_crates(root: QObject) -> None:
     add_crates_eee(root, 675, 700, 85, 0.0)
 
     # Collection areas
-    ## LocalBottom
-    add_crates_ybyb(root, -825, -400, 0.0, 180.0)
-    ## LocalBottomSide
-    add_crates_ybyb(root, -600, -1325, 0.0, -90.0)
-    ## LocalTopSide
-    add_crates_ybyb(root, 200, -1325, 0.0, -90.0)
-    ## LocalCenter
-    add_crates_ybyb(root, -200, -350, 0.0, 180.0)
-    ## OppositeBottom
-    add_crates_ybyb(root, -825, 400, 0.0, 180.0)
-    ## OppositeBottomSide
-    add_crates_ybyb(root, -600, 1325, 0.0, 90.0)
-    ## OppositeTopSide
-    add_crates_ybyb(root, 200, 1325, 0.0, 90.0)
-    ## OppositeCenter
-    add_crates_ybyb(root, -200, 350, 0.0, 180.0)
+    for x, y, angle, _ in collection_areas.values():
+        if angle is None:
+            angle = 0.0
+        add_crates_ybyb(root, x, y, 0.0, angle)
