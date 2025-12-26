@@ -36,7 +36,7 @@ class ParkingAction(Action):
         return 9999000.0
 
     async def before_pose(self):
-        self.logger.info(f"{self.name}: before_pose - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
+        self.logger.info(f"{self.name}: before_pose")
         self.planner.pose_order = None
         await self.planner.sio_ns.emit("brake")
         if self.planner.shared_properties.table == TableEnum.Game:
