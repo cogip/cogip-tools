@@ -6,15 +6,8 @@ from cogip.models.actuators import (
     PositionalActuatorEnum,
 )
 from cogip.models.artifacts import (
-    ConstructionArea,
-    ConstructionAreaID,
-    ConstructionAreaSmall,
     FixedObstacle,
     FixedObstacleID,
-    Tribune,
-    TribuneID,
-    construction_area_positions,
-    tribune_positions,
 )
 from .pose import AdaptedPose
 from .table import TableEnum
@@ -31,10 +24,6 @@ class GameContext:
             self.minimum_score: int = 0
             self.game_duration: int = 100
             self.score = self.minimum_score
-            self.tribunes_in_robot = 0
-            self.construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
-            self.opponent_construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
-            self.tribunes: dict[TribuneID, Tribune] = {}
             self.fixed_obstacles: dict[FixedObstacleID, FixedObstacle] = {}
             self.positional_actuator_states: dict[PositionalActuatorEnum, PositionalActuator] = {}
             self.bool_sensor_states: dict[BoolSensorEnum, BoolSensor] = {}
@@ -48,7 +37,6 @@ class GameContext:
         self.score = self.minimum_score
         self.countdown = self.game_duration
         self.last_countdown = self.game_duration
-        self.tribunes_in_robot = 0
         self.create_artifacts()
         self.create_fixed_obstacles()
         self.create_actuators_states()
@@ -63,56 +51,11 @@ class GameContext:
         new_ctx.score = self.score
         new_ctx.countdown = self.countdown
         new_ctx.last_countdown = self.last_countdown
-        new_ctx.tribunes_in_robot = self.tribunes_in_robot
-        new_ctx.construction_areas = {k: v.model_copy() for k, v in self.construction_areas.items()}
-        new_ctx.tribunes = {k: v.model_copy() for k, v in self.tribunes.items()}
         new_ctx.fixed_obstacles = {k: v.model_copy() for k, v in self.fixed_obstacles.items()}
-        # Do not copy artifacts that are not used in actions but keep the code in comments to no forget
-        # that this copy function is only a partial copy.
-        # new_ctx.opponent_construction_areas = {
-        #     k: v.model_copy(deep=True) for k, v in self.opponent_construction_areas.items()
-        # }
-        # new_ctx.positional_actuator_states = {
-        #     k: v.model_copy(deep=True) for k, v in self.positional_actuator_states.items()
-        # }
         return new_ctx
 
     def create_artifacts(self):
-        # Positions are related to the default camp blue.
-        self.construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
-        self.opponent_construction_areas: dict[ConstructionAreaID, ConstructionArea] = {}
-        self.tribunes: dict[TribuneID, Tribune] = {}
-
-        # Construction areas
-        for id, area in construction_area_positions.items():
-            adapted_pose = AdaptedPose(**area.model_dump())
-            self.construction_areas[id] = ConstructionAreaSmall(**adapted_pose.model_dump(), id=id, enabled=False)
-            self.opponent_construction_areas[id] = ConstructionAreaSmall(
-                x=adapted_pose.x,
-                y=-adapted_pose.y,
-                O=-adapted_pose.O,
-                id=id,
-            )
-
-        self.opponent_construction_areas[ConstructionAreaID.LocalBottomLarge3].enabled = False
-        self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
-        if self.shared_properties.table == TableEnum.Training:
-            self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge1].enabled = False
-            self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge2].enabled = False
-            self.opponent_construction_areas[ConstructionAreaID.OppositeSideLarge3].enabled = False
-
-        # Tribunes
-        for id, tribune in tribune_positions.items():
-            adapted_pose = AdaptedPose(**tribune.model_dump())
-            self.tribunes[id] = Tribune(**adapted_pose.model_dump(), id=id)
-
-        if self.shared_properties.table == TableEnum.Training:
-            self.tribunes[TribuneID.LocalTop] = self.tribunes[TribuneID.LocalTopTraining].model_copy(
-                update={"id": TribuneID.LocalTop}
-            )
-            self.tribunes[TribuneID.LocalTop].x -= 73.0 / 2
-            self.tribunes[TribuneID.LocalCenter].x -= 73.0 / 2
-        del self.tribunes[TribuneID.LocalTopTraining]
+        pass
 
     def create_fixed_obstacles(self):
         # Positions are related to the default camp blue.
