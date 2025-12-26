@@ -8,15 +8,10 @@ class FixedObstacleID(IntEnum):
     Enum to identify fixed obstacles.
     """
 
-    Ramp = auto()
-    Scene = auto()
-    PitArea = auto()
-    PamiStartArea = auto()
-    Pami5Path = auto()
-    OpponentRamp = auto()
-    OpponentScene = auto()
-    OpponentPitArea = auto()
-    Backstage = auto()
+    Granary = auto()
+    Nest = auto()
+    OppositeNest = auto()
+    Table = auto()
 
 
 class FixedObstacle(Vertex):

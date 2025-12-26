@@ -2,11 +2,9 @@ from typing import TYPE_CHECKING
 
 from cogip import models
 from cogip.cpp.libraries.models import MotionDirection
-from cogip.models.artifacts import FixedObstacleID
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.pose import AdaptedPose
-from cogip.tools.planner.table import TableEnum
 
 if TYPE_CHECKING:
     from ..planner import Planner
@@ -39,10 +37,6 @@ class ParkingAction(Action):
         self.logger.info(f"{self.name}: before_pose")
         self.planner.pose_order = None
         await self.planner.sio_ns.emit("brake")
-        if self.planner.shared_properties.table == TableEnum.Game:
-            self.planner.game_context.fixed_obstacles[FixedObstacleID.PitArea].enabled = True
-            self.planner.game_context.fixed_obstacles[FixedObstacleID.OpponentPitArea].enabled = True
-            self.planner.game_context.fixed_obstacles[FixedObstacleID.PamiStartArea].enabled = False
 
     async def after_pose(self):
         self.logger.info(f"{self.name}: after_pose")
