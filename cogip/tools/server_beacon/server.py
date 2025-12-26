@@ -104,7 +104,7 @@ class Server:
                 position: StartPositionEnum | None = None
                 match robot_id:
                     case 1:
-                        position = StartPositionEnum.Bottom
+                        position = StartPositionEnum.Top
                     case 2:
                         position = StartPositionEnum.PAMI2
                     case 3:
