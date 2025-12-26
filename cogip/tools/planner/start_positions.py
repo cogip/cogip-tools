@@ -12,14 +12,11 @@ class StartPositionEnum(ArgEnum):
     Enum for available start positions.
     """
 
-    Bottom = auto()
     Top = auto()
-    Opposite = auto()
     PAMI2 = auto()
     PAMI3 = auto()
     PAMI4 = auto()
     PAMI5 = auto()
-    Center = auto()
 
 
 class StartPositions:
@@ -33,46 +30,34 @@ class StartPositions:
             position = StartPositionEnum(position)
         training_offset_x = -1000 if self.shared_properties.table == TableEnum.Training else 0
         match position:
-            case StartPositionEnum.Bottom:
-                return AdaptedPose(
-                    x=-550 - self.shared_properties.robot_length / 2,
-                    y=-100 - self.shared_properties.robot_width / 2,
-                    O=0,
-                ).pose
             case StartPositionEnum.Top:
                 return AdaptedPose(
-                    x=550 + self.shared_properties.robot_length / 2 + training_offset_x,
-                    y=-900 - self.shared_properties.robot_width / 2,
+                    x=600 + self.shared_properties.robot_length / 2 + training_offset_x,
+                    y=-1100 - self.shared_properties.robot_width / 2,
                     O=180,
-                ).pose
-            case StartPositionEnum.Opposite:
-                return AdaptedPose(
-                    x=-350 + self.shared_properties.robot_width / 2,
-                    y=1050 + self.shared_properties.robot_length / 2,
-                    O=-90,
                 ).pose
             case StartPositionEnum.PAMI2:
                 return AdaptedPose(
                     x=550 + 100 * 0.5 + training_offset_x,
-                    y=-1350 - self.shared_properties.robot_length / 2,
-                    O=90,
+                    y=-934,
+                    O=-90,
                 ).pose
             case StartPositionEnum.PAMI3:
                 return AdaptedPose(
                     x=550 + 100 * 1.5 + training_offset_x,
-                    y=-1350 - self.shared_properties.robot_length / 2,
-                    O=90,
+                    y=-934,
+                    O=-90,
                 ).pose
             case StartPositionEnum.PAMI4:
                 return AdaptedPose(
                     x=550 + 100 * 2.5 + training_offset_x,
-                    y=-1350 - self.shared_properties.robot_length / 2,
-                    O=90,
+                    y=-934,
+                    O=-90,
                 ).pose
             case StartPositionEnum.PAMI5:
                 return AdaptedPose(
-                    x=550 + 100 * 3.5 + training_offset_x,
-                    y=-1350 - self.shared_properties.robot_length / 2,
+                    x=800 + self.shared_properties.robot_width / 2 + training_offset_x,
+                    y=-700 - self.shared_properties.robot_length / 2,
                     O=90,
                 ).pose
 
@@ -83,12 +68,14 @@ class StartPositions:
     def is_valid(self, position: StartPositionEnum | int) -> bool:
         if isinstance(position, int):
             position = StartPositionEnum(position)
-        if self.shared_properties.table == TableEnum.Training and position == StartPositionEnum.Opposite:
+        if self.shared_properties.robot_id == 1 and position != StartPositionEnum.Top:
             return False
-        if self.shared_properties.robot_id == 1 and position not in [
-            StartPositionEnum.Top,
-            StartPositionEnum.Bottom,
-            StartPositionEnum.Opposite,
+        if self.shared_properties.robot_id in [2, 3, 4] and position not in [
+            StartPositionEnum.PAMI2,
+            StartPositionEnum.PAMI3,
+            StartPositionEnum.PAMI4,
         ]:
+            return False
+        if self.shared_properties.robot_id == 5 and position != StartPositionEnum.PAMI5:
             return False
         return True
