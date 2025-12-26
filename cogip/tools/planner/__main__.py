@@ -225,7 +225,7 @@ def main_opt(
             help="Default strategy on startup",
             envvar="PLANNER_STRATEGY",
         ),
-    ] = StrategyEnum.TestVisitStartingAreas.name,
+    ] = StrategyEnum.TestBackAndForth.name,
     start_position: Annotated[
         StartPositionEnum,
         typer.Option(
