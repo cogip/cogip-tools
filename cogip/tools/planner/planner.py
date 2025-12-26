@@ -20,8 +20,6 @@ from luma.core.render import canvas
 from luma.oled.device import sh1106
 from numpy.typing import NDArray
 from PIL import ImageFont
-from shapely.affinity import rotate, translate
-from shapely.geometry import Polygon
 
 from cogip import models
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
@@ -32,7 +30,7 @@ from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCi
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, SharedProperties, WritePriorityLock
 from cogip.models.actuators import ActuatorState
-from cogip.models.artifacts import ConstructionArea, FixedObstacleID
+from cogip.models.artifacts import ConstructionArea
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from . import actuators, cameras, logger, pose, sio_events
@@ -381,13 +379,6 @@ class Planner:
             return
         self.playing = False
         await self.sio_ns.emit("game_end")
-        if self.robot_id == 1:
-            if self.robot_in_parking():
-                self.game_context.score += 10
-
-            # Display score
-            await self.sio_ns.emit("score", self.game_context.score)
-
         self.flag_motor.on()
         self.pose_order = None
 
@@ -1068,33 +1059,3 @@ class Planner:
         # if not self.virtual and actuator_state.id in self.game_context.emulated_actuator_states:
         #     self.game_context.emulated_actuator_states.remove(actuator_state.id)
         pass
-
-    def robot_in_parking(self) -> bool:
-        pose_current = self.pose_current.model_copy()
-        robot_half = self.shared_properties.robot_width / 2.0
-        robot_square = Polygon(
-            [
-                (-robot_half, -robot_half),
-                (robot_half, -robot_half),
-                (robot_half, robot_half),
-                (-robot_half, robot_half),
-            ]
-        )
-        robot_square = rotate(robot_square, pose_current.O, origin=(0, 0), use_radians=False)
-        robot_square = translate(robot_square, xoff=pose_current.x, yoff=pose_current.y)
-
-        parking = self.game_context.fixed_obstacles[FixedObstacleID.Backstage]
-        parking_half = parking.width / 2.0
-        parking_square = Polygon(
-            [
-                (-parking_half, -parking_half),
-                (parking_half, -parking_half),
-                (parking_half, parking_half),
-                (-parking_half, parking_half),
-            ]
-        )
-        parking_square = translate(parking_square, xoff=parking.x, yoff=parking.y)
-
-        result = robot_square.intersects(parking_square)
-        logger.info(f"Planner: Robot in parking={result}")
-        return result
