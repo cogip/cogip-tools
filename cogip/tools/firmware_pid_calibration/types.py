@@ -10,6 +10,36 @@ from enum import Enum
 from cogip.tools.copilot.controller import ControllerEnum
 
 
+class CalibrationMode(Enum):
+    """Calibration modes."""
+
+    MANUAL = (1, "Manual Tuning", "Adjust gains manually based on observation")
+    EMPIRICAL_AUTOTUNE = (2, "Empirical Autotune", "Automatic gain estimation via step response")
+
+    def __init__(self, index: int, label: str, description: str):
+        self.index = index
+        self.label = label
+        self.description = description
+
+    @classmethod
+    def from_index(cls, index: int) -> "CalibrationMode":
+        """Get CalibrationMode by its index number."""
+        for mode in cls:
+            if mode.index == index:
+                return mode
+        raise ValueError(f"Invalid calibration mode index: {index}")
+
+    @classmethod
+    def choices(cls) -> list[str]:
+        """Return list of valid index choices as strings."""
+        return [str(mode.index) for mode in cls]
+
+    @classmethod
+    def table_rows(cls) -> list[tuple[str, str, str]]:
+        """Return table rows: (index, label, description)."""
+        return [(str(m.index), m.label, m.description) for m in cls]
+
+
 class PidType(Enum):
     """Types of PID controllers."""
 
@@ -17,6 +47,7 @@ class PidType(Enum):
     ANGULAR_POSE = (2, "Angular Pose", "Position control (rotation)")
     LINEAR_SPEED = (3, "Linear Speed", "Velocity control (linear)")
     ANGULAR_SPEED = (4, "Angular Speed", "Velocity control (angular)")
+    LINEAR_POSE_TEST = (5, "Linear Pose Test", "Linear movement with angular heading correction")
 
     def __init__(self, index: int, label: str, description: str):
         self.index = index
@@ -45,10 +76,11 @@ class PidType(Enum):
     def controller(self) -> ControllerEnum:
         """Return the controller to use for this PID type."""
         controller_map = {
-            PidType.LINEAR_POSE: ControllerEnum.QUADPID_FEEDFORWARD,
-            PidType.ANGULAR_POSE: ControllerEnum.QUADPID_FEEDFORWARD,
+            PidType.LINEAR_POSE: ControllerEnum.LINEAR_POSE_TUNING,
+            PidType.ANGULAR_POSE: ControllerEnum.ANGULAR_POSE_TUNING,
             PidType.LINEAR_SPEED: ControllerEnum.LINEAR_SPEED_TUNING,
             PidType.ANGULAR_SPEED: ControllerEnum.ANGULAR_SPEED_TUNING,
+            PidType.LINEAR_POSE_TEST: ControllerEnum.LINEAR_POSE_TEST,
         }
         return controller_map[self]
 
