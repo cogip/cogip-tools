@@ -32,15 +32,15 @@ class TelemetryGraphWidget(QWidget):
     # Colors for different telemetry curves
     CURVE_COLORS = {
         # Linear
-        TelemetryType.LINEAR_SPEED_ORDER: "#f1c40f",  # Yellow - target
-        TelemetryType.LINEAR_CURRENT_SPEED: "#2ecc71",  # Green - actual
-        TelemetryType.LINEAR_FEEDFORWARD_VELOCITY: "#9b59b6",  # Purple
-        TelemetryType.LINEAR_SPEED_COMMAND: "#e74c3c",  # Red - PID output
+        TelemetryType.LINEAR_SPEED_ORDER: "#f1c40f",  # Yellow - setpoint
+        TelemetryType.LINEAR_CURRENT_SPEED: "#2ecc71",  # Green - actual speed
+        TelemetryType.LINEAR_FEEDFORWARD_VELOCITY: "#9b59b6",  # Purple - feedforward
+        TelemetryType.LINEAR_SPEED_COMMAND: "#e74c3c",  # Red - command to motors
         # Angular
-        TelemetryType.ANGULAR_SPEED_ORDER: "#f1c40f",  # Yellow - target
-        TelemetryType.ANGULAR_CURRENT_SPEED: "#2ecc71",  # Green - actual
-        TelemetryType.ANGULAR_FEEDFORWARD_VELOCITY: "#9b59b6",  # Purple
-        TelemetryType.ANGULAR_SPEED_COMMAND: "#e74c3c",  # Red - PID output
+        TelemetryType.ANGULAR_SPEED_ORDER: "#f1c40f",  # Yellow - setpoint
+        TelemetryType.ANGULAR_CURRENT_SPEED: "#2ecc71",  # Green - actual speed
+        TelemetryType.ANGULAR_FEEDFORWARD_VELOCITY: "#9b59b6",  # Purple - feedforward
+        TelemetryType.ANGULAR_SPEED_COMMAND: "#e74c3c",  # Red - command to motors
     }
 
     MAX_POINTS = 2000  # Maximum data points per curve
@@ -86,16 +86,18 @@ class TelemetryGraphWidget(QWidget):
         self._angular_plot.showGrid(x=True, y=True, alpha=0.3)
         layout.addWidget(self._angular_plot)
 
-    # Telemetry types to display (excluding command)
+    # Telemetry types to display
     LINEAR_TYPES = [
         TelemetryType.LINEAR_SPEED_ORDER,
         TelemetryType.LINEAR_CURRENT_SPEED,
         TelemetryType.LINEAR_FEEDFORWARD_VELOCITY,
+        TelemetryType.LINEAR_SPEED_COMMAND,
     ]
     ANGULAR_TYPES = [
         TelemetryType.ANGULAR_SPEED_ORDER,
         TelemetryType.ANGULAR_CURRENT_SPEED,
         TelemetryType.ANGULAR_FEEDFORWARD_VELOCITY,
+        TelemetryType.ANGULAR_SPEED_COMMAND,
     ]
 
     def _setup_all_curves(self) -> None:
