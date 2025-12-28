@@ -406,7 +406,7 @@ class Planner:
             case StrategyEnum.PidLinearSpeedTest:
                 return ControllerEnum.LINEAR_SPEED_TEST
             case _:
-                return ControllerEnum.QUADPID
+                return ControllerEnum.QUADPID_FEEDFORWARD
 
     async def set_controller(self, new_controller: ControllerEnum, force: bool = False):
         if self.controller == new_controller and not force:
