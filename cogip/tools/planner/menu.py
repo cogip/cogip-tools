@@ -47,26 +47,92 @@ cameras_menu = models.ShellMenu(
     ],
 )
 
-robot_actuators_commands = [
+robot_front_actuators_commands = [
     "actuators_init",
-    "lift_0",
-    "lift_5",
-    "lift_125",
-    "lift_140",
+    "front_lift_down",
+    "front_lift_mid",
+    "front_lift_up",
+    "front_grip_left_side_open",
+    "front_grip_left_side_close",
+    "front_grip_left_center_open",
+    "front_grip_left_center_close",
+    "front_grip_right_center_open",
+    "front_grip_right_center_close",
+    "front_grip_right_side_open",
+    "front_grip_right_side_close",
+    "front_axis_left_side_out",
+    "front_axis_left_side_in",
+    "front_axis_left_center_out",
+    "front_axis_left_center_in",
+    "front_axis_right_center_out",
+    "front_axis_right_center_in",
+    "front_axis_right_side_out",
+    "front_axis_right_side_in",
+    "front_arm_left_open",
+    "front_arm_left_close",
+    "front_arm_right_open",
+    "front_arm_right_close",
 ]
 
-robot_actuators_menu = models.ShellMenu(
-    name="Actuators",
+robot_front_actuators_menu = models.ShellMenu(
+    name="Front Actuators",
     entries=[
-        models.MenuEntry(cmd=f"act_{cmd}", desc=f"{cmd.replace('_', ' ').title()}") for cmd in robot_actuators_commands
+        models.MenuEntry(
+            cmd=f"act_{cmd}",
+            desc=f"{cmd.replace('_', ' ').title()}",
+        )
+        for cmd in robot_front_actuators_commands
+    ],
+)
+
+robot_back_actuators_commands = [
+    "actuators_init",
+    "back_lift_down",
+    "back_lift_mid",
+    "back_lift_up",
+    "back_grip_left_side_open",
+    "back_grip_left_side_close",
+    "back_grip_left_center_open",
+    "back_grip_left_center_close",
+    "back_grip_right_center_open",
+    "back_grip_right_center_close",
+    "back_grip_right_side_open",
+    "back_grip_right_side_close",
+    "back_axis_left_side_out",
+    "back_axis_left_side_in",
+    "back_axis_left_center_out",
+    "back_axis_left_center_in",
+    "back_axis_right_center_out",
+    "back_axis_right_center_in",
+    "back_axis_right_side_out",
+    "back_axis_right_side_in",
+    "back_arm_left_open",
+    "back_arm_left_close",
+    "back_arm_right_open",
+    "back_arm_right_close",
+]
+
+robot_back_actuators_menu = models.ShellMenu(
+    name="Back Actuators",
+    entries=[
+        models.MenuEntry(cmd=f"act_{cmd}", desc=f"{cmd.replace('_', ' ').title()}")
+        for cmd in robot_back_actuators_commands
     ],
 )
 
 robot_actuators_multi_commands = [
-    "lift_0",
-    "lift_5",
-    "lift_125",
-    "lift_140",
+    "front_arms_open",
+    "front_arms_close",
+    "front_grips_open",
+    "front_grips_close",
+    "front_lift_down",
+    "front_lift_up",
+    "back_arms_open",
+    "back_arms_close",
+    "back_grips_open",
+    "back_grips_close",
+    "back_lift_down",
+    "back_lift_up",
 ]
 
 robot_actuators_multi_menu = models.ShellMenu(

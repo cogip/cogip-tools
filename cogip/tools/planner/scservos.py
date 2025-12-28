@@ -15,11 +15,51 @@ def upper_snake_to_title(string: str):
 class SCServoEnum(IntEnum):
     """Enum defining SC Servo IDs"""
 
-    UNUSED = 0
+    FRONT_GRIP_LEFT_SIDE = 1
+    FRONT_GRIP_LEFT_CENTER = 2
+    FRONT_GRIP_RIGHT_CENTER = 3
+    FRONT_GRIP_RIGHT_SIDE = 4
+    FRONT_AXIS_LEFT_SIDE = 5
+    FRONT_AXIS_LEFT_CENTER = 6
+    FRONT_AXIS_RIGHT_CENTER = 7
+    FRONT_AXIS_RIGHT_SIDE = 8
+    FRONT_ARM_LEFT = 9
+    FRONT_ARM_RIGHT = 10
+
+    BACK_GRIP_LEFT_SIDE = 11
+    BACK_GRIP_LEFT_CENTER = 12
+    BACK_GRIP_RIGHT_CENTER = 13
+    BACK_GRIP_RIGHT_SIDE = 14
+    BACK_AXIS_LEFT_SIDE = 15
+    BACK_AXIS_LEFT_CENTER = 16
+    BACK_AXIS_RIGHT_CENTER = 17
+    BACK_AXIS_RIGHT_SIDE = 18
+    BACK_ARM_LEFT = 19
+    BACK_ARM_RIGHT = 20
 
 
 class SCServosProperties(BaseModel):
-    UNUSED: Annotated[int, Field(ge=1, le=1000)] = 1
+    FRONT_GRIP_LEFT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_GRIP_LEFT_CENTER: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_GRIP_RIGHT_CENTER: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_GRIP_RIGHT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_AXIS_LEFT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_AXIS_LEFT_CENTER: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_AXIS_RIGHT_CENTER: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_AXIS_RIGHT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_ARM_LEFT: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_ARM_RIGHT: Annotated[int, Field(ge=1, le=1200)] = 1
+
+    BACK_GRIP_LEFT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_GRIP_LEFT_CENTER: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_GRIP_RIGHT_CENTER: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_GRIP_RIGHT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_AXIS_LEFT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_AXIS_LEFT_CENTER: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_AXIS_RIGHT_CENTER: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_AXIS_RIGHT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_ARM_LEFT: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_ARM_RIGHT: Annotated[int, Field(ge=1, le=1200)] = 1
 
 
 class SCServos:
@@ -32,6 +72,7 @@ class SCServos:
 
         self.port_handler = PortHandler(str(port))
         self.packet_handler = scscl(self.port_handler)
+        self.reg_props: dict[SCServoEnum, int] = {}
 
         if not self.port_handler.openPort():
             logger.error("Failed to open SC Servos port")
@@ -69,11 +110,38 @@ class SCServos:
                 logger.error(f"SCServo {id.name}: failed to read position ({self.packet_handler.getTxRxResult(result)}")
             self.update_property(id, current_position)
 
-    def set(self, id: SCServoEnum, value: int, speed: int = 2400):
+    def set(self, id: SCServoEnum, value: int, speed: int = 2400, reg_only: bool = False):
         if not self.port_handler:
             return
 
-        self.update_property(id, value)
-        result, error = self.packet_handler.WritePos(id.value, value, 0, speed)
+        if reg_only:
+            self.reg_props[id] = value
+            func = self.packet_handler.RegWritePos
+        else:
+            self.update_property(id, value)
+            func = self.packet_handler.WritePos
+
+        result, _ = func(id.value, value, 0, speed)
         if result != COMM_SUCCESS:
-            logger.error(f"SCServo {id.name}: failed to write position ({self.packet_handler.getTxRxResult(result)}")
+            logger.error(
+                f"SCServo {id.name}: failed to {'reg' if reg_only else ''} write position "
+                f"({self.packet_handler.getTxRxResult(result)}"
+            )
+            return
+
+    def action(self):
+        if not self.port_handler:
+            return
+
+        if not self.reg_props:
+            logger.warning("SCServo: failed to reg action (no registered actions)")
+            return
+
+        result, _ = self.packet_handler.RegAction()
+        if result != COMM_SUCCESS:
+            logger.error(f"SCServo: failed to reg action ({self.packet_handler.getTxRxResult(result)}")
+            return
+
+        for id, value in self.reg_props.items():
+            self.update_property(id, value)
+        self.reg_props.clear()
