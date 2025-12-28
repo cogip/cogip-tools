@@ -145,7 +145,7 @@ class GameWizard:
 
     async def response_strategy(self, message: dict[str, Any]):
         self.game_strategy = StrategyEnum[message["value"]].val
-        self.planner.shared_properties.strategy = StrategyEnum.TestAlignBottomForBanner.val
+        self.planner.shared_properties.strategy = StrategyEnum.TestAlignTopCornerCamera.val
         await self.planner.soft_reset()
 
     async def request_starter_for_calibration(self):
