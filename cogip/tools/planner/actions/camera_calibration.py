@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from cogip.models.models import CameraExtrinsicParameters
 from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.action_align import AlignTopCornerAction
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.cameras import calibrate_camera
 from cogip.tools.planner.pose import Pose
@@ -20,18 +21,8 @@ class CameraCalibrationAction(Action):
     def __init__(self, planner: "Planner", strategy: Strategy):
         super().__init__("CameraCalibration action", planner, strategy)
         self.camera_positions: list[CameraExtrinsicParameters] = []
-        self.after_action_func = self.print_camera_positions
-
-        self.poses.append(
-            Pose(
-                x=-500,
-                y=-1200,
-                O=90,
-                max_speed_linear=66,
-                max_speed_angular=66,
-                after_pose_func=self.calibrate_camera,
-            )
-        )
+        self.before_action_func = self.before_action
+        self.after_action_func = self.after_action
 
         self.poses.append(
             Pose(
@@ -110,13 +101,29 @@ class CameraCalibrationAction(Action):
             )
         )
 
+        self.poses.append(
+            Pose(
+                x=-400,
+                y=-1200,
+                O=90,
+                max_speed_linear=66,
+                max_speed_angular=66,
+                after_pose_func=self.calibrate_camera,
+            )
+        )
+
+    async def before_action(self):
+        self.disable_fixed_obstacles_backup = self.planner.shared_properties.disable_fixed_obstacles
+        self.planner.shared_properties.disable_fixed_obstacles = True
+
     async def calibrate_camera(self):
         await asyncio.sleep(0.5)
         if pose := await calibrate_camera(self.planner):
             self.camera_positions.append(pose)
-        await asyncio.sleep(0.2)
 
-    async def print_camera_positions(self):
+    async def after_action(self):
+        self.planner.shared_properties.disable_fixed_obstacles = self.disable_fixed_obstacles_backup
+
         x = 0
         y = 0
         z = 0
@@ -151,4 +158,5 @@ class CameraCalibrationAction(Action):
 class CameraCalibrationStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
+        self.append(AlignTopCornerAction(planner, self))
         self.append(CameraCalibrationAction(planner, self))
