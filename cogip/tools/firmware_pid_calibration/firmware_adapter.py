@@ -169,7 +169,7 @@ class FirmwareAdapter:
             logger.warning(f"Timeout waiting for pose reached (>{timeout}s)")
             return False
 
-    async def goto(self, x: float, y: float, orientation: float, timeout: float = 60.0) -> bool:
+    async def goto(self, x: float, y: float, orientation: float, timeout: float = 5.0) -> bool:
         """
         Move robot to target position and wait for completion.
 
