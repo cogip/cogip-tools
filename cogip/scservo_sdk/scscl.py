@@ -108,3 +108,9 @@ class scscl(protocol_packet_handler):
 
     def unLockEprom(self, scs_id):
         return self.write1ByteTxRx(scs_id, SCSCL_LOCK, 0)
+
+    def EnableTorque(self, scs_id):
+        return self.write1ByteTxRx(scs_id, SCSCL_TORQUE_ENABLE, 1)
+
+    def DisableTorque(self, scs_id):
+        return self.write1ByteTxRx(scs_id, SCSCL_TORQUE_ENABLE, 0)
