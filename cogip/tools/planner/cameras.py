@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import httpx
+from pydantic import TypeAdapter
 
 from cogip.models import CameraExtrinsicParameters, Pose
 from . import logger
@@ -56,3 +57,23 @@ async def get_robot_position(planner: "Planner") -> Pose | None:
         except Exception as exc:  # noqa
             logger.error(f"Request robot_position: Unknown exception: {exc}")
             return None
+
+
+async def get_crates_position(planner: "Planner", in_table_coords: bool = False) -> list[tuple[int, Pose]]:
+    async with httpx.AsyncClient() as client:
+        try:
+            port = 8100 + planner.robot_id
+            response = await client.get(
+                f"http://robot{planner.robot_id}:{port}/crates_position?in_table_coords={int(in_table_coords)}"
+            )
+            if response.status_code != 200:
+                logger.warning(f"Request crates_position: Failed: {response.status_code}: {response.text}")
+                return []
+            crates_data: list[tuple[int, Pose]] = TypeAdapter(list[tuple[int, Pose]]).validate_python(response.json())
+            return crates_data
+        except httpx.HTTPError as exc:
+            logger.error(f"Request crates_position: HTTP Exception: {exc}")
+            return []
+        except Exception as exc:  # noqa
+            logger.error(f"Request crates_position: Unknown exception: {exc}")
+            return []
