@@ -36,11 +36,11 @@ for path in Path(__file__).parent.glob("*.py"):
 
     for name, obj in inspect.getmembers(module, inspect.isclass):
         if issubclass(obj, Strategy) and obj is not Strategy:
-            strategies_found.append(obj)
+            if obj.__module__ == module.__name__:
+                strategies_found.append(obj)
 
 sorted_strategies = sorted(strategies_found, key=lambda cls: cls.__name__)
 strategies_map = {strip_action_name(strategy.__name__): i + 1 for i, strategy in enumerate(sorted_strategies)}
-
 StrategyEnum = ArgEnum("StrategyEnum", strategies_map)
 
 strategy_classes: dict[StrategyEnum, Strategy] = {
