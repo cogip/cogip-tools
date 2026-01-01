@@ -3,8 +3,8 @@
 from functools import partial
 from typing import TYPE_CHECKING
 
+from cogip.cpp.libraries.models import MotionDirection
 from cogip.models import models
-from cogip.models.models import MotionDirection
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.pose import Pose
@@ -20,7 +20,6 @@ class TestRectangleAlternatingAction(Action):
 
     This demonstrates the MotionDirection enum capabilities.
     """
-
 
     def __init__(self, planner: "Planner", strategy: Strategy):
         super().__init__("TestRectangleAlternating", planner, strategy)

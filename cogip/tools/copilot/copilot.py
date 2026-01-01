@@ -6,6 +6,7 @@ import socketio
 from google.protobuf.json_format import MessageToDict
 
 from cogip import models
+from cogip.cpp.libraries.models import MotionDirection
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.models import PoseOrderList as SharedPoseOrderList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
@@ -464,7 +465,7 @@ class Copilot:
                     continue
                 pose_order = models.PathPose.from_shared(self.shared_avoidance_path[0])
                 if self.id > 1:
-                    pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
+                    pose_order.motion_direction = MotionDirection.FORWARD_ONLY
                 pb_pose_order = PB_PathPose()
                 pose_order.copy_pb(pb_pose_order)
                 await self.pbcom.send_can_message(pose_order_uuid, pb_pose_order)
