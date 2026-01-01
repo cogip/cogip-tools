@@ -477,7 +477,7 @@ class Planner:
             self.pose_order = pose_order
 
             if self.shared_properties.strategy in [StrategyEnum.PidLinearSpeedTest, StrategyEnum.PidAngularSpeedTest]:
-                await self.sio_ns.emit("pose_order", self.pose_order.path_pose.model_dump())
+                await self.sio_ns.emit("pose_order", self.pose_order.path_pose.model_dump(mode="json"))
 
     async def next_pose(self):
         """

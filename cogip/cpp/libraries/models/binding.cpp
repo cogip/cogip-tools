@@ -31,9 +31,9 @@ NB_MODULE(models, m) {
 
     // Bind MotionDirection enum
     nb::enum_<MotionDirection>(m, "MotionDirection", "Motion direction mode for path navigation")
-        .value("bidirectional", MotionDirection::bidirectional, "Robot can move forward or backward (choose optimal)")
-        .value("forward_only", MotionDirection::forward_only, "Force forward motion only")
-        .value("backward_only", MotionDirection::backward_only, "Force backward motion only")
+        .value("BIDIRECTIONAL", MotionDirection::bidirectional, "Robot can move forward or backward (choose optimal)")
+        .value("FORWARD_ONLY", MotionDirection::forward_only, "Force forward motion only")
+        .value("BACKWARD_ONLY", MotionDirection::backward_only, "Force backward motion only")
         .export_values();
 
     // Bind coords_t structure

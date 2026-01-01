@@ -8,23 +8,15 @@ an exception being raised if impossible.
 """
 
 import math
-from enum import IntEnum
 
 import numpy as np
 from numpy.typing import ArrayLike
 from pydantic import BaseModel
 
+from cogip.cpp.libraries.models import MotionDirection
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.models import PoseOrder as SharedPoseOrder
 from cogip.protobuf import PB_PathPose
-
-
-class MotionDirection(IntEnum):
-    """Motion direction mode for path navigation."""
-
-    BIDIRECTIONAL = 0  # Robot can move forward or backward (choose optimal)
-    FORWARD_ONLY = 1  # Force forward motion only
-    BACKWARD_ONLY = 2  # Force backward motion only
 
 
 class MenuEntry(BaseModel):
