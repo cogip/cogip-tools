@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from colorzero import Color
 
-from cogip.models.models import MotionDirection
+from cogip.cpp.libraries.models import MotionDirection
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose, set_countdown_color
