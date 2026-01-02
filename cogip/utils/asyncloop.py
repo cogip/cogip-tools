@@ -69,7 +69,6 @@ class AsyncLoop:
                     wait = self.interval - duration
                     await asyncio.sleep(wait)
         except asyncio.CancelledError:
-            self._logger.info("Task cancelled")
             raise
 
     def start(self):
