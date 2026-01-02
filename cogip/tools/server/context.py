@@ -18,6 +18,7 @@ class Context(metaclass=Singleton):
         robotcam_sid:       Robotcam sid
         beacon_sid:         Beacon server sid
         monitor_sid:        Monitor sid
+        calibration_sid:    Calibration client sid
         tool_menus:         all registered tool menus
         current_tool_menu:  name of the currently selected tool menu
         shell_menu:         last received shell menu
@@ -34,6 +35,7 @@ class Context(metaclass=Singleton):
     robotcam_sid: str | None = None
     beacon_sid: str | None = None
     monitor_sid: str | None = None
+    calibration_sid: str | None = None
     tool_menus: dict[str, models.ShellMenu] = field(default_factory=dict)
     current_tool_menu: str | None = None
     shell_menu: models.ShellMenu | None = None

@@ -56,6 +56,8 @@ class CopilotNamespace(socketio.AsyncNamespace):
         """
         logger.info("[copilot => planner] Pose reached.")
         await self.emit("pose_reached", namespace="/planner")
+        if self.context.calibration_sid:
+            await self.emit("pose_reached", namespace="/calibration")
 
     async def on_intermediate_pose_reached(self, sid) -> None:
         """
@@ -109,3 +111,27 @@ class CopilotNamespace(socketio.AsyncNamespace):
         """
         logger.info("[copilot => planner] Game end.")
         await self.emit("game_end", namespace="/planner")
+
+    async def on_get_parameter_response(self, sid, response: dict[str, Any]) -> None:
+        """
+        Callback on get_parameter_response message from copilot.
+        Forward to firmware parameter manager.
+        """
+        logger.info(f"[copilot => parameters] Get response: {response}")
+        await self.emit("get_parameter_response", response, namespace="/parameters")
+
+    async def on_set_parameter_response(self, sid, response: dict[str, Any]) -> None:
+        """
+        Callback on set_parameter_response message from copilot.
+        Forward to firmware parameter manager.
+        """
+        logger.info(f"[copilot => parameters] Set response: {response}")
+        await self.emit("set_parameter_response", response, namespace="/parameters")
+
+    async def on_telemetry_data(self, sid, telemetry: dict[str, Any]) -> None:
+        """
+        Callback on telemetry_data message from copilot.
+        Forward to telemetry clients.
+        """
+        logger.debug(f"[copilot => telemetry] Telemetry Data: {telemetry}")
+        await self.emit("telemetry_data", telemetry, namespace="/telemetry")
