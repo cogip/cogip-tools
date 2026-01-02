@@ -43,7 +43,9 @@ public:
     void postUpdate();
 
     /// Wait for the updated signal meaning that data was updated.
-    void waitUpdate();
+    /// @param timeout_seconds Timeout in seconds. If negative, wait indefinitely.
+    /// @return True if the signal was received, false if timed out.
+    bool waitUpdate(double timeout_seconds = -1.0);
 
     /// Reset counters and semaphores.
     void reset();

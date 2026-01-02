@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <stdexcept>
 #include <iostream>
+#include <time.h>
 
 namespace cogip {
 
@@ -256,14 +257,39 @@ void WritePriorityLock::postUpdate() {
     }
 }
 
-void WritePriorityLock::waitUpdate() {
+bool WritePriorityLock::waitUpdate(double timeout_seconds) {
     if (debug_) {
         int value;
         sem_getvalue(sem_update_, &value);
         std::cout << name_ << " waitUpdate: count=" << *consumer_count_ << " sem_update_=" << value << std::endl;
     }
-    sem_wait(sem_update_);
-    if (debug_) std::cout << name_ << " waitUpdate: end" << std::endl;
+
+    if (timeout_seconds < 0) {
+        sem_wait(sem_update_);
+        if (debug_) std::cout << name_ << " waitUpdate: end" << std::endl;
+        return true;
+    } else {
+        struct timespec ts;
+        if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+            return false;
+        }
+
+        long seconds = (long)timeout_seconds;
+        long nanoseconds = (long)((timeout_seconds - seconds) * 1e9);
+
+        ts.tv_sec += seconds;
+        ts.tv_nsec += nanoseconds;
+        if (ts.tv_nsec >= 1000000000) {
+            ts.tv_sec += 1;
+            ts.tv_nsec -= 1000000000;
+        }
+
+        if (sem_timedwait(sem_update_, &ts) == -1) {
+            return false;
+        }
+        if (debug_) std::cout << name_ << " waitUpdate: end" << std::endl;
+        return true;
+    }
 }
 
 void WritePriorityLock::reset() {

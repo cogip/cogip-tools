@@ -62,7 +62,7 @@ NB_MODULE(shared_memory, m) {
              "Register the the lock will be used to wait the update signal to read updated data.")
         .def("post_update", &WritePriorityLock::postUpdate,
              "Signal to registered consumers that data was updated.")
-        .def("wait_update", &WritePriorityLock::waitUpdate, nb::call_guard<nb::gil_scoped_release>(),
+        .def("wait_update", &WritePriorityLock::waitUpdate, "timeout_seconds"_a = -1.0, nb::call_guard<nb::gil_scoped_release>(),
              "Wait for the updated signal meaning that data was updated.")
         .def("reset", &WritePriorityLock::reset,
              "Reset counters and semaphores.")
