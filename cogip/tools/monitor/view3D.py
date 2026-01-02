@@ -9,6 +9,7 @@ from PySide6.QtQml import QmlElement
 from PySide6.QtQuick import QQuickItemGrabResult
 
 from cogip.models import models
+from cogip.tools.planner.table import TableEnum
 from . import logger
 from .artifacts.artifacts import add_artifacts
 from .obstacle import ObstacleStorage, ObstacleWindowSettings
@@ -23,7 +24,6 @@ QML_IMPORT_NAME = "View3DBackend"
 QML_IMPORT_MAJOR_VERSION = 1
 
 
-@QmlElement
 class View3DBackend(QObject):
     sim_camera_update_interval_ms = 50  # 20 FPS
     robotIdChanged = QtSignal()
@@ -98,6 +98,8 @@ class View3DBackend(QObject):
         self.view_item.setProperty("virtualDetector", virtual_detector)
         self.view_item.setProperty("virtualPlanner", virtual_planner)
         self.shm.connect(robot_id, virtual_planner, virtual_detector)
+        self.update_training_borders_visibility()
+
         logger.info(
             "Adding robot %s (virtual_planner=%s, virtual_detector=%s)", robot_id, virtual_planner, virtual_detector
         )
@@ -226,3 +228,18 @@ class View3DBackend(QObject):
         for obstacle in obstacles:
             self.shm.shared_monitor_obstacles.append(obstacle["x"], obstacle["y"])
         self.shm.shared_monitor_obstacles_lock.finish_writing()
+
+    def update_training_borders_visibility(self):
+        if self.shm.shared_properties:
+            is_training = self.shm.shared_properties.table == TableEnum.Training.val
+
+            training_left_border = self.view_item.findChild(QObject, "TrainingLeftBorder")
+            if training_left_border:
+                training_left_border.setProperty("visible", is_training)
+
+            training_top_border = self.view_item.findChild(QObject, "TrainingTopBorder")
+            if training_top_border:
+                training_top_border.setProperty("visible", is_training)
+
+
+QmlElement(View3DBackend)
