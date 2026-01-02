@@ -31,6 +31,7 @@ PoseOrder::PoseOrder(
     bool bypass_final_orientation,
     std::uint32_t timeout_ms,
     bool is_intermediate,
+    double stop_before_distance,
     pose_order_t *data
 ):
     data_(data),
@@ -47,6 +48,7 @@ PoseOrder::PoseOrder(
     data_->bypass_final_orientation = bypass_final_orientation;
     data_->timeout_ms = timeout_ms;
     data_->is_intermediate = is_intermediate;
+    data_->stop_before_distance = stop_before_distance;
 }
 
 PoseOrder::PoseOrder(const PoseOrder& other, bool deep_copy):

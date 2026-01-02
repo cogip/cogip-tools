@@ -18,7 +18,8 @@ void PoseOrderList::append(
     bool bypass_anti_blocking,
     bool bypass_final_orientation,
     std::uint32_t timeout_ms,
-    bool is_intermediate
+    bool is_intermediate,
+    double stop_before_distance
 )
 {
     if (size() >= max_size()) {
@@ -34,6 +35,7 @@ void PoseOrderList::append(
     list_->elems[list_->count].bypass_final_orientation = bypass_final_orientation;
     list_->elems[list_->count].timeout_ms = timeout_ms;
     list_->elems[list_->count].is_intermediate = is_intermediate;
+    list_->elems[list_->count].stop_before_distance = stop_before_distance;
     list_->count++;
 }
 
@@ -48,7 +50,8 @@ void PoseOrderList::set(
     bool bypass_anti_blocking,
     bool bypass_final_orientation,
     std::uint32_t timeout_ms,
-    bool is_intermediate
+    bool is_intermediate,
+    double stop_before_distance
 ) {
     if (index >= size()) {
         throw std::runtime_error("index out of range");
@@ -63,6 +66,7 @@ void PoseOrderList::set(
     list_->elems[index].bypass_final_orientation = bypass_final_orientation;
     list_->elems[index].timeout_ms = timeout_ms;
     list_->elems[index].is_intermediate = is_intermediate;
+    list_->elems[index].stop_before_distance = stop_before_distance;
 }
 
 } // namespace models
