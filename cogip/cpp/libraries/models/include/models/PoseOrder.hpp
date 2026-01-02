@@ -42,6 +42,7 @@ public:
         bool bypass_final_orientation=false,  ///< [in] True if the pose bypasses final orientation, false otherwise.
         std::uint32_t timeout_ms=0,           ///< [in] Timeout in milliseconds for the pose to be reached.
         bool is_intermediate=false,           ///< [in] True if the pose is an intermediate pose, false if it is a final pose.
+        double stop_before_distance=0.0,      ///< [in] Distance to stop before reaching the pose.
         pose_order_t *data=nullptr            ///< [in] Pointer to an existing data structure
                                               ///<      If nullptr, will allocate one internally
     );
@@ -131,6 +132,12 @@ public:
         bool is_intermediate  ///< [in] true if the pose is an intermediate pose, false if it is a final pose
     ) { data_->is_intermediate = is_intermediate; }
 
+    /// Return distance to stop before reaching the pose.
+    double stop_before_distance() const { return data_->stop_before_distance; }
+
+    /// Set distance to stop before reaching the pose.
+    void set_stop_before_distance(double distance) { data_->stop_before_distance = distance; }
+
 protected:
     void initMemory();
 
@@ -154,7 +161,8 @@ inline std::ostream& operator<<(std::ostream& os, PoseOrder data) {
        << "bypass_anti_blocking=" << data.bypass_anti_blocking() << ", "
        << "bypass_final_orientation=" << data.bypass_final_orientation() << ", "
        << "timeout_ms=" << data.timeout_ms() << ", "
-       << "is_intermediate=" << data.is_intermediate()
+       << "is_intermediate=" << data.is_intermediate() << ", "
+       << "stop_before_distance=" << data.stop_before_distance() << ", "
        << ")";
     return os;
 }

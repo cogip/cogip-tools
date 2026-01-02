@@ -36,6 +36,7 @@ typedef struct {
     bool bypass_final_orientation; ///< True if the pose bypasses final orientation, false otherwise.
     std::uint32_t timeout_ms; ///< Timeout in milliseconds for the pose to be reached.
     bool is_intermediate; ///< True if the pose is an intermediate pose, false if it is a final pose.
+    double stop_before_distance; ///< Distance to stop before reaching the pose.
 } pose_order_t;
 
 /// Overloads the stream insertion operator for `pose_order_t`.
@@ -55,6 +56,7 @@ inline std::ostream& operator<<(std::ostream& os, const pose_order_t& data) {
        << "bypass_final_orientation=" << data.bypass_final_orientation << ", "
        << "timeout_ms=" << data.timeout_ms << ", "
        << "is_intermediate=" << data.is_intermediate << ", "
+       << "stop_before_distance=" << data.stop_before_distance << ", "
        << ")";
     return os;
 }

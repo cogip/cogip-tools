@@ -124,6 +124,7 @@ class PathPose(Pose):
         timeout_ms: max time is milliseconds to reach the pose, the robot stops if timeout is reached, 0 for no timeout
         bypass_final_orientation: do not set orientation pose order
         is_intermediate: whether this pose is an intermediate pose in a path
+        stop_before_distance: distance to stop before reaching the pose
     """
 
     max_speed_linear: int = 66
@@ -133,6 +134,7 @@ class PathPose(Pose):
     timeout_ms: int = 0
     bypass_final_orientation: bool = False
     is_intermediate: bool = False
+    stop_before_distance: float = 0.0
 
     @property
     def pose(self) -> Pose:
@@ -175,6 +177,7 @@ class PathPose(Pose):
         shared_pose_order.bypass_final_orientation = self.bypass_final_orientation
         shared_pose_order.timeout_ms = self.timeout_ms
         shared_pose_order.is_intermediate = self.is_intermediate
+        shared_pose_order.stop_before_distance = self.stop_before_distance
 
     @classmethod
     def from_shared(cls, shared_pose: SharedPose | SharedPoseOrder) -> "PathPose":
@@ -200,6 +203,7 @@ class PathPose(Pose):
             path_pose.timeout_ms = shared_pose.timeout_ms
             path_pose.bypass_final_orientation = shared_pose.bypass_final_orientation
             path_pose.is_intermediate = shared_pose.is_intermediate
+            path_pose.stop_before_distance = shared_pose.stop_before_distance
 
         return path_pose
 
