@@ -374,6 +374,7 @@ class Planner:
         self.strategy = strategy_classes.get(StrategyEnum(self.shared_properties.strategy), strategy.Strategy)(self)
         await self.set_pose_start(self.start_positions.get())
         self.pami_event.clear()
+        await self.sio_ns.emit("soft_reset")
 
     async def final_action(self):
         if not self.playing:
