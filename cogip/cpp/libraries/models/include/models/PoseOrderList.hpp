@@ -33,7 +33,8 @@ public:
         bool bypass_anti_blocking = false,
         bool bypass_final_orientation = false,
         std::uint32_t timeout_ms = 0,
-        bool is_intermediate = false
+        bool is_intermediate = false,
+        double stop_before_distance = 0.0
     );
     void append(const pose_order_t* elem) {
         append(
@@ -46,7 +47,8 @@ public:
             elem->bypass_anti_blocking,
             elem->bypass_final_orientation,
             elem->timeout_ms,
-            elem->is_intermediate
+            elem->is_intermediate,
+            elem->stop_before_distance
         );
     };
     void append(const PoseOrder& elem) {
@@ -60,7 +62,8 @@ public:
             elem.bypass_anti_blocking(),
             elem.bypass_final_orientation(),
             elem.timeout_ms(),
-            elem.is_intermediate()
+            elem.is_intermediate(),
+            elem.stop_before_distance()
         );
     };
     void set(
@@ -74,7 +77,8 @@ public:
         bool bypass_anti_blocking = false,
         bool bypass_final_orientation = false,
         std::uint32_t timeout_ms = 0,
-        bool is_intermediate = false
+        bool is_intermediate = false,
+        double stop_before_distance = 0.0
     );
     void set(std::size_t index, const pose_order_t* elem) {
         set(
@@ -88,7 +92,8 @@ public:
             elem->bypass_anti_blocking,
             elem->bypass_final_orientation,
             elem->timeout_ms,
-            elem->is_intermediate
+            elem->is_intermediate,
+            elem->stop_before_distance
         );
     };
     void set(std::size_t index, const PoseOrder& elem) {
@@ -103,7 +108,8 @@ public:
             elem.bypass_anti_blocking(),
             elem.bypass_final_orientation(),
             elem.timeout_ms(),
-            elem.is_intermediate()
+            elem.is_intermediate(),
+            elem.stop_before_distance()
         );
     };
 };
