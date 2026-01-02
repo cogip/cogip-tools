@@ -4,6 +4,7 @@ import os
 import time
 
 from cogip import models
+from cogip.cpp.libraries.models import MotionDirection
 from cogip.cpp.libraries.obstacles import ObstacleCircle as SharedObstacleCircle
 from cogip.cpp.libraries.obstacles import ObstacleRectangle as SharedObstacleRectangle
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory
@@ -183,9 +184,94 @@ def avoidance_process(robot_id: int):
 
         logger.info("Avoidance: Update path")
         last_emitted_pose_order = path[1].model_copy()
+
+        adjusted_path = path
+        if pose_order.stop_before_distance > 0.0:
+            # Adjust the last pose in the path to stop before the target pose
+            # We want to stop at stop_before_distance from pose_order in straight line
+
+            # Check if we are already inside the stop distance
+            dist_start_to_target = math.dist((path[0].x, path[0].y), (pose_order.x, pose_order.y))
+
+            if dist_start_to_target > pose_order.stop_before_distance:
+                for i in range(1, len(path)):
+                    p1 = path[i - 1]
+                    p2 = path[i]
+
+                    # Check if the segment enters the circle
+                    dist_p2_target = math.dist((p2.x, p2.y), (pose_order.x, pose_order.y))
+
+                    if dist_p2_target > pose_order.stop_before_distance:
+                        continue
+
+                    # Intersection is on this segment
+                    # Solve for t in |P - C| = R
+                    # P = p1 + t * (p2 - p1)
+                    # C = pose_order
+                    # R = stop_before_distance
+
+                    ax = p1.x - pose_order.x
+                    ay = p1.y - pose_order.y
+                    bx = p2.x - p1.x
+                    by = p2.y - p1.y
+
+                    # Quadratic equation: (bx^2 + by^2)t^2 + 2(ax*bx + ay*by)t + (ax^2 + ay^2 - R^2) = 0
+                    a = bx**2 + by**2
+                    b = 2 * (ax * bx + ay * by)
+                    c = (ax**2 + ay**2) - pose_order.stop_before_distance**2
+
+                    delta = b**2 - 4 * a * c
+
+                    if delta < 0 or a == 0:
+                        continue
+
+                    t = (-b - math.sqrt(delta)) / (2 * a)
+                    t = max(0.0, min(1.0, t))
+
+                    new_x = p1.x + t * bx
+                    new_y = p1.y + t * by
+
+                    # Compute orientation towards pose_order
+                    new_O = math.degrees(math.atan2(pose_order.y - new_y, pose_order.x - new_x))
+                    if pose_order.motion_direction == MotionDirection.BACKWARD_ONLY:
+                        new_O += 180
+
+                    adjusted_path = path[:i]
+                    adjusted_path.append(
+                        models.PathPose(
+                            x=new_x,
+                            y=new_y,
+                            O=new_O,
+                            max_speed_linear=pose_order.max_speed_linear,
+                            max_speed_angular=pose_order.max_speed_angular,
+                            motion_direction=pose_order.motion_direction,
+                            bypass_final_orientation=pose_order.bypass_final_orientation,
+                            timeout_ms=pose_order.timeout_ms,
+                        )
+                    )
+                    break
+            else:
+                # Already within stop distance, stay in current position but set orientation towards target
+                new_O = math.degrees(math.atan2(pose_order.y - path[0].y, pose_order.x - path[0].x))
+                if pose_order.motion_direction == MotionDirection.BACKWARD_ONLY:
+                    new_O += 180
+                adjusted_path = [
+                    path[0],
+                    models.PathPose(
+                        x=path[0].x,
+                        y=path[0].y,
+                        O=new_O,
+                        max_speed_linear=pose_order.max_speed_linear,
+                        max_speed_angular=pose_order.max_speed_angular,
+                        motion_direction=pose_order.motion_direction,
+                        bypass_final_orientation=pose_order.bypass_final_orientation,
+                        timeout_ms=pose_order.timeout_ms,
+                    ),
+                ]
+
         shared_avoidance_path_lock.start_writing()
         shared_avoidance_path.clear()
-        for pose in path[1:]:
+        for pose in adjusted_path[1:]:
             shared_avoidance_path.append()
             shared_pose = shared_avoidance_path[shared_avoidance_path.size() - 1]
             pose.to_shared(shared_pose)
