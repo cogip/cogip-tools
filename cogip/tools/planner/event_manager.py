@@ -88,8 +88,6 @@ class EventManager:
                 if not updated:
                     continue
                 self.planner.blocked_counter = 0
-                if self.planner.pose_order:
-                    await self.planner.pose_order.act_intermediate_pose()
         except asyncio.CancelledError:
             logger.info("Planner: Task New Path Event Watcher Loop cancelled")
             raise

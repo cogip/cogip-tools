@@ -473,6 +473,7 @@ class Planner:
 
         # The pose reached is intermediate, just force path recompute.
         if self.pose_order:
+            await self.pose_order.act_intermediate_pose()
             self.pose_order.path_pose.to_shared(self.shared_avoidance_pose_order)
             self.shared_memory.avoidance_has_new_pose_order = True
 
