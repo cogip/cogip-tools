@@ -194,3 +194,10 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         logger.info("[planner => beacon] PAMI play.")
         await self.emit("pami_play", timestamp, namespace="/beacon")
+
+    async def on_soft_reset(self, sid):
+        """
+        Callback on pami_play message.
+        """
+        logger.info("[planner => dashboard] soft reset.")
+        await self.emit("soft_reset", namespace="/dashboard")
