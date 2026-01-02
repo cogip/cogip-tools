@@ -349,8 +349,14 @@ class CameraExtrinsicParameters(BaseModel):
     x: float
     y: float
     z: float
-    angle: float
+    roll: float = 0.0
+    pitch: float = 0.0
+    yaw: float = 0.0
 
     @property
     def tvec(self) -> ArrayLike:
         return np.array([self.x, self.y, self.z])
+
+    @property
+    def rvec(self) -> ArrayLike:
+        return np.array([self.roll, self.pitch, self.yaw])

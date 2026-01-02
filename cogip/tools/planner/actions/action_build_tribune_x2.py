@@ -1,14 +1,11 @@
-import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models.artifacts import ConstructionArea, ConstructionAreaID, TribuneID
 from cogip.models.models import MotionDirection
-from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose
 from cogip.tools.planner.pose import Pose
-from cogip.tools.planner.scservos import SCServoEnum
 
 if TYPE_CHECKING:
     from ..planner import Planner
@@ -119,36 +116,6 @@ class BuildTribuneX2Action(Action):
 
     async def after_build(self):
         self.logger.info(f"{self.name}: after_build - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}")
-        await actuators.tribune_spread(self.planner)
-        await asyncio.sleep(0.2)
-
-        await actuators.arms_hold1(self.planner)
-        await asyncio.sleep(0.1)
-
-        await actuators.lift_140(self.planner)
-        await asyncio.sleep(1)
-
-        self.planner.scservos.set(SCServoEnum.ARM_RIGHT, 223)
-        self.planner.scservos.set(SCServoEnum.ARM_LEFT, 703)
-        await asyncio.sleep(0.2)
-
-        await actuators.magnet_side_left_in(self.planner)
-        await actuators.magnet_side_right_in(self.planner)
-        await asyncio.sleep(0.2)
-
-        await actuators.lift_125(self.planner)
-        await asyncio.sleep(0.5)
-
-        await actuators.arms_hold2(self.planner)
-        await asyncio.sleep(0.1)
-
-        await actuators.arms_release(self.planner)
-        await asyncio.sleep(0.1)
-
-        await actuators.arms_close(self.planner)
-        await actuators.arm_left_side(self.planner)
-        await actuators.arm_right_side(self.planner)
-
         self.planner.game_context.tribunes_in_robot -= 2
         self.construction_area.tribune_level += 2
 
@@ -160,9 +127,6 @@ class BuildTribuneX2Action(Action):
             f"{self.name}: after_step_back - tribunes_in_robot={self.planner.game_context.tribunes_in_robot}"
         )
         self.construction_area.enabled = True
-        await actuators.arm_left_center(self.planner)
-        await actuators.arm_right_center(self.planner)
-        await actuators.lift_0(self.planner)
         self.planner.game_context.score += 12
 
     def weight(self) -> float:

@@ -3,6 +3,7 @@ from pathlib import Path
 import cv2
 import cv2.typing
 import numpy as np
+from numpy.typing import ArrayLike
 
 from cogip.models import CameraExtrinsicParameters
 
@@ -56,25 +57,62 @@ def rotation_matrix_to_euler_angles(R):
     return np.array([x, y, z])
 
 
-def rotate_2d(vector: cv2.typing.MatLike, angle: float) -> cv2.typing.MatLike:
-    """Rotate a 2D point with specify angle"""
-    rotation_matrix = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
-    vector = vector.reshape(1, 2)
-    vector = vector.T
-    rotated: cv2.typing.MatLike = (rotation_matrix @ vector).T
-    return rotated.squeeze()
-
-
-def wrap_to_pi(angle: float) -> float:
-    """Wrap angle to PI, return a angle value between `-PI` and `PI`
+def euler_angles_to_rotation_matrix(theta: ArrayLike) -> cv2.typing.MatLike:
+    """
+    Calculates rotation matrix from euler angles.
 
     Arguments:
-        angle: Angle in radians
-
-    Returns:
-        Wrapped angle, in radians
+        theta: Euler angles in radians (roll, pitch, yaw)
     """
-    return np.arctan2(np.sin(angle), np.cos(angle))
+    R_x = np.array(
+        [
+            [1, 0, 0],
+            [0, np.cos(theta[0]), -np.sin(theta[0])],
+            [0, np.sin(theta[0]), np.cos(theta[0])],
+        ]
+    )
+
+    R_y = np.array(
+        [
+            [np.cos(theta[1]), 0, np.sin(theta[1])],
+            [0, 1, 0],
+            [-np.sin(theta[1]), 0, np.cos(theta[1])],
+        ]
+    )
+
+    R_z = np.array(
+        [
+            [np.cos(theta[2]), -np.sin(theta[2]), 0],
+            [np.sin(theta[2]), np.cos(theta[2]), 0],
+            [0, 0, 1],
+        ]
+    )
+
+    R = np.dot(R_z, np.dot(R_y, R_x))
+
+    return R
+
+
+def make_transform_matrix(R: ArrayLike, t: ArrayLike) -> np.ndarray:
+    """Create a 4x4 transformation matrix from rotation matrix and translation vector."""
+    M = np.eye(4)
+    M[:3, :3] = R
+    M[:3, 3] = np.asarray(t).flatten()
+    return M
+
+
+def decompose_transform_matrix(M: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Decompose a 4x4 transformation matrix into rotation matrix and translation vector."""
+    return M[:3, :3].copy(), M[:3, 3].copy()
+
+
+def extrinsic_params_to_matrix(params: CameraExtrinsicParameters) -> np.ndarray:
+    """Convert camera extrinsic parameters to a 4x4 transformation matrix."""
+    rvec_degrees = np.array([params.roll, params.pitch, params.yaw])
+    R_flipped = euler_angles_to_rotation_matrix(np.deg2rad(rvec_degrees))
+    R = R_flip @ R_flipped
+    t = np.array([params.x, params.y, params.z])
+    return make_transform_matrix(R, t)
 
 
 #

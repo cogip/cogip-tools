@@ -55,10 +55,10 @@ typedef struct {
 class YDLidar {
 public:
     /// Constructor with optional external memory pointer
-    explicit YDLidar(float (*external_lidar_data)[3] = nullptr);
+    explicit YDLidar(double (*external_lidar_data)[3] = nullptr);
 
     /// Constructor accepting a nanobind::ndarray
-    explicit YDLidar(nb::ndarray<float, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_data);
+    explicit YDLidar(nb::ndarray<double, nb::numpy, nb::shape<MAX_DATA_COUNT, 3>> external_lidar_data);
 
     /// Destructor
     ~YDLidar();
@@ -165,7 +165,7 @@ private:
     void updateSharedMemory();
 
     bool external_data_;      ///< Flag to indicate if memory is externally managed
-    float (*lidar_data_)[3];  ///< Pointer to lidar data memory
+    double (*lidar_data_)[3]; ///< Pointer to lidar data memory
     cogip::shared_memory::WritePriorityLock* data_write_lock_;
     std::atomic<bool> update_shm_thread_exit_flag_;
     std::thread* update_shm_thread_;

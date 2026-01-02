@@ -28,7 +28,7 @@ def cmd_capture(
             help="Name of the camera",
             envvar="CAMERA_NAME",
         ),
-    ] = CameraName.hbv.name,
+    ] = CameraName.rpicam.name,
     camera_codec: Annotated[
         VideoCodec,
         typer.Option(
@@ -42,14 +42,14 @@ def cmd_capture(
             help="Camera frame width",
             envvar="CAMERA_WIDTH",
         ),
-    ] = 1920,
+    ] = 728,
     camera_height: Annotated[
         int,
         typer.Option(
             help="Camera frame height",
             envvar="CAMERA_HEIGHT",
         ),
-    ] = 1080,
+    ] = 544,
     max_frames: Annotated[
         int,
         typer.Option(
@@ -103,8 +103,6 @@ def cmd_capture(
     """Capture images to be used by the 'calibrate' command"""
     exit_key = 27  # use this key (Esc) to exit before max_frames
     captures_frames: list[cv2.typing.MatLike] = []  # Captured frames
-    capture_path = Path(__file__).parent  # Directory to store captured frames
-    capture_path /= f"cameras/{id}/{camera_name.name}_{camera_codec.name}_{camera_width}x{camera_height}/images"
     preview_window_name = "Detection Preview - Press Esc to exit"
 
     cv2.namedWindow(preview_window_name, cv2.WINDOW_NORMAL)
@@ -155,9 +153,9 @@ def cmd_capture(
         cv2.imshow(preview_window_name, stream_frame)
 
     camera.close()
-    logger.info(f"Writing captured frames in: {capture_path}")
-    shutil.rmtree(capture_path, ignore_errors=True)
-    capture_path.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Writing captured frames in: {camera.capture_path}")
+    shutil.rmtree(camera.capture_path, ignore_errors=True)
+    camera.capture_path.mkdir(parents=True, exist_ok=True)
     for n, frame in enumerate(captures_frames):
-        filename = capture_path / f"image_{n:03}.jpg"
+        filename = camera.capture_path / f"image_{n:03}.jpg"
         cv2.imwrite(str(filename), frame)

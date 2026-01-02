@@ -2,22 +2,23 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
 import QtQuick3D
+import ".."
 
 Window {
-    id: pamiManualWindow
+    id: robotManualWindow
 
     property bool hasShown: false
-    property Node pami: null
     property var parentWindow: null
+    property Node robot: null
     property var settings: null
     property bool updating: false
 
     function showPanel() {
-        var target = pamiManualWindow.pami;
+        var target = robotManualWindow.robot;
         if (!target) {
             return;
         }
-        syncFromPami();
+        syncFromRobot();
         if (!visible) {
             if (settings && settings.windowX !== -1 && settings.windowY !== -1) {
                 x = settings.windowX;
@@ -34,8 +35,8 @@ Window {
         }
     }
 
-    function syncFromPami() {
-        var target = pamiManualWindow.pami;
+    function syncFromRobot() {
+        var target = robotManualWindow.robot;
         if (!target) {
             return;
         }
@@ -70,7 +71,7 @@ Window {
     palette.text: "#ffffff"
     palette.window: "#2a2a2a"
     palette.windowText: "#ffffff"
-    title: "Pami"
+    title: "Robot"
     visible: false
 
     onVisibleChanged: {
@@ -118,8 +119,8 @@ Window {
             realTo: 2000
 
             onRealValueChanged: {
-                var target = pamiManualWindow.pami;
-                if (!pamiManualWindow.updating && target) {
+                var target = robotManualWindow.robot;
+                if (!robotManualWindow.updating && target) {
                     target.x = realValue;
                 }
             }
@@ -143,8 +144,8 @@ Window {
             realTo: 2500
 
             onRealValueChanged: {
-                var target = pamiManualWindow.pami;
-                if (!pamiManualWindow.updating && target) {
+                var target = robotManualWindow.robot;
+                if (!robotManualWindow.updating && target) {
                     target.y = realValue;
                 }
             }
@@ -168,8 +169,8 @@ Window {
             realTo: 360
 
             onRealValueChanged: {
-                var target = pamiManualWindow.pami;
-                if (!pamiManualWindow.updating && target) {
+                var target = robotManualWindow.robot;
+                if (!robotManualWindow.updating && target) {
                     var currentRot = target.eulerRotation || Qt.vector3d();
                     target.eulerRotation = Qt.vector3d(currentRot.x, currentRot.y, realValue);
                 }

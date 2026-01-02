@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Annotated
 
 import cv2
@@ -91,18 +90,16 @@ def cmd_calibrate(
     """Calibrate camera using images captured by the 'capture' command"""
     obj = ctx.ensure_object(dict)
     debug = obj.get("debug", False)
-    capture_path = Path(__file__).parent  # Directory to store captured frames
-    capture_path /= f"cameras/{id}/{camera_name.name}_{camera_codec.name}_{camera_width}x{camera_height}/images"
-
-    if not capture_path.exists():
-        logger.error(f"Captured images directory not found: {capture_path}")
-        return
 
     if camera_name == CameraName.rpicam:
         CameraClass = RPiCamera
     else:
         CameraClass = USBCamera
     camera = CameraClass(id, camera_name, camera_codec, camera_width, camera_height)
+
+    if not camera.capture_path.exists():
+        logger.error(f"Captured images directory not found: {camera.capture_path}")
+        return
 
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     board = cv2.aruco.CharucoBoard(
@@ -113,7 +110,7 @@ def cmd_calibrate(
     )
     board.setLegacyPattern(charuco_legacy)
 
-    captured_images = list(capture_path.glob("image_*.jpg"))
+    captured_images = list(camera.capture_path.glob("image_*.jpg"))
     if (nb_img := len(captured_images)) < 10:
         logger.error(f"Not enough images: {nb_img} < 10")
         return
@@ -131,8 +128,14 @@ def cmd_calibrate(
         if char_corners is None or len(char_corners) == 0:
             logger.info(f"{im}: KO")
             continue
-        logger.info(f"{im}: OK")
+
         frame_obj_points, frame_img_points = board.matchImagePoints(char_corners, char_ids)
+
+        if len(frame_obj_points) < 4:
+            logger.info(f"{im}: KO (not enough points: {len(frame_obj_points)})")
+            continue
+
+        logger.info(f"{im}: OK ({len(frame_obj_points)} points)")
         object_points.append(frame_obj_points)
         image_points.append(frame_img_points)
 

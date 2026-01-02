@@ -83,8 +83,9 @@ def main_opt(
         sys.exit(-1)
 
     root: QWindow = engine.rootObjects()[0]
-    view3d_qml = root.findChild(QObject, "view")
-    view3d_backend = View3DBackend(view3d_qml)
+    scene_qml = root.findChild(QObject, "Scene")
+    view3d_backend = View3DBackend(scene_qml)
+    view3d_qml = scene_qml.findChild(QObject, "view")
     view3d_qml.setProperty("view3DBackend", view3d_backend)
     root.setProperty("isConnected", False)
     root.setProperty("starterChecked", False)
@@ -157,6 +158,7 @@ def main_opt(
     sio_client.signal_exit.connect(request_quit)
     sio_client.signal_add_robot.connect(view3d_backend.handle_add_robot)
     sio_client.signal_del_robot.connect(view3d_backend.handle_del_robot)
+    sio_client.signal_pose_current.connect(view3d_backend.handle_pose_current)
     sio_client.signal_robot_path.connect(view3d_backend.handle_robot_path)
     sio_client.signal_tool_menu.connect(handle_tool_menu)
     sio_client.signal_wizard_request.connect(handle_wizard_request)

@@ -1,9 +1,13 @@
+import QtMultimedia
 import QtQuick
 import QtQuick.Window
 import QtQuick3D
 import "." as Components
+import "artifacts" as Artifacts
+import "cursor.mesh"
 import "pami.mesh"
 import "robot.mesh"
+import "robots"
 import "table.mesh"
 
 Item {
@@ -13,10 +17,31 @@ Item {
     readonly property string gridGroundTexture: "../../../assets/grid_plain.webp"
     property alias groundTextureSource: view.groundTextureSource
     property alias liveRobotNode: view.liveRobotNode
+    property alias obstacleSettings: view.obstacleSettings
     property alias orderRobotNode: view.orderRobotNode
     property alias rectangleObstacles: view.rectangleObstacles
+    property int robotId: view.view3DBackend ? view.view3DBackend.robotId : 0
     property var robotPathPoints: []
-    readonly property string tableGroundTexture: "../../../assets/table2025.webp"
+    property bool showLivePip: false
+    property bool showManualPip: false
+    property var socketClient
+    readonly property string tableGroundTexture: "../../../assets/table2026.webp"
+    property string videoStreamUrl: {
+        if (!socketClient || !view.liveRobotNode || !view.view3DBackend)
+            return "";
+        var url = socketClient.url;
+        if (!url)
+            return "";
+        var parts = url.split("://");
+        var hostname;
+        if (parts.length > 1) {
+            hostname = parts[1].split(":")[0];
+        } else {
+            hostname = url.split(":")[0];
+        }
+        var robotId = view.view3DBackend.robotId;
+        return "http://" + hostname + ":810" + robotId;
+    }
     property alias virtualDetector: view.virtualDetector
     property alias virtualPlanner: view.virtualPlanner
 
@@ -38,6 +63,16 @@ Item {
         return [];
     }
 
+    function grabPipView() {
+        if (pipView && pipView.grabToImage) {
+            pipView.grabToImage(function (result) {
+                if (view && view.view3DBackend) {
+                    view.view3DBackend.process_grab_result(result);
+                }
+            });
+        }
+    }
+
     function importObstacles(list) {
         if (view && view.importObstacles) {
             view.importObstacles(list);
@@ -51,6 +86,8 @@ Item {
         id: view
 
         property var circleObstacles: []
+        property string cursorTextureSource: "../../../assets/cursor.webp"
+        property string granaryTextureSource: "../../../assets/granary.webp"
         property string groundTextureSource: sceneRoot.tableGroundTexture
         property int lidarRayBatch: 360
         property int lidarRayCount: 360
@@ -64,11 +101,86 @@ Item {
         property var orderRobotNode: null
         property var rectangleObstacles: []
         property var robotPathPoints: []
+        property string thermometerBlueTextureSource: "../../../assets/thermometer_blue.webp"
+        property string thermometerYellowTextureSource: "../../../assets/thermometer_yellow.webp"
         property var view3DBackend: null
         property bool virtualDetector: false
         property bool virtualPlanner: false
 
         signal postLidarUpdate
+
+        function addCrateBlue(x, y, z, rotZ) {
+            var crate = crateBlueComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCrateEmpty(x, y, z, rotX, rotZ) {
+            var crateEmpty = crateEmptyComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.x": rotX,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCrateYellow(x, y, z, rotZ) {
+            var crate = crateYellowComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesBBBB(x, y, z, rotZ) {
+            var cratesBBBB = cratesBBBBComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesEEE(x, y, z, rotZ) {
+            var cratesEEE = cratesEEEComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesYB(x, y, z, rotZ) {
+            var cratesYB = cratesYBComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesYBYB(x, y, z, rotZ) {
+            var cratesYBYB = cratesYBYBComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
+
+        function addCratesYYYY(x, y, z, rotZ) {
+            var cratesYYYY = cratesYYYYComponent.createObject(sceneGroup, {
+                "x": x,
+                "y": y,
+                "z": z,
+                "eulerRotation.z": rotZ
+            });
+        }
 
         function addOrderRobotInstance(robotId) {
             const component = robotId === 1 ? orderRobotComponent : orderPamiComponent;
@@ -85,7 +197,7 @@ Item {
                 orderRobotNode.destroy();
                 orderRobotNode = null;
             }
-            const node = component.createObject(sceneGroup, {
+            const node = component.createObject(orderRobotGroup, {
                 objectName: expectedName
             });
             if (!node) {
@@ -112,7 +224,8 @@ Item {
                 liveRobotNode = null;
             }
             const node = component.createObject(sceneGroup, {
-                objectName: expectedName
+                objectName: expectedName,
+                z: robotId === 5 ? 55 : 0
             });
             if (!node) {
                 console.error("Failed to create robot instance for", robotId);
@@ -228,6 +341,10 @@ Item {
             view.updateMonitorObstacles();
         }
 
+        function openNinjaManualDialog() {
+            ninjaManualWindow.showPanel();
+        }
+
         function openObstacleConfig(obstacle) {
             obstacleWindow.showPanel(obstacle);
         }
@@ -327,6 +444,16 @@ Item {
             id: liveRobotComponent
 
             Robot {
+                property alias camera: liveRobotCamera
+
+                PerspectiveCamera {
+                    id: liveRobotCamera
+
+                    eulerRotation.y: -45
+                    eulerRotation.z: -90
+                    objectName: "robotCamera"
+                    position: Qt.vector3d(120, 0, 350)
+                }
             }
         }
 
@@ -351,10 +478,73 @@ Item {
             }
         }
 
+        Component {
+            id: crateBlueComponent
+
+            Artifacts.CrateBlue {
+            }
+        }
+
+        Component {
+            id: crateYellowComponent
+
+            Artifacts.CrateYellow {
+            }
+        }
+
+        Component {
+            id: crateEmptyComponent
+
+            Artifacts.CrateEmpty {
+            }
+        }
+
+        Component {
+            id: cratesYBComponent
+
+            Artifacts.CratesYB {
+            }
+        }
+
+        Component {
+            id: cratesYBYBComponent
+
+            Artifacts.CratesYBYB {
+            }
+        }
+
+        Component {
+            id: cratesBBBBComponent
+
+            Artifacts.CratesBBBB {
+            }
+        }
+
+        Component {
+            id: cratesYYYYComponent
+
+            Artifacts.CratesYYYY {
+            }
+        }
+
+        Component {
+            id: cratesEEEComponent
+
+            Artifacts.CratesEEE {
+            }
+        }
+
         DirectionalLight {
             castsShadow: true
             eulerRotation.x: -45
             eulerRotation.y: 45
+        }
+
+        DirectionalLight {
+            castsShadow: false
+            color: "#808080"
+            eulerRotation.x: -45
+            eulerRotation.y: -45
         }
 
         PerspectiveCamera {
@@ -388,6 +578,186 @@ Item {
                 id: table
 
                 objectName: "table"
+            }
+
+            Model {
+                id: trainingLeftBorder
+
+                objectName: "TrainingLeftBorder"
+                position: Qt.vector3d(-500, 11, 35)
+                scale: Qt.vector3d(10.44, 0.22, 0.7)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#ffeacc61"
+                    }
+                ]
+            }
+
+            Model {
+                id: trainingTopBorder
+
+                objectName: "TrainingTopBorder"
+                position: Qt.vector3d(11, -750, 35)
+                scale: Qt.vector3d(0.22, 15.44, 0.7)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#ffeacc61"
+                    }
+                ]
+            }
+
+            Model {
+                id: granary
+
+                objectName: "Granary"
+                position: Qt.vector3d(775, 0, 27.5)
+                scale: Qt.vector3d(4.5, 18, 0.55)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#96643f"
+                    }
+                ]
+            }
+
+            Model {
+                id: granaryLeftBorder
+
+                objectName: "GranaryLeftBorder"
+                position: Qt.vector3d(775, 892.5, 62.5)
+                scale: Qt.vector3d(4.5, 0.15, 0.15)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#96643f"
+                    }
+                ]
+            }
+
+            Model {
+                id: granaryRightBorder
+
+                objectName: "GranaryRightBorder"
+                position: Qt.vector3d(775, -892.5, 62.5)
+                scale: Qt.vector3d(4.5, 0.15, 0.15)
+                source: "#Cube"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseColor: "#96643f"
+                    }
+                ]
+            }
+
+            Model {
+                id: granaryGround
+
+                objectName: "granaryGround"
+                position: Qt.vector3d(775, 0, 56)
+                scale: Qt.vector3d(4.5, 18, 0.55)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.granaryTextureSource
+                        }
+                    }
+                ]
+            }
+
+            Model {
+                id: thermometerBlue
+
+                eulerRotation: Qt.vector3d(0, -90, -90)
+                objectName: "thermometerBlue"
+                position: Qt.vector3d(-1022.1, -800, 24)
+                scale: Qt.vector3d(14, 0.7, 1)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.thermometerBlueTextureSource
+                        }
+                    }
+                ]
+            }
+
+            Model {
+                id: thermometerYellow
+
+                eulerRotation: Qt.vector3d(0, -90, -90)
+                objectName: "thermometerYellow"
+                position: Qt.vector3d(-1022.1, 800, 24)
+                scale: Qt.vector3d(14, 0.7, 1)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.thermometerYellowTextureSource
+                        }
+                    }
+                ]
+            }
+
+            Cursor {
+                id: cursorBlue
+
+                eulerRotation: Qt.vector3d(0, 0, 180)
+                objectName: "cursorBlue"
+                position: Qt.vector3d(-1023.5, -1250, 66)
+            }
+
+            Cursor {
+                id: cursorYellow
+
+                eulerRotation: Qt.vector3d(0, 0, 180)
+                objectName: "cursorYellow"
+                position: Qt.vector3d(-1023.5, 1250, 66)
+            }
+
+            Model {
+                id: cursorTextureBlue
+
+                eulerRotation: Qt.vector3d(0, -90, -90)
+                objectName: "cursorTextureBlue"
+                position: Qt.vector3d(-1040, 1250, 66)
+                scale: Qt.vector3d(1, 1.05, 1)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.cursorTextureSource
+                        }
+                    }
+                ]
+            }
+
+            Model {
+                id: cursorTextureYellow
+
+                eulerRotation: Qt.vector3d(0, -90, -90)
+                objectName: "cursorTextureYellow"
+                position: Qt.vector3d(-1040, -1250, 66)
+                scale: Qt.vector3d(1, 1.05, 1)
+                source: "#Rectangle"
+
+                materials: [
+                    DefaultMaterial {
+                        diffuseMap: Texture {
+                            source: view.cursorTextureSource
+                        }
+                    }
+                ]
             }
 
             Components.Polyline3D {
@@ -565,6 +935,7 @@ Item {
             Robot {
                 id: robotManual
 
+                property alias camera: robotManualCamera
                 property bool dragging: false
                 property var windowSettings: null
 
@@ -572,6 +943,28 @@ Item {
                 objectName: "robotManual"
                 x: 1200
                 y: 1200
+
+                PerspectiveCamera {
+                    id: robotManualCamera
+
+                    eulerRotation.y: -45
+                    eulerRotation.z: -90
+                    objectName: "robotCamera"
+                    position: Qt.vector3d(120, 0, 350)
+                }
+            }
+
+            Pami {
+                id: ninjaManual
+
+                property bool dragging: false
+                property var windowSettings: null
+
+                eulerRotation.z: 180
+                objectName: "ninjaManual"
+                x: 955
+                y: 0
+                z: 55
             }
 
             Pami {
@@ -622,6 +1015,8 @@ Item {
                     lastY = mouse.y;
                     if (draggedObject === robotManual && robotManualWindow.visible) {
                         robotManualWindow.syncFromRobot();
+                    } else if (draggedObject === ninjaManual && ninjaManualWindow.visible) {
+                        ninjaManualWindow.syncFromNinja();
                     } else if (draggedObject === pamiManual && pamiManualWindow.visible) {
                         pamiManualWindow.syncFromPami();
                     } else if (obstacleWindow.visible && obstacleWindow.obstacle === draggedObject) {
@@ -669,6 +1064,12 @@ Item {
                         clickPressY = mouse.y;
                         break;
                     }
+                    if (hitNode.objectName === "ninjaManual") {
+                        clickCandidate = ninjaManual;
+                        clickPressX = mouse.x;
+                        clickPressY = mouse.y;
+                        break;
+                    }
                     if (hitNode.objectName === "pamiManual") {
                         clickCandidate = pamiManual;
                         clickPressX = mouse.x;
@@ -692,6 +1093,8 @@ Item {
                     draggedObject = null;
                 } else if (clickCandidate === robotManual && mouse.button === Qt.LeftButton) {
                     view.openRobotManualDialog();
+                } else if (clickCandidate === ninjaManual && mouse.button === Qt.LeftButton) {
+                    view.openNinjaManualDialog();
                 } else if (clickCandidate === pamiManual && mouse.button === Qt.LeftButton) {
                     view.openPamiManualDialog();
                 } else if (clickCandidate && clickCandidate.objectName && clickCandidate.objectName.indexOf("obstacle_") === 0 && mouse.button === Qt.LeftButton) {
@@ -709,6 +1112,14 @@ Item {
             settings: robotManual.windowSettings
         }
 
+        NinjaManualWindow {
+            id: ninjaManualWindow
+
+            ninja: ninjaManual
+            parentWindow: view.Window.window
+            settings: ninjaManual.windowSettings
+        }
+
         PamiManualWindow {
             id: pamiManualWindow
 
@@ -722,6 +1133,15 @@ Item {
 
             parentWindow: view.Window.window
             settings: view.obstacleSettings
+        }
+
+        Node {
+            id: orderRobotGroup
+
+            eulerRotation: sceneGroup.eulerRotation
+            position: sceneGroup.position
+            scale: sceneGroup.scale
+            visible: !sceneRoot.showLivePip && !sceneRoot.showManualPip
         }
 
         Timer {
@@ -756,6 +1176,80 @@ Item {
                     event.accepted = true;
                 }
             }
+        }
+    }
+
+    View3D {
+        id: pipView
+
+        anchors.margins: 20
+        anchors.right: parent.right
+        anchors.top: parent.top
+        camera: (view.liveRobotNode && view.liveRobotNode.camera) ? view.liveRobotNode.camera : null
+        height: 240
+        importScene: sceneGroup
+        objectName: "pipView"
+        visible: sceneRoot.showLivePip && view.liveRobotNode && view.virtualPlanner
+        width: 320
+
+        environment: SceneEnvironment {
+            backgroundMode: SceneEnvironment.Color
+            clearColor: "black"
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            border.color: "white"
+            border.width: 2
+            color: "transparent"
+        }
+    }
+
+    MediaPlayer {
+        id: player
+
+        audioOutput: null
+        autoPlay: true
+        source: (sceneRoot.showLivePip && !view.virtualPlanner) ? sceneRoot.videoStreamUrl : ""
+        videoOutput: videoOutput
+    }
+
+    VideoOutput {
+        id: videoOutput
+
+        anchors.fill: pipView
+        visible: sceneRoot.showLivePip && !view.virtualPlanner && sceneRoot.videoStreamUrl !== ""
+
+        Rectangle {
+            anchors.fill: parent
+            border.color: "white"
+            border.width: 2
+            color: "transparent"
+        }
+    }
+
+    View3D {
+        id: manualPipView
+
+        anchors.bottom: parent.bottom
+        anchors.margins: 20
+        anchors.right: parent.right
+        camera: robotManual.camera
+        height: 240
+        importScene: sceneGroup
+        visible: sceneRoot.showManualPip
+        width: 320
+
+        environment: SceneEnvironment {
+            backgroundMode: SceneEnvironment.Color
+            clearColor: "black"
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            border.color: "white"
+            border.width: 2
+            color: "transparent"
         }
     }
 }

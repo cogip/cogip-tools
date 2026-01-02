@@ -5,8 +5,9 @@ from PySide6.QtCore import SignalInstance as QtSignalInstance
 from PySide6.QtGui import QVector3D
 from PySide6.QtQml import QJSValue, QJSValueIterator
 
-from . import logger
-from .shared_memory import SharedMemoryManager
+from cogip.models import models
+from .. import logger
+from ..shared_memory import SharedMemoryManager
 
 
 class Robot:
@@ -37,7 +38,7 @@ class Robot:
 
         self.update_pose_current_timer = QTimer(self.root)
         self.update_pose_current_timer.setInterval(Robot.update_pose_current_interval)
-        self.update_pose_current_timer.timeout.connect(self.update_pose_current)
+        self.update_pose_current_timer.timeout.connect(self.update_pose_current_from_shm)
 
         if self.virtual_planner:
             self.update_pose_current_timer.start()
@@ -82,7 +83,7 @@ class Robot:
                 except AttributeError:
                     logger.error("No postLidarUpdate signal found on view")
 
-    def update_pose_current(self) -> None:
+    def update_pose_current_from_shm(self) -> None:
         """
         Update pose current from shared memory.
         """
@@ -96,6 +97,14 @@ class Robot:
         self.root.setProperty("x", pose_current.x)
         self.root.setProperty("y", pose_current.y)
         self.root.setProperty("eulerRotation", QVector3D(0, 0, pose_current.angle))
+
+    def update_pose_current_from_model(self, pose_current: models.Pose) -> None:
+        """
+        Update pose current from model.
+        """
+        self.root.setProperty("x", pose_current.x)
+        self.root.setProperty("y", pose_current.y)
+        self.root.setProperty("eulerRotation", QVector3D(0, 0, pose_current.O))
 
     def handle_distance_changed(self, index: int) -> None:
         q_object = self.lidar_ray_nodes.get(index)

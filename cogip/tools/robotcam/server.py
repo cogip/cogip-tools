@@ -16,18 +16,21 @@ from fastapi.responses import StreamingResponse
 from uvicorn.main import Server as UvicornServer
 
 from cogip import logger
-from cogip.models import CameraExtrinsicParameters, Pose, Vertex
+from cogip.models import CameraExtrinsicParameters, Pose
 from cogip.tools.camera.arguments import CameraName, VideoCodec
-from cogip.tools.camera.camera import RPiCamera, USBCamera
+from cogip.tools.camera.camera import RPiCamera, SimCamera, USBCamera
 from cogip.tools.camera.detect import (
     get_camera_position_in_robot,
     get_camera_position_on_table,
-    get_solar_panel_positions,
 )
 from cogip.tools.camera.utils import (
+    R_flip,
+    decompose_transform_matrix,
+    euler_angles_to_rotation_matrix,
+    extrinsic_params_to_matrix,
     load_camera_extrinsic_params,
     load_camera_intrinsic_params,
-    rotate_2d,
+    make_transform_matrix,
 )
 from .settings import Settings
 
@@ -69,6 +72,8 @@ class CameraServer:
 
         if self.settings.camera_name == CameraName.rpicam.name:
             CameraClass = RPiCamera
+        elif self.settings.camera_name == CameraName.simcam.name:
+            CameraClass = SimCamera
         else:
             CameraClass = USBCamera
         self.camera = CameraClass(
@@ -96,7 +101,22 @@ class CameraServer:
         else:
             self.extrinsic_params = load_camera_extrinsic_params(self.camera.extrinsic_params_filename)
 
-        self.detector = cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100))
+        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+        parameters = cv2.aruco.DetectorParameters()
+
+        # Speed optimizations
+        # Use a single window size for adaptive thresholding to avoid multiple passes
+        parameters.adaptiveThreshWinSizeMin = 13
+        parameters.adaptiveThreshWinSizeMax = 13
+        parameters.adaptiveThreshWinSizeStep = 1
+
+        # Reduce accuracy of polygonal approximation (faster contour processing)
+        parameters.polygonalApproxAccuracyRate = 0.05  # Default 0.03
+
+        # Disable corner refinement if not strictly necessary (SUBPIX is slow)
+        parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_NONE
+
+        self.detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
 
     def set_queues(self, frame_queue: Queue, stream_queue: Queue):
         self.frame_queue = frame_queue
@@ -173,6 +193,33 @@ class CameraServer:
             stream = self.camera_streamer() if self.last_stream_frame else ""
             return StreamingResponse(stream, media_type="multipart/x-mixed-replace;boundary=frame")
 
+        @self.app.get("/detect", status_code=200)
+        def detect() -> list[dict]:
+            start_time = time.time()
+            if self.last_frame is None:
+                raise HTTPException(status_code=503, detail="Camera not ready")
+
+            jpg_as_np = np.frombuffer(self.last_frame, dtype=np.uint8)
+            frame = cv2.imdecode(jpg_as_np, flags=cv2.IMREAD_UNCHANGED)
+
+            if len(frame.shape) == 2:
+                dst = frame
+            else:
+                dst = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            # Detect marker corners
+            marker_corners, marker_ids, _ = self.detector.detectMarkers(dst)
+
+            results = []
+            if marker_ids is not None:
+                for id, corners in zip(marker_ids, marker_corners):
+                    results.append({"id": int(id[0]), "corners": corners[0].tolist()})
+
+            duration = time.time() - start_time
+            logger.info(f"Detect endpoint took {duration:.3f}s")
+
+            return results
+
         @self.app.get("/snapshot", status_code=200)
         def snapshot():
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -188,7 +235,7 @@ class CameraServer:
             cv2.imwrite(str(record_filename), frame)
 
         @self.app.get("/camera_calibration", status_code=200)
-        def camera_calibration(x: float, y: float, angle: float) -> Vertex:
+        def camera_calibration(x: float, y: float, angle: float) -> CameraExtrinsicParameters:
             if self.last_frame is None:
                 raise HTTPException(status_code=503, detail="Camera not ready")
 
@@ -227,7 +274,7 @@ class CameraServer:
                 raise HTTPException(status_code=404, detail="No table marker found")
 
             # Compute camera position on table
-            table_camera_tvec, table_camera_angle = get_camera_position_on_table(
+            table_camera_tvec, table_camera_rvec_degrees = get_camera_position_on_table(
                 table_markers,
                 self.camera_matrix,
                 self.dist_coefs,
@@ -237,57 +284,10 @@ class CameraServer:
             camera_position = get_camera_position_in_robot(
                 robot_pose,
                 table_camera_tvec,
-                table_camera_angle,
+                table_camera_rvec_degrees,
             )
 
             return camera_position
-
-        @self.app.get("/solar_panels", status_code=200)
-        def solar_panels(x: float, y: float, angle: float) -> dict[int, float]:
-            if self.last_frame is None:
-                raise HTTPException(status_code=503, detail="Camera not ready")
-
-            jpg_as_np = np.frombuffer(self.last_frame, dtype=np.uint8)
-            frame = cv2.imdecode(jpg_as_np, flags=cv2.IMREAD_UNCHANGED)
-
-            if len(frame.shape) == 2:
-                dst = frame
-                frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-            else:
-                dst = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            # Detect marker corners
-            marker_corners, marker_ids, rejected = self.detector.detectMarkers(dst)
-
-            # Draw detected markers
-            cv2.aruco.drawDetectedMarkers(frame, marker_corners, marker_ids)
-
-            # Record image
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            basename = f"robot{self.settings.id}-{timestamp}-panels"
-            record_filename = self.records_dir / f"{basename}.jpg"
-            cv2.imwrite(str(record_filename), frame)
-
-            if marker_ids is None:
-                return {}
-
-            robot_pose = Pose(x=x, y=y, O=angle)
-
-            # Keep solar panel markers only
-            solar_panel_markers = [corners for id, corners in zip(marker_ids, marker_corners) if id[0] == 47]
-
-            if len(solar_panel_markers) == 0:
-                return {}
-
-            panels = get_solar_panel_positions(
-                solar_panel_markers,
-                self.camera_matrix,
-                self.dist_coefs,
-                self.extrinsic_params,
-                robot_pose,
-            )
-
-            return panels
 
         @self.app.get("/robot_position", status_code=200)
         def robot_position() -> Pose:
@@ -330,20 +330,32 @@ class CameraServer:
                 raise HTTPException(status_code=503, detail="Camera intrinsic parameters not loaded")
 
             # Compute camera position on table
-            camera_tvec, camera_angle = get_camera_position_on_table(
+            camera_tvec, camera_rvec_degrees = get_camera_position_on_table(
                 table_markers,
                 self.camera_matrix,
                 self.dist_coefs,
             )
 
             # Compute robot position on table
-            delta_tvec = np.array([self.extrinsic_params.x, self.extrinsic_params.y])
-            camera_tvec_rotated = rotate_2d(camera_tvec[0:2], -camera_angle)
-            robot_tvec_rotated = camera_tvec_rotated + delta_tvec
-            robot_tvec = rotate_2d(robot_tvec_rotated, camera_angle)
-            camera_angle_degrees = np.rad2deg(camera_angle)
+
+            # 1. Camera in Table frame (Transformation T_ct)
+            # Reconstruct rotation matrix from Euler angles (applying R_flip to match convention)
+            R_ct_flipped = euler_angles_to_rotation_matrix(np.deg2rad(camera_rvec_degrees))
+            R_ct = R_flip @ R_ct_flipped
+            M_ct = make_transform_matrix(R_ct, camera_tvec)
+
+            # 2. Camera in Robot frame (Transformation T_cr)
+            M_cr = extrinsic_params_to_matrix(self.extrinsic_params)
+
+            # 3. Robot in Table frame (Transformation T_rt)
+            # M_rt = M_ct * M_cr^(-1)
+            M_rt = M_ct @ np.linalg.inv(M_cr)
+
+            # Extract results
+            R_rt, T_rt = decompose_transform_matrix(M_rt)
+            robot_angle_degrees = np.rad2deg(np.arctan2(R_rt[1, 0], R_rt[0, 0]))
+
             logger.info(
-                "Robot position: "
-                f"X={robot_tvec[0]:.0f} Y={robot_tvec[1]:.0f} Z={camera_tvec[2]:.0f} Angle={camera_angle_degrees:.0f}"
+                f"Robot position: X={T_rt[0]:.0f} Y={T_rt[1]:.0f} Z={T_rt[2]:.0f} Angle={robot_angle_degrees:.0f}"
             )
-            return Pose(x=robot_tvec[0], y=robot_tvec[1], z=camera_tvec[2], O=camera_angle_degrees)
+            return Pose(x=T_rt[0], y=T_rt[1], z=T_rt[2], O=robot_angle_degrees)

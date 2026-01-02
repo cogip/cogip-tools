@@ -62,7 +62,9 @@ class EventManager:
         logger.info("Planner: Task Blocked Event Watcher Loop started")
         try:
             while True:
-                await asyncio.to_thread(self.planner.shared_avoidance_blocked_lock.wait_update)
+                updated = await asyncio.to_thread(self.planner.shared_avoidance_blocked_lock.wait_update, 1.0)
+                if not updated:
+                    continue
                 if self.planner.sio.connected:
                     await self.planner.sio_ns.emit("brake")
                 self.planner.blocked_counter += 1
@@ -82,10 +84,10 @@ class EventManager:
         logger.info("Planner: Task New Path Event Watcher Loop started")
         try:
             while True:
-                await asyncio.to_thread(self.planner.shared_avoidance_path_lock.wait_update)
+                updated = await asyncio.to_thread(self.planner.shared_avoidance_path_lock.wait_update, 1.0)
+                if not updated:
+                    continue
                 self.planner.blocked_counter = 0
-                if self.planner.pose_order:
-                    await self.planner.pose_order.act_intermediate_pose()
         except asyncio.CancelledError:
             logger.info("Planner: Task New Path Event Watcher Loop cancelled")
             raise
