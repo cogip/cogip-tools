@@ -587,6 +587,7 @@ Item {
                 position: Qt.vector3d(-500, 11, 35)
                 scale: Qt.vector3d(10.44, 0.22, 0.7)
                 source: "#Cube"
+                visible: false
 
                 materials: [
                     DefaultMaterial {
@@ -602,6 +603,7 @@ Item {
                 position: Qt.vector3d(11, -750, 35)
                 scale: Qt.vector3d(0.22, 15.44, 0.7)
                 source: "#Cube"
+                visible: false
 
                 materials: [
                     DefaultMaterial {
