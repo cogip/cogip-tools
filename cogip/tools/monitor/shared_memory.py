@@ -9,7 +9,7 @@ from cogip.cpp.libraries.models import CircleList as SharedCircleList
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCircleList
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
-from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
+from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, SharedProperties, WritePriorityLock
 from cogip.utils.singleton import Singleton
 from . import logger
 
@@ -35,6 +35,7 @@ class SharedMemoryManager(metaclass=Singleton):
         self.shared_monitor_obstacles_lock: WritePriorityLock | None = None
         self.shared_sim_camera_data: NDArray | None = None
         self.shared_sim_camera_data_lock: WritePriorityLock | None = None
+        self.shared_properties: SharedProperties | None = None
         self.update_obstacles_timer: QTimer | None = None
         self.view_item: QObject | None = None
         self.scene_root: QObject | None = None
@@ -60,6 +61,7 @@ class SharedMemoryManager(metaclass=Singleton):
             self.shared_obstacles_lock.register_consumer()
             self.shared_sim_camera_data = self.shared_memory.get_sim_camera_data()
             self.shared_sim_camera_data_lock = self.shared_memory.get_lock(LockName.SimCameraData)
+            self.shared_properties = self.shared_memory.get_properties()
             if self.update_obstacles_timer is None:
                 self.update_obstacles_timer = QTimer()
                 self.update_obstacles_timer.setInterval(100)
@@ -82,6 +84,7 @@ class SharedMemoryManager(metaclass=Singleton):
 
     def disconnect(self) -> None:
         logger.info(f"Disconnecting from shared memory for robot {self.robot_id}")
+        self.shared_properties = None
         self.shared_sim_camera_data_lock = None
         self.shared_sim_camera_data = None
         self.shared_monitor_obstacles_lock = None

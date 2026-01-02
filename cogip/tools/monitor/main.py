@@ -154,6 +154,10 @@ def main_opt(
     def handle_starter_changed(pushed: bool) -> None:
         QtCore.QTimer.singleShot(0, lambda: root.setProperty("starterChecked", pushed))
 
+    def handle_soft_reset() -> None:
+        view3d_backend.handle_robot_path([])
+        view3d_backend.update_training_borders_visibility()
+
     sio_client.signal_connected.connect(handle_connected)
     sio_client.signal_exit.connect(request_quit)
     sio_client.signal_add_robot.connect(view3d_backend.handle_add_robot)
@@ -164,6 +168,7 @@ def main_opt(
     sio_client.signal_wizard_request.connect(handle_wizard_request)
     sio_client.signal_close_wizard.connect(handle_close_wizard)
     sio_client.signal_starter_changed.connect(handle_starter_changed)
+    sio_client.signal_soft_reset.connect(handle_soft_reset)
 
     sio_client.start()
 

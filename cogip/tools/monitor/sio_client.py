@@ -42,6 +42,8 @@ class SocketioClient(QtCore.QObject):
             Qt signal emitted to forward wizard requests
         signal_starter_changed:
             Qt signal emitted the starter state has changed
+        signal_soft_reset:
+            Qt signal emitted on soft reset request
     """
 
     signal_connected: QtSignal = QtSignal(bool)
@@ -55,6 +57,7 @@ class SocketioClient(QtCore.QObject):
     signal_wizard_request: QtSignal = QtSignal(dict)
     signal_close_wizard: QtSignal = QtSignal()
     signal_starter_changed: QtSignal = QtSignal(bool)
+    signal_soft_reset: QtSignal = QtSignal()
 
     def __init__(self, url: str):
         """
@@ -303,3 +306,10 @@ class SocketioClient(QtCore.QObject):
             Change the state of a starter.
             """
             self.signal_starter_changed.emit(pushed)
+
+        @self.sio.on("soft_reset", namespace="/dashboard")
+        def on_soft_reset() -> None:
+            """
+            Soft reset.
+            """
+            self.signal_soft_reset.emit()
