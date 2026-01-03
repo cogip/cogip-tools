@@ -81,6 +81,11 @@ bool ObstacleCircle::is_segment_crossing(const models::Coords& a, const models::
     return (scal1 >= 0 && scal2 >= 0);
 }
 
+bool ObstacleCircle::is_segment_crossing(double ax, double ay, double bx, double by)
+{
+    return is_segment_crossing(models::Coords(ax, ay), models::Coords(bx, by));
+}
+
 models::Coords ObstacleCircle::nearest_point(const models::Coords& p)
 {
     // Vector from the circle center to the given point
