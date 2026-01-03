@@ -36,6 +36,7 @@ public:
     virtual bool is_point_inside(const models::Coords& p) = 0;
 
     /// Check if a segment defined by two points A,B is crossing an obstacle.
+    virtual bool is_segment_crossing(double ax, double ay, double bx, double by) = 0;
     virtual bool is_segment_crossing(const models::Coords& a, const models::Coords& b) = 0;
 
     /// Find the nearest point of obstacle perimeter from a given point.
