@@ -171,6 +171,11 @@ bool ObstaclePolygon::is_segment_crossing(const models::Coords& a, const models:
     return false;
 }
 
+bool ObstaclePolygon::is_segment_crossing(double ax, double ay, double bx, double by)
+{
+    return is_segment_crossing(models::Coords(ax, ay), models::Coords(bx, by));
+}
+
 models::Coords ObstaclePolygon::nearest_point(const models::Coords& p) {
     double min_distance = std::numeric_limits<double>::max();
     models::Coords closest_point = p;
