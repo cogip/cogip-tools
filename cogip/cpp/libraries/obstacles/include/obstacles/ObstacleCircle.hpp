@@ -54,6 +54,7 @@ public:
     bool is_point_inside(const models::Coords& p) override { return is_point_inside(p.x(), p.y()); };
 
     /// Check if a segment defined by two points crosses the circle.
+    bool is_segment_crossing(double ax, double ay, double bx, double by) override;
     bool is_segment_crossing(const models::Coords& a, const models::Coords& b) override;
 
     /// Find the nearest point on the circle's perimeter to a given point.
