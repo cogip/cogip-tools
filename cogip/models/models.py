@@ -360,3 +360,43 @@ class CameraExtrinsicParameters(BaseModel):
     @property
     def rvec(self) -> ArrayLike:
         return np.array([self.roll, self.pitch, self.yaw])
+
+class PowerRailsStatus(BaseModel):
+    """
+    Model representing the status of power rails.
+
+    Attributes:
+        p3V3_pgood: 3.3V power good status (True = OK, False = fault)
+        p5V0_pgood: 5.0V power good status (True = OK, False = fault)
+        p7V5_pgood: 7.5V power good status (True = OK, False = fault)
+        pxVx_pgood: Variable voltage power good status (True = OK, False = fault)
+    """
+
+    p3V3_pgood: bool = False
+    p5V0_pgood: bool = False
+    p7V5_pgood: bool = False
+    pxVx_pgood: bool = False
+
+
+class EmergencyStopStatus(BaseModel):
+    """
+    Model representing the emergency stop button status.
+
+    Attributes:
+        emergency_stop: Emergency stop button status (True = released, False = engaged)
+    """
+
+    emergency_stop: bool = False
+
+
+class PowerSourceStatus(BaseModel):
+    """
+    Model representing the power source validity status.
+
+    Attributes:
+        battery_valid: Battery validity status (True = connected, False = disconnected)
+        dc_supply_valid: DC supply validity status (True = connected, False = disconnected)
+    """
+
+    battery_valid: bool = False
+    dc_supply_valid: bool = False
