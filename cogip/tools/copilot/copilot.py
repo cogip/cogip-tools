@@ -12,12 +12,15 @@ from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePrior
 from cogip.models.actuators import ActuatorsKindEnum
 from cogip.protobuf import (
     PB_ActuatorState,
+    PB_EmergencyStopStatus,
     PB_ParameterGetResponse,
     PB_ParameterSetResponse,
     PB_PathPose,
     PB_Pid,
     PB_PidEnum,
     PB_Pose,
+    PB_PowerRailsStatus,
+    PB_PowerSourceStatus,
     PB_State,
     PB_TelemetryData,
 )
@@ -58,6 +61,10 @@ telemetry_data_uuid: int = 0x300A
 game_start_uuid: int = 0x4001
 game_end_uuid: int = 0x4002
 game_reset_uuid: int = 0x4003
+# Power Supply: 0x5000 - 0x5FFF
+emergency_stop_status_uuid: int = 0x5001
+power_source_status_uuid: int = 0x5002
+power_rails_status_uuid: int = 0x5003
 # Board: 0xF000 - 0xFFFF
 
 
@@ -108,6 +115,9 @@ class Copilot:
             parameter_get_response_uuid: self.handle_parameter_get_response,
             parameter_set_response_uuid: self.handle_parameter_set_response,
             telemetry_data_uuid: self.handle_telemetry_data,
+            emergency_stop_status_uuid: self.handle_emergency_stop_status,
+            power_source_status_uuid: self.handle_power_source_status,
+            power_rails_status_uuid: self.handle_power_rails_status,
         }
 
         self.pbcom = PBCom(can_channel, can_bitrate, canfd_data_bitrate, pb_message_handlers)
@@ -371,6 +381,75 @@ class Copilot:
 
         if self.sio_events.connected:
             await self.sio_events.emit("telemetry_data", telemetry)
+
+    @pb_exception_handler
+    async def handle_emergency_stop_status(self, message: bytes | None = None):
+        """
+        Handle emergency stop status from power supply board.
+
+        Forward status to connected clients.
+        """
+        pb_status = PB_EmergencyStopStatus()
+
+        if message:
+            await self.loop.run_in_executor(None, pb_status.ParseFromString, message)
+
+        status = MessageToDict(
+            pb_status,
+            always_print_fields_with_no_presence=True,
+            preserving_proto_field_name=True,
+            use_integers_for_enums=True,
+        )
+        logger.debug(f"[CAN] emergency stop status: {status}")
+
+        if self.sio_events.connected:
+            await self.sio_events.emit("emergency_stop_status", status)
+
+    @pb_exception_handler
+    async def handle_power_source_status(self, message: bytes | None = None):
+        """
+        Handle power source status from power supply board.
+
+        Forward status to connected clients.
+        """
+        pb_status = PB_PowerSourceStatus()
+
+        if message:
+            await self.loop.run_in_executor(None, pb_status.ParseFromString, message)
+
+        status = MessageToDict(
+            pb_status,
+            always_print_fields_with_no_presence=True,
+            preserving_proto_field_name=True,
+            use_integers_for_enums=True,
+        )
+        logger.debug(f"[CAN] power source status: {status}")
+
+        if self.sio_events.connected:
+            await self.sio_events.emit("power_source_status", status)
+
+    @pb_exception_handler
+    async def handle_power_rails_status(self, message: bytes | None = None):
+        """
+        Handle power rails status from power supply board.
+
+        Forward status to connected clients.
+        """
+        pb_status = PB_PowerRailsStatus()
+
+        if message:
+            await self.loop.run_in_executor(None, pb_status.ParseFromString, message)
+
+        status = MessageToDict(
+            pb_status,
+            always_print_fields_with_no_presence=True,
+            preserving_proto_field_name=True,
+            use_integers_for_enums=True,
+        )
+        logger.debug(f"[CAN] power rails status: {status}")
+
+        if self.sio_events.connected:
+            await self.sio_events.emit("power_rails_status", status)
 
     async def new_path_event_loop(self):
         """
