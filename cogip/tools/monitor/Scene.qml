@@ -1181,29 +1181,55 @@ Item {
         }
     }
 
-    View3D {
-        id: pipView
+    Item {
+        id: pipContainer
 
         anchors.margins: 20
         anchors.right: parent.right
         anchors.top: parent.top
-        camera: (view.liveRobotNode && view.liveRobotNode.camera) ? view.liveRobotNode.camera : null
         height: 240
-        importScene: sceneGroup
-        objectName: "pipView"
-        visible: sceneRoot.showLivePip && view.liveRobotNode && view.virtualPlanner
+        visible: sceneRoot.showLivePip
         width: 320
 
-        environment: SceneEnvironment {
-            backgroundMode: SceneEnvironment.Color
-            clearColor: "black"
+        View3D {
+            id: pipView
+
+            camera: (view.liveRobotNode && view.liveRobotNode.camera) ? view.liveRobotNode.camera : null
+            height: 480
+            importScene: sceneGroup
+            objectName: "pipView"
+            scale: 0.5
+            transformOrigin: Item.TopLeft
+            visible: view.liveRobotNode && view.virtualPlanner
+            width: 640
+
+            environment: SceneEnvironment {
+                antialiasingMode: SceneEnvironment.MSAA
+                antialiasingQuality: SceneEnvironment.High
+                backgroundMode: SceneEnvironment.Color
+                clearColor: "black"
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                border.color: "white"
+                border.width: 4
+                color: "transparent"
+            }
         }
 
-        Rectangle {
+        VideoOutput {
+            id: videoOutput
+
             anchors.fill: parent
-            border.color: "white"
-            border.width: 2
-            color: "transparent"
+            visible: !view.virtualPlanner && sceneRoot.videoStreamUrl !== ""
+
+            Rectangle {
+                anchors.fill: parent
+                border.color: "white"
+                border.width: 2
+                color: "transparent"
+            }
         }
     }
 
@@ -1214,20 +1240,6 @@ Item {
         autoPlay: true
         source: (sceneRoot.showLivePip && !view.virtualPlanner) ? sceneRoot.videoStreamUrl : ""
         videoOutput: videoOutput
-    }
-
-    VideoOutput {
-        id: videoOutput
-
-        anchors.fill: pipView
-        visible: sceneRoot.showLivePip && !view.virtualPlanner && sceneRoot.videoStreamUrl !== ""
-
-        Rectangle {
-            anchors.fill: parent
-            border.color: "white"
-            border.width: 2
-            color: "transparent"
-        }
     }
 
     View3D {
