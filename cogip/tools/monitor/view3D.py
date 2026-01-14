@@ -73,8 +73,17 @@ class View3DBackend(QObject):
         if image.isNull():
             return
 
+        target_height, target_width = self.shm.shared_sim_camera_data.shape[:2]
+        if image.width() != target_width or image.height() != target_height:
+            image = image.scaled(
+                target_width,
+                target_height,
+                Qt.AspectRatioMode.IgnoreAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+
         ptr = image.constBits()
-        arr = np.array(ptr).reshape((image.height(), image.width(), 4))
+        arr = np.array(ptr).reshape((target_height, target_width, 4))
         self.shm.shared_sim_camera_data_lock.start_writing()
         self.shm.shared_sim_camera_data[:] = arr[:]
         self.shm.shared_sim_camera_data_lock.finish_writing()
