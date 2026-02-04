@@ -54,7 +54,7 @@ class AlignBottomAction(Action):
             x=-1200,
             y=self.start_pose.y,
             O=self.start_pose.O,
-            max_speed_linear=10,
+            max_speed_linear=5,
             max_speed_angular=10,
             motion_direction=MotionDirection.BIDIRECTIONAL,
             bypass_anti_blocking=True,
