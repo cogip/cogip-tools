@@ -347,6 +347,31 @@ class ConsoleUI(Console):
             kwargs["default"] = default
         return await asyncio.to_thread(lambda: FloatPrompt.ask(f"[prompt]{prompt}[/]", **kwargs))
 
+    async def get_choice(
+        self,
+        prompt: str,
+        *,
+        choices: list[str],
+        default: str | None = None,
+    ) -> str:
+        """
+        Get a choice from a list of options.
+
+        Args:
+            prompt: Prompt message to display
+            choices: List of valid choices
+            default: Default value. If None, first choice is used.
+        """
+        loop = asyncio.get_event_loop()
+        kwargs: dict[str, Any] = {
+            "console": self,
+            "choices": choices,
+            "case_sensitive": False,
+        }
+        if default is not None:
+            kwargs["default"] = default
+        return await loop.run_in_executor(None, lambda: Prompt.ask(f"[prompt]{prompt}[/]", **kwargs))
+
     async def confirm(self, message: str, *, default: bool = True) -> bool:
         """
         Ask for confirmation.
