@@ -69,8 +69,12 @@ def avoidance_process(robot_id: int):
         pose_current = models.PathPose.from_shared(shared_pose_current)
         shared_pose_current_lock.finish_reading()
 
-        if shared_properties.strategy in [StrategyEnum.PidLinearSpeedTest, StrategyEnum.PidAngularSpeedTest]:
-            logger.debug("Avoidance: Skip path update (speed test)")
+        if shared_properties.strategy in [
+            StrategyEnum.PidLinearSpeedTest,
+            StrategyEnum.PidAngularSpeedTest,
+            StrategyEnum.TestRectangleAlternating,
+        ]:
+            logger.debug("Avoidance: Skip path update (test strategy)")
             continue
 
         if last_pose_current:
