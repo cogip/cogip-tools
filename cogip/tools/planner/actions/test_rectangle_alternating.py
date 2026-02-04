@@ -2,7 +2,7 @@
 
 Tests all three controller chains in a loop:
 - ADAPTIVE_PURE_PURSUIT: BACKWARD_ONLY for all segments
-- QUADPID_FEEDFORWARD: BACKWARD_ONLY, FORWARD_ONLY, BIDIRECTIONAL
+- QUADPID_TRACKER: BACKWARD_ONLY, FORWARD_ONLY, BIDIRECTIONAL
 - QUADPID: BACKWARD_ONLY, FORWARD_ONLY, BIDIRECTIONAL
 
 Adapts to table type:
@@ -35,7 +35,7 @@ class TestRectangleAlternatingAction(Action):
 
     Tests controller chains in a loop:
     - ADAPTIVE_PURE_PURSUIT: BACKWARD_ONLY for all segments
-    - QUADPID_FEEDFORWARD: BACKWARD, FORWARD, BIDIRECTIONAL, BIDIRECTIONAL
+    - QUADPID_TRACKER: BACKWARD, FORWARD, BIDIRECTIONAL, BIDIRECTIONAL
     - QUADPID: BACKWARD, FORWARD, BIDIRECTIONAL, BIDIRECTIONAL
 
     Table adaptation:
@@ -45,7 +45,7 @@ class TestRectangleAlternatingAction(Action):
 
     # Controller chains to test in order
     CONTROLLERS = [
-        ControllerEnum.QUADPID_FEEDFORWARD,
+        ControllerEnum.QUADPID_TRACKER,
         ControllerEnum.QUADPID,
         ControllerEnum.ADAPTIVE_PURE_PURSUIT,
     ]
@@ -102,7 +102,7 @@ class TestRectangleAlternatingAction(Action):
                 (corners[0][0], corners[0][1], self.angle, MotionDirection.BACKWARD_ONLY),
             ]
         else:
-            # QUADPID and QUADPID_FEEDFORWARD: test all three motion directions
+            # QUADPID and QUADPID_TRACKER: test all three motion directions
             return [
                 # Corner 1: BACKWARD_ONLY
                 (corners[1][0], corners[1][1], self.angle, MotionDirection.BACKWARD_ONLY),

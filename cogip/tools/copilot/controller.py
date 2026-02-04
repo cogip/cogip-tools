@@ -4,7 +4,7 @@ from enum import IntEnum
 class ControllerEnum(IntEnum):
     QUADPID = 0
     LINEAR_POSE_DISABLED = 1
-    QUADPID_FEEDFORWARD = 2
+    QUADPID_TRACKER = 2
     LINEAR_SPEED_TUNING = 3
     ANGULAR_SPEED_TUNING = 4
     LINEAR_POSE_TUNING = 5

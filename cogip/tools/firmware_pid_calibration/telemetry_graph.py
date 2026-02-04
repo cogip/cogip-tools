@@ -34,12 +34,12 @@ class TelemetryGraphWidget(QWidget):
         # Linear
         TelemetryType.LINEAR_SPEED_ORDER: "#f1c40f",  # Yellow - setpoint
         TelemetryType.LINEAR_CURRENT_SPEED: "#2ecc71",  # Green - actual speed
-        TelemetryType.LINEAR_FEEDFORWARD_VELOCITY: "#9b59b6",  # Purple - feedforward
+        TelemetryType.LINEAR_TRACKER_VELOCITY: "#9b59b6",  # Purple - tracker
         TelemetryType.LINEAR_SPEED_COMMAND: "#e74c3c",  # Red - command to motors
         # Angular
         TelemetryType.ANGULAR_SPEED_ORDER: "#f1c40f",  # Yellow - setpoint
         TelemetryType.ANGULAR_CURRENT_SPEED: "#2ecc71",  # Green - actual speed
-        TelemetryType.ANGULAR_FEEDFORWARD_VELOCITY: "#9b59b6",  # Purple - feedforward
+        TelemetryType.ANGULAR_TRACKER_VELOCITY: "#9b59b6",  # Purple - tracker
         TelemetryType.ANGULAR_SPEED_COMMAND: "#e74c3c",  # Red - command to motors
     }
 
@@ -90,13 +90,13 @@ class TelemetryGraphWidget(QWidget):
     LINEAR_TYPES = [
         TelemetryType.LINEAR_SPEED_ORDER,
         TelemetryType.LINEAR_CURRENT_SPEED,
-        TelemetryType.LINEAR_FEEDFORWARD_VELOCITY,
+        TelemetryType.LINEAR_TRACKER_VELOCITY,
         TelemetryType.LINEAR_SPEED_COMMAND,
     ]
     ANGULAR_TYPES = [
         TelemetryType.ANGULAR_SPEED_ORDER,
         TelemetryType.ANGULAR_CURRENT_SPEED,
-        TelemetryType.ANGULAR_FEEDFORWARD_VELOCITY,
+        TelemetryType.ANGULAR_TRACKER_VELOCITY,
         TelemetryType.ANGULAR_SPEED_COMMAND,
     ]
 

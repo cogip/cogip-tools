@@ -95,13 +95,13 @@ class TelemetryType(Enum):
     # Linear telemetry
     LINEAR_SPEED_ORDER = ("linear_speed_order", "Order")
     LINEAR_CURRENT_SPEED = ("linear_current_speed", "Current Speed")
-    LINEAR_FEEDFORWARD_VELOCITY = ("linear_feedforward_velocity", "Feedforward")
+    LINEAR_TRACKER_VELOCITY = ("linear_tracker_velocity", "Tracker")
     LINEAR_SPEED_COMMAND = ("linear_speed_command", "Command")
 
     # Angular telemetry
     ANGULAR_SPEED_ORDER = ("angular_speed_order", "Order")
     ANGULAR_CURRENT_SPEED = ("angular_current_speed", "Current Speed")
-    ANGULAR_FEEDFORWARD_VELOCITY = ("angular_feedforward_velocity", "Feedforward")
+    ANGULAR_TRACKER_VELOCITY = ("angular_tracker_velocity", "Tracker")
     ANGULAR_SPEED_COMMAND = ("angular_speed_command", "Command")
 
     def __init__(self, telemetry_key: str, label: str):
@@ -115,14 +115,14 @@ class TelemetryType(Enum):
             return [
                 cls.LINEAR_SPEED_ORDER,
                 cls.LINEAR_CURRENT_SPEED,
-                cls.LINEAR_FEEDFORWARD_VELOCITY,
+                cls.LINEAR_TRACKER_VELOCITY,
                 cls.LINEAR_SPEED_COMMAND,
             ]
         else:
             return [
                 cls.ANGULAR_SPEED_ORDER,
                 cls.ANGULAR_CURRENT_SPEED,
-                cls.ANGULAR_FEEDFORWARD_VELOCITY,
+                cls.ANGULAR_TRACKER_VELOCITY,
                 cls.ANGULAR_SPEED_COMMAND,
             ]
 

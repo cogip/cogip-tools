@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13PB_Controller.proto\"/\n\rPB_Controller\x12\x1e\n\x02id\x18\x01 \x01(\x0e\x32\x12.PB_ControllerEnum*\xb5\x01\n\x11PB_ControllerEnum\x12\x0b\n\x07QUADPID\x10\x00\x12\x16\n\x12\x41NGULAR_SPEED_TEST\x10\x01\x12\x15\n\x11LINEAR_SPEED_TEST\x10\x02\x12\x18\n\x14LINEAR_POSE_DISABLED\x10\x03\x12\x17\n\x13QUADPID_FEEDFORWARD\x10\x04\x12\x17\n\x13LINEAR_SPEED_TUNING\x10\x05\x12\x18\n\x14\x41NGULAR_SPEED_TUNING\x10\x06\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13PB_Controller.proto\"/\n\rPB_Controller\x12\x1e\n\x02id\x18\x01 \x01(\x0e\x32\x12.PB_ControllerEnum*\xb5\x01\n\x11PB_ControllerEnum\x12\x0b\n\x07QUADPID\x10\x00\x12\x16\n\x12\x41NGULAR_SPEED_TEST\x10\x01\x12\x15\n\x11LINEAR_SPEED_TEST\x10\x02\x12\x18\n\x14LINEAR_POSE_DISABLED\x10\x03\x12\x17\n\x13QUADPID_TRACKER\x10\x04\x12\x17\n\x13LINEAR_SPEED_TUNING\x10\x05\x12\x18\n\x14\x41NGULAR_SPEED_TUNING\x10\x06\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
