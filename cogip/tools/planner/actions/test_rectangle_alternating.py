@@ -21,7 +21,6 @@ class TestRectangleAlternatingAction(Action):
     This demonstrates the MotionDirection enum capabilities.
     """
 
-
     def __init__(self, planner: "Planner", strategy: Strategy):
         super().__init__("TestRectangleAlternating", planner, strategy)
         # Coordinates fit within training table: x=[-1000, 0], y=[-1500, 0]
