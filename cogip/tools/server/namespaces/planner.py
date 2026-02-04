@@ -218,3 +218,27 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         logger.info(f"[planner => monitor] Lift command: {(actuator_id, position)}")
         await self.emit("lift", (actuator_id, position), namespace="/monitor")
+
+    async def on_path_reset(self, sid):
+        """
+        Callback on path_reset message.
+        Forward to copilot.
+        """
+        logger.info("[planner => copilot] Path reset.")
+        await self.emit("path_reset", namespace="/copilot")
+
+    async def on_path_add_point(self, sid, data: dict[str, Any]):
+        """
+        Callback on path_add_point message.
+        Forward to copilot.
+        """
+        logger.info(f"[planner => copilot] Path add point: {data}")
+        await self.emit("path_add_point", data, namespace="/copilot")
+
+    async def on_path_start(self, sid):
+        """
+        Callback on path_start message.
+        Forward to copilot.
+        """
+        logger.info("[planner => copilot] Path start.")
+        await self.emit("path_start", namespace="/copilot")
