@@ -48,6 +48,9 @@ class PidType(Enum):
     LINEAR_SPEED = (3, "Linear Speed", "Velocity control (linear)")
     ANGULAR_SPEED = (4, "Angular Speed", "Velocity control (angular)")
     LINEAR_POSE_TEST = (5, "Linear Pose Test", "Linear movement with angular heading correction")
+    # Lift PID types (for lift actuator calibration)
+    LIFT_POSE = (6, "Lift Pose", "Lift position tracking error correction")
+    LIFT_SPEED = (7, "Lift Speed", "Lift velocity control")
 
     def __init__(self, index: int, label: str, description: str):
         self.index = index
@@ -73,16 +76,28 @@ class PidType(Enum):
         return [(str(pt.index), pt.label, pt.description) for pt in cls]
 
     @property
-    def controller(self) -> ControllerEnum:
-        """Return the controller to use for this PID type."""
-        controller_map = {
+    def controller(self) -> ControllerEnum | None:
+        """Return the controller to use for this PID type.
+
+        Returns None for lift PIDs since they don't require a controller switch
+        (lift motors are controlled by the actuator system, not motion control).
+        """
+        controller_map: dict[PidType, ControllerEnum | None] = {
             PidType.LINEAR_POSE: ControllerEnum.LINEAR_POSE_TUNING,
             PidType.ANGULAR_POSE: ControllerEnum.ANGULAR_POSE_TUNING,
             PidType.LINEAR_SPEED: ControllerEnum.LINEAR_SPEED_TUNING,
             PidType.ANGULAR_SPEED: ControllerEnum.ANGULAR_SPEED_TUNING,
             PidType.LINEAR_POSE_TEST: ControllerEnum.LINEAR_POSE_TEST,
+            # Lift PIDs don't use motion control controller switching
+            PidType.LIFT_POSE: None,
+            PidType.LIFT_SPEED: None,
         }
         return controller_map[self]
+
+    @property
+    def is_lift_pid(self) -> bool:
+        """Return True if this is a lift PID type."""
+        return self in (PidType.LIFT_POSE, PidType.LIFT_SPEED)
 
 
 class TelemetryType(Enum):
@@ -104,6 +119,12 @@ class TelemetryType(Enum):
     ANGULAR_TRACKER_VELOCITY = ("angular_tracker_velocity", "Tracker")
     ANGULAR_SPEED_COMMAND = ("angular_speed_command", "Command")
 
+    # Lift telemetry
+    LIFT_SPEED_ORDER = ("speed_order", "Order")
+    LIFT_CURRENT_SPEED = ("current_speed", "Current Speed")
+    LIFT_TRACKER_VELOCITY = ("tracker_velocity", "Tracker")
+    LIFT_SPEED_COMMAND = ("speed_command", "Command")
+
     def __init__(self, telemetry_key: str, label: str):
         self.telemetry_key = telemetry_key
         self.label = label
@@ -111,19 +132,27 @@ class TelemetryType(Enum):
     @classmethod
     def for_pid_type(cls, pid_type: PidType) -> list["TelemetryType"]:
         """Return relevant telemetry types for a given PID type."""
-        if pid_type in (PidType.LINEAR_POSE, PidType.LINEAR_SPEED):
+        if pid_type in (PidType.LINEAR_POSE, PidType.LINEAR_SPEED, PidType.LINEAR_POSE_TEST):
             return [
                 cls.LINEAR_SPEED_ORDER,
                 cls.LINEAR_CURRENT_SPEED,
                 cls.LINEAR_TRACKER_VELOCITY,
                 cls.LINEAR_SPEED_COMMAND,
             ]
-        else:
+        elif pid_type in (PidType.ANGULAR_POSE, PidType.ANGULAR_SPEED):
             return [
                 cls.ANGULAR_SPEED_ORDER,
                 cls.ANGULAR_CURRENT_SPEED,
                 cls.ANGULAR_TRACKER_VELOCITY,
                 cls.ANGULAR_SPEED_COMMAND,
+            ]
+        else:
+            # Lift PID types
+            return [
+                cls.LIFT_SPEED_ORDER,
+                cls.LIFT_CURRENT_SPEED,
+                cls.LIFT_TRACKER_VELOCITY,
+                cls.LIFT_SPEED_COMMAND,
             ]
 
 

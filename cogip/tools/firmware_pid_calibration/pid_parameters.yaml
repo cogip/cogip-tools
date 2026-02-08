@@ -58,3 +58,34 @@ parameters:
     value:
       type: float
       content: 0.0
+
+  # Lift PID parameters
+  - name: lift_pose_pid_kp
+    value:
+      type: float
+      content: 0.0
+
+  - name: lift_pose_pid_ki
+    value:
+      type: float
+      content: 0.0
+
+  - name: lift_pose_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  - name: lift_speed_pid_kp
+    value:
+      type: float
+      content: 0.0
+
+  - name: lift_speed_pid_ki
+    value:
+      type: float
+      content: 0.0
+
+  - name: lift_speed_pid_kd
+    value:
+      type: float
+      content: 0.0

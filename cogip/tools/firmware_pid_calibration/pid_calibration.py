@@ -435,6 +435,47 @@ class PidCalibration:
             self.gains = new_gains
             self.console.show_success("Gains saved")
 
+    async def _run_lift_calibration_loop(self) -> None:
+        """
+        Run the lift PID calibration loop.
+
+        Unlike linear/angular calibration which uses motion control poses,
+        lift calibration requires manual testing of the lift actuator.
+        This loop allows adjusting PID gains while the user tests the lift
+        from another tool (e.g., cogip-planner).
+        """
+        self.console.show_rule("Lift Calibration")
+        self.console.show_info("Lift PID calibration mode")
+        self.console.show_info("Use cogip-planner or another tool to send lift commands")
+        self.console.show_info("Adjust gains here based on observed behavior")
+
+        iteration = 0
+        while True:
+            iteration += 1
+
+            self.console.show_rule(f"Iteration {iteration}")
+            self._display_gains(self.gains, "Current Gains")
+
+            # Wait for user to test the lift
+            await self.console.wait_for_enter("Test the lift, then press Enter to continue")
+
+            # Ask if satisfied
+            self.console.print()
+            satisfied = await self.console.confirm("Is the lift behavior satisfactory?", default=False)
+
+            if satisfied:
+                self.console.show_success("Lift calibration complete!")
+                break
+
+            # Get new gains
+            new_gains = await self._ask_new_gains()
+
+            # Save new gains to firmware
+            self.console.show_info("Saving new gains to firmware...")
+            await self.firmware.save_pid_gains(self.pid_type, new_gains)
+            self.gains = new_gains
+            self.console.show_success("Gains saved - test the lift again")
+
     async def _run_pose_test_loop(self) -> None:
         """Run simple pose test loop (linear movement only, no tuning)."""
         self.console.show_rule("Pose Test")
@@ -694,10 +735,14 @@ class PidCalibration:
         await self._select_pid_type()
 
         # Set the appropriate controller for the selected PID type
+        # Lift PIDs don't use motion control controller switching
         controller = self.pid_type.controller
-        self.console.show_info(f"Setting controller to {controller.name}...")
-        await self.firmware.set_controller(controller)
-        self.console.show_success(f"Controller set to {controller.name}")
+        if controller is not None:
+            self.console.show_info(f"Setting controller to {controller.name}...")
+            await self.firmware.set_controller(controller)
+            self.console.show_success(f"Controller set to {controller.name}")
+        else:
+            self.console.show_info("Lift PID calibration (no controller switch needed)")
 
         # LINEAR_POSE_TEST is just a test mode, no calibration
         if self.pid_type == PidType.LINEAR_POSE_TEST:
@@ -716,7 +761,13 @@ class PidCalibration:
 
         # Run appropriate calibration based on mode
         if self.calibration_mode == CalibrationMode.EMPIRICAL_AUTOTUNE:
-            await self._run_empirical_autotune()
+            if self.pid_type.is_lift_pid:
+                self.console.show_warning("Empirical autotune not supported for lift PIDs yet")
+                await self._run_lift_calibration_loop()
+            else:
+                await self._run_empirical_autotune()
+        elif self.pid_type.is_lift_pid:
+            await self._run_lift_calibration_loop()
         elif self.pid_type in (PidType.LINEAR_POSE, PidType.LINEAR_SPEED):
             await self._run_linear_calibration_loop()
         else:

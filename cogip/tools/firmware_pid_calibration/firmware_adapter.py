@@ -35,6 +35,9 @@ class FirmwareAdapter:
         PidType.ANGULAR_POSE: ("angular_pose_pid_kp", "angular_pose_pid_ki", "angular_pose_pid_kd"),
         PidType.LINEAR_SPEED: ("linear_speed_pid_kp", "linear_speed_pid_ki", "linear_speed_pid_kd"),
         PidType.ANGULAR_SPEED: ("angular_speed_pid_kp", "angular_speed_pid_ki", "angular_speed_pid_kd"),
+        # Lift PID parameters (for lift actuator calibration)
+        PidType.LIFT_POSE: ("lift_pose_pid_kp", "lift_pose_pid_ki", "lift_pose_pid_kd"),
+        PidType.LIFT_SPEED: ("lift_speed_pid_kp", "lift_speed_pid_ki", "lift_speed_pid_kd"),
     }
 
     # Telemetry keys for encoder values
