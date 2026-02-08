@@ -49,31 +49,85 @@ cameras_menu = models.ShellMenu(
 
 robot_actuators_commands = [
     "actuators_init",
-    "lift_0",
-    "lift_5",
-    "lift_125",
-    "lift_140",
+    # Lift 1 commands (10mm increments)
+    "lift1_0",
+    "lift1_10",
+    "lift1_20",
+    "lift1_30",
+    "lift1_40",
+    "lift1_50",
+    "lift1_60",
+    "lift1_70",
+    "lift1_80",
+    "lift1_90",
+    "lift1_100",
+    "lift1_110",
+    # Lift 2 commands (10mm increments)
+    "lift2_0",
+    "lift2_10",
+    "lift2_20",
+    "lift2_30",
+    "lift2_40",
+    "lift2_50",
+    "lift2_60",
+    "lift2_70",
+    "lift2_80",
+    "lift2_90",
+    "lift2_100",
+    "lift2_110",
 ]
+
+
+def _format_actuator_desc(cmd: str) -> str:
+    """Format actuator command to readable description."""
+    # lift1_5 -> "Lift 1: 5", actuators_init -> "Actuators Init"
+    if cmd.startswith("lift"):
+        # Extract lift number and position
+        parts = cmd.split("_")
+        lift_num = parts[0][-1]  # "1" or "2"
+        position = parts[1] if len(parts) > 1 else "0"
+        return f"Lift {lift_num}: {position}"
+    return cmd.replace("_", " ").title()
+
 
 robot_actuators_menu = models.ShellMenu(
     name="Actuators",
-    entries=[
-        models.MenuEntry(cmd=f"act_{cmd}", desc=f"{cmd.replace('_', ' ').title()}") for cmd in robot_actuators_commands
-    ],
+    entries=[models.MenuEntry(cmd=f"act_{cmd}", desc=_format_actuator_desc(cmd)) for cmd in robot_actuators_commands],
 )
 
 robot_actuators_multi_commands = [
-    "lift_0",
-    "lift_5",
-    "lift_125",
-    "lift_140",
+    # Lift 1 commands (10mm increments)
+    "lift1_0",
+    "lift1_10",
+    "lift1_20",
+    "lift1_30",
+    "lift1_40",
+    "lift1_50",
+    "lift1_60",
+    "lift1_70",
+    "lift1_80",
+    "lift1_90",
+    "lift1_100",
+    "lift1_110",
+    # Lift 2 commands (10mm increments)
+    "lift2_0",
+    "lift2_10",
+    "lift2_20",
+    "lift2_30",
+    "lift2_40",
+    "lift2_50",
+    "lift2_60",
+    "lift2_70",
+    "lift2_80",
+    "lift2_90",
+    "lift2_100",
+    "lift2_110",
 ]
 
 robot_actuators_multi_menu = models.ShellMenu(
     name="Actuators Multi",
     entries=[
-        models.MenuEntry(cmd=f"act_{cmd}", desc=f"{cmd.replace('_', ' ').title()}")
-        for cmd in robot_actuators_multi_commands
+        models.MenuEntry(cmd=f"act_{cmd}", desc=_format_actuator_desc(cmd)) for cmd in robot_actuators_multi_commands
     ],
 )
 

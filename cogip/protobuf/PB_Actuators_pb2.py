@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12PB_Actuators.proto\"\x81\x01\n\x15PB_PositionalActuator\x12&\n\x02id\x18\x01 \x01(\x0e\x32\x1a.PB_PositionalActuatorEnum\x12.\n\x05state\x18\x02 \x01(\x0e\x32\x1f.PB_PositionalActuatorStateEnum\x12\x10\n\x08position\x18\x03 \x01(\x05\">\n\rPB_BoolSensor\x12\x1e\n\x02id\x18\x01 \x01(\x0e\x32\x12.PB_BoolSensorEnum\x12\r\n\x05state\x18\x02 \x01(\x08\"x\n\x10PB_ActuatorState\x12\x35\n\x13positional_actuator\x18\x01 \x01(\x0b\x32\x16.PB_PositionalActuatorH\x00\x12%\n\x0b\x62ool_sensor\x18\x02 \x01(\x0b\x32\x0e.PB_BoolSensorH\x00\x42\x06\n\x04type\"w\n\x1cPB_PositionalActuatorCommand\x12&\n\x02id\x18\x01 \x01(\x0e\x32\x1a.PB_PositionalActuatorEnum\x12\x0f\n\x07\x63ommand\x18\x02 \x01(\x05\x12\r\n\x05speed\x18\x03 \x01(\x05\x12\x0f\n\x07timeout\x18\x04 \x01(\x05\"]\n\x12PB_ActuatorCommand\x12<\n\x13positional_actuator\x18\x01 \x01(\x0b\x32\x1d.PB_PositionalActuatorCommandH\x00\x42\t\n\x07\x63ommand*7\n\x14PB_ActuatorsTypeEnum\x12\x0e\n\nPOSITIONAL\x10\x00\x12\x0f\n\x0b\x42OOL_SENSOR\x10\x02*+\n\x19PB_PositionalActuatorEnum\x12\x0e\n\nMOTOR_LIFT\x10\x00*\x1d\n\x11PB_BoolSensorEnum\x12\x08\n\x04NONE\x10\x00*a\n\x1ePB_PositionalActuatorStateEnum\x12\x0b\n\x07REACHED\x10\x00\x12\x18\n\x14INTERMEDIATE_REACHED\x10\x01\x12\x0b\n\x07TIMEOUT\x10\x02\x12\x0b\n\x07\x42LOCKED\x10\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12PB_Actuators.proto\"\x81\x01\n\x15PB_PositionalActuator\x12&\n\x02id\x18\x01 \x01(\x0e\x32\x1a.PB_PositionalActuatorEnum\x12.\n\x05state\x18\x02 \x01(\x0e\x32\x1f.PB_PositionalActuatorStateEnum\x12\x10\n\x08position\x18\x03 \x01(\x05\">\n\rPB_BoolSensor\x12\x1e\n\x02id\x18\x01 \x01(\x0e\x32\x12.PB_BoolSensorEnum\x12\r\n\x05state\x18\x02 \x01(\x08\"x\n\x10PB_ActuatorState\x12\x35\n\x13positional_actuator\x18\x01 \x01(\x0b\x32\x16.PB_PositionalActuatorH\x00\x12%\n\x0b\x62ool_sensor\x18\x02 \x01(\x0b\x32\x0e.PB_BoolSensorH\x00\x42\x06\n\x04type\"w\n\x1cPB_PositionalActuatorCommand\x12&\n\x02id\x18\x01 \x01(\x0e\x32\x1a.PB_PositionalActuatorEnum\x12\x0f\n\x07\x63ommand\x18\x02 \x01(\x05\x12\r\n\x05speed\x18\x03 \x01(\x05\x12\x0f\n\x07timeout\x18\x04 \x01(\x05\"]\n\x12PB_ActuatorCommand\x12<\n\x13positional_actuator\x18\x01 \x01(\x0b\x32\x1d.PB_PositionalActuatorCommandH\x00\x42\t\n\x07\x63ommand*7\n\x14PB_ActuatorsTypeEnum\x12\x0e\n\nPOSITIONAL\x10\x00\x12\x0f\n\x0b\x42OOL_SENSOR\x10\x02*?\n\x19PB_PositionalActuatorEnum\x12\x10\n\x0cMOTOR_LIFT_1\x10\x00\x12\x10\n\x0cMOTOR_LIFT_2\x10\x01*\x1d\n\x11PB_BoolSensorEnum\x12\x08\n\x04NONE\x10\x00*a\n\x1ePB_PositionalActuatorStateEnum\x12\x0b\n\x07REACHED\x10\x00\x12\x18\n\x14INTERMEDIATE_REACHED\x10\x01\x12\x0b\n\x07TIMEOUT\x10\x02\x12\x0b\n\x07\x42LOCKED\x10\x03\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'PB_Actuators_pb2', globals())
@@ -23,11 +23,11 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _PB_ACTUATORSTYPEENUM._serialized_start=556
   _PB_ACTUATORSTYPEENUM._serialized_end=611
   _PB_POSITIONALACTUATORENUM._serialized_start=613
-  _PB_POSITIONALACTUATORENUM._serialized_end=656
-  _PB_BOOLSENSORENUM._serialized_start=658
-  _PB_BOOLSENSORENUM._serialized_end=687
-  _PB_POSITIONALACTUATORSTATEENUM._serialized_start=689
-  _PB_POSITIONALACTUATORSTATEENUM._serialized_end=786
+  _PB_POSITIONALACTUATORENUM._serialized_end=676
+  _PB_BOOLSENSORENUM._serialized_start=678
+  _PB_BOOLSENSORENUM._serialized_end=707
+  _PB_POSITIONALACTUATORSTATEENUM._serialized_start=709
+  _PB_POSITIONALACTUATORSTATEENUM._serialized_end=806
   _PB_POSITIONALACTUATOR._serialized_start=23
   _PB_POSITIONALACTUATOR._serialized_end=152
   _PB_BOOLSENSOR._serialized_start=154
