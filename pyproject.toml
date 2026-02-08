@@ -62,7 +62,9 @@ dev = [
     "mkdocstrings[python]==1.0.0",
     "pre-commit==4.0.1",
     "pymdown-extensions==10.18",
+    "pyqtgraph>=0.13.7",
     "PySide6==6.10.0",
+    "qasync>=0.27.1",
     "ruff==0.14.0",
     "toposort==1.10"
 ]
