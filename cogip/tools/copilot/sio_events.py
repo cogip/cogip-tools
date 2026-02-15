@@ -247,3 +247,30 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         logger.info("[SIO] Telemetry disable")
         await self.copilot.pbcom.send_can_message(copilot.telemetry_disable_uuid, None)
+
+    async def on_path_reset(self):
+        """
+        Callback on path_reset message.
+        Clear the waypoint list on the robot.
+        """
+        logger.info("[SIO] Path reset")
+        await self.copilot.pbcom.send_can_message(copilot.path_reset_uuid, None)
+
+    async def on_path_add_point(self, data: dict[str, Any]):
+        """
+        Callback on path_add_point message.
+        Add a waypoint to the robot's path list.
+        """
+        logger.info(f"[SIO] Path add point: {data}")
+        pose = models.PathPose.model_validate(data)
+        pb_pose = PB_PathPose()
+        pose.copy_pb(pb_pose)
+        await self.copilot.pbcom.send_can_message(copilot.path_add_point_uuid, pb_pose)
+
+    async def on_path_start(self):
+        """
+        Callback on path_start message.
+        Start path execution on the robot.
+        """
+        logger.info("[SIO] Path start")
+        await self.copilot.pbcom.send_can_message(copilot.path_start_uuid, None)

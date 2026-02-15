@@ -40,6 +40,10 @@ brake_uuid: int = 0x1007
 controller_uuid: int = 0x1008
 blocked_uuid: int = 0x1009
 intermediate_pose_reached_uuid: int = 0x100A
+path_reset_uuid: int = 0x100D
+path_add_point_uuid: int = 0x100E
+path_start_uuid: int = 0x100F
+path_complete_uuid: int = 0x1010
 # Actuators: 0x2000 - 0x2FFF
 actuators_thread_start_uuid: int = 0x2001
 actuators_thread_stop_uuid: int = 0x2002
@@ -454,20 +458,32 @@ class Copilot:
     async def new_path_event_loop(self):
         """
         Async worker watching for new path orders in shared memory.
-        When a new path is available, its first pose is sent to the firmware.
+        When a new path is available, all waypoints are sent to the firmware using the path API.
         """
         logger.info("Copilot: Task New Path Event Watcher Loop started")
         try:
             while True:
                 await asyncio.to_thread(self.shared_avoidance_path_lock.wait_update)
-                if len(self.shared_avoidance_path) == 0:
+                path_size = len(self.shared_avoidance_path)
+                if path_size == 0:
                     continue
-                pose_order = models.PathPose.from_shared(self.shared_avoidance_path[0])
-                if self.id > 1:
-                    pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
-                pb_pose_order = PB_PathPose()
-                pose_order.copy_pb(pb_pose_order)
-                await self.pbcom.send_can_message(pose_order_uuid, pb_pose_order)
+
+                logger.info(f"Copilot: Sending path with {path_size} waypoints")
+
+                # Reset path on firmware
+                await self.pbcom.send_can_message(path_reset_uuid, None)
+
+                # Add all waypoints
+                for i in range(path_size):
+                    pose_order = models.PathPose.from_shared(self.shared_avoidance_path[i])
+                    if self.id > 1:
+                        pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
+                    pb_pose_order = PB_PathPose()
+                    pose_order.copy_pb(pb_pose_order)
+                    await self.pbcom.send_can_message(path_add_point_uuid, pb_pose_order)
+
+                # Start path execution
+                await self.pbcom.send_can_message(path_start_uuid, None)
 
         except asyncio.CancelledError:
             logger.info("Copilot: Task New Path Event Watcher Loop cancelled")
