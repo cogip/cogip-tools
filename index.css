@@ -1,0 +1,17 @@
+:root {
+    --grey-color: #acaeb1;
+    --red-cogip: #d85659;
+
+    [data-md-color-scheme="default"],
+    [data-md-color-scheme="slate"] {
+        --md-primary-fg-color: var(--red-cogip);
+        --md-primary-fg-color--light: var(--red-cogip);
+        --md-primary-fg-color--dark: var(--red-cogip);
+
+        --md-accent-fg-color: var(--red-cogip);
+        --md-accent-fg-color--transparent: var(--red-cogip);
+
+        --md-code-fg-color: var(--red-cogip);
+        --md-typeset-a-color: var(--red-cogip);
+    }
+}
