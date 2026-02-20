@@ -32,8 +32,8 @@ class ActuatorBase(BaseModel):
 class PositionalActuatorEnum(IntEnum):
     """Enum defining positional actuators IDs"""
 
-    FRONT_MOTOR_LIFT = 0
-    BACK_MOTOR_LIFT = 1
+    FRONT_LIFT = 0
+    BACK_LIFT = 1
 
 
 class PositionalActuatorCommand(BaseModel):
@@ -136,6 +136,6 @@ ActuatorCommand = PositionalActuatorCommand
 
 # Actuator limits
 actuator_limits: dict[IntEnum, tuple[int, int]] = {
-    PositionalActuatorEnum.FRONT_MOTOR_LIFT: (0, 200),
-    PositionalActuatorEnum.BACK_MOTOR_LIFT: (0, 200),
+    PositionalActuatorEnum.FRONT_LIFT: (0, 200),
+    PositionalActuatorEnum.BACK_LIFT: (0, 200),
 }

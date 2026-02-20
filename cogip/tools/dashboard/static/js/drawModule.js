@@ -1,12 +1,13 @@
 let pose_current = {}, pose_order = {}, path = {}, obstacles = {};
 const robotImages = {}, orderImages = {}, cachedElements = {};
-const robotColors = {
-  1: "#FFA500", // Bright orange
-  2: "#32CD32", // Lime green
-  3: "#FF69B4", // Hot pink
-  4: "#1E90FF", // Dodger blue
-  5: "#FF6347", // Orange red
-};
+const robotColors = [
+  "#bf0000",
+  "#1e35ff",
+  "#00770e",
+  "#890098",
+  "#530000",
+  "#232678",
+];
 
 let ratioX = null, ratioY = null,  coordX = 0, coordY = 0;
 
@@ -206,9 +207,9 @@ function drawObstacles(color, obstacle, context) {
   const obstacleY = y * ratioY;
 
   const previousFilter = context.filter;
-  const obstacle_color = obstacle.id ? "#e555e5" : color;
+  const obstacle_color = obstacle.id ? robotColors[0] : color;
   context.fillStyle = obstacle_color;
-  context.filter = "opacity(20%)";
+  context.filter = "opacity(40%)";
 
   context.save(); // Save the current context state
 

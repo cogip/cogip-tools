@@ -38,23 +38,14 @@ class AlignTopCornerAction(Action):
         self.after_action_func = self.after_action
         self.align_x = 700
         self.align_y = -1300
+        self.border_offset = 115
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
         self.planner.shared_properties.avoidance_strategy = new_strategy.val
 
     async def init_start_pose(self):
-        # On start, the robot is aligned on the right (blue camp) border of the Top-Right start position
-        start_pose = AdaptedPose(
-            x=550 + self.planner.shared_properties.robot_length / 2,
-            y=-1050 - self.planner.shared_properties.robot_width / 2,
-            O=90,
-        )
-        if self.planner.shared_properties.table == TableEnum.Training:
-            start_pose.x -= 1000
-
-        self.planner.shared_pose_current_buffer.push(start_pose.x, start_pose.y, start_pose.O)
-        await self.planner.sio_ns.emit("pose_start", start_pose.pose.model_dump())
+        pass
 
     async def before_action(self):
         self.logger.info(f"{self.name}: before_action")
@@ -62,100 +53,19 @@ class AlignTopCornerAction(Action):
         self.set_avoidance(AvoidanceStrategy.Disabled)
         self.disable_fixed_obstacles_backup = self.planner.shared_properties.disable_fixed_obstacles
         self.planner.shared_properties.disable_fixed_obstacles = True
+        self.start_position = self.planner.start_positions.get()
+        if not self.final_pose:
+            self.final_pose = self.start_position
 
         await self.init_start_pose()
-
-        # Approach side
-        pose = AdaptedPose(
-            x=self.align_x,
-            y=self.align_y,
-            O=90,
-            max_speed_linear=80,
-            max_speed_angular=80,
-            motion_direction=MotionDirection.BACKWARD_ONLY,
-            bypass_anti_blocking=False,
-            timeout_ms=0,
-            bypass_final_orientation=False,
-            before_pose_func=self.before_approach_side,
-            after_pose_func=self.after_approach_side,
-        )
-        if self.planner.shared_properties.table == TableEnum.Training:
-            pose.x -= 1000
-        self.poses.append(pose)
-
-    async def before_approach_side(self):
-        self.logger.info(f"{self.name}: before_approach_side")
-        await actuators.front_arms_close(self.planner)
-        await actuators.back_arms_close(self.planner)
-        await actuators.front_lift_mid(self.planner)
-        await actuators.back_lift_mid(self.planner)
-
-    async def after_approach_side(self):
-        self.logger.info(f"{self.name}: after_approach_side")
-
-        # Align side
-        pose = AdaptedPose(
-            x=self.align_x,
-            y=-1600,
-            O=90,
-            max_speed_linear=10,
-            max_speed_angular=10,
-            motion_direction=MotionDirection.BACKWARD_ONLY,
-            bypass_anti_blocking=True,
-            timeout_ms=0,
-            bypass_final_orientation=True,
-            before_pose_func=self.before_align_side,
-            after_pose_func=self.after_align_side,
-        )
-        if self.planner.shared_properties.table == TableEnum.Training:
-            pose.x -= 1000
-        self.poses.append(pose)
-
-    async def before_align_side(self):
-        self.logger.info(f"{self.name}: before_align_side")
-
-    async def after_align_side(self):
-        self.logger.info(f"{self.name}: after_align_side")
-        pose_current = self.planner.pose_current
-        new_pose_current = AdaptedPose(
-            x=pose_current.x,
-            y=-1500 + self.planner.shared_properties.robot_length / 2,
-            O=90,
-        )
-        self.planner.shared_pose_current_buffer.push(new_pose_current.x, new_pose_current.y, new_pose_current.O)
-        await self.planner.sio_ns.emit("pose_start", new_pose_current.pose.model_dump())
-        await asyncio.sleep(0.5)
-
-        # Approach top
-        pose = AdaptedPose(
-            x=pose_current.x,
-            y=self.align_y,
-            O=180,
-            max_speed_linear=50,
-            max_speed_angular=50,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_anti_blocking=False,
-            timeout_ms=0,
-            bypass_final_orientation=False,
-            before_pose_func=self.before_approach_top,
-            after_pose_func=self.after_approach_top,
-        )
-        self.poses.append(pose)
-
-    async def before_approach_top(self):
-        self.logger.info(f"{self.name}: before_approach_top")
-
-    async def after_approach_top(self):
-        self.logger.info(f"{self.name}: after_approach_top")
-        pose_current = self.planner.pose_current
 
         # Align top
         pose = Pose(
             x=1100,
-            y=pose_current.y,
+            y=self.start_position.y,
             O=180,
-            max_speed_linear=10,
-            max_speed_angular=10,
+            max_speed_linear=5,
+            max_speed_angular=5,
             motion_direction=MotionDirection.BACKWARD_ONLY,
             bypass_anti_blocking=True,
             timeout_ms=0,
@@ -169,12 +79,16 @@ class AlignTopCornerAction(Action):
 
     async def before_align_top(self):
         self.logger.info(f"{self.name}: before_align_top")
+        await actuators.front_arms_open(self.planner)
+        await actuators.back_arms_open(self.planner)
+        await actuators.front_lift_mid(self.planner)
+        await actuators.back_lift_mid(self.planner)
 
     async def after_align_top(self):
         self.logger.info(f"{self.name}: after_align_top")
         pose_current = self.planner.pose_current
         new_pose_current = Pose(
-            x=1000 - self.planner.shared_properties.robot_length / 2,
+            x=1000 - self.border_offset,
             y=pose_current.y,
             O=180,
         )
@@ -184,46 +98,106 @@ class AlignTopCornerAction(Action):
         await self.planner.sio_ns.emit("pose_start", new_pose_current.pose.model_dump())
         await asyncio.sleep(0.5)
 
-        # Step forward
+        # Step forward from top
         pose = Pose(
-            x=self.align_x,
+            x=self.start_position.x,
             y=pose_current.y,
             O=180,
-            max_speed_linear=50,
-            max_speed_angular=50,
+            max_speed_linear=10,
+            max_speed_angular=10,
             motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
-            before_pose_func=self.before_step_forward,
-            after_pose_func=self.after_step_forward,
+            before_pose_func=self.before_step_forward_from_top,
+            after_pose_func=self.after_step_forward_from_top,
         )
-        if self.planner.shared_properties.table == TableEnum.Training:
-            pose.x -= 1000
+        # if self.planner.shared_properties.table == TableEnum.Training:
+        #     pose.x -= 1000
         self.poses.append(pose)
 
-    async def before_step_forward(self):
-        self.logger.info(f"{self.name}: before_step_forward")
+    async def before_step_forward_from_top(self):
+        self.logger.info(f"{self.name}: before_step_forward_from_top")
 
-    async def after_step_forward(self):
-        self.logger.info(f"{self.name}: after_step_forward")
-        if self.final_pose:
-            # Final pose
-            pose = Pose(
-                x=self.final_pose.x,
-                y=self.final_pose.y,
-                O=self.final_pose.O,
-                max_speed_linear=50,
-                max_speed_angular=50,
-                motion_direction=MotionDirection.BIDIRECTIONAL,
-                before_pose_func=self.before_final_pose,
-                after_pose_func=self.after_final_pose,
-            )
-            self.poses.append(pose)
+    async def after_step_forward_from_top(self):
+        self.logger.info(f"{self.name}: after_step_forward_from_top")
+        pose_current = self.planner.pose_current
+
+        # Align side
+        pose = AdaptedPose(
+            x=pose_current.x,
+            y=-1600,
+            O=90,
+            max_speed_linear=5,
+            max_speed_angular=5,
+            motion_direction=MotionDirection.BACKWARD_ONLY,
+            bypass_anti_blocking=True,
+            timeout_ms=0,
+            bypass_final_orientation=True,
+            before_pose_func=self.before_align_side,
+            after_pose_func=self.after_align_side,
+        )
+        # if self.planner.shared_properties.table == TableEnum.Training:
+        #     pose.x -= 1000
+        self.poses.append(pose)
+
+    async def before_align_side(self):
+        self.logger.info(f"{self.name}: before_align_side")
+
+    async def after_align_side(self):
+        self.logger.info(f"{self.name}: after_align_side")
+        pose_current = self.planner.pose_current
+        new_pose_current = AdaptedPose(
+            x=pose_current.x,
+            y=-1500 + self.border_offset,
+            O=90,
+        )
+        self.planner.shared_pose_current_buffer.push(new_pose_current.x, new_pose_current.y, new_pose_current.O)
+        await self.planner.sio_ns.emit("pose_start", new_pose_current.pose.model_dump())
+        await asyncio.sleep(0.5)
+
+        # Step forward from side
+        pose = Pose(
+            x=pose_current.x,
+            y=self.start_position.y,
+            O=90,
+            max_speed_linear=10,
+            max_speed_angular=10,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=False,
+            before_pose_func=self.before_step_forward_from_side,
+            after_pose_func=self.after_step_forward_from_side,
+        )
+        # if self.planner.shared_properties.table == TableEnum.Training:
+        #     pose.x -= 1000
+        self.poses.append(pose)
+
+    async def before_step_forward_from_side(self):
+        self.logger.info(f"{self.name}: before_step_forward_from_side")
+
+    async def after_step_forward_from_side(self):
+        self.logger.info(f"{self.name}: after_step_forward_from_side")
+
+        # Final pose
+        pose = Pose(
+            x=self.final_pose.x,
+            y=self.final_pose.y,
+            O=self.final_pose.O,
+            max_speed_linear=10,
+            max_speed_angular=10,
+            motion_direction=MotionDirection.BIDIRECTIONAL,
+            before_pose_func=self.before_final_pose,
+            after_pose_func=self.after_final_pose,
+        )
+        self.poses.append(pose)
 
     async def before_final_pose(self):
         self.logger.info(f"{self.name}: before_final_pose")
 
     async def after_final_pose(self):
         self.logger.info(f"{self.name}: after_final_pose")
+        await actuators.front_arms_close(self.planner)
+        await actuators.back_arms_close(self.planner)
+        await actuators.front_lift_down(self.planner)
+        await actuators.back_lift_down(self.planner)
 
     async def after_action(self):
         self.logger.info(f"{self.name}: after_action")
@@ -266,7 +240,7 @@ class AlignTopCornerCameraAction(AlignTopCornerAction):
         self.name = "Align Top Corner Camera action"
 
     async def init_start_pose(self):
-        # On start, the robot is inside the Top start area, oriented toward the Aruco tag.
+        # On start, the robot is inside the Top start area, oriented toward the Aruco tag (only useful for simulation).
         init_pose = AdaptedPose(
             x=550 + self.planner.shared_properties.robot_length / 2,
             y=-1050 - self.planner.shared_properties.robot_width / 2,

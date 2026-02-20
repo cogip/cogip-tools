@@ -36,8 +36,9 @@ class CaptureCratesAction(Action):
         super().__init__(f"CaptureCollectionArea {collection_area_id.name}", planner, strategy)
         self.before_action_func = self.before_action
         self.collection_area_id = collection_area_id
-        self.shift_capture = 140
-        self.shift_approach = self.shift_capture + 150
+        self.shift_align = 150
+        self.shift_capture = self.shift_align + 10
+        self.shift_approach = self.shift_align + 160
         if Camp().color == Camp.Colors.blue:
             self.good_crate_id = 36
             self.bad_crate_id = 47
@@ -59,6 +60,7 @@ class CaptureCratesAction(Action):
         self.crates_ids: list[int] = []
 
         if self.planner.game_context.front_free:
+            self.logger.info(f"{self.name}: before_action: front selected")
             self.arms_open = functools.partial(actuators.front_arms_open, self.planner)
             self.arms_close = functools.partial(actuators.front_arms_close, self.planner)
             self.lift_down = functools.partial(actuators.front_lift_down, self.planner)
@@ -71,6 +73,7 @@ class CaptureCratesAction(Action):
             self.axis_left_center_in = functools.partial(actuators.front_axis_left_center_in, self.planner)
             self.axis_right_center_in = functools.partial(actuators.front_axis_right_center_in, self.planner)
         else:
+            self.logger.info(f"{self.name}: before_action: back selected")
             self.arms_open = functools.partial(actuators.back_arms_open, self.planner)
             self.arms_close = functools.partial(actuators.back_arms_close, self.planner)
             self.lift_down = functools.partial(actuators.back_lift_down, self.planner)
@@ -98,14 +101,34 @@ class CaptureCratesAction(Action):
                 front_offset=-self.shift_approach,
                 angular_offset=0,
             ).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
+            max_speed_linear=10,
+            max_speed_angular=10,
             motion_direction=MotionDirection.BIDIRECTIONAL,
             before_pose_func=self.before_approach,
             after_pose_func=self.after_approach,
         )
         self.poses.append(approach_pose)
-        self.logger.info(f"{self.name}: approach: {approach_pose.pose}")
+        self.logger.info(
+            f"{self.name}: approach: x={approach_pose.x: 5.2f} y={approach_pose.y: 5.2f} O={approach_pose.O: 3.2f}°"
+        )
+
+        # Align
+        align_pose = Pose(
+            **get_relative_pose(
+                self.collection_area,
+                front_offset=-self.shift_align,
+                angular_offset=0,
+            ).model_dump(),
+            max_speed_linear=10,
+            max_speed_angular=10,
+            motion_direction=(
+                MotionDirection.FORWARD_ONLY if self.planner.game_context.front_free else MotionDirection.BACKWARD_ONLY
+            ),
+            before_pose_func=self.before_align,
+            after_pose_func=self.after_align,
+        )
+        self.poses.append(align_pose)
+        self.logger.info(f"{self.name}: align: x={align_pose.x: 5.2f} y={align_pose.y: 5.2f} O={align_pose.O: 3.2f}°")
 
         # Capture
         capture_pose = Pose(
@@ -114,17 +137,19 @@ class CaptureCratesAction(Action):
                 front_offset=-self.shift_capture,
                 angular_offset=0,
             ).model_dump(),
-            max_speed_linear=20,
-            max_speed_angular=20,
+            max_speed_linear=10,
+            max_speed_angular=10,
             motion_direction=(
-                MotionDirection.FORWARD_ONLY if self.planner.game_context.front_free else MotionDirection.BACKWARD_ONLY
+                MotionDirection.BACKWARD_ONLY if self.planner.game_context.front_free else MotionDirection.FORWARD_ONLY
             ),
             bypass_final_orientation=True,
             before_pose_func=self.before_capture,
             after_pose_func=self.after_capture,
         )
         self.poses.append(capture_pose)
-        self.logger.info(f"{self.name}: capture: {capture_pose.pose}")
+        self.logger.info(
+            f"{self.name}: capture: x={capture_pose.x: 5.2f} y={capture_pose.y: 5.2f} O={capture_pose.O: 3.2f}°"
+        )
 
     async def before_approach(self):
         self.logger.info(f"{self.name}: before_approach")
@@ -194,15 +219,24 @@ class CaptureCratesAction(Action):
 
         self.logger.info(f"{self.name}: Accepted group (angle={angle:.1f}°): {self.crates_ids}")
 
-    async def prepare_actuators_before_capture(self):
+    async def prepare_actuators_before_align(self):
+        self.logger.info(f"{self.name}: prepare_actuators_before_align begin")
         duration = await self.lift_down()
-        await asyncio.sleep(duration)
         await self.arms_open()
+        await asyncio.sleep(duration)
+        self.logger.info(f"{self.name}: prepare_actuators_before_align end")
+
+    async def before_align(self):
+        self.logger.info(f"{self.name}: before_align")
+        self.collection_area.enabled = False
+        await self.prepare_actuators_before_align()
+        self.logger.info(f"{self.name}: before_align end")
+
+    async def after_align(self):
+        self.logger.info(f"{self.name}: after_align")
 
     async def before_capture(self):
         self.logger.info(f"{self.name}: before_capture")
-        self.collection_area.enabled = False
-        asyncio.create_task(self.prepare_actuators_before_capture())
 
     async def execute_actuators_after_capture(self):
         duration = await self.arms_open()
@@ -227,7 +261,7 @@ class CaptureCratesAction(Action):
         await asyncio.sleep(duration)
         duration = await self.grips_close()
         await asyncio.sleep(duration)
-        asyncio.create_task(self.execute_actuators_after_capture())
+        # await self.execute_actuators_after_capture()
         if self.planner.game_context.front_free:
             self.planner.game_context.front_free = False
         else:
@@ -263,8 +297,14 @@ class TestCaptureX2Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
 
-        self.append(CaptureCratesAction(planner, self, CollectionAreaID.LocalBottomSide, 2_000_000.0))
-        self.append(CaptureCratesAction(planner, self, CollectionAreaID.LocalBottom, 1_900_000.0))
+        # self.append(CaptureCratesAction(planner, self, CollectionAreaID.LocalBottomSide, 2_000_000.0))
+        # self.append(CaptureCratesAction(planner, self, CollectionAreaID.LocalBottom, 1_900_000.0))
+
+        self.append(CaptureCratesAction(planner, self, CollectionAreaID.LocalBottom, 2_000_000.0))
+        self.append(CaptureCratesAction(planner, self, CollectionAreaID.LocalCenter, 1_900_000.0))
+
+        # self.append(CaptureCratesAction(planner, self, CollectionAreaID.OppositeCenter, 2_000_000.0))
+        # self.append(CaptureCratesAction(planner, self, CollectionAreaID.OppositeBottom, 1_900_000.0))
 
 
 class TestAlignCaptureX2Strategy(TestCaptureX2Strategy):

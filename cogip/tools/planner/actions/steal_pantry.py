@@ -78,8 +78,9 @@ class StealPantryAction(Action):
         self.before_action_func = self.before_action
         self.pantry_id = pantry_id
         self.shift_inspect = 350
-        self.shift_capture = 170
-        self.shift_approach = self.shift_capture + 150
+        self.shift_align = 150
+        self.shift_capture = self.shift_align + 10
+        self.shift_approach = self.shift_align + 160
         if Camp().color == Camp.Colors.blue:
             self.good_crate_id = 36
             self.bad_crate_id = 47
@@ -285,8 +286,8 @@ class StealPantryAction(Action):
         # Create approach pose
         approach_pose = Pose(
             **best_approach_pose.model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
+            max_speed_linear=10,
+            max_speed_angular=10,
             motion_direction=MotionDirection.BIDIRECTIONAL,
             bypass_final_orientation=True,
             before_pose_func=self.before_approach,
@@ -297,6 +298,24 @@ class StealPantryAction(Action):
             f"{self.name}: approach: x={approach_pose.x: 5.2f} y={approach_pose.y: 5.2f} O={approach_pose.O: 3.2f}°"
         )
 
+        # Align
+        align_pose = Pose(
+            **get_relative_pose(
+                best_approach_pose,
+                front_offset=self.shift_approach - self.shift_align,
+                angular_offset=0,
+            ).model_dump(),
+            max_speed_linear=10,
+            max_speed_angular=10,
+            motion_direction=(
+                MotionDirection.FORWARD_ONLY if self.planner.game_context.front_free else MotionDirection.BACKWARD_ONLY
+            ),
+            before_pose_func=self.before_align,
+            after_pose_func=self.after_align,
+        )
+        self.poses.append(align_pose)
+        self.logger.info(f"{self.name}: align: x={align_pose.x: 5.2f} y={align_pose.y: 5.2f} O={align_pose.O: 3.2f}°")
+
         # Capture
         capture_pose = Pose(
             **get_relative_pose(
@@ -304,10 +323,10 @@ class StealPantryAction(Action):
                 front_offset=self.shift_approach - self.shift_capture,
                 angular_offset=0,
             ).model_dump(),
-            max_speed_linear=20,
-            max_speed_angular=20,
+            max_speed_linear=10,
+            max_speed_angular=10,
             motion_direction=(
-                MotionDirection.FORWARD_ONLY if self.planner.game_context.front_free else MotionDirection.BACKWARD_ONLY
+                MotionDirection.BACKWARD_ONLY if self.planner.game_context.front_free else MotionDirection.FORWARD_ONLY
             ),
             bypass_final_orientation=True,
             before_pose_func=self.before_capture,
@@ -321,8 +340,8 @@ class StealPantryAction(Action):
         # Step back
         step_back_pose = Pose(
             **best_approach_pose.model_dump(),
-            max_speed_linear=20,
-            max_speed_angular=20,
+            max_speed_linear=10,
+            max_speed_angular=10,
             motion_direction=(
                 MotionDirection.BACKWARD_ONLY if self.planner.game_context.front_free else MotionDirection.FORWARD_ONLY
             ),
@@ -446,23 +465,30 @@ class StealPantryAction(Action):
 
     async def before_approach(self):
         self.logger.info(f"{self.name}: before_approach")
+        await self.arms_close()
+        await self.lift_mid()
 
     async def after_approach(self):
         self.logger.info(f"{self.name}: after_approach")
 
-    async def prepare_actuators_before_capture(self):
-        self.logger.info(f"{self.name}: prepare_actuators_before_capture: begin")
+    async def prepare_actuators_before_align(self):
+        self.logger.info(f"{self.name}: prepare_actuators_before_align begin")
         duration = await self.lift_down()
+        await self.arms_open()
         await asyncio.sleep(duration)
-        duration = await self.arms_open()
-        await asyncio.sleep(duration)
-        self.logger.info(f"{self.name}: prepare_actuators_before_capture: end")
+        self.logger.info(f"{self.name}: prepare_actuators_before_align end")
+
+    async def before_align(self):
+        self.logger.info(f"{self.name}: before_align")
+        self.pantry.enabled = False
+        await self.prepare_actuators_before_align()
+        self.logger.info(f"{self.name}: before_align: end")
+
+    async def after_align(self):
+        self.logger.info(f"{self.name}: after_align")
 
     async def before_capture(self):
         self.logger.info(f"{self.name}: before_capture: begin")
-        self.pantry.enabled = False
-        asyncio.create_task(self.prepare_actuators_before_capture())
-        self.logger.info(f"{self.name}: before_capture: end")
 
     async def after_capture(self):
         self.logger.info(f"{self.name}: after_capture")
@@ -471,29 +497,29 @@ class StealPantryAction(Action):
         await asyncio.sleep(duration)
         duration = await self.lift_up()
         await asyncio.sleep(duration)
-        duration = await self.grips_close()
-        await asyncio.sleep(duration)
+        # duration = await self.grips_close()
+        # await asyncio.sleep(duration)
 
-        duration = await self.arms_open()
-        await asyncio.sleep(duration)
-        if self.crate_group.crate_ids[0] == self.bad_crate_id:
-            await self.axis_left_side_in()
-        if self.crate_group.crate_ids[1] == self.bad_crate_id:
-            await self.axis_left_center_in()
-        if self.crate_group.crate_ids[2] == self.bad_crate_id:
-            await self.axis_right_center_in()
-        if self.crate_group.crate_ids[3] == self.bad_crate_id:
-            await self.axis_right_side_in()
-        await asyncio.sleep(actuators.AXIS_MOVE_DURATION_SEC)
-        duration = await self.arms_close()
-        await asyncio.sleep(duration)
+        # duration = await self.arms_open()
+        # await asyncio.sleep(duration)
+        # if self.crate_group.crate_ids[0] == self.bad_crate_id:
+        #     await self.axis_left_side_in()
+        # if self.crate_group.crate_ids[1] == self.bad_crate_id:
+        #     await self.axis_left_center_in()
+        # if self.crate_group.crate_ids[2] == self.bad_crate_id:
+        #     await self.axis_right_center_in()
+        # if self.crate_group.crate_ids[3] == self.bad_crate_id:
+        #     await self.axis_right_side_in()
+        # await asyncio.sleep(actuators.AXIS_MOVE_DURATION_SEC)
+        # duration = await self.arms_close()
+        # await asyncio.sleep(duration)
 
-        duration = await self.grips_open()
-        await asyncio.sleep(duration)
-        duration = await self.lift_down()
-        await asyncio.sleep(duration)
-        duration = await self.arms_open()
-        await asyncio.sleep(duration)
+        # duration = await self.grips_open()
+        # await asyncio.sleep(duration)
+        # duration = await self.lift_down()
+        # await asyncio.sleep(duration)
+        # duration = await self.arms_open()
+        # await asyncio.sleep(duration)
         self.logger.info(f"{self.name}: after_capture done")
 
     async def before_step_back(self):
@@ -514,7 +540,10 @@ class StealPantryAction(Action):
 class TestStealX1Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
-        self.append(StealPantryAction(planner, self, PantryID.MiddleBottom, 2_000_000.0))
+        self.append(StealPantryAction(planner, self, PantryID.MiddleBottom, 3_000_000.0))
+        # self.append(StealPantryAction(planner, self, PantryID.LocalBottom, 3_000_000.0))
+        # self.append(StealPantryAction(planner, self, PantryID.LocalCenter, 2_000_000.0))
+        # self.append(StealPantryAction(planner, self, PantryID.LocalSide, 1_000_000.0))
 
 
 class TestAlignStealX1Strategy(TestStealX1Strategy):

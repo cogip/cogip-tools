@@ -25,6 +25,8 @@ class SCServoEnum(IntEnum):
     FRONT_AXIS_RIGHT_SIDE = 8
     FRONT_ARM_LEFT = 9
     FRONT_ARM_RIGHT = 10
+    FRONT_SCISSOR_LEFT = 21
+    FRONT_SCISSOR_RIGHT = 22
 
     BACK_GRIP_LEFT_SIDE = 11
     BACK_GRIP_LEFT_CENTER = 12
@@ -36,6 +38,8 @@ class SCServoEnum(IntEnum):
     BACK_AXIS_RIGHT_SIDE = 18
     BACK_ARM_LEFT = 19
     BACK_ARM_RIGHT = 20
+    BACK_SCISSOR_LEFT = 23
+    BACK_SCISSOR_RIGHT = 24
 
 
 class SCServosProperties(BaseModel):
@@ -49,6 +53,8 @@ class SCServosProperties(BaseModel):
     FRONT_AXIS_RIGHT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
     FRONT_ARM_LEFT: Annotated[int, Field(ge=1, le=1200)] = 1
     FRONT_ARM_RIGHT: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_SCISSOR_LEFT: Annotated[int, Field(ge=1, le=1200)] = 1
+    FRONT_SCISSOR_RIGHT: Annotated[int, Field(ge=1, le=1200)] = 1
 
     BACK_GRIP_LEFT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
     BACK_GRIP_LEFT_CENTER: Annotated[int, Field(ge=1, le=1200)] = 1
@@ -60,6 +66,8 @@ class SCServosProperties(BaseModel):
     BACK_AXIS_RIGHT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
     BACK_ARM_LEFT: Annotated[int, Field(ge=1, le=1200)] = 1
     BACK_ARM_RIGHT: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_SCISSOR_LEFT: Annotated[int, Field(ge=1, le=1200)] = 1
+    BACK_SCISSOR_RIGHT: Annotated[int, Field(ge=1, le=1200)] = 1
 
 
 class SCServos:
@@ -137,7 +145,7 @@ class SCServos:
             logger.warning("SCServo: failed to reg action (no registered actions)")
             return
 
-        result, _ = self.packet_handler.RegAction()
+        result = self.packet_handler.RegAction()
         if result != COMM_SUCCESS:
             logger.error(f"SCServo: failed to reg action ({self.packet_handler.getTxRxResult(result)}")
             return

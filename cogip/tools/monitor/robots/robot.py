@@ -31,10 +31,11 @@ class Robot:
         self.lidar_ray_nodes: dict[int, QObject] = {}
         self.lidar_distances_changed: bool = False
 
-        self.node = self.root.findChild(QObject, "Scene")
+        self.node = self.root.findChild(QObject, "Robot")
         self.models = [m for m in self.node.children() if m.metaObject().className() == "QQuick3DModel"]
         for model in self.models:
             model.setObjectName(f"robot_{model.objectName()}")
+            print(f"Renamed model to {model.objectName()}")
 
         self.update_pose_current_timer = QTimer(self.root)
         self.update_pose_current_timer.setInterval(Robot.update_pose_current_interval)

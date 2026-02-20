@@ -50,6 +50,26 @@ Item {
         return obstacle;
     }
 
+    function animateLift(targetNode, zPos) {
+        var anim = Qt.createQmlObject('import QtQuick; NumberAnimation { property: "z"; duration: 1000; easing.type: Easing.InOutQuad }', targetNode);
+        anim.target = targetNode;
+        anim.to = zPos;
+        anim.start();
+        anim.stopped.connect(function () {
+            anim.destroy();
+        });
+    }
+
+    function animateServo(targetNode, angle) {
+        var anim = Qt.createQmlObject('import QtQuick; NumberAnimation { property: "eulerRotation.z"; duration: 500; easing.type: Easing.Linear }', targetNode);
+        anim.target = targetNode;
+        anim.to = angle;
+        anim.start();
+        anim.stopped.connect(function () {
+            anim.destroy();
+        });
+    }
+
     function clearObstacles() {
         if (view && view.clearObstacles) {
             view.clearObstacles();
@@ -61,6 +81,24 @@ Item {
             return view.exportObstacles();
         }
         return [];
+    }
+
+    function findNodeByName(node, name) {
+        if (!node)
+            return null;
+
+        if (node.objectName === name || node.objectName === "robot_" + name)
+            return node;
+
+        var kids = node.children;
+        if (kids) {
+            for (var i = 0; i < kids.length; i++) {
+                var res = findNodeByName(kids[i], name);
+                if (res)
+                    return res;
+            }
+        }
+        return null;
     }
 
     function grabPipView() {
@@ -81,6 +119,42 @@ Item {
 
     height: 600
     width: 800
+
+    Connections {
+        function onSignal_lift_changed(liftName, zPos) {
+            if (!sceneRoot.liveRobotNode)
+                return;
+            var targetNode = sceneRoot.findNodeByName(sceneRoot.liveRobotNode, liftName);
+            if (targetNode) {
+                sceneRoot.animateLift(targetNode, zPos);
+            } else {
+                console.warn("Lift node not found: " + liftName);
+                if (sceneRoot.liveRobotNode.children.length > 0) {
+                    var robotNode = sceneRoot.liveRobotNode.children[0];
+                    console.warn("Root child: " + robotNode.objectName);
+                    // Try to find in robot node specifically if liveRobotNode is just a wrapper
+                    var retry = sceneRoot.findNodeByName(robotNode, liftName);
+                    if (retry) {
+                        console.info("Found on retry!");
+                        sceneRoot.animateLift(retry, zPos);
+                    }
+                }
+            }
+        }
+
+        function onSignal_servo_changed(servoName, angle) {
+            if (!sceneRoot.liveRobotNode)
+                return;
+            var targetNode = sceneRoot.findNodeByName(sceneRoot.liveRobotNode, servoName);
+            if (targetNode) {
+                sceneRoot.animateServo(targetNode, angle);
+            } else {
+                console.warn("Servo node not found: " + servoName);
+            }
+        }
+
+        target: sceneRoot.socketClient
+    }
 
     View3D {
         id: view
@@ -452,7 +526,7 @@ Item {
                     eulerRotation.y: -45
                     eulerRotation.z: -90
                     objectName: "robotCamera"
-                    position: Qt.vector3d(120, 0, 350)
+                    position: Qt.vector3d(120, 0, 310)
                 }
             }
         }
@@ -952,7 +1026,7 @@ Item {
                     eulerRotation.y: -45
                     eulerRotation.z: -90
                     objectName: "robotCamera"
-                    position: Qt.vector3d(120, 0, 350)
+                    position: Qt.vector3d(120, 0, 310)
                 }
             }
 

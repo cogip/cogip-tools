@@ -312,6 +312,7 @@ class Planner:
         Start sending obstacles list.
         """
         logger.info("Planner: start")
+        self.loop = asyncio.get_running_loop()
         self.create_shared_memory()
         self.shared_memory.avoidance_exiting = False
         await self.soft_reset()
@@ -382,22 +383,19 @@ class Planner:
         self.pose_order = None
 
     def starter_changed_callback(self, pushed: bool):
-        asyncio.create_task(self.starter_changed(pushed))
+        logger.info(f"Planner: Starter callback: {pushed}")
+        if hasattr(self, "loop") and self.loop.is_running():
+            asyncio.run_coroutine_threadsafe(self.starter_changed(pushed), self.loop)
 
     async def starter_changed(self, pushed: bool):
+        logger.info(f"Starter changed: {'On' if pushed else 'Off'}")
         self.last_starter_event_timestamp = datetime.now(UTC)
         if not self.virtual:
             await self.sio_ns.emit("starter_changed", pushed)
 
     @property
     def default_controller(self) -> ControllerEnum:
-        match self.shared_properties.strategy:
-            case StrategyEnum.PidAngularSpeedTest:
-                return ControllerEnum.ANGULAR_SPEED_TEST
-            case StrategyEnum.PidLinearSpeedTest:
-                return ControllerEnum.LINEAR_SPEED_TEST
-            case _:
-                return ControllerEnum.QUADPID
+        return ControllerEnum.QUADPID
 
     async def set_controller(self, new_controller: ControllerEnum, force: bool = False):
         if self.controller == new_controller and not force:
@@ -496,7 +494,7 @@ class Planner:
                     asyncio.create_task(self.set_pose_reached())
         except Exception as exc:  # noqa
             logger.warning(f"Planner: Unknown exception {exc}")
-            traceback.print_exc()
+            logger.warning(traceback.format_exc())
             raise
 
     async def set_action(self, action: "action.Action"):

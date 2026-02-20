@@ -87,6 +87,7 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         Callback on starter_pushed message.
         """
+        logger.info(f"[planner => dashboard] Starter changed: {pushed}.")
         await self.emit("starter_changed", pushed, namespace="/dashboard")
 
     async def on_close_wizard(self, sid):
@@ -201,3 +202,19 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         logger.info("[planner => dashboard] soft reset.")
         await self.emit("soft_reset", namespace="/dashboard")
+
+    async def on_servo(self, sid, servo_id: int, position: int):
+        """
+        Callback on servo message.
+        Forward to monitor.
+        """
+        logger.info(f"[planner => monitor] Servo command: {(servo_id, position)}")
+        await self.emit("servo", (servo_id, position), namespace="/monitor")
+
+    async def on_lift(self, sid, actuator_id: int, position: int):
+        """
+        Callback on lift message.
+        Forward to monitor.
+        """
+        logger.info(f"[planner => monitor] Lift command: {(actuator_id, position)}")
+        await self.emit("lift", (actuator_id, position), namespace="/monitor")

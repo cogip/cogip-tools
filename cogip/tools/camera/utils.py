@@ -5,7 +5,7 @@ import cv2.typing
 import numpy as np
 from numpy.typing import ArrayLike
 
-from cogip.models import CameraExtrinsicParameters
+from cogip.models import CameraExtrinsicParameters, Pose
 
 #
 # Utility functions to handle rotation matrices
@@ -145,3 +145,34 @@ def save_camera_extrinsic_params(params: CameraExtrinsicParameters, path: Path):
 def load_camera_extrinsic_params(path: Path) -> CameraExtrinsicParameters:
     """Loads camera position relative to robot center."""
     return CameraExtrinsicParameters.model_validate_json(path.read_text())
+
+
+def transform_pose_robot_to_table(pose: Pose, robot_pose: Pose) -> Pose:
+    """
+    Transforms a pose from the robot frame to the table frame.
+
+    Arguments:
+        pose: The pose in the robot frame to transform.
+        robot_pose: The robot pose in the table frame.
+    """
+    # Robot in Table frame (Transformation T_rt)
+    # We assume the robot is flat on the table (roll=0, pitch=0)
+    R_rt = euler_angles_to_rotation_matrix(np.deg2rad([0, 0, robot_pose.O]))
+    T_rt = np.array([robot_pose.x, robot_pose.y, 0.0])
+    M_rt = make_transform_matrix(R_rt, T_rt)
+
+    # Pose in Robot frame (Transformation T_pr)
+    R_pr = euler_angles_to_rotation_matrix(np.deg2rad([0, 0, pose.O]))
+    T_pr = np.array([pose.x, pose.y, pose.z])
+    M_pr = make_transform_matrix(R_pr, T_pr)
+
+    # Pose in Table frame (Transformation T_pt)
+    # M_pt = M_rt * M_pr
+    M_pt = M_rt @ M_pr
+
+    # Extract results
+    R_pt, T_pt = decompose_transform_matrix(M_pt)
+    euler_pt = rotation_matrix_to_euler_angles(R_pt)
+    angle_pt = np.rad2deg(euler_pt[2])
+
+    return Pose(x=T_pt[0], y=T_pt[1], z=T_pt[2], O=angle_pt)
