@@ -72,6 +72,10 @@ robot_front_actuators_commands = [
     "front_arm_left_close",
     "front_arm_right_open",
     "front_arm_right_close",
+    "front_scissor_left_open",
+    "front_scissor_left_close",
+    "front_scissor_right_open",
+    "front_scissor_right_close",
 ]
 
 robot_front_actuators_menu = models.ShellMenu(
@@ -110,6 +114,10 @@ robot_back_actuators_commands = [
     "back_arm_left_close",
     "back_arm_right_open",
     "back_arm_right_close",
+    "back_scissor_left_open",
+    "back_scissor_left_close",
+    "back_scissor_right_open",
+    "back_scissor_right_close",
 ]
 
 robot_back_actuators_menu = models.ShellMenu(
@@ -133,6 +141,10 @@ robot_actuators_multi_commands = [
     "back_grips_close",
     "back_lift_down",
     "back_lift_up",
+    "front_scissors_open",
+    "front_scissors_close",
+    "back_scissors_open",
+    "back_scissors_close",
 ]
 
 robot_actuators_multi_menu = models.ShellMenu(

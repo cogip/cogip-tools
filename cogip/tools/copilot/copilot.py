@@ -16,15 +16,16 @@ from cogip.protobuf import (
     PB_ParameterGetResponse,
     PB_ParameterSetResponse,
     PB_PathPose,
-    PB_Pid,
-    PB_PidEnum,
+    # PB_Pid,
+    # PB_PidEnum,
     PB_Pose,
     PB_State,
     PB_TelemetryData,
 )
 from . import logger
 from .pbcom import PBCom, pb_exception_handler
-from .pid import Pid
+
+# from .pid import Pid
 from .sio_events import SioEvents
 
 # Motion Control: 0x1000 - 0x1FFF
@@ -33,7 +34,7 @@ pose_order_uuid: int = 0x1002
 pose_reached_uuid: int = 0x1003
 pose_start_uuid: int = 0x1004
 pid_request_uuid: int = 0x1005
-pid_uuid: int = 0x1006
+# pid_uuid: int = 0x1006
 brake_uuid: int = 0x1007
 controller_uuid: int = 0x1008
 blocked_uuid: int = 0x1009
@@ -84,7 +85,7 @@ class Copilot:
         self.id = id
         self.retry_connection = True
         self.shell_menu: models.ShellMenu | None = None
-        self.pb_pids: dict[PB_PidEnum, PB_Pid] = {}
+        # self.pb_pids: dict[PB_PidEnum, PB_Pid] = {}
 
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_buffer: SharedPoseBuffer | None = None
@@ -104,7 +105,7 @@ class Copilot:
             pose_reached_uuid: self.handle_pose_reached,
             intermediate_pose_reached_uuid: self.handle_intermediate_pose_reached,
             actuator_state_uuid: self.handle_actuator_state,
-            pid_uuid: self.handle_pid,
+            # pid_uuid: self.handle_pid,
             blocked_uuid: self.handle_blocked,
             parameter_get_response_uuid: self.handle_parameter_get_response,
             parameter_set_response_uuid: self.handle_parameter_set_response,
@@ -240,39 +241,39 @@ class Copilot:
         if self.sio_events.connected:
             await self.sio_events.emit("actuator_state", actuator_state)
 
-    @pb_exception_handler
-    async def handle_pid(self, message: bytes | None = None) -> None:
-        """
-        Send pids state received from the robot to connected dashboards.
-        """
-        pb_pid = PB_Pid()
-        if message:
-            await self.loop.run_in_executor(None, pb_pid.ParseFromString, message)
+    # @pb_exception_handler
+    # async def handle_pid(self, message: bytes | None = None) -> None:
+    #     """
+    #     Send pids state received from the robot to connected dashboards.
+    #     """
+    #     pb_pid = PB_Pid()
+    #     if message:
+    #         await self.loop.run_in_executor(None, pb_pid.ParseFromString, message)
 
-        self.pb_pids[pb_pid.id] = pb_pid
-        pid = Pid(
-            id=pb_pid.id,
-            kp=pb_pid.kp,
-            ki=pb_pid.ki,
-            kd=pb_pid.kd,
-            integral_term_limit=pb_pid.integral_term_limit,
-        )
+    #     self.pb_pids[pb_pid.id] = pb_pid
+    #     pid = Pid(
+    #         id=pb_pid.id,
+    #         kp=pb_pid.kp,
+    #         ki=pb_pid.ki,
+    #         kd=pb_pid.kd,
+    #         integral_term_limit=pb_pid.integral_term_limit,
+    #     )
 
-        # Get JSON Schema
-        pid_schema = pid.model_json_schema()
-        # Add namespace in JSON Schema
-        pid_schema["namespace"] = "/copilot"
-        pid_schema["sio_event"] = "config_updated"
-        # Add current values in JSON Schema
-        pid_schema["title"] = pid.id.name
-        for prop, value in pid.model_dump().items():
-            if prop == "id":
-                continue
-            pid_schema["properties"][prop]["value"] = value
-            pid_schema["properties"][f"{pid.id}-{prop}"] = pid_schema["properties"][prop]
-            del pid_schema["properties"][prop]
-        # Send config
-        await self.sio_events.emit("config", pid_schema)
+    #     # Get JSON Schema
+    #     pid_schema = pid.model_json_schema()
+    #     # Add namespace in JSON Schema
+    #     pid_schema["namespace"] = "/copilot"
+    #     pid_schema["sio_event"] = "config_updated"
+    #     # Add current values in JSON Schema
+    #     pid_schema["title"] = pid.id.name
+    #     for prop, value in pid.model_dump().items():
+    #         if prop == "id":
+    #             continue
+    #         pid_schema["properties"][prop]["value"] = value
+    #         pid_schema["properties"][f"{pid.id}-{prop}"] = pid_schema["properties"][prop]
+    #         del pid_schema["properties"][prop]
+    #     # Send config
+    #     await self.sio_events.emit("config", pid_schema)
 
     async def handle_pose_reached(self) -> None:
         """
