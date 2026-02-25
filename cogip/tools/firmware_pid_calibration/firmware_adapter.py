@@ -2,10 +2,8 @@
 Firmware Adapter for PID Calibration
 
 Unified facade for all firmware interactions via SocketIO:
-- Parameter load/save operations
-- Encoder telemetry
+- PID parameter load/save operations
 - Motion control via pose_order/pose_reached
-- Calibration-specific movement sequences
 """
 
 from __future__ import annotations
@@ -16,7 +14,6 @@ import socketio
 from cogip.models.models import Pose
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.tools.firmware_parameter_manager.firmware_parameter_manager import FirmwareParameterManager
-from cogip.tools.firmware_telemetry.firmware_telemetry_manager import FirmwareTelemetryManager
 from cogip.utils.console_ui import ConsoleUI
 from . import logger
 from .types import PidGains, PidType
@@ -25,8 +22,8 @@ from .types import PidGains, PidType
 class FirmwareAdapter:
     """Unified adapter for firmware operations via SocketIO.
 
-    Handles PID parameter load/save, encoder telemetry, motion control
-    via pose_order/pose_reached events, and calibration movement sequences.
+    Handles PID parameter load/save and motion control via pose_order/pose_reached
+    events.
     """
 
     # PID parameter names mapping: PidType -> (kp_name, ki_name, kd_name)
@@ -37,15 +34,10 @@ class FirmwareAdapter:
         PidType.ANGULAR_SPEED: ("angular_speed_pid_kp", "angular_speed_pid_ki", "angular_speed_pid_kd"),
     }
 
-    # Telemetry keys for encoder values
-    TELEMETRY_LEFT_ENCODER = "encoder_left"
-    TELEMETRY_RIGHT_ENCODER = "encoder_right"
-
     def __init__(
         self,
         sio: socketio.AsyncClient,
         param_manager: FirmwareParameterManager,
-        telemetry_manager: FirmwareTelemetryManager,
         pose_reached_event: asyncio.Event,
         console: ConsoleUI | None = None,
     ):
@@ -55,13 +47,11 @@ class FirmwareAdapter:
         Args:
             sio: SocketIO client for communication
             param_manager: Firmware parameter manager for read/write operations
-            telemetry_manager: Firmware telemetry manager for encoder tick counts
             pose_reached_event: Event signaled when robot reaches target position
             console: Optional ConsoleUI for progress display
         """
         self.sio = sio
         self._param_manager = param_manager
-        self._telemetry = telemetry_manager
         self.pose_reached_event = pose_reached_event
         self._console = console or ConsoleUI()
 
@@ -116,9 +106,6 @@ class FirmwareAdapter:
 
         logger.info(f"{pid_type.name} PID gains saved successfully")
 
-    # === Telemetry ===
-    # TODO:
-
     # === Motion Control ===
 
     async def set_start_position(self, x: float, y: float, orientation: float) -> None:
@@ -169,7 +156,7 @@ class FirmwareAdapter:
             logger.warning(f"Timeout waiting for pose reached (>{timeout}s)")
             return False
 
-    async def goto(self, x: float, y: float, orientation: float, timeout: float = 5.0) -> bool:
+    async def goto(self, x: float, y: float, orientation: float, timeout: float = 20.0) -> bool:
         """
         Move robot to target position and wait for completion.
 
@@ -187,16 +174,12 @@ class FirmwareAdapter:
 
     # === Controller ===
 
-    async def set_controller(self, controller: ControllerEnum, timeout: float = 5.0) -> bool:
+    async def set_controller(self, controller: ControllerEnum) -> None:
         """
-        Set the robot controller and wait for acknowledgment.
+        Set the robot controller.
 
         Args:
             controller: Controller type to set
-            timeout: Maximum time to wait for acknowledgment in seconds
-
-        Returns:
-            True if controller was set, False if timeout
         """
         logger.debug(f"Setting controller: {controller.name}")
 

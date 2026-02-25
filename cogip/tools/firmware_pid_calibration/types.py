@@ -10,36 +10,6 @@ from enum import Enum
 from cogip.tools.copilot.controller import ControllerEnum
 
 
-class CalibrationMode(Enum):
-    """Calibration modes."""
-
-    MANUAL = (1, "Manual Tuning", "Adjust gains manually based on observation")
-    EMPIRICAL_AUTOTUNE = (2, "Empirical Autotune", "Automatic gain estimation via step response")
-
-    def __init__(self, index: int, label: str, description: str):
-        self.index = index
-        self.label = label
-        self.description = description
-
-    @classmethod
-    def from_index(cls, index: int) -> "CalibrationMode":
-        """Get CalibrationMode by its index number."""
-        for mode in cls:
-            if mode.index == index:
-                return mode
-        raise ValueError(f"Invalid calibration mode index: {index}")
-
-    @classmethod
-    def choices(cls) -> list[str]:
-        """Return list of valid index choices as strings."""
-        return [str(mode.index) for mode in cls]
-
-    @classmethod
-    def table_rows(cls) -> list[tuple[str, str, str]]:
-        """Return table rows: (index, label, description)."""
-        return [(str(m.index), m.label, m.description) for m in cls]
-
-
 class PidType(Enum):
     """Types of PID controllers."""
 
@@ -83,48 +53,6 @@ class PidType(Enum):
             PidType.LINEAR_POSE_TEST: ControllerEnum.LINEAR_POSE_TEST,
         }
         return controller_map[self]
-
-
-class TelemetryType(Enum):
-    """
-    Telemetry types for PID visualization.
-
-    Each type has: (telemetry_key, label)
-    """
-
-    # Linear telemetry
-    LINEAR_SPEED_ORDER = ("linear_speed_order", "Order")
-    LINEAR_CURRENT_SPEED = ("linear_current_speed", "Current Speed")
-    LINEAR_FEEDFORWARD_VELOCITY = ("linear_feedforward_velocity", "Feedforward")
-    LINEAR_SPEED_COMMAND = ("linear_speed_command", "Command")
-
-    # Angular telemetry
-    ANGULAR_SPEED_ORDER = ("angular_speed_order", "Order")
-    ANGULAR_CURRENT_SPEED = ("angular_current_speed", "Current Speed")
-    ANGULAR_FEEDFORWARD_VELOCITY = ("angular_feedforward_velocity", "Feedforward")
-    ANGULAR_SPEED_COMMAND = ("angular_speed_command", "Command")
-
-    def __init__(self, telemetry_key: str, label: str):
-        self.telemetry_key = telemetry_key
-        self.label = label
-
-    @classmethod
-    def for_pid_type(cls, pid_type: PidType) -> list["TelemetryType"]:
-        """Return relevant telemetry types for a given PID type."""
-        if pid_type in (PidType.LINEAR_POSE, PidType.LINEAR_SPEED):
-            return [
-                cls.LINEAR_SPEED_ORDER,
-                cls.LINEAR_CURRENT_SPEED,
-                cls.LINEAR_FEEDFORWARD_VELOCITY,
-                cls.LINEAR_SPEED_COMMAND,
-            ]
-        else:
-            return [
-                cls.ANGULAR_SPEED_ORDER,
-                cls.ANGULAR_CURRENT_SPEED,
-                cls.ANGULAR_FEEDFORWARD_VELOCITY,
-                cls.ANGULAR_SPEED_COMMAND,
-            ]
 
 
 @dataclass
