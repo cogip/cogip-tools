@@ -110,10 +110,11 @@ class OdometryCalibration:
 
     async def _disconnect(self) -> None:
         """Disconnect from server."""
-        # Disable telemetry
-        await self.telemetry_manager.disable()
-        await asyncio.sleep(0.2)
-        
+        # Disable telemetry (only if namespace is connected)
+        if self.telemetry_manager.is_connected:
+            await self.telemetry_manager.disable()
+            await asyncio.sleep(0.2)
+
         if self.sio and self.sio.connected:
             await self.sio.disconnect()
 
