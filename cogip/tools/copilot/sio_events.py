@@ -14,6 +14,7 @@ from cogip.protobuf import (
     PB_ParameterGetRequest,
     PB_ParameterSetRequest,
     PB_PathPose,
+    PB_SpeedOrder,
     # PB_Pid_Id,
     # PB_PidEnum,
 )
@@ -119,6 +120,17 @@ class SioEvents(socketio.AsyncClientNamespace):
         pb_pose_order = PB_PathPose()
         pose_order.copy_pb(pb_pose_order)
         await self.copilot.pbcom.send_can_message(copilot.pose_order_uuid, pb_pose_order)
+
+    async def on_speed_order(self, data: dict[str, Any]):
+        """
+        Callback on speed order (from calibration tool).
+        Forward to mcu-firmware.
+        """
+        logger.info(f"[SIO] Speed order: {data}")
+        speed_order = models.SpeedOrder.model_validate(data)
+        pb_speed_order = PB_SpeedOrder()
+        speed_order.copy_pb(pb_speed_order)
+        await self.copilot.pbcom.send_can_message(copilot.speed_order_uuid, pb_speed_order)
 
     async def on_actuators_start(self):
         """

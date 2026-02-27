@@ -11,7 +11,7 @@ import asyncio
 
 import socketio
 
-from cogip.models.models import Pose
+from cogip.models.models import Pose, SpeedOrder
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.tools.firmware_parameter_manager.firmware_parameter_manager import FirmwareParameterManager
 from cogip.utils.console_ui import ConsoleUI
@@ -171,6 +171,25 @@ class FirmwareAdapter:
         """
         await self._send_pose_order(x, y, orientation)
         return await self._wait_pose_reached(timeout)
+
+    async def send_speed_order(self, linear_speed_mm_s: int, angular_speed_deg_s: int, duration_ms: int) -> None:
+        """
+        Send a speed order to the robot.
+
+        Args:
+            linear_speed_mm_s: Linear speed in mm/s (positive = forward, negative = backward)
+            angular_speed_deg_s: Angular speed in deg/s (positive = counter-clockwise)
+            duration_ms: Duration of the speed command in milliseconds
+        """
+        speed_order = SpeedOrder(
+            linear_speed_mm_s=linear_speed_mm_s,
+            angular_speed_deg_s=angular_speed_deg_s,
+            duration_ms=duration_ms,
+        )
+
+        logger.debug(f"Sending speed order: {speed_order}")
+
+        await self.sio.emit("speed_order", speed_order.model_dump(), namespace="/calibration")
 
     # === Controller ===
 
