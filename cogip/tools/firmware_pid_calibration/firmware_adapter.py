@@ -26,13 +26,7 @@ class FirmwareAdapter:
     events.
     """
 
-    # PID parameter names mapping: PidType -> (kp_name, ki_name, kd_name)
-    PID_PARAM_NAMES: dict[PidType, tuple[str, str, str]] = {
-        PidType.LINEAR_POSE: ("linear_pose_pid_kp", "linear_pose_pid_ki", "linear_pose_pid_kd"),
-        PidType.ANGULAR_POSE: ("angular_pose_pid_kp", "angular_pose_pid_ki", "angular_pose_pid_kd"),
-        PidType.LINEAR_SPEED: ("linear_speed_pid_kp", "linear_speed_pid_ki", "linear_speed_pid_kd"),
-        PidType.ANGULAR_SPEED: ("angular_speed_pid_kp", "angular_speed_pid_ki", "angular_speed_pid_kd"),
-    }
+    PARAM_TIMEOUT: float = 5.0
 
     def __init__(
         self,
@@ -70,13 +64,13 @@ class FirmwareAdapter:
         Raises:
             TimeoutError: If firmware communication times out
         """
-        kp_name, ki_name, kd_name = self.PID_PARAM_NAMES[pid_type]
+        kp_name, ki_name, kd_name = pid_type.param_names
         logger.info(f"Loading {pid_type.name} PID gains from firmware...")
 
         kp, ki, kd = await asyncio.gather(
-            self._param_manager.get_parameter_value(kp_name, timeout=5),
-            self._param_manager.get_parameter_value(ki_name, timeout=5),
-            self._param_manager.get_parameter_value(kd_name, timeout=5),
+            self._param_manager.get_parameter_value(kp_name, timeout=self.PARAM_TIMEOUT),
+            self._param_manager.get_parameter_value(ki_name, timeout=self.PARAM_TIMEOUT),
+            self._param_manager.get_parameter_value(kd_name, timeout=self.PARAM_TIMEOUT),
         )
 
         gains = PidGains(kp=kp, ki=ki, kd=kd)
@@ -95,13 +89,13 @@ class FirmwareAdapter:
         Raises:
             TimeoutError: If firmware communication times out
         """
-        kp_name, ki_name, kd_name = self.PID_PARAM_NAMES[pid_type]
+        kp_name, ki_name, kd_name = pid_type.param_names
         logger.info(f"Saving {pid_type.name} PID gains: {gains}")
 
         await asyncio.gather(
-            self._param_manager.set_parameter_value(kp_name, gains.kp, timeout=5),
-            self._param_manager.set_parameter_value(ki_name, gains.ki, timeout=5),
-            self._param_manager.set_parameter_value(kd_name, gains.kd, timeout=5),
+            self._param_manager.set_parameter_value(kp_name, gains.kp, timeout=self.PARAM_TIMEOUT),
+            self._param_manager.set_parameter_value(ki_name, gains.ki, timeout=self.PARAM_TIMEOUT),
+            self._param_manager.set_parameter_value(kd_name, gains.kd, timeout=self.PARAM_TIMEOUT),
         )
 
         logger.info(f"{pid_type.name} PID gains saved successfully")
