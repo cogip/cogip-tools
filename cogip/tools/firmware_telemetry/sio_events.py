@@ -73,7 +73,7 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         telemetry = ParseDict(data, PB_TelemetryData())
         telemetry_data = TelemetryData.from_protobuf(telemetry)
-        self.manager.store.update(telemetry_data)
+        self.manager.data.update(telemetry_data)
 
         if self._telemetry_callback:
             self._telemetry_callback(telemetry_data)
