@@ -40,6 +40,7 @@ brake_uuid: int = 0x1007
 controller_uuid: int = 0x1008
 blocked_uuid: int = 0x1009
 intermediate_pose_reached_uuid: int = 0x100A
+speed_order_uuid: int = 0x100B
 # Actuators: 0x2000 - 0x2FFF
 actuators_thread_start_uuid: int = 0x2001
 actuators_thread_stop_uuid: int = 0x2002

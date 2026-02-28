@@ -33,3 +33,7 @@ from .odometry_calibration import (  # noqa
     EncoderDeltas,
     OdometryParameters,
 )
+from .telemetry_graph import (  # noqa
+    PlotConfig,
+    TelemetryGraphConfig,
+)
