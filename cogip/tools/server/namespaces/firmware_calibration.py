@@ -56,6 +56,14 @@ class FirmwareCalibrationNamespace(socketio.AsyncNamespace):
         logger.info(f"[calibration => copilot] Speed order: {data}")
         await self.emit("speed_order", data, namespace="/copilot")
 
+    async def on_game_end(self, sid):
+        """
+        Callback on game_end message.
+        Forward to copilot.
+        """
+        logger.info("[calibration => copilot] Game reset.")
+        await self.emit("game_end", namespace="/copilot")
+
     async def on_set_controller(self, sid, controller: int):
         """
         Callback on set_controller message.
