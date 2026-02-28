@@ -305,7 +305,6 @@ dependencies = [
     { name = "python-engineio" },
     { name = "python-socketio" },
     { name = "requests" },
-    { name = "rich" },
     { name = "scikit-learn" },
     { name = "sentry-sdk" },
     { name = "shapely" },
@@ -327,7 +326,9 @@ dev = [
     { name = "mkdocstrings", extra = ["python"] },
     { name = "pre-commit" },
     { name = "pymdown-extensions" },
+    { name = "pyqtgraph" },
     { name = "pyside6" },
+    { name = "rich" },
     { name = "ruff" },
     { name = "toposort" },
 ]
@@ -365,7 +366,6 @@ requires-dist = [
     { name = "python-engineio", specifier = "==4.8.0" },
     { name = "python-socketio", specifier = "==5.10.0" },
     { name = "requests", specifier = "==2.31.0" },
-    { name = "rich", specifier = "==14.2.0" },
     { name = "scikit-learn", specifier = "~=1.6.1" },
     { name = "sentry-sdk", specifier = "==1.39.1" },
     { name = "shapely", specifier = "~=2.1" },
@@ -387,7 +387,9 @@ dev = [
     { name = "mkdocstrings", extras = ["python"], specifier = "==1.0.0" },
     { name = "pre-commit", specifier = "==4.0.1" },
     { name = "pymdown-extensions", specifier = "==10.18" },
+    { name = "pyqtgraph", specifier = "==0.14.0" },
     { name = "pyside6", specifier = "==6.10.0" },
+    { name = "rich", specifier = "==14.2.0" },
     { name = "ruff", specifier = "==0.14.0" },
     { name = "toposort", specifier = "==1.10" },
 ]
@@ -1689,6 +1691,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f2/a5/181488fc2b9d093e3972d2a472855aae8a03f000592dbfce716a512b3359/pyparsing-3.2.5.tar.gz", hash = "sha256:2df8d5b7b2802ef88e8d016a2eb9c7aeaa923529cd251ed0fe4608275d4105b6", size = 1099274, upload-time = "2025-09-21T04:11:06.277Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/10/5e/1aa9a93198c6b64513c9d7752de7422c06402de6600a8767da1524f9570b/pyparsing-3.2.5-py3-none-any.whl", hash = "sha256:e38a4f02064cf41fe6593d328d0512495ad1f3d8a91c4f73fc401b3079a59a5e", size = 113890, upload-time = "2025-09-21T04:11:04.117Z" },
+]
+
+[[package]]
+name = "pyqtgraph"
+version = "0.14.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama" },
+    { name = "numpy" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/36/4c242f81fdcbfa4fb62a5645f6af79191f4097a0577bd5460c24f19cc4ef/pyqtgraph-0.14.0-py3-none-any.whl", hash = "sha256:7abb7c3e17362add64f8711b474dffac5e7b0e9245abdf992e9a44119b7aa4f5", size = 1924755, upload-time = "2025-11-16T19:43:22.251Z" },
 ]
 
 [[package]]
