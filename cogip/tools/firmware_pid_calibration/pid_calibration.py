@@ -1,28 +1,29 @@
 """
-PID Calibration Tool for differential drive robots.
+PID Calibration Tool.
 
 Calibrates PID controller parameters through manual tuning.
 
 Phases:
-    1. Select PID type (linear/angular pose/speed)
+    1. Select PID type
     2. Set appropriate controller
-    3. Iterative manual tuning loop with live movement tests
+    3. Iterative manual tuning loop with live motion tests
 
 Usage:
     - Select which PID to calibrate
-    - Observe robot behavior during test movements
+    - Observe behavior during test motion
     - Adjust Kp, Ki, Kd until satisfactory
     - Save or restore initial gains
 """
 
 from __future__ import annotations
-
 import asyncio
 import sys
 
 import socketio
+import yaml
 
 from cogip.models import FirmwareParametersGroup
+from cogip.models.telemetry_graph import TelemetryGraphConfig
 from cogip.tools.firmware_parameter_manager.firmware_parameter_manager import FirmwareParameterManager
 from cogip.tools.firmware_telemetry.firmware_telemetry_manager import FirmwareTelemetryManager
 from cogip.tools.firmware_telemetry.graph.bridge import TelemetryGraphBridge
@@ -30,7 +31,7 @@ from cogip.utils.console_ui import ConsoleUI
 from . import logger
 from .firmware_adapter import FirmwareAdapter
 from .sio_events import SioEvents
-from .types import MovementKind, PidGains, PidType
+from .types import CommandKind, MotionKind, PidGains, PidType
 
 
 class PidCalibration:
@@ -74,9 +75,7 @@ class PidCalibration:
         self.telemetry_manager = FirmwareTelemetryManager(self.sio)
 
         # Firmware adapter for motion control
-        self.firmware = FirmwareAdapter(
-            self.sio, self.param_manager, self.pose_reached_event, self.console
-        )
+        self.firmware = FirmwareAdapter(self.sio, self.param_manager, self.pose_reached_event, self.console)
 
         # Calibration state
         self.pid_type: PidType = PidType.LINEAR_POSE
@@ -129,7 +128,7 @@ class PidCalibration:
         self.console.show_panel(
             "This tool calibrates the robot's PID gains through manual tuning:\n"
             "1. [header]Select PID type[/] - Choose which controller to tune\n"
-            "2. [header]Observe behavior[/] - Watch robot response to test movements\n"
+            "2. [header]Observe behavior[/] - Watch robot response to test motions\n"
             "3. [header]Adjust gains[/] - Modify Kp, Ki, Kd until satisfactory",
             title="PID Calibration Tool",
         )
@@ -192,6 +191,15 @@ class PidCalibration:
         kd = await self.console.get_float("Kd", default=self.gains.kd)
         return PidGains(kp=kp, ki=ki, kd=kd)
 
+    def _load_graph_layout(self) -> None:
+        """Load the graph layout matching the current PID type."""
+        if not self.graph_bridge:
+            return
+        layout_path = self.pid_type.command_kind.layout_path
+        config_data = yaml.safe_load(layout_path.read_text())
+        config = TelemetryGraphConfig.model_validate(config_data)
+        self.graph_bridge.emit_load_config(config)
+
     def _graph_clear_and_start(self) -> None:
         """Clear the graph and start recording."""
         if self.graph_bridge:
@@ -203,41 +211,81 @@ class PidCalibration:
         if self.graph_bridge:
             self.graph_bridge.emit_stop_recording()
 
-    async def _execute_movement(self) -> None:
-        """Execute one back-and-forth movement cycle based on pid_type.movement_kind."""
-        dist = self.pid_type.default_distance
-        kind = self.pid_type.movement_kind
+    async def _execute_motion(self) -> None:
+        """Execute one back-and-forth motion cycle based on pid_type."""
+        kind = self.pid_type.motion_kind
+        command = self.pid_type.command_kind
 
-        if kind == MovementKind.LINEAR:
-            self.console.show_info(f"Moving forward {dist} mm...")
-            if not await self.firmware.goto(dist, 0, 0):
-                self.console.show_warning("Movement timeout - robot may not have reached target")
-            await asyncio.sleep(0.25)
-            self.console.show_info(f"Moving backward {dist} mm...")
-            if not await self.firmware.goto(0, 0, 0):
-                self.console.show_warning("Movement timeout - robot may not have reached target")
+        match (command, kind):
+            case (CommandKind.POSE, MotionKind.LINEAR):
+                dist = self.pid_type.default_distance
 
-        elif kind == MovementKind.ANGULAR:
-            self.console.show_info(f"Rotating +{dist} deg...")
-            if not await self.firmware.goto(0, 0, dist):
-                self.console.show_warning("Movement timeout - robot may not have reached target")
-            await asyncio.sleep(0.25)
-            self.console.show_info(f"Rotating -{dist} deg...")
-            if not await self.firmware.goto(0, 0, 0):
-                self.console.show_warning("Movement timeout - robot may not have reached target")
+                self.console.show_info(f"Moving forward {dist} mm...")
+                if not await self.firmware.goto(dist, 0, 0):
+                    self.console.show_warning("Motion timeout - robot may not have reached target")
+                await asyncio.sleep(0.25)
+                self.console.show_info(f"Moving backward {dist} mm...")
+                if not await self.firmware.goto(0, 0, 0):
+                    self.console.show_warning("Motion timeout - robot may not have reached target")
 
-    async def _run_calibration_loop(self) -> None:
+            case (CommandKind.POSE, MotionKind.ANGULAR):
+                dist = self.pid_type.default_distance
+
+                self.console.show_info(f"Rotating +{dist} deg...")
+                if not await self.firmware.goto(0, 0, dist):
+                    self.console.show_warning("Motion timeout - robot may not have reached target")
+                await asyncio.sleep(0.25)
+                self.console.show_info(f"Rotating -{dist} deg...")
+                if not await self.firmware.goto(0, 0, 0):
+                    self.console.show_warning("Motion timeout - robot may not have reached target")
+
+            case (CommandKind.SPEED, MotionKind.LINEAR):
+                speed = self.pid_type.default_speed
+                duration_ms = self.pid_type.default_duration_ms
+                duration_s = duration_ms / 1000.0
+
+                self.console.show_info(f"Speed forward at {speed} mm/s for {duration_ms} ms...")
+                await self.firmware.send_speed_order(speed, 0, duration_ms)
+                await asyncio.sleep(duration_s + 0.25)
+                self.console.show_info(f"Speed backward at {speed} mm/s for {duration_ms} ms...")
+                await self.firmware.send_speed_order(-speed, 0, duration_ms)
+                await asyncio.sleep(duration_s + 0.25)
+
+            case (CommandKind.SPEED, MotionKind.ANGULAR):
+                speed = self.pid_type.default_speed
+                duration_ms = self.pid_type.default_duration_ms
+                duration_s = duration_ms / 1000.0
+
+                self.console.show_info(f"Speed rotate +{speed} deg/s for {duration_ms} ms...")
+                await self.firmware.send_speed_order(0, speed, duration_ms)
+                await asyncio.sleep(duration_s + 0.25)
+                self.console.show_info(f"Speed rotate -{speed} deg/s for {duration_ms} ms...")
+                await self.firmware.send_speed_order(0, -speed, duration_ms)
+                await asyncio.sleep(duration_s + 0.25)
+
+    async def _pid_calibration_loop(self) -> None:
         """Run the PID calibration loop."""
-        dist = self.pid_type.default_distance
-        kind = self.pid_type.movement_kind
+        kind = self.pid_type.motion_kind
+        command = self.pid_type.command_kind
 
-        movement_descriptions = {
-            MovementKind.LINEAR: f"{dist} mm forward, then {dist} mm backward",
-            MovementKind.ANGULAR: f"+{dist} deg rotation, then -{dist} deg rotation",
-        }
+        match (command, kind):
+            case (CommandKind.POSE, MotionKind.LINEAR):
+                dist = self.pid_type.default_distance
+                motion_desc = f"{dist} mm forward, then {dist} mm backward"
+            case (CommandKind.POSE, MotionKind.ANGULAR):
+                dist = self.pid_type.default_distance
+                motion_desc = f"+{dist} deg rotation, then -{dist} deg rotation"
+            case (CommandKind.SPEED, MotionKind.LINEAR):
+                speed = self.pid_type.default_speed
+                duration_ms = self.pid_type.default_duration_ms
+                motion_desc = f"{speed} mm/s forward for {duration_ms} ms, then reverse"
+            case (CommandKind.SPEED, MotionKind.ANGULAR):
+                speed = self.pid_type.default_speed
+                duration_ms = self.pid_type.default_duration_ms
+                motion_desc = f"{speed} deg/s rotation for {duration_ms} ms, then reverse"
 
         self.console.show_rule(f"{self.pid_type.label} Calibration")
-        self.console.show_info(f"Movement: {movement_descriptions[kind]}")
+        self.console.show_info(f"Motion: {motion_desc}")
 
         iteration = 0
         while True:
@@ -249,8 +297,8 @@ class PidCalibration:
             self.console.show_rule(f"Iteration {iteration}")
             self._display_gains(self.gains, "Current Gains")
 
-            await self.console.wait_for_enter("Press Enter to start movement")
-            await self._execute_movement()
+            await self.console.wait_for_enter("Press Enter to start motion")
+            await self._execute_motion()
 
             self._graph_stop()
 
@@ -269,40 +317,48 @@ class PidCalibration:
     async def _run_calibration(self) -> None:
         """Run the PID calibration procedure."""
         self._display_intro()
-        await self._select_pid_type()
 
-        # Load graph plot for the selected PID type
-        if self.graph_bridge and self.pid_type.graph_plot:
-            self.graph_bridge.emit_load_plot(self.pid_type.graph_plot)
+        while True:
+            # Select the PID type to calibrate
+            await self._select_pid_type()
 
-        # Set the appropriate controller
-        controller = self.pid_type.controller
-        self.console.show_info(f"Setting controller to {controller.name}...")
-        await self.firmware.set_controller(controller)
-        self.console.show_success(f"Controller set to {controller.name}")
+            # Load the appropriate graph layout
+            self._load_graph_layout()
 
-        # Load gains from firmware
-        self.console.show_info("Loading PID gains from firmware...")
-        self.gains = await self.firmware.load_pid_gains(self.pid_type)
-        self.initial_gains = self.gains.copy()
-        self.console.show_success("Gains loaded successfully")
+            # Set the appropriate controller
+            controller = self.pid_type.controller
+            self.console.show_info(f"Setting controller to {controller.name}...")
+            await self.firmware.set_controller(controller)
+            self.console.show_success(f"Controller set to {controller.name}")
 
-        # Run calibration loop
-        await self._run_calibration_loop()
+            # Load gains from firmware
+            self.console.show_info("Loading PID gains from firmware...")
+            self.gains = await self.firmware.load_pid_gains(self.pid_type)
+            self.initial_gains = self.gains.copy()
+            self.console.show_success("Gains loaded successfully")
 
-        # Final summary
-        self.console.print()
-        self._display_final_summary()
+            # Run PID calibration loop
+            await self._pid_calibration_loop()
 
-        save_gains = await self.console.confirm("Save calibrated gains to firmware?")
-        if save_gains:
-            self.console.show_info("Saving gains to firmware...")
-            await self.firmware.save_pid_gains(self.pid_type, self.gains)
-            self.console.show_success("Gains saved successfully!")
-        else:
-            self.console.show_warning("Restoring initial gains...")
-            await self.firmware.save_pid_gains(self.pid_type, self.initial_gains)
-            self.console.show_warning("Initial gains restored.")
+            # Final summary
+            self.console.print()
+            self._display_final_summary()
+
+            # Save final gains
+            save_gains = await self.console.confirm("Save calibrated gains to firmware?")
+            if save_gains:
+                self.console.show_info("Saving gains to firmware...")
+                await self.firmware.save_pid_gains(self.pid_type, self.gains)
+                self.console.show_success("Gains saved successfully!")
+            else:
+                self.console.show_warning("Restoring initial gains...")
+                await self.firmware.save_pid_gains(self.pid_type, self.initial_gains)
+                self.console.show_warning("Initial gains restored.")
+
+            # Ask to calibrate another PID
+            self.console.print()
+            if not await self.console.confirm("Calibrate another PID?", default=False):
+                break
 
     async def run(self) -> None:
         """Main entry point: connect, run calibration, disconnect."""

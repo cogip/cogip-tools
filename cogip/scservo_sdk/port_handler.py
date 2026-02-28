@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-import time
-import serial
 import sys
-import platform
+import time
+
+import serial
 
 DEFAULT_BAUDRATE = 1000000
-LATENCY_TIMER = 50 
+LATENCY_TIMER = 50
 
-class PortHandler(object):
+class PortHandler:
     def __init__(self, port_name):
         self.is_open = False
         self.baudrate = DEFAULT_BAUDRATE
@@ -113,4 +113,4 @@ class PortHandler(object):
         if baudrate in [4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 250000, 500000, 921600, 1000000]:
             return baudrate
         else:
-            return -1          
+            return -1

@@ -16,6 +16,7 @@ class PlotConfig(BaseModel):
     col: int
     keys: list[str]
     y_unit: str = ""
+    y_range: tuple[float, float] | None = None
     rowspan: int = 1
     colspan: int = 1
 

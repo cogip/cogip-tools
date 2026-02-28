@@ -9,7 +9,6 @@ from pathlib import Path
 import yaml
 
 from cogip.models.telemetry_graph import PlotConfig, TelemetryGraphConfig
-
 from .bridge import TelemetryGraphBridge
 from .telemetry_view import TelemetryView
 

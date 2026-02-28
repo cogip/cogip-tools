@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from .scservo_def import *
-from .protocol_packet_handler import *
 from .group_sync_read import *
 from .group_sync_write import *
+from .protocol_packet_handler import *
+from .scservo_def import *
 
 # define baud rate
 SMS_STS_1M = 0

@@ -1,5 +1,5 @@
-# PID Tuning Telemetry Layout
-# Two plots side by side: Linear and Angular speed control
+# PID Tuning Telemetry Layout - Speed only
+# Two plots side by side: Linear and Angular speed
 
 plots:
   - title: "Linear Speed"

@@ -9,7 +9,7 @@ from PySide6.QtCore import Signal as QtSignal
 from PySide6.QtCore import Slot as QtSlot
 
 from cogip.models.firmware_telemetry import TelemetryData
-
+from cogip.models.telemetry_graph import TelemetryGraphConfig
 from .telemetry_view import TelemetryView
 
 
@@ -26,7 +26,7 @@ class TelemetryGraphBridge(QObject):
     signal_clear = QtSignal()
     signal_start_recording = QtSignal()
     signal_stop_recording = QtSignal()
-    signal_load_plot = QtSignal(str)  # plot title to load
+    signal_load_config = QtSignal(object)  # TelemetryGraphConfig
 
     def __init__(self, widget: TelemetryView):
         super().__init__()
@@ -37,7 +37,7 @@ class TelemetryGraphBridge(QObject):
         self.signal_clear.connect(self._on_clear)
         self.signal_start_recording.connect(self._on_start_recording)
         self.signal_stop_recording.connect(self._on_stop_recording)
-        self.signal_load_plot.connect(self._on_load_plot)
+        self.signal_load_config.connect(self._on_load_config)
 
     @QtSlot(object)
     def _on_telemetry(self, data: TelemetryData) -> None:
@@ -59,10 +59,10 @@ class TelemetryGraphBridge(QObject):
         """Handle stop recording signal."""
         self._widget.stop_recording()
 
-    @QtSlot(str)
-    def _on_load_plot(self, title: str) -> None:
-        """Handle load plot signal."""
-        self._widget.load_plot(title)
+    @QtSlot(object)
+    def _on_load_config(self, config: TelemetryGraphConfig) -> None:
+        """Handle load config signal."""
+        self._widget.load_config(config)
 
     # Public methods called from asyncio context
     def emit_telemetry(self, data: TelemetryData) -> None:
@@ -81,6 +81,6 @@ class TelemetryGraphBridge(QObject):
         """Stop recording telemetry data (thread-safe)."""
         self.signal_stop_recording.emit()
 
-    def emit_load_plot(self, title: str) -> None:
-        """Load only the specified plot by title (thread-safe)."""
-        self.signal_load_plot.emit(title)
+    def emit_load_config(self, config: TelemetryGraphConfig) -> None:
+        """Load a new graph configuration (thread-safe)."""
+        self.signal_load_config.emit(config)

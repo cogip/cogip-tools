@@ -164,7 +164,7 @@ class CaptureCratesAction(Action):
         for crate_id, pose in crates_found:
             self.logger.info(
                 f"{self.name}: - {crate_id}: x={pose.x: 5.2f} y={pose.y: 5.2f} O={pose.O: 3.2f}°"
-                f" dist={math.dist((0,0),(pose.x,pose.y)):5.2f}mm"
+                f" dist={math.dist((0, 0), (pose.x, pose.y)):5.2f}mm"
             )
 
         # Analyze crates

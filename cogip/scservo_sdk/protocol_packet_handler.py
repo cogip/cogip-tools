@@ -22,7 +22,7 @@ ERRBIT_OVERELE = 8
 ERRBIT_OVERLOAD = 32
 
 
-class protocol_packet_handler(object):
+class protocol_packet_handler:
     def __init__(self, portHandler, protocol_end):
         #self.scs_setend(protocol_end)# SCServo bit end(STS/SMS=0, SCS=1)
         self.portHandler = portHandler
@@ -72,7 +72,7 @@ class protocol_packet_handler(object):
             return (w >> 8) & 0xFF
         else:
             return w & 0xFF
-        
+
     def getProtocolVersion(self):
         return 1.0
 
@@ -110,7 +110,7 @@ class protocol_packet_handler(object):
 
         if error & ERRBIT_OVERELE:
             return "[ServoStatus] OverEle error!"
-        
+
         if error & ERRBIT_OVERLOAD:
             return "[ServoStatus] Overload error!"
 

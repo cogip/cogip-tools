@@ -383,6 +383,7 @@ class CameraExtrinsicParameters(BaseModel):
     def rvec(self) -> ArrayLike:
         return np.array([self.roll, self.pitch, self.yaw])
 
+
 class PowerRailsStatus(BaseModel):
     """
     Model representing the status of power rails.

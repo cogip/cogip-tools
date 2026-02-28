@@ -2,6 +2,7 @@
 
 from .scservo_def import *
 
+
 class GroupSyncRead:
     def __init__(self, ph, start_address, data_length):
         self.ph = ph
@@ -88,20 +89,20 @@ class GroupSyncRead:
         data = []
         rx_length = len(rxpacket)
         # print(rx_length)
-        rx_index = 0;
+        rx_index = 0
         while (rx_index+6+data_length) <= rx_length:
             headpacket = [0x00, 0x00, 0x00]
             while rx_index < rx_length:
-                headpacket[2] = headpacket[1];
-                headpacket[1] = headpacket[0];
-                headpacket[0] = rxpacket[rx_index];
+                headpacket[2] = headpacket[1]
+                headpacket[1] = headpacket[0]
+                headpacket[0] = rxpacket[rx_index]
                 rx_index += 1
                 if (headpacket[2] == 0xFF) and (headpacket[1] == 0xFF) and headpacket[0] == scs_id:
                     # print(rx_index)
                     break
             # print(rx_index+3+data_length)
             if (rx_index+3+data_length) > rx_length:
-                break;
+                break
             if rxpacket[rx_index] != (data_length+2):
                 rx_index += 1
                 # print(rx_index)
@@ -119,7 +120,7 @@ class GroupSyncRead:
             # print(calSum)
             if calSum != rxpacket[rx_index]:
                 return None, COMM_RX_CORRUPT
-            return data, COMM_SUCCESS 
+            return data, COMM_SUCCESS
         # print(rx_index)
         return None, COMM_RX_CORRUPT
 

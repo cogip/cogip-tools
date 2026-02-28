@@ -30,16 +30,16 @@ class TelemetryView(QWidget):
     """
 
     DEFAULT_COLORS: list[Color] = [
-        (31, 119, 180),    # Blue
-        (255, 127, 14),    # Orange
-        (44, 160, 44),     # Green
-        (214, 39, 40),     # Red
-        (148, 103, 189),   # Purple
-        (140, 86, 75),     # Brown
-        (227, 119, 194),   # Pink
-        (127, 127, 127),   # Gray
-        (188, 189, 34),    # Olive
-        (23, 190, 207),    # Cyan
+        (31, 119, 180),  # Blue
+        (255, 127, 14),  # Orange
+        (44, 160, 44),  # Green
+        (214, 39, 40),  # Red
+        (148, 103, 189),  # Purple
+        (140, 86, 75),  # Brown
+        (227, 119, 194),  # Pink
+        (127, 127, 127),  # Gray
+        (188, 189, 34),  # Olive
+        (23, 190, 207),  # Cyan
     ]
 
     def __init__(self, config: TelemetryGraphConfig, parent: QWidget | None = None):
@@ -80,6 +80,14 @@ class TelemetryView(QWidget):
         self._graph_layout = pg.GraphicsLayoutWidget()
         layout.addWidget(self._graph_layout)
 
+        self._build_plots()
+
+        # Set window properties
+        self.setWindowTitle("Telemetry View")
+        self.setMinimumSize(900, 700)
+
+    def _build_plots(self) -> None:
+        """Build plots from current config."""
         # Assign colors to all keys
         self._assign_colors()
 
@@ -121,42 +129,23 @@ class TelemetryView(QWidget):
                 # Map key hash to key name
                 self._key_hashes[fnv1a_hash(key)] = key
 
-        # Set window properties
-        self.setWindowTitle("Telemetry View")
-        self.setMinimumSize(900, 700)
-
-    def load_plot(self, title: str) -> None:
-        """Rebuild the UI showing only the plot matching the given title."""
-        plot_config = next((p for p in self._config.plots if p.title == title), None)
-        if plot_config is None:
-            return
+    def load_config(self, config: TelemetryGraphConfig) -> None:
+        """Load a new configuration, rebuilding all plots."""
+        self._config = config
+        self._recording = False
+        self._start_time_ms = None
+        self._update_counter = 0
 
         # Clear existing state
         self._data.clear()
         self._curves.clear()
         self._plots.clear()
         self._key_hashes.clear()
+        self._colors.clear()
+
+        # Clear the graphics layout and rebuild
         self._graph_layout.clear()
-
-        # Create single plot at position (0, 0)
-        plot = self._graph_layout.addPlot(row=0, col=0, title=plot_config.title)
-        y_label = f"Value ({plot_config.y_unit})" if plot_config.y_unit else "Value"
-        plot.setLabel("left", y_label)
-        plot.setLabel("bottom", "Time (ms)")
-        plot.addLegend(offset=(10, 10))
-        plot.showGrid(x=True, y=True, alpha=0.3)
-
-        self._plots[plot_config.title] = plot
-
-        for key in plot_config.keys:
-            color = self._colors[key]
-            curve = plot.plot(pen=pg.mkPen(color=color, width=2), symbol="o", symbolSize=5, symbolBrush=color, name=key)
-            self._curves[key] = curve
-            self._data[key] = (
-                deque(maxlen=self._config.max_points),
-                deque(maxlen=self._config.max_points),
-            )
-            self._key_hashes[fnv1a_hash(key)] = key
+        self._build_plots()
 
     def _assign_colors(self) -> None:
         """Assign colors to all telemetry keys."""

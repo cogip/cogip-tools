@@ -161,7 +161,7 @@ class FirmwareAdapter:
             timeout: Maximum time to wait in seconds
 
         Returns:
-            True if movement completed, False if timeout
+            True if motion completed, False if timeout
         """
         await self._send_pose_order(x, y, orientation)
         return await self._wait_pose_reached(timeout)

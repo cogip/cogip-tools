@@ -76,7 +76,7 @@ def main_opt(
     app = QApplication(sys.argv)
 
     # Create telemetry graph widget + bridge
-    graph_config_path = Path(__file__).with_name("pid_graph_layout.yaml")
+    graph_config_path = Path(__file__).with_name("pid_graph_pose_layout.yaml")
     widget, bridge = create_telemetry_graph(graph_config_path)
 
     # Create calibration controller with graph bridge
@@ -94,7 +94,7 @@ def main_opt(
     # Start asyncio in background thread
     asyncio_thread = Thread(target=run_asyncio, daemon=True)
     asyncio_thread.start()
-    
+
     # Restore SIGINT handling so Ctrl+C works despite socketio/engineio
     # wrapping the signal handler. The QTimer ensures Python gets a chance
     # to run signal handlers while the Qt event loop is running.

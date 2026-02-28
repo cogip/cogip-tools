@@ -2,6 +2,7 @@
 
 from .scservo_def import *
 
+
 class GroupSyncWrite:
     def __init__(self, ph, start_address, data_length):
         self.ph = ph
