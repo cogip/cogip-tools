@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from cogip.cpp.libraries.models import MotionDirection
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.models import PoseOrder as SharedPoseOrder
-from cogip.protobuf import PB_PathPose
+from cogip.protobuf import PB_PathPose, PB_SpeedOrder
 
 
 class MenuEntry(BaseModel):
@@ -107,6 +107,32 @@ class Speed(BaseModel):
 
     distance: float = 0.0
     angle: float = 0.0
+
+
+class SpeedOrder(BaseModel):
+    """
+    A speed order to send to the robot.
+
+    Attributes:
+        linear_speed_mm_s: Linear speed in mm/s (signed)
+        angular_speed_deg_s: Angular speed in deg/s (signed)
+        duration_ms: Duration in milliseconds
+    """
+
+    linear_speed_mm_s: int = 0
+    angular_speed_deg_s: int = 0
+    duration_ms: int = 0
+
+    def copy_pb(self, pb_speed_order: PB_SpeedOrder) -> None:
+        """
+        Copy data into a Protobuf message.
+
+        Arguments:
+            pb_speed_order: Protobuf message to fill
+        """
+        pb_speed_order.linear_speed_mm_s = self.linear_speed_mm_s
+        pb_speed_order.angular_speed_deg_s = self.angular_speed_deg_s
+        pb_speed_order.duration_ms = self.duration_ms
 
 
 class PathPose(Pose):
@@ -356,6 +382,7 @@ class CameraExtrinsicParameters(BaseModel):
     @property
     def rvec(self) -> ArrayLike:
         return np.array([self.roll, self.pitch, self.yaw])
+
 
 class PowerRailsStatus(BaseModel):
     """
