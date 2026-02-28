@@ -24,6 +24,7 @@ from .models import (  # noqa
     PowerSourceStatus,
     RobotState,
     ShellMenu,
+    SpeedOrder,
     Vertex,
 )
 from .odometry_calibration import (  # noqa
