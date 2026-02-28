@@ -1,0 +1,24 @@
+# PID Tuning Telemetry Layout
+# Two plots side by side: Linear and Angular speed control
+
+plots:
+  - title: "Linear Speed"
+    row: 0
+    col: 0
+    keys:
+      - linear_speed_order
+      - linear_current_speed
+      - linear_feedforward_velocity
+      - linear_speed_command
+
+  - title: "Angular Speed"
+    row: 0
+    col: 1
+    keys:
+      - angular_speed_order
+      - angular_current_speed
+      - angular_feedforward_velocity
+      - angular_speed_command
+
+max_points: 2000
+retention_seconds: 60
