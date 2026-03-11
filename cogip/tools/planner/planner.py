@@ -438,6 +438,17 @@ class Planner:
         # When the firmware receives a pose start, it does not send its updated pose current,
         # so do it here.
         self.shared_pose_current_buffer.push(pose_start.x, pose_start.y, pose_start.O)
+
+        # Write to shared memory using the same lock as set_controller and path.
+        if self.shared_avoidance_path_lock is not None and self.shared_memory is not None:
+            self.shared_avoidance_path_lock.start_writing()
+            self.shared_memory.has_pose_start = True
+            self.shared_memory.pose_start_x = pose_start.x
+            self.shared_memory.pose_start_y = pose_start.y
+            self.shared_memory.pose_start_angle = pose_start.O
+            self.shared_avoidance_path_lock.finish_writing()
+            self.shared_avoidance_path_lock.post_update()
+        # Also emit via SIO for server/dashboard state tracking
         await self.sio_ns.emit("pose_start", pose_start.model_dump())
 
     async def path_reset(self):

@@ -459,10 +459,10 @@ class Copilot:
     async def new_path_event_loop(self):
         """
         Async worker watching for shared memory updates from planner.
-        Handles set_controller and path commands. Both use the same
-        AvoidancePath lock so that this single event loop processes them
-        sequentially, guaranteeing CAN message ordering (set_controller
-        always arrives before path_start on the firmware).
+        Handles set_controller, pose_start and path commands. All use the
+        same AvoidancePath lock so that this single event loop processes
+        them sequentially, guaranteeing CAN message ordering on the
+        firmware side.
         """
         logger.info("Copilot: Task New Path Event Watcher Loop started")
         try:
@@ -476,6 +476,16 @@ class Copilot:
                     pb_controller = PB_Controller()
                     pb_controller.id = controller_id
                     await self.pbcom.send_can_message(controller_uuid, pb_controller)
+
+                # Read pose_start from shared memory (one-shot, consumed after sending)
+                if self.shared_memory.has_pose_start:
+                    logger.info("Copilot: Sending pose_start")
+                    pb_start_pose = PB_PathPose()
+                    pb_start_pose.pose.x = int(self.shared_memory.pose_start_x)
+                    pb_start_pose.pose.y = int(self.shared_memory.pose_start_y)
+                    pb_start_pose.pose.O = int(self.shared_memory.pose_start_angle)
+                    await self.pbcom.send_can_message(pose_start_uuid, pb_start_pose)
+                    self.shared_memory.has_pose_start = False
 
                 # Read path from shared memory
                 path_size = len(self.shared_avoidance_path)
