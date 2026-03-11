@@ -62,6 +62,7 @@ class TestRectangleAlternatingAction(Action):
 
         # Current controller index
         self.controller_index = 0
+        self._first_run = True
 
     def get_corners_for_table(self) -> list[tuple[float, float]]:
         """Get rectangle corners based on current table type.
@@ -124,19 +125,21 @@ class TestRectangleAlternatingAction(Action):
         logger.info(f"=== Testing {current_controller.name} on {table_name} ({ctrl_num}/{ctrl_total}) ===")
 
         # Set the controller
-        await self.planner.set_controller(current_controller, force=True)
+        await self.planner.set_controller(current_controller, force=True, notify=False)
 
-        # Get corners for current table and set start position (first corner)
-        corners = self.get_corners_for_table()
-        start_x, start_y = corners[0]
-
-        # Set start position
-        pose_init = models.Pose(
-            x=start_x,
-            y=start_y,
-            O=self.angle,
-        )
-        await self.planner.set_pose_start(pose_init)
+        # Set start position only on first run; on subsequent runs the robot
+        # is already at corner 0. The strategy is recreated on reset, so
+        # _first_run is True again after a reset.
+        if self._first_run:
+            corners = self.get_corners_for_table()
+            start_x, start_y = corners[0]
+            pose_init = models.Pose(
+                x=start_x,
+                y=start_y,
+                O=self.angle,
+            )
+            await self.planner.set_pose_start(pose_init, notify=False)
+            self._first_run = False
 
         # Reset path on firmware
         await self.planner.path_reset()
