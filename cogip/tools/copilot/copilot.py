@@ -469,9 +469,10 @@ class Copilot:
             while True:
                 await asyncio.to_thread(self.shared_avoidance_path_lock.wait_update)
 
-                # Read controller from shared memory (sticky value, always sent if >= 0)
+                # Read controller from shared memory (consumed after sending)
                 controller_id = self.shared_memory.path_controller_id
                 if controller_id >= 0:
+                    self.shared_memory.path_controller_id = -1
                     logger.info(f"Copilot: Setting controller {controller_id}")
                     pb_controller = PB_Controller()
                     pb_controller.id = controller_id
@@ -487,7 +488,7 @@ class Copilot:
                     await self.pbcom.send_can_message(pose_start_uuid, pb_start_pose)
                     self.shared_memory.has_pose_start = False
 
-                # Read path from shared memory
+                # Read path from shared memory (consumed after sending)
                 path_size = len(self.shared_avoidance_path)
                 if path_size == 0:
                     continue
@@ -505,6 +506,9 @@ class Copilot:
                     pb_pose_order = PB_PathPose()
                     pose_order.copy_pb(pb_pose_order)
                     await self.pbcom.send_can_message(path_add_point_uuid, pb_pose_order)
+
+                # Clear shared memory path to avoid resending on next wake-up
+                self.shared_avoidance_path.clear()
 
                 # Start path execution
                 await self.pbcom.send_can_message(path_start_uuid, None)
