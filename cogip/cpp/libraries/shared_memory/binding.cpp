@@ -155,6 +155,22 @@ NB_MODULE(shared_memory, m) {
             [](SharedMemory& self) { return self.getData()->path_controller_id; },
             [](SharedMemory& self, int32_t id) { self.getData()->path_controller_id = id; },
             "Controller to set before path execution, -1 = no change")
+        .def_prop_rw("has_pose_start",
+            [](SharedMemory& self) { return self.getData()->has_pose_start; },
+            [](SharedMemory& self, bool has) { self.getData()->has_pose_start = has; },
+            "Whether pose_start should be sent to firmware")
+        .def_prop_rw("pose_start_x",
+            [](SharedMemory& self) { return self.getData()->pose_start.x; },
+            [](SharedMemory& self, double x) { self.getData()->pose_start.x = x; },
+            "X coordinate of the start pose")
+        .def_prop_rw("pose_start_y",
+            [](SharedMemory& self) { return self.getData()->pose_start.y; },
+            [](SharedMemory& self, double y) { self.getData()->pose_start.y = y; },
+            "Y coordinate of the start pose")
+        .def_prop_rw("pose_start_angle",
+            [](SharedMemory& self) { return self.getData()->pose_start.angle; },
+            [](SharedMemory& self, double angle) { self.getData()->pose_start.angle = angle; },
+            "Orientation angle of the start pose")
         .def("get_sim_camera_data",
              [](SharedMemory &self) -> nb::ndarray<uint8_t, nb::numpy, nb::shape<SIM_CAMERA_HEIGHT, SIM_CAMERA_WIDTH, 4>> {
                  auto &data = self.getSimCameraData();
