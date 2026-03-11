@@ -42,6 +42,7 @@ typedef struct {
     models::pose_order_t avoidance_new_pose_order;  ///< New pose order for the avoidance process
     models::pose_order_t avoidance_pose_order;  ///< Current pose order for the avoidance process
     models::pose_order_list_t avoidance_path;  ///< Path for the avoidance process
+    int32_t path_controller_id;      ///< Controller to set before path execution, -1 = no change
     uint8_t sim_camera_data[SIM_CAMERA_WIDTH * SIM_CAMERA_HEIGHT * 4];  ///< Simulated camera data in RGBA format
 } shared_data_t;
 

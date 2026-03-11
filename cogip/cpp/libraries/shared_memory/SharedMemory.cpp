@@ -52,6 +52,7 @@ SharedMemory::SharedMemory(const std::string& name, bool owner):
             data_->lidar_data[i][1] = -1;
             data_->lidar_data[i][2] = -1;
         }
+        data_->path_controller_id = -1;
     }
 
     for (const auto& [lock, name] : lock2str) {

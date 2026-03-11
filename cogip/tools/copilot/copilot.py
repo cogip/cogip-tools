@@ -12,6 +12,7 @@ from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePrior
 from cogip.models.actuators import ActuatorsKindEnum
 from cogip.protobuf import (
     PB_ActuatorState,
+    PB_Controller,
     PB_EmergencyStopStatus,
     PB_ParameterGetResponse,
     PB_ParameterSetResponse,
@@ -457,13 +458,26 @@ class Copilot:
 
     async def new_path_event_loop(self):
         """
-        Async worker watching for new path orders in shared memory.
-        When a new path is available, all waypoints are sent to the firmware using the path API.
+        Async worker watching for shared memory updates from planner.
+        Handles set_controller and path commands. Both use the same
+        AvoidancePath lock so that this single event loop processes them
+        sequentially, guaranteeing CAN message ordering (set_controller
+        always arrives before path_start on the firmware).
         """
         logger.info("Copilot: Task New Path Event Watcher Loop started")
         try:
             while True:
                 await asyncio.to_thread(self.shared_avoidance_path_lock.wait_update)
+
+                # Read controller from shared memory (sticky value, always sent if >= 0)
+                controller_id = self.shared_memory.path_controller_id
+                if controller_id >= 0:
+                    logger.info(f"Copilot: Setting controller {controller_id}")
+                    pb_controller = PB_Controller()
+                    pb_controller.id = controller_id
+                    await self.pbcom.send_can_message(controller_uuid, pb_controller)
+
+                # Read path from shared memory
                 path_size = len(self.shared_avoidance_path)
                 if path_size == 0:
                     continue
