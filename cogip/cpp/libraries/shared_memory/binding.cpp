@@ -151,6 +151,10 @@ NB_MODULE(shared_memory, m) {
              "Get PoseOrder object wrapping the shared memory avoidance_pose_order structure.")
         .def("get_avoidance_path", &SharedMemory::getAvoidancePath, nb::rv_policy::reference_internal,
              "Get PoseOrderList object wrapping the shared memory avoidance_path structure.")
+        .def_prop_rw("path_controller_id",
+            [](SharedMemory& self) { return self.getData()->path_controller_id; },
+            [](SharedMemory& self, int32_t id) { self.getData()->path_controller_id = id; },
+            "Controller to set before path execution, -1 = no change")
         .def("get_sim_camera_data",
              [](SharedMemory &self) -> nb::ndarray<uint8_t, nb::numpy, nb::shape<SIM_CAMERA_HEIGHT, SIM_CAMERA_WIDTH, 4>> {
                  auto &data = self.getSimCameraData();
