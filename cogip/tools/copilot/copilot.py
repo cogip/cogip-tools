@@ -12,6 +12,7 @@ from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePrior
 from cogip.models.actuators import ActuatorsKindEnum
 from cogip.protobuf import (
     PB_ActuatorState,
+    PB_Controller,
     PB_EmergencyStopStatus,
     PB_ParameterGetResponse,
     PB_ParameterSetResponse,
@@ -40,6 +41,10 @@ brake_uuid: int = 0x1007
 controller_uuid: int = 0x1008
 blocked_uuid: int = 0x1009
 intermediate_pose_reached_uuid: int = 0x100A
+path_reset_uuid: int = 0x100D
+path_add_point_uuid: int = 0x100E
+path_start_uuid: int = 0x100F
+path_complete_uuid: int = 0x1010
 # Actuators: 0x2000 - 0x2FFF
 actuators_thread_start_uuid: int = 0x2001
 actuators_thread_stop_uuid: int = 0x2002
@@ -453,21 +458,60 @@ class Copilot:
 
     async def new_path_event_loop(self):
         """
-        Async worker watching for new path orders in shared memory.
-        When a new path is available, its first pose is sent to the firmware.
+        Async worker watching for shared memory updates from planner.
+        Handles set_controller, pose_start and path commands. All use the
+        same AvoidancePath lock so that this single event loop processes
+        them sequentially, guaranteeing CAN message ordering on the
+        firmware side.
         """
         logger.info("Copilot: Task New Path Event Watcher Loop started")
         try:
             while True:
                 await asyncio.to_thread(self.shared_avoidance_path_lock.wait_update)
-                if len(self.shared_avoidance_path) == 0:
+
+                # Read controller from shared memory (consumed after sending)
+                controller_id = self.shared_memory.path_controller_id
+                if controller_id >= 0:
+                    self.shared_memory.path_controller_id = -1
+                    logger.info(f"Copilot: Setting controller {controller_id}")
+                    pb_controller = PB_Controller()
+                    pb_controller.id = controller_id
+                    await self.pbcom.send_can_message(controller_uuid, pb_controller)
+
+                # Read pose_start from shared memory (one-shot, consumed after sending)
+                if self.shared_memory.has_pose_start:
+                    logger.info("Copilot: Sending pose_start")
+                    pb_start_pose = PB_PathPose()
+                    pb_start_pose.pose.x = int(self.shared_memory.pose_start_x)
+                    pb_start_pose.pose.y = int(self.shared_memory.pose_start_y)
+                    pb_start_pose.pose.O = int(self.shared_memory.pose_start_angle)
+                    await self.pbcom.send_can_message(pose_start_uuid, pb_start_pose)
+                    self.shared_memory.has_pose_start = False
+
+                # Read path from shared memory (consumed after sending)
+                path_size = len(self.shared_avoidance_path)
+                if path_size == 0:
                     continue
-                pose_order = models.PathPose.from_shared(self.shared_avoidance_path[0])
-                if self.id > 1:
-                    pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
-                pb_pose_order = PB_PathPose()
-                pose_order.copy_pb(pb_pose_order)
-                await self.pbcom.send_can_message(pose_order_uuid, pb_pose_order)
+
+                logger.info(f"Copilot: Sending path with {path_size} waypoints")
+
+                # Reset path on firmware
+                await self.pbcom.send_can_message(path_reset_uuid, None)
+
+                # Add all waypoints
+                for i in range(path_size):
+                    pose_order = models.PathPose.from_shared(self.shared_avoidance_path[i])
+                    if self.id > 1:
+                        pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
+                    pb_pose_order = PB_PathPose()
+                    pose_order.copy_pb(pb_pose_order)
+                    await self.pbcom.send_can_message(path_add_point_uuid, pb_pose_order)
+
+                # Clear shared memory path to avoid resending on next wake-up
+                self.shared_avoidance_path.clear()
+
+                # Start path execution
+                await self.pbcom.send_can_message(path_start_uuid, None)
 
         except asyncio.CancelledError:
             logger.info("Copilot: Task New Path Event Watcher Loop cancelled")

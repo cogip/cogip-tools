@@ -10,7 +10,6 @@ from cogip.models import FirmwareParameter
 from cogip.models.actuators import ActuatorCommand, PositionalActuatorCommand
 from cogip.protobuf import (
     PB_ActuatorCommand,
-    PB_Controller,
     PB_ParameterGetRequest,
     PB_ParameterSetRequest,
     PB_PathPose,
@@ -99,13 +98,10 @@ class SioEvents(socketio.AsyncClientNamespace):
     async def on_pose_start(self, data: dict[str, Any]):
         """
         Callback on pose start (from planner).
-        Forward to mcu-firmware.
+        CAN is now sent via shared memory event loop for ordering guarantee.
+        SIO is only kept for server/dashboard state tracking.
         """
-        logger.info(f"[SIO] Pose start: {data}")
-        start_pose = models.PathPose.model_validate(data)
-        pb_start_pose = PB_PathPose()
-        start_pose.copy_pb(pb_start_pose)
-        await self.copilot.pbcom.send_can_message(copilot.pose_start_uuid, pb_start_pose)
+        logger.info(f"[SIO] Pose start (info only): {data}")
 
     async def on_pose_order(self, data: dict[str, Any]):
         """
@@ -168,11 +164,10 @@ class SioEvents(socketio.AsyncClientNamespace):
     async def on_set_controller(self, controller: int):
         """
         Callback on set_controller message.
-        Forward to firmware.
+        CAN is now sent via shared memory event loop for ordering guarantee.
+        SIO is only kept for server/dashboard state tracking.
         """
-        pb_controller = PB_Controller()
-        pb_controller.id = controller
-        await self.copilot.pbcom.send_can_message(copilot.controller_uuid, pb_controller)
+        logger.info(f"[SIO] Set controller (info only): {controller}")
 
     async def on_game_start(self):
         """

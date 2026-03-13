@@ -65,6 +65,10 @@ RUN group_exists=$(getent group ${GID} || true) && echo $group_exists \
 ADD .python-version uv.lock pyproject.toml CMakeLists.txt LICENSE /src/
 ADD cogip /src/cogip
 
+# Install the project package at build time to avoid
+# rebuilding C++ extensions on every container start (~40s).
+RUN uv sync -C build-dir=/src/build/docker --link-mode=copy
+
 CMD ["sleep", "infinity"]
 
 
