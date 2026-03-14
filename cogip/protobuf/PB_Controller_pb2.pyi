@@ -8,13 +8,11 @@ DESCRIPTOR: _descriptor.FileDescriptor
 class PB_ControllerEnum(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     QUADPID: _ClassVar[PB_ControllerEnum]
-    ANGULAR_SPEED_TEST: _ClassVar[PB_ControllerEnum]
-    LINEAR_SPEED_TEST: _ClassVar[PB_ControllerEnum]
-    LINEAR_POSE_DISABLED: _ClassVar[PB_ControllerEnum]
+    QUADPID_TRACKER: _ClassVar[PB_ControllerEnum]
+    TRACKER_SPEED_TUNING: _ClassVar[PB_ControllerEnum]
 QUADPID: PB_ControllerEnum
-ANGULAR_SPEED_TEST: PB_ControllerEnum
-LINEAR_SPEED_TEST: PB_ControllerEnum
-LINEAR_POSE_DISABLED: PB_ControllerEnum
+QUADPID_TRACKER: PB_ControllerEnum
+TRACKER_SPEED_TUNING: PB_ControllerEnum
 
 class PB_Controller(_message.Message):
     __slots__ = ("id",)
