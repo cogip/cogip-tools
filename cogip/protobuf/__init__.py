@@ -17,4 +17,5 @@ from .PB_PidEnum_pb2 import PB_PidEnum  # noqa
 from .PB_Controller_pb2 import PB_ControllerEnum, PB_Controller  # noqa
 from .PB_ParameterCommands_pb2 import PB_ParameterGetRequest, PB_ParameterSetRequest, PB_ParameterGetResponse, PB_ParameterSetResponse, PB_ParameterStatus  # noqa
 from .PB_Telemetry_pb2 import PB_TelemetryData
-from .PB_PowerSupply_pb2 import PB_PowerRailsStatus, PB_EmergencyStopStatus, PB_PowerSourceStatus  # noqa
+from .PB_PowerSupply_pb2 import PB_PowerRailsStatus, PB_PowerSourceStatus  # noqa
+from .PB_EmergencyStop_pb2 import PB_EmergencyStopStatus  # noqa

@@ -16,12 +16,6 @@ class PB_PowerRailsStatus(_message.Message):
     pxVx_pgood: bool
     def __init__(self, p3V3_pgood: bool = ..., p5V0_pgood: bool = ..., p7V5_pgood: bool = ..., pxVx_pgood: bool = ...) -> None: ...
 
-class PB_EmergencyStopStatus(_message.Message):
-    __slots__ = ("emergency_stop",)
-    EMERGENCY_STOP_FIELD_NUMBER: _ClassVar[int]
-    emergency_stop: bool
-    def __init__(self, emergency_stop: bool = ...) -> None: ...
-
 class PB_PowerSourceStatus(_message.Message):
     __slots__ = ("battery_valid", "dc_supply_valid")
     BATTERY_VALID_FIELD_NUMBER: _ClassVar[int]

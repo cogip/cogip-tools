@@ -12,7 +12,8 @@ class PB_ActuatorsTypeEnum(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
 
 class PB_PositionalActuatorEnum(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
-    MOTOR_LIFT: _ClassVar[PB_PositionalActuatorEnum]
+    MOTOR_LIFT_1: _ClassVar[PB_PositionalActuatorEnum]
+    MOTOR_LIFT_2: _ClassVar[PB_PositionalActuatorEnum]
 
 class PB_BoolSensorEnum(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
@@ -26,7 +27,8 @@ class PB_PositionalActuatorStateEnum(int, metaclass=_enum_type_wrapper.EnumTypeW
     BLOCKED: _ClassVar[PB_PositionalActuatorStateEnum]
 POSITIONAL: PB_ActuatorsTypeEnum
 BOOL_SENSOR: PB_ActuatorsTypeEnum
-MOTOR_LIFT: PB_PositionalActuatorEnum
+MOTOR_LIFT_1: PB_PositionalActuatorEnum
+MOTOR_LIFT_2: PB_PositionalActuatorEnum
 NONE: PB_BoolSensorEnum
 REACHED: PB_PositionalActuatorStateEnum
 INTERMEDIATE_REACHED: PB_PositionalActuatorStateEnum
