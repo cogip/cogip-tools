@@ -17,6 +17,7 @@ from .models import (  # noqa
     DynRoundObstacle,
     EmergencyStopStatus,
     MenuEntry,
+    MotionDirection,
     Obstacle,
     PathPose,
     Pose,
@@ -24,6 +25,7 @@ from .models import (  # noqa
     PowerSourceStatus,
     RobotState,
     ShellMenu,
+    SpeedOrder,
     Vertex,
 )
 from .odometry_calibration import (  # noqa
@@ -31,4 +33,8 @@ from .odometry_calibration import (  # noqa
     CalibrationState,
     EncoderDeltas,
     OdometryParameters,
+)
+from .telemetry_graph import (  # noqa
+    PlotConfig,
+    TelemetryGraphConfig,
 )

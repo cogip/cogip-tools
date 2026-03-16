@@ -1,0 +1,36 @@
+# PID Tuning Telemetry Layout - Pose (position + speed)
+# Four plots in a 2x2 grid: Polar coordinates (distance, angle, linear speed, angular speed)
+
+plots:
+  - title: "Distance"
+    row: 0
+    col: 0
+    y_unit: "mm"
+    keys:
+      - linear_pose_error
+
+  - title: "Angle"
+    row: 0
+    col: 1
+    y_unit: "deg"
+    keys:
+      - angular_pose_error
+
+  - title: "Linear Speed"
+    row: 1
+    col: 0
+    y_unit: "mm/s"
+    keys:
+      - linear_current_speed
+      - linear_tracker_velocity
+
+  - title: "Angular Speed"
+    row: 1
+    col: 1
+    y_unit: "deg/s"
+    keys:
+      - angular_current_speed
+      - angular_tracker_velocity
+
+max_points: 2000
+retention_seconds: 60
