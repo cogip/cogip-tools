@@ -1,0 +1,188 @@
+parameters:
+  # Odometry
+  - name: qdec_left_polarity
+    value:
+      type: float
+      content: 0.0
+  - name: qdec_right_polarity
+    value:
+      type: float
+      content: 0.0
+  - name: left_wheel_diameter_mm
+    value:
+      type: float
+      content: 0.0
+  - name: right_wheel_diameter_mm
+    value:
+      type: float
+      content: 0.0
+  - name: encoder_wheels_distance_mm
+    value:
+      type: float
+      content: 0.0
+  - name: encoder_wheels_resolution_pulses
+    value:
+      type: float
+      content: 0.0
+
+  # Linear pose PID
+  - name: linear_pose_pid_kp
+    value:
+      type: float
+      content: 0.0
+  - name: linear_pose_pid_ki
+    value:
+      type: float
+      content: 0.0
+  - name: linear_pose_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  # Angular pose PID
+  - name: angular_pose_pid_kp
+    value:
+      type: float
+      content: 0.0
+  - name: angular_pose_pid_ki
+    value:
+      type: float
+      content: 0.0
+  - name: angular_pose_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  # Linear speed PID
+  - name: linear_speed_pid_kp
+    value:
+      type: float
+      content: 0.0
+  - name: linear_speed_pid_ki
+    value:
+      type: float
+      content: 0.0
+  - name: linear_speed_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  # Angular speed PID
+  - name: angular_speed_pid_kp
+    value:
+      type: float
+      content: 0.0
+  - name: angular_speed_pid_ki
+    value:
+      type: float
+      content: 0.0
+  - name: angular_speed_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  # Tracker linear pose PID
+  - name: tracker_linear_pose_pid_kp
+    value:
+      type: float
+      content: 0.0
+  - name: tracker_linear_pose_pid_ki
+    value:
+      type: float
+      content: 0.0
+  - name: tracker_linear_pose_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  # Tracker angular pose PID
+  - name: tracker_angular_pose_pid_kp
+    value:
+      type: float
+      content: 0.0
+  - name: tracker_angular_pose_pid_ki
+    value:
+      type: float
+      content: 0.0
+  - name: tracker_angular_pose_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  # Tracker linear speed PID
+  - name: tracker_linear_speed_pid_kp
+    value:
+      type: float
+      content: 0.0
+  - name: tracker_linear_speed_pid_ki
+    value:
+      type: float
+      content: 0.0
+  - name: tracker_linear_speed_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  # Tracker angular speed PID
+  - name: tracker_angular_speed_pid_kp
+    value:
+      type: float
+      content: 0.0
+  - name: tracker_angular_speed_pid_ki
+    value:
+      type: float
+      content: 0.0
+  - name: tracker_angular_speed_pid_kd
+    value:
+      type: float
+      content: 0.0
+
+  # Pose straight filter thresholds
+  - name: linear_threshold
+    value:
+      type: float
+      content: 0.0
+  - name: angular_threshold
+    value:
+      type: float
+      content: 0.0
+  - name: angular_intermediate_threshold
+    value:
+      type: float
+      content: 0.0
+
+  # Speed limits
+  - name: min_speed_linear
+    value:
+      type: float
+      content: 0.0
+  - name: max_speed_linear
+    value:
+      type: float
+      content: 0.0
+  - name: min_speed_angular
+    value:
+      type: float
+      content: 0.0
+  - name: max_speed_angular
+    value:
+      type: float
+      content: 0.0
+
+  # Acceleration/deceleration limits
+  - name: max_acc_linear
+    value:
+      type: float
+      content: 0.0
+  - name: max_dec_linear
+    value:
+      type: float
+      content: 0.0
+  - name: max_acc_angular
+    value:
+      type: float
+      content: 0.0
+  - name: max_dec_angular
+    value:
+      type: float
+      content: 0.0
