@@ -486,7 +486,10 @@ class StealPantryAction(Action):
 class TestStealX1Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
-        self.append(StealPantryAction(planner, self, PantryID.MiddleBottom, 2_000_000.0))
+        self.append(StealPantryAction(planner, self, PantryID.MiddleBottom, 3_000_000.0))
+        # self.append(StealPantryAction(planner, self, PantryID.LocalBottom, 3_000_000.0))
+        # self.append(StealPantryAction(planner, self, PantryID.LocalCenter, 2_000_000.0))
+        # self.append(StealPantryAction(planner, self, PantryID.LocalSide, 1_000_000.0))
 
 
 class TestAlignStealX1Strategy(TestStealX1Strategy):
