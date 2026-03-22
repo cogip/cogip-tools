@@ -99,7 +99,7 @@
           </span>
           <span class="text-muted text-sm z-10" id="starter">
             <label>
-              <input type="checkbox" class="checked:accent-red-cogip checked:border-red-cogip" disabled> Starter
+              <input type="checkbox" class="checked:accent-red-cogip checked:border-red-cogip" onclick="return false;"> Starter
             </label>
           </span>
           {% endif %}
@@ -236,7 +236,7 @@
           socketModule.onDisconnect();
         })
         .on("virtual", function (robot_id, msg) {
-          document.querySelector("#starter input").disabled = !msg;
+          document.querySelector("#starter input").onclick = msg ? null : () => false;
         })
         .on("tool_menu", function (menu) {
           socketModule.onMenu(menu, "tool", this);
@@ -268,6 +268,7 @@
           drawModule.updateObstacles(robot_id, msg);
         })
         .on("starter_changed", function(pushed) {
+          console.log(`Starter changed: ${pushed}`);
           document.querySelector("#starter input").checked = pushed;
         })
         .on('config', function(msg) {
