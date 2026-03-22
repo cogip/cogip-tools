@@ -162,65 +162,72 @@ class CaptureCratesAction(Action):
     async def after_approach(self):
         self.logger.info(f"{self.name}: after_approach")
         await asyncio.sleep(0.2)
-        crates_found: list[tuple[int, models.Pose]] = await get_crates_position(self.planner)
-        self.logger.info(f"{self.name}: crates found:")
-        for crate_id, pose in crates_found:
-            self.logger.info(
-                f"{self.name}: - {crate_id}: x={pose.x: 5.2f} y={pose.y: 5.2f} O={pose.O: 3.2f}°"
-                f" dist={math.dist((0,0),(pose.x,pose.y)):5.2f}mm"
-            )
+        # crates_found: list[tuple[int, models.Pose]] = await get_crates_position(self.planner)
+        # self.logger.info(f"{self.name}: crates found:")
+        # for crate_id, pose in crates_found:
+        #     self.logger.info(
+        #         f"{self.name}: - {crate_id}: x={pose.x: 5.2f} y={pose.y: 5.2f} O={pose.O: 3.2f}°"
+        #         f" dist={math.dist((0,0),(pose.x,pose.y)):5.2f}mm"
+        #     )
 
-        # Analyze crates
-        analyzer = CrateAnalyzer(self.good_crate_id, self.bad_crate_id)
-        valid_groups = analyzer.find_groups(crates_found)
+        # # Analyze crates
+        # analyzer = CrateAnalyzer(self.good_crate_id, self.bad_crate_id)
+        # valid_groups = analyzer.find_groups(crates_found)
 
-        if not valid_groups:
-            self.logger.info(f"{self.name}: Rejected: no valid crate group found")
-            self.poses.clear()
-            self.collection_area.invalid = True
-            if len(crates_found) > 0:
-                # Keep obstacle
-                self.collection_area.enabled = True
-            return
+        # if not valid_groups:
+        #     self.logger.info(f"{self.name}: Rejected: no valid crate group found")
+        #     self.poses.clear()
+        #     self.collection_area.invalid = True
+        #     if len(crates_found) > 0:
+        #         # Keep obstacle
+        #         self.collection_area.enabled = True
+        #     return
 
-        # Keep closest group
-        valid_groups.sort(key=lambda g: math.hypot(g.pose.x, g.pose.y))
-        group = valid_groups[0]
+        # # Keep closest group
+        # valid_groups.sort(key=lambda g: math.hypot(g.pose.x, g.pose.y))
+        # group = valid_groups[0]
 
-        # Check alignment with robot (angle must be close to 0 or 180)
-        # Normalize angle to [-180, 180]
-        max_angle_distance = 10.0  # degrees
-        angle = group.pose.O
-        while angle > 180:
-            angle -= 360
-        while angle <= -180:
-            angle += 360
+        # # Check alignment with robot (angle must be close to 0 or 180)
+        # # Normalize angle to [-180, 180]
+        # max_angle_distance = 10.0  # degrees
+        # angle = group.pose.O
+        # while angle > 180:
+        #     angle -= 360
+        # while angle <= -180:
+        #     angle += 360
 
-        # CrateAnalyzer returns crates sorted by Y coordinate in group frame
-        # We need them sorted from Left (+Y robot) to Right (-Y robot) to map to actuators
+        # # CrateAnalyzer returns crates sorted by Y coordinate in group frame
+        # # We need them sorted from Left (+Y robot) to Right (-Y robot) to map to actuators
 
-        if abs(angle) < max_angle_distance:
-            # Group aligned with robot (0°)
-            # Group Y+ is aligned with Robot Y+.
-            # Analyzer sorts by Group Y ascending -> Robot Y ascending (Right to Left).
-            # We need Left to Right -> Reverse.
-            self.crates_ids[:] = list(reversed(group.crate_ids))[:]
+        # if abs(angle) < max_angle_distance:
+        #     # Group aligned with robot (0°)
+        #     # Group Y+ is aligned with Robot Y+.
+        #     # Analyzer sorts by Group Y ascending -> Robot Y ascending (Right to Left).
+        #     # We need Left to Right -> Reverse.
+        #     self.crates_ids[:] = list(reversed(group.crate_ids))[:]
 
-        elif abs(angle) > 180 - max_angle_distance:
-            # Group flipped (180°)
-            # Group Y+ is aligned with Robot Y-.
-            # Analyzer sorts by Group Y ascending -> Robot Y descending (Left to Right).
-            # Already in correct order.
-            self.crates_ids[:] = group.crate_ids[:]
+        # elif abs(angle) > 180 - max_angle_distance:
+        #     # Group flipped (180°)
+        #     # Group Y+ is aligned with Robot Y-.
+        #     # Analyzer sorts by Group Y ascending -> Robot Y descending (Left to Right).
+        #     # Already in correct order.
+        #     self.crates_ids[:] = group.crate_ids[:]
 
-        else:
-            self.logger.warning(f"{self.name}: Rejected group: angle {group.pose.O: .2f}° not close to 0° or 180°")
-            self.poses.clear()
-            self.collection_area.invalid = True
-            self.collection_area.enabled = True
-            return
+        # else:
+        #     self.logger.warning(f"{self.name}: Rejected group: angle {group.pose.O: .2f}° not close to 0° or 180°")
+        #     self.poses.clear()
+        #     self.collection_area.invalid = True
+        #     self.collection_area.enabled = True
+        #     return
 
-        self.logger.info(f"{self.name}: Accepted group (angle={angle:.1f}°): {self.crates_ids}")
+        # self.logger.info(f"{self.name}: Accepted group (angle={angle:.1f}°): {self.crates_ids}")
+
+        self.crates_ids[:] = [
+            self.good_crate_id,
+            self.good_crate_id,
+            self.good_crate_id,
+            self.good_crate_id,
+        ]
 
         # Align
         pose_current = self.pose_current
