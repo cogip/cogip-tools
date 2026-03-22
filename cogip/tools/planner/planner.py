@@ -501,7 +501,7 @@ class Planner:
                     asyncio.create_task(self.set_pose_reached())
         except Exception as exc:  # noqa
             logger.warning(f"Planner: Unknown exception {exc}")
-            traceback.print_exc()
+            logger.warning(traceback.format_exc())
             raise
 
     async def set_action(self, action: "action.Action"):
