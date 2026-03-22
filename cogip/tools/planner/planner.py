@@ -315,6 +315,7 @@ class Planner:
         Start sending obstacles list.
         """
         logger.info("Planner: start")
+        self.loop = asyncio.get_running_loop()
         self.create_shared_memory()
         self.shared_memory.avoidance_exiting = False
         await self.soft_reset()
@@ -392,9 +393,12 @@ class Planner:
         self.pose_order = None
 
     def starter_changed_callback(self, pushed: bool):
-        asyncio.create_task(self.starter_changed(pushed))
+        logger.info(f"Planner: Starter callback: {pushed}")
+        if hasattr(self, "loop") and self.loop.is_running():
+            asyncio.run_coroutine_threadsafe(self.starter_changed(pushed), self.loop)
 
     async def starter_changed(self, pushed: bool):
+        logger.info(f"Starter changed: {'On' if pushed else 'Off'}")
         self.last_starter_event_timestamp = datetime.now(UTC)
         if not self.virtual:
             await self.sio_ns.emit("starter_changed", pushed)

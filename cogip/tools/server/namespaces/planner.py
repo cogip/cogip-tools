@@ -87,6 +87,7 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         Callback on starter_pushed message.
         """
+        logger.info(f"[planner => dashboard] Starter changed: {pushed}.")
         await self.emit("starter_changed", pushed, namespace="/dashboard")
 
     async def on_close_wizard(self, sid):
