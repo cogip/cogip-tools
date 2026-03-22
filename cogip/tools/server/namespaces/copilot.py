@@ -93,12 +93,6 @@ class CopilotNamespace(socketio.AsyncNamespace):
         await self.emit("actuator_state", actuator_state, namespace="/planner")
         await self.emit("actuator_state", actuator_state, namespace="/dashboard")
 
-    async def on_pid(self, sid, pid: dict[str, Any]):
-        """
-        Callback on pid message.
-        """
-        await self.emit("pid", pid, namespace="/dashboard")
-
     async def on_config(self, sid, config: dict[str, Any]):
         """
         Callback on config message.

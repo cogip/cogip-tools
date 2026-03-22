@@ -14,12 +14,9 @@ from cogip.protobuf import (
     PB_ParameterGetRequest,
     PB_ParameterSetRequest,
     PB_PathPose,
-    PB_Pid_Id,
-    PB_PidEnum,
     PB_SpeedOrder,
 )
 from . import copilot, logger
-from .menu import menu
 
 
 class SioEvents(socketio.AsyncClientNamespace):
@@ -48,10 +45,6 @@ class SioEvents(socketio.AsyncClientNamespace):
         self.copilot.create_shared_memory()
         self.connected = True
 
-        if self.copilot.shell_menu:
-            await self.emit("menu", self.copilot.shell_menu.model_dump(exclude_defaults=True, exclude_unset=True))
-        await self.emit("register_menu", {"name": "copilot", "menu": menu.model_dump()})
-
     async def on_disconnect(self) -> None:
         """
         On disconnection from cogip-server.
@@ -70,32 +63,6 @@ class SioEvents(socketio.AsyncClientNamespace):
         else:
             message = data
         logger.error(f"Connection to cogip-server failed: {message}")
-
-    async def on_command(self, data):
-        """
-        Callback on tool command message.
-        """
-        cmd, _, _ = data.partition(" ")
-        pid_id = PB_Pid_Id()
-        match cmd:
-            case "angular_speed_pid_config":
-                # Request angular speed pid state
-                pid_id.id = PB_PidEnum.ANGULAR_SPEED_PID
-                await self.copilot.pbcom.send_can_message(copilot.pid_request_uuid, pid_id)
-            case "linear_speed_pid_config":
-                # Request linear_speed pid state
-                pid_id.id = PB_PidEnum.LINEAR_SPEED_PID
-                await self.copilot.pbcom.send_can_message(copilot.pid_request_uuid, pid_id)
-            case "angular_position_pid_config":
-                # Request angular position pid state
-                pid_id.id = PB_PidEnum.ANGULAR_POSE_PID
-                await self.copilot.pbcom.send_can_message(copilot.pid_request_uuid, pid_id)
-            case "linear_position_pid_config":
-                # Request linear position pid state
-                pid_id.id = PB_PidEnum.LINEAR_POSE_PID
-                await self.copilot.pbcom.send_can_message(copilot.pid_request_uuid, pid_id)
-            case _:
-                logger.warning(f"Unknown command: {cmd}")
 
     async def on_pose_start(self, data: dict[str, Any]):
         """
@@ -166,16 +133,6 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         logger.info("[SIO] Actuator init")
         await self.copilot.pbcom.send_can_message(copilot.actuator_init_uuid, None)
-
-    async def on_config_updated(self, config: dict[str, Any]) -> None:
-        """
-        Callback on config_updated from dashboard.
-        Update pid PB message and send it back to firmware.
-        """
-        pid_id, _, name = config["name"].partition("-")
-        if pid_id and name:
-            setattr(self.copilot.pb_pids[int(pid_id)], name, config["value"])
-            await self.copilot.pbcom.send_can_message(copilot.pid_uuid, self.copilot.pb_pids[int(pid_id)])
 
     async def on_set_controller(self, controller: int):
         """
