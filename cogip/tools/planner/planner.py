@@ -395,13 +395,8 @@ class Planner:
 
     @property
     def default_controller(self) -> ControllerEnum:
-        match self.shared_properties.strategy:
-            case StrategyEnum.PidAngularSpeedTest:
-                return ControllerEnum.ANGULAR_SPEED_TEST
-            case StrategyEnum.PidLinearSpeedTest:
-                return ControllerEnum.LINEAR_SPEED_TEST
-            case _:
-                return ControllerEnum.QUADPID
+        # return ControllerEnum.QUADPID_TRACKER
+        return ControllerEnum.QUADPID
 
     async def set_controller(self, new_controller: ControllerEnum, force: bool = False):
         if self.controller == new_controller and not force:
