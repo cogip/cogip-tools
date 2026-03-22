@@ -32,6 +32,8 @@ class GameContext:
             self.score = self.minimum_score
             self.front_free = True
             self.back_free = True
+            self.front_crates: list[int | None] = [None, None, None, None]
+            self.back_crates: list[int | None] = [None, None, None, None]
             self.collection_areas: dict[CollectionAreaID, CollectionArea] = {}
             self.pantries: dict[PantryID, Pantry] = {}
             self.fixed_obstacles: dict[FixedObstacleID, FixedObstacle] = {}
@@ -49,6 +51,8 @@ class GameContext:
         self.last_countdown = self.game_duration
         self.front_free = True
         self.back_free = True
+        self.front_crates = [None, None, None, None]
+        self.back_crates = [None, None, None, None]
         self.create_artifacts()
         self.create_fixed_obstacles()
         self.create_actuators_states()
@@ -63,6 +67,8 @@ class GameContext:
         new_ctx.score = self.score
         new_ctx.front_free = self.front_free
         new_ctx.back_free = self.back_free
+        new_ctx.front_crates = self.front_crates.copy()
+        new_ctx.back_crates = self.back_crates.copy()
         new_ctx.countdown = self.countdown
         new_ctx.last_countdown = self.last_countdown
         new_ctx.fixed_obstacles = {k: v.model_copy() for k, v in self.fixed_obstacles.items()}
