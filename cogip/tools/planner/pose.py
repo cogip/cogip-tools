@@ -1,7 +1,6 @@
 from collections.abc import Awaitable, Callable
 from typing import ClassVar, final
 
-import socketio
 from pydantic import field_validator
 
 from cogip.models.models import PathPose
@@ -14,9 +13,9 @@ class Pose(PathPose):
     A function can be executed before moving and an other once it is reached.
     """
 
-    before_pose_func: Callable[[socketio.ClientNamespace], Awaitable[None]] | None = None
-    intermediate_pose_func: Callable[[socketio.ClientNamespace], Awaitable[None]] | None = None
-    after_pose_func: Callable[[socketio.ClientNamespace], Awaitable[None]] | None = None
+    before_pose_func: Callable[[], Awaitable[None]] | None = None
+    intermediate_pose_func: Callable[[], Awaitable[None]] | None = None
+    after_pose_func: Callable[[], Awaitable[None]] | None = None
 
     @final
     async def act_before_pose(self):
