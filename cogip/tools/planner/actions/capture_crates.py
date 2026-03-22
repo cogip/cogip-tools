@@ -110,45 +110,45 @@ class CaptureCratesAction(Action):
             f"{self.name}: approach: x={approach_pose.x: 5.2f} y={approach_pose.y: 5.2f} O={approach_pose.O: 3.2f}°"
         )
 
-        # # Align
-        # align_pose = Pose(
-        #     **get_relative_pose(
-        #         self.collection_area,
-        #         front_offset=-self.shift_align,
-        #         angular_offset=0 if self.side == "front" else 180,
-        #     ).model_dump(),
-        #     max_speed_linear=10,
-        #     max_speed_angular=10,
-        #     motion_direction=(
-        #         MotionDirection.FORWARD_ONLY if self.side == "front" else MotionDirection.BACKWARD_ONLY
-        #     ),
-        #     bypass_final_orientation=True,
-        #     before_pose_func=self.before_align,
-        #     after_pose_func=self.after_align,
-        # )
-        # self.poses.append(align_pose)
-        # self.logger.info(f"{self.name}: align: x={align_pose.x: 5.2f} y={align_pose.y: 5.2f} O={align_pose.O: 3.2f}°")
+        # Align
+        align_pose = Pose(
+            **get_relative_pose(
+                self.collection_area,
+                front_offset=-self.shift_align,
+                angular_offset=0 if self.side == "front" else 180,
+            ).model_dump(),
+            max_speed_linear=10,
+            max_speed_angular=10,
+            motion_direction=(
+                MotionDirection.FORWARD_ONLY if self.side == "front" else MotionDirection.BACKWARD_ONLY
+            ),
+            bypass_final_orientation=True,
+            before_pose_func=self.before_align,
+            after_pose_func=self.after_align,
+        )
+        self.poses.append(align_pose)
+        self.logger.info(f"{self.name}: align: x={align_pose.x: 5.2f} y={align_pose.y: 5.2f} O={align_pose.O: 3.2f}°")
 
-        # # Capture
-        # capture_pose = Pose(
-        #     **get_relative_pose(
-        #         self.collection_area,
-        #         front_offset=-self.shift_capture,
-        #         angular_offset=0 if self.side == "front" else 180,
-        #     ).model_dump(),
-        #     max_speed_linear=10,
-        #     max_speed_angular=10,
-        #     motion_direction=(
-        #         MotionDirection.BACKWARD_ONLY if self.side == "front" else MotionDirection.FORWARD_ONLY
-        #     ),
-        #     bypass_final_orientation=True,
-        #     before_pose_func=self.before_capture,
-        #     after_pose_func=self.after_capture,
-        # )
-        # self.poses.append(capture_pose)
-        # self.logger.info(
-        #     f"{self.name}: capture: x={capture_pose.x: 5.2f} y={capture_pose.y: 5.2f} O={capture_pose.O: 3.2f}°"
-        # )
+        # Capture
+        capture_pose = Pose(
+            **get_relative_pose(
+                self.collection_area,
+                front_offset=-self.shift_capture,
+                angular_offset=0 if self.side == "front" else 180,
+            ).model_dump(),
+            max_speed_linear=10,
+            max_speed_angular=10,
+            motion_direction=(
+                MotionDirection.BACKWARD_ONLY if self.side == "front" else MotionDirection.FORWARD_ONLY
+            ),
+            bypass_final_orientation=True,
+            before_pose_func=self.before_capture,
+            after_pose_func=self.after_capture,
+        )
+        self.poses.append(capture_pose)
+        self.logger.info(
+            f"{self.name}: capture: x={capture_pose.x: 5.2f} y={capture_pose.y: 5.2f} O={capture_pose.O: 3.2f}°"
+        )
 
     async def before_approach(self):
         self.logger.info(f"{self.name}: before_approach")
@@ -229,24 +229,24 @@ class CaptureCratesAction(Action):
             self.good_crate_id,
         ]
 
-        # Align
-        pose_current = self.pose_current
-        shift_align = 160
-        align_pose = Pose(
-            **get_relative_pose(
-                pose_current,
-                front_offset=shift_align,
-                angular_offset=0 if self.side == "front" else 180,
-            ).model_dump(),
-            max_speed_linear=10,
-            max_speed_angular=10,
-            motion_direction=(MotionDirection.FORWARD_ONLY if self.side == "front" else MotionDirection.BACKWARD_ONLY),
-            bypass_final_orientation=True,
-            before_pose_func=self.before_align,
-            after_pose_func=self.after_align,
-        )
-        self.poses.append(align_pose)
-        self.logger.info(f"{self.name}: align: x={align_pose.x: 5.2f} y={align_pose.y: 5.2f} O={align_pose.O: 3.2f}°")
+        # # Align
+        # pose_current = self.pose_current
+        # shift_align = 160
+        # align_pose = Pose(
+        #     **get_relative_pose(
+        #         pose_current,
+        #         front_offset=shift_align,
+        #         angular_offset=0 if self.side == "front" else 180,
+        #     ).model_dump(),
+        #     max_speed_linear=10,
+        #     max_speed_angular=10,
+        #     motion_direction=(MotionDirection.FORWARD_ONLY if self.side == "front" else MotionDirection.BACKWARD_ONLY),
+        #     bypass_final_orientation=True,
+        #     before_pose_func=self.before_align,
+        #     after_pose_func=self.after_align,
+        # )
+        # self.poses.append(align_pose)
+        # self.logger.info(f"{self.name}: align: x={align_pose.x: 5.2f} y={align_pose.y: 5.2f} O={align_pose.O: 3.2f}°")
 
     async def before_align(self):
         self.logger.info(f"{self.name}: before_align")
@@ -258,26 +258,26 @@ class CaptureCratesAction(Action):
     async def after_align(self):
         self.logger.info(f"{self.name}: after_align")
 
-        # Capture
-        pose_current = self.pose_current
-        shift_capture = 15
-        capture_pose = Pose(
-            **get_relative_pose(
-                pose_current,
-                front_offset=-shift_capture if self.side == "front" else shift_capture,
-                angular_offset=0,
-            ).model_dump(),
-            max_speed_linear=5,
-            max_speed_angular=5,
-            motion_direction=(MotionDirection.BACKWARD_ONLY if self.side == "front" else MotionDirection.FORWARD_ONLY),
-            bypass_final_orientation=False,
-            before_pose_func=self.before_capture,
-            after_pose_func=self.after_capture,
-        )
-        self.poses.append(capture_pose)
-        self.logger.info(
-            f"{self.name}: capture: x={capture_pose.x: 5.2f} y={capture_pose.y: 5.2f} O={capture_pose.O: 3.2f}°"
-        )
+        # # Capture
+        # pose_current = self.pose_current
+        # shift_capture = 15
+        # capture_pose = Pose(
+        #     **get_relative_pose(
+        #         pose_current,
+        #         front_offset=-shift_capture if self.side == "front" else shift_capture,
+        #         angular_offset=0,
+        #     ).model_dump(),
+        #     max_speed_linear=5,
+        #     max_speed_angular=5,
+        #     motion_direction=(MotionDirection.BACKWARD_ONLY if self.side == "front" else MotionDirection.FORWARD_ONLY),
+        #     bypass_final_orientation=False,
+        #     before_pose_func=self.before_capture,
+        #     after_pose_func=self.after_capture,
+        # )
+        # self.poses.append(capture_pose)
+        # self.logger.info(
+        #     f"{self.name}: capture: x={capture_pose.x: 5.2f} y={capture_pose.y: 5.2f} O={capture_pose.O: 3.2f}°"
+        # )
 
     async def before_capture(self):
         self.logger.info(f"{self.name}: before_capture")
