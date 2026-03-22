@@ -517,8 +517,9 @@ class Planner:
             logger.info("Planner: blocked")
             if new_action := await self.strategy.get_next_action():
                 await self.set_action(new_action)
-            await current_action.recycle()
-            self.strategy.append(current_action)
+            if current_action.recyclable:
+                await current_action.recycle()
+                self.strategy.append(current_action)
             if not self.pose_order:
                 asyncio.create_task(self.set_pose_reached())
 

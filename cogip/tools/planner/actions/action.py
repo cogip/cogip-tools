@@ -21,11 +21,19 @@ class Action:
 
     logger = logger
 
-    def __init__(self, name: str, planner: "Planner", strategy: "Strategy", interruptable: bool = True):
+    def __init__(
+        self,
+        name: str,
+        planner: "Planner",
+        strategy: "Strategy",
+        interruptable: bool = True,
+        recyclable: bool = True,
+    ):
         self.name = name
         self.planner = planner
         self.strategy = strategy
         self.interruptable = interruptable
+        self.recyclable = recyclable
         self.poses: list[Pose] = []
         self.before_action_func: Callable[[], Awaitable[None]] | None = None
         self.after_action_func: Callable[[], Awaitable[None]] | None = None
