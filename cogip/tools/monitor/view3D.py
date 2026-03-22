@@ -39,6 +39,8 @@ class View3DBackend(QObject):
         self.sim_camera_timer = QTimer()
         self.sim_camera_timer.setInterval(self.sim_camera_update_interval_ms)
         self.sim_camera_timer.timeout.connect(self.update_sim_camera)
+        self.shm = SharedMemoryManager()
+        self.shm.set_scene(self.root, self.view_item)
         self.robot_manual = RobotManual(self.view_item.findChild(QObject, "robotManual"))
         self.ninja_manual = NinjaManual(self.view_item.findChild(QObject, "ninjaManual"))
         self.pami_manual = PamiManual(self.view_item.findChild(QObject, "pamiManual"))
@@ -46,8 +48,6 @@ class View3DBackend(QObject):
         self.view_item.setProperty("obstacleSettings", self.obstacle_window_settings)
         self.live_robot: Robot | None = None
         self.order_robot: RobotOrder | None = None
-        self.shm = SharedMemoryManager()
-        self.shm.set_scene(self.root, self.view_item)
         signal: QtSignal | None = getattr(self.view_item, "liveRobotNodeChanged", None)
         if signal and isinstance(signal, QtSignal):
             signal.connect(self.handle_live_robot_node_changed)
