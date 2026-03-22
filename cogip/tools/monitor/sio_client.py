@@ -12,6 +12,8 @@ from socketio.exceptions import ConnectionError
 
 from cogip import logger
 from cogip.models import models
+from cogip.models.actuators import PositionalActuatorEnum
+from cogip.tools.planner.scservos import SCServoEnum
 
 
 class SocketioClient(QtCore.QObject):
@@ -44,6 +46,10 @@ class SocketioClient(QtCore.QObject):
             Qt signal emitted the starter state has changed
         signal_soft_reset:
             Qt signal emitted on soft reset request
+        signal_servo_changed:
+            Qt signal emitted on servo command
+        signal_lift_changed:
+            Qt signal emitted on lift command
     """
 
     signal_connected: QtSignal = QtSignal(bool)
@@ -58,6 +64,8 @@ class SocketioClient(QtCore.QObject):
     signal_close_wizard: QtSignal = QtSignal()
     signal_starter_changed: QtSignal = QtSignal(bool)
     signal_soft_reset: QtSignal = QtSignal()
+    signal_servo_changed: QtSignal = QtSignal(str, float)
+    signal_lift_changed: QtSignal = QtSignal(str, float)
 
     def __init__(self, url: str):
         """
@@ -313,3 +321,44 @@ class SocketioClient(QtCore.QObject):
             Soft reset.
             """
             self.signal_soft_reset.emit()
+
+        @self.sio.on("servo", namespace="/monitor")
+        def on_servo(servo_id: int, position: int) -> None:
+            """
+            Callback on servo message.
+            """
+            servo_id = SCServoEnum(servo_id)
+            logger.info(f"Servo command received: {(servo_id, position)}")
+            logger.info(f"Servo ID: {servo_id}, Position: {position}")
+
+            match (servo_id, position):
+                case (SCServoEnum.FRONT_ARM_LEFT, 1):
+                    orientation = 90
+                case (SCServoEnum.FRONT_ARM_LEFT, 0):
+                    orientation = 0
+                case (SCServoEnum.FRONT_ARM_RIGHT, 1):
+                    orientation = -90
+                case (SCServoEnum.FRONT_ARM_RIGHT, 0):
+                    orientation = 0
+                case (SCServoEnum.BACK_ARM_LEFT, 1):
+                    orientation = -90
+                case (SCServoEnum.BACK_ARM_LEFT, 0):
+                    orientation = 0
+                case (SCServoEnum.BACK_ARM_RIGHT, 1):
+                    orientation = 90
+                case (SCServoEnum.BACK_ARM_RIGHT, 0):
+                    orientation = 0
+                case _:
+                    logger.warning(f"Unknown servo ID: {servo_id} or position: {position}")
+                    return
+
+            self.signal_servo_changed.emit(servo_id.name.title(), float(orientation))
+
+        @self.sio.on("lift", namespace="/monitor")
+        def on_lift(actuator_id: int, position: int) -> None:
+            """
+            Callback on lift message.
+            """
+            lift_id = PositionalActuatorEnum(actuator_id)
+            logger.info(f"Lift command received: {(lift_id, position)}")
+            self.signal_lift_changed.emit(lift_id.name.title(), float(position))
