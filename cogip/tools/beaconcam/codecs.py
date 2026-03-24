@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class VideoCodec(str, Enum):
+class VideoCodec(StrEnum):
     """Video codecs supported by our cameras"""
 
     mjpg = "MJPG"
