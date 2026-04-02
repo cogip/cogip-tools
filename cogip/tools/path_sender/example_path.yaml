@@ -1,0 +1,8 @@
+# Example path for cogip-path-sender
+# Each point is [X, Y, O] in [mm, mm, deg]
+path:
+  - [0, 0, 0]
+  - [500, 0, 0]
+  - [500, 500, 90]
+  - [0, 500, 180]
+  - [0, 0, 0]
