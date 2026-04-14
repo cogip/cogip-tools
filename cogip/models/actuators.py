@@ -101,6 +101,20 @@ class PositionalActuator(ActuatorBase, PositionalActuatorCommand):
     pass
 
 
+class PositionalActuatorStateEnum(IntEnum):
+    REACHED = 0
+    INTERMEDIATE_REACHED = 1
+    TIMEOUT = 2
+    BLOCKED = 3
+
+
+class PositionalActuatorState(BaseModel):
+    kind: Literal[ActuatorsKindEnum.positional_actuator] = ActuatorsKindEnum.positional_actuator
+    id: PositionalActuatorEnum
+    position: int
+    state: PositionalActuatorStateEnum
+
+
 # Bool sensor related definitions
 
 
@@ -130,7 +144,13 @@ class BoolSensor(BaseModel):
     ] = False
 
 
-ActuatorState = PositionalActuator | BoolSensor
+class BoolSensorState(BaseModel):
+    kind: Literal[ActuatorsKindEnum.bool_sensor] = ActuatorsKindEnum.bool_sensor
+    id: BoolSensorEnum
+    state: bool
+
+
+ActuatorState = Annotated[PositionalActuatorState | BoolSensorState, Field(discriminator="kind")]
 ActuatorCommand = PositionalActuatorCommand
 
 

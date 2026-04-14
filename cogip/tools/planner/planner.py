@@ -1063,7 +1063,9 @@ class Planner:
         # actuators_states[actuator_state.id] = actuator_state
         # if not self.virtual and actuator_state.id in self.game_context.emulated_actuator_states:
         #     self.game_context.emulated_actuator_states.remove(actuator_state.id)
-        pass
+        logger.info(
+            f"Planner: Actuator state updated: {actuator_state.kind.name} {actuator_state.id} = {actuator_state.state}"
+        )
 
     def robot_in_parking(self) -> bool:
         pose_current = self.pose_current.model_copy()
