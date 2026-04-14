@@ -423,6 +423,7 @@ class Copilot:
                 if len(self.shared_avoidance_path) == 0:
                     continue
                 pose_order = models.PathPose.from_shared(self.shared_avoidance_path[0])
+                logger.info(f"Copilot: New path available in shared memory: {pose_order}")
                 if self.id > 1:
                     pose_order.motion_direction = MotionDirection.FORWARD_ONLY
                 pb_pose_order = PB_PathPose()
