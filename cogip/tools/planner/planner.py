@@ -401,10 +401,8 @@ class Planner:
     @property
     def default_controller(self) -> ControllerEnum:
         match self.shared_properties.strategy:
-            case StrategyEnum.PidAngularSpeedTest:
-                return ControllerEnum.ANGULAR_SPEED_TEST
-            case StrategyEnum.PidLinearSpeedTest:
-                return ControllerEnum.LINEAR_SPEED_TEST
+            case StrategyEnum.PidAngularSpeedTest | StrategyEnum.PidLinearSpeedTest:
+                return ControllerEnum.TRACKER_SPEED_TUNING
             case _:
                 return ControllerEnum.QUADPID
 
