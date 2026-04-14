@@ -5,6 +5,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 
+import "."
+
 Dialog {
     id: wizardDialog
 

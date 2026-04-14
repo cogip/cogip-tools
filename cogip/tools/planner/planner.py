@@ -179,6 +179,8 @@ class Planner:
         )
         self.playing: bool = False
         self._pose_order: pose.Pose | None = None
+        self._path_points: list[models.PathPose] = []  # Waypoints for new path API
+        self._sending_path: bool = False  # Flag to ignore pose_reached while configuring a new path
         self.pose_reached: bool = True
         self.blocked_counter: int = 0
         self.controller = self.default_controller
@@ -401,20 +403,27 @@ class Planner:
     @property
     def default_controller(self) -> ControllerEnum:
         match self.shared_properties.strategy:
-            case StrategyEnum.PidAngularSpeedTest:
-                return ControllerEnum.ANGULAR_SPEED_TEST
-            case StrategyEnum.PidLinearSpeedTest:
-                return ControllerEnum.LINEAR_SPEED_TEST
+            case StrategyEnum.PidAngularSpeedTest | StrategyEnum.PidLinearSpeedTest:
+                return ControllerEnum.TRACKER_SPEED_TUNING
             case _:
                 return ControllerEnum.QUADPID
 
-    async def set_controller(self, new_controller: ControllerEnum, force: bool = False):
+    async def set_controller(self, new_controller: ControllerEnum, force: bool = False, notify: bool = True):
         if self.controller == new_controller and not force:
             return
         self.controller = new_controller
+        # Write to shared memory using the same lock as path data.
+        if self.shared_avoidance_path_lock is not None and self.shared_memory is not None:
+            self.shared_avoidance_path_lock.start_writing()
+            self.shared_memory.path_controller_id = self.controller.value
+            self.shared_avoidance_path_lock.finish_writing()
+            # Only notify if not part of a path sequence (path_start will notify)
+            if notify:
+                self.shared_avoidance_path_lock.post_update()
+        # Also emit via SIO for server/dashboard state tracking
         await self.sio_ns.emit("set_controller", self.controller.value)
 
-    async def set_pose_start(self, pose_start: models.Pose):
+    async def set_pose_start(self, pose_start: models.Pose, notify: bool = True):
         """
         Set the start position of the robot for the next game.
         """
@@ -425,7 +434,56 @@ class Planner:
         # When the firmware receives a pose start, it does not send its updated pose current,
         # so do it here.
         self.shared_pose_current_buffer.push(pose_start.x, pose_start.y, pose_start.O)
+
+        # Write to shared memory using the same lock as set_controller and path.
+        if self.shared_avoidance_path_lock is not None and self.shared_memory is not None:
+            self.shared_avoidance_path_lock.start_writing()
+            self.shared_memory.has_pose_start = True
+            self.shared_memory.pose_start_x = pose_start.x
+            self.shared_memory.pose_start_y = pose_start.y
+            self.shared_memory.pose_start_angle = pose_start.O
+            self.shared_avoidance_path_lock.finish_writing()
+            # Only notify if not part of a path sequence (path_start will notify)
+            if notify:
+                self.shared_avoidance_path_lock.post_update()
+        # Also emit via SIO for server/dashboard state tracking
         await self.sio_ns.emit("pose_start", pose_start.model_dump())
+
+    async def path_reset(self):
+        """
+        Reset the path (clear all waypoints).
+        """
+        logger.info("Planner: path_reset() - setting _sending_path=True")
+        self._sending_path = True  # Ignore pose_reached until path_start()
+        self._path_points.clear()
+
+    async def path_add_point(self, path_pose: models.PathPose):
+        """
+        Add a waypoint to the path.
+        """
+        logger.info(f"Planner: path_add_point({path_pose})")
+        self._path_points.append(path_pose)
+
+    async def path_start(self):
+        """
+        Start path execution on the firmware.
+        Writes the path to shared memory and signals the copilot via post_update().
+        The copilot's new_path_event_loop() will read the path and send CAN messages.
+        """
+        logger.info("Planner: path_start()")
+        if self._path_points and self.shared_avoidance_path_lock is not None and self.shared_avoidance_path is not None:
+            self.shared_avoidance_path_lock.start_writing()
+            self.shared_avoidance_path.clear()
+            for path_pose in self._path_points:
+                self.shared_avoidance_path.append()
+                shared_pose = self.shared_avoidance_path[self.shared_avoidance_path.size() - 1]
+                path_pose.to_shared(shared_pose)
+
+            self.shared_avoidance_path_lock.finish_writing()
+            self.shared_avoidance_path_lock.post_update()
+
+        logger.info("Planner: path_start() done - setting _sending_path=False")
+        self._sending_path = False  # Now ready to receive pose_reached
 
     @property
     def pose_order(self) -> pose.Pose | None:
@@ -446,7 +504,13 @@ class Planner:
         """
         Set pose reached for a robot.
         """
-        logger.info("Planner: set_pose_reached()")
+        action_name = self.action.name if self.action else None
+        logger.info(f"Planner: set_pose_reached() [_sending_path={self._sending_path}, action={action_name}]")
+
+        # Ignore pose_reached signals while configuring a new path
+        if self._sending_path:
+            logger.info("Planner: set_pose_reached() ignored - path is being configured")
+            return
 
         # Set pose reached
         if not self.pose_reached and (pose_order := self.pose_order):
@@ -457,6 +521,7 @@ class Planner:
 
         self.pose_reached = True
         if (action := self.action) and len(self.action.poses) == 0:
+            logger.info(f"Planner: set_pose_reached() clearing action '{action.name}' (poses empty)")
             self.action = None
             await action.act_after_action()
 
@@ -501,7 +566,13 @@ class Planner:
             # If no pose left in current action, get and set new action
             if not self.pose_order and (new_action := await self.strategy.get_next_action()):
                 await self.set_action(new_action)
-                if not self.pose_order:
+                # Only auto-advance if no action is waiting for completion.
+                # Actions using path API will have self.action set but pose_order None,
+                # they need to wait for firmware pose_reached signal.
+                action_name = self.action.name if self.action else None
+                logger.info(f"Planner: next_pose() after set_action: pose={self.pose_order}, action={action_name}")
+                if not self.pose_order and self.action is None:
+                    logger.info("Planner: next_pose() -> auto-advance (no action)")
                     asyncio.create_task(self.set_pose_reached())
         except Exception as exc:  # noqa
             logger.warning(f"Planner: Unknown exception {exc}")
@@ -515,8 +586,12 @@ class Planner:
         logger.info(f"Planner: set action '{action.name}'")
         self.pose_order = None
         self.action = action
+        action_name = self.action.name if self.action else None
+        logger.info(f"Planner: set_action() calling act_before_action, action={action_name}")
         await self.action.act_before_action()
+        logger.info(f"Planner: set_action() act_before_action done, action={action_name}")
         await self.next_pose_in_action()
+        logger.info(f"Planner: set_action() done, action={action_name}")
 
     async def blocked(self):
         """
@@ -528,7 +603,7 @@ class Planner:
                 await self.set_action(new_action)
             await current_action.recycle()
             self.strategy.append(current_action)
-            if not self.pose_order:
+            if not self.pose_order and self.action is None:
                 asyncio.create_task(self.set_pose_reached())
 
     async def update_obstacles(self):

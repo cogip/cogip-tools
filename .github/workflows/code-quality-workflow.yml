@@ -24,9 +24,9 @@ jobs:
         with:
           python-version: '3.13'
       - name: Install dependencies
-        run: pip install PySide6
+        run: pip install PySide6==6.10.0
       - name: Run qmllint
-        run: pyside6-qmllint cogip/tools/monitor/*.qml
+        run: pyside6-qmllint -i cogip/tools/monitor/qmldir cogip/tools/monitor/*.qml
       - name: Check qml format
         run: |
           pyside6-qmlformat --inplace cogip/tools/monitor/*.qml

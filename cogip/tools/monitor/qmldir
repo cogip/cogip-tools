@@ -1,0 +1,11 @@
+module Monitor
+ConfigWindow 1.0 ConfigWindow.qml
+DoubleSpinBox 1.0 DoubleSpinBox.qml
+Footer 1.0 Footer.qml
+LidarRayNode 1.0 LidarRayNode.qml
+Obstacle 1.0 Obstacle.qml
+ObstacleWindow 1.0 ObstacleWindow.qml
+Polyline3D 1.0 Polyline3D.qml
+Scene 1.0 Scene.qml
+SideMenu 1.0 SideMenu.qml
+Wizard 1.0 Wizard.qml

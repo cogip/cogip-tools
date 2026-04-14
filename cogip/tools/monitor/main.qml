@@ -5,6 +5,8 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 
+import "."
+
 ApplicationWindow {
     id: window
 
