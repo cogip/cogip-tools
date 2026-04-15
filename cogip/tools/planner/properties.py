@@ -17,7 +17,7 @@ properties_schema = {
             "description": "Length of the robot (mm)",
             "maximum": 1000,
             "minimum": 100,
-            "default": 295,
+            "default": 289,
         },
         "obstacle_radius": {
             "title": "Obstacle Radius",
