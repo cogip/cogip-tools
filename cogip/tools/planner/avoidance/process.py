@@ -8,7 +8,6 @@ from cogip.cpp.libraries.obstacles import ObstacleCircle as SharedObstacleCircle
 from cogip.cpp.libraries.obstacles import ObstacleRectangle as SharedObstacleRectangle
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory
 from cogip.utils.logger import Logger
-from ..actions import StrategyEnum
 from .avoidance import Avoidance, AvoidanceStrategy
 
 
@@ -67,10 +66,6 @@ def avoidance_process(robot_id: int):
         shared_pose_current = shared_pose_current_buffer.last
         pose_current = models.PathPose.from_shared(shared_pose_current)
         shared_pose_current_lock.finish_reading()
-
-        if shared_properties.strategy in [StrategyEnum.PidLinearSpeedTest, StrategyEnum.PidAngularSpeedTest]:
-            logger.debug("Avoidance: Skip path update (speed test)")
-            continue
 
         if last_pose_current:
             # Check if pose order is far enough from current pose

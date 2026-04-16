@@ -400,13 +400,7 @@ class Planner:
 
     @property
     def default_controller(self) -> ControllerEnum:
-        match self.shared_properties.strategy:
-            case StrategyEnum.PidAngularSpeedTest:
-                return ControllerEnum.ANGULAR_SPEED_TEST
-            case StrategyEnum.PidLinearSpeedTest:
-                return ControllerEnum.LINEAR_SPEED_TEST
-            case _:
-                return ControllerEnum.QUADPID
+        return ControllerEnum.QUADPID_TRACKER
 
     async def set_controller(self, new_controller: ControllerEnum, force: bool = False):
         if self.controller == new_controller and not force:
@@ -484,9 +478,6 @@ class Planner:
             await pose_order.act_before_pose()
             self.blocked_counter = 0
             self.pose_order = pose_order
-
-            if self.shared_properties.strategy in [StrategyEnum.PidLinearSpeedTest, StrategyEnum.PidAngularSpeedTest]:
-                await self.sio_ns.emit("pose_order", self.pose_order.path_pose.model_dump())
 
     async def next_pose(self):
         """

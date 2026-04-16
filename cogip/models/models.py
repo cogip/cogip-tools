@@ -8,23 +8,15 @@ an exception being raised if impossible.
 """
 
 import math
-from enum import IntEnum
 
 import numpy as np
 from numpy.typing import ArrayLike
 from pydantic import BaseModel
 
+from cogip.cpp.libraries.models import MotionDirection
 from cogip.cpp.libraries.models import Pose as SharedPose
 from cogip.cpp.libraries.models import PoseOrder as SharedPoseOrder
-from cogip.protobuf import PB_PathPose
-
-
-class MotionDirection(IntEnum):
-    """Motion direction mode for path navigation."""
-
-    BIDIRECTIONAL = 0  # Robot can move forward or backward (choose optimal)
-    FORWARD_ONLY = 1  # Force forward motion only
-    BACKWARD_ONLY = 2  # Force backward motion only
+from cogip.protobuf import PB_PathPose, PB_SpeedOrder
 
 
 class MenuEntry(BaseModel):
@@ -115,6 +107,32 @@ class Speed(BaseModel):
 
     distance: float = 0.0
     angle: float = 0.0
+
+
+class SpeedOrder(BaseModel):
+    """
+    A speed order to send to the robot.
+
+    Attributes:
+        linear_speed_mm_s: Linear speed in mm/s (signed)
+        angular_speed_deg_s: Angular speed in deg/s (signed)
+        duration_ms: Duration in milliseconds
+    """
+
+    linear_speed_mm_s: int = 0
+    angular_speed_deg_s: int = 0
+    duration_ms: int = 0
+
+    def copy_pb(self, pb_speed_order: PB_SpeedOrder) -> None:
+        """
+        Copy data into a Protobuf message.
+
+        Arguments:
+            pb_speed_order: Protobuf message to fill
+        """
+        pb_speed_order.linear_speed_mm_s = self.linear_speed_mm_s
+        pb_speed_order.angular_speed_deg_s = self.angular_speed_deg_s
+        pb_speed_order.duration_ms = self.duration_ms
 
 
 class PathPose(Pose):
@@ -360,6 +378,7 @@ class CameraExtrinsicParameters(BaseModel):
     @property
     def rvec(self) -> ArrayLike:
         return np.array([self.roll, self.pitch, self.yaw])
+
 
 class PowerRailsStatus(BaseModel):
     """

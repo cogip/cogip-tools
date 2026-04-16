@@ -1,0 +1,22 @@
+# PID Tuning Telemetry Layout - Speed only
+# Two plots side by side: Linear and Angular speed
+
+plots:
+  - title: "Linear Speed"
+    row: 0
+    col: 0
+    y_unit: "mm/s"
+    keys:
+      - linear_current_speed
+      - linear_tracker_velocity
+
+  - title: "Angular Speed"
+    row: 0
+    col: 1
+    y_unit: "deg/s"
+    keys:
+      - angular_current_speed
+      - angular_tracker_velocity
+
+max_points: 2000
+retention_seconds: 60

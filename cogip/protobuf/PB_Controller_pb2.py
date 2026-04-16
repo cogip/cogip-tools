@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13PB_Controller.proto\"/\n\rPB_Controller\x12\x1e\n\x02id\x18\x01 \x01(\x0e\x32\x12.PB_ControllerEnum*i\n\x11PB_ControllerEnum\x12\x0b\n\x07QUADPID\x10\x00\x12\x16\n\x12\x41NGULAR_SPEED_TEST\x10\x01\x12\x15\n\x11LINEAR_SPEED_TEST\x10\x02\x12\x18\n\x14LINEAR_POSE_DISABLED\x10\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13PB_Controller.proto\"/\n\rPB_Controller\x12\x1e\n\x02id\x18\x01 \x01(\x0e\x32\x12.PB_ControllerEnum*O\n\x11PB_ControllerEnum\x12\x0b\n\x07QUADPID\x10\x00\x12\x13\n\x0fQUADPID_TRACKER\x10\x01\x12\x18\n\x14TRACKER_SPEED_TUNING\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,7 +32,7 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'PB_Controller_pb2', _global
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_PB_CONTROLLERENUM']._serialized_start=72
-  _globals['_PB_CONTROLLERENUM']._serialized_end=177
+  _globals['_PB_CONTROLLERENUM']._serialized_end=151
   _globals['_PB_CONTROLLER']._serialized_start=23
   _globals['_PB_CONTROLLER']._serialized_end=70
 # @@protoc_insertion_point(module_scope)

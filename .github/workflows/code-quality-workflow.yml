@@ -15,6 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.1
       - uses: chartboost/ruff-action@v1
+        with:
+          version: 0.14.0
 
   qmllint:
     runs-on: ubuntu-24.04
@@ -24,7 +26,7 @@ jobs:
         with:
           python-version: '3.13'
       - name: Install dependencies
-        run: pip install PySide6
+        run: pip install "PySide6==6.10.0"
       - name: Run qmllint
         run: pyside6-qmllint cogip/tools/monitor/*.qml
       - name: Check qml format

@@ -6,6 +6,7 @@ import socketio
 from google.protobuf.json_format import MessageToDict
 
 from cogip import models
+from cogip.cpp.libraries.models import MotionDirection
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.models import PoseOrderList as SharedPoseOrderList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
@@ -16,8 +17,6 @@ from cogip.protobuf import (
     PB_ParameterGetResponse,
     PB_ParameterSetResponse,
     PB_PathPose,
-    PB_Pid,
-    PB_PidEnum,
     PB_Pose,
     PB_PowerRailsStatus,
     PB_PowerSourceStatus,
@@ -26,7 +25,6 @@ from cogip.protobuf import (
 )
 from . import logger
 from .pbcom import PBCom, pb_exception_handler
-from .pid import Pid
 from .sio_events import SioEvents
 
 # Motion Control: 0x1000 - 0x1FFF
@@ -34,12 +32,11 @@ state_uuid: int = 0x1001
 pose_order_uuid: int = 0x1002
 pose_reached_uuid: int = 0x1003
 pose_start_uuid: int = 0x1004
-pid_request_uuid: int = 0x1005
-pid_uuid: int = 0x1006
 brake_uuid: int = 0x1007
 controller_uuid: int = 0x1008
 blocked_uuid: int = 0x1009
 intermediate_pose_reached_uuid: int = 0x100A
+speed_order_uuid: int = 0x100B
 # Actuators: 0x2000 - 0x2FFF
 actuators_thread_start_uuid: int = 0x2001
 actuators_thread_stop_uuid: int = 0x2002
@@ -89,8 +86,6 @@ class Copilot:
         self.server_url = server_url
         self.id = id
         self.retry_connection = True
-        self.shell_menu: models.ShellMenu | None = None
-        self.pb_pids: dict[PB_PidEnum, PB_Pid] = {}
 
         self.shared_memory: SharedMemory | None = None
         self.shared_pose_current_buffer: SharedPoseBuffer | None = None
@@ -110,7 +105,6 @@ class Copilot:
             pose_reached_uuid: self.handle_pose_reached,
             intermediate_pose_reached_uuid: self.handle_intermediate_pose_reached,
             actuator_state_uuid: self.handle_actuator_state,
-            pid_uuid: self.handle_pid,
             blocked_uuid: self.handle_blocked,
             parameter_get_response_uuid: self.handle_parameter_get_response,
             parameter_set_response_uuid: self.handle_parameter_set_response,
@@ -248,40 +242,6 @@ class Copilot:
         actuator_state["kind"] = ActuatorsKindEnum[kind]
         if self.sio_events.connected:
             await self.sio_events.emit("actuator_state", actuator_state)
-
-    @pb_exception_handler
-    async def handle_pid(self, message: bytes | None = None) -> None:
-        """
-        Send pids state received from the robot to connected dashboards.
-        """
-        pb_pid = PB_Pid()
-        if message:
-            await self.loop.run_in_executor(None, pb_pid.ParseFromString, message)
-
-        self.pb_pids[pb_pid.id] = pb_pid
-        pid = Pid(
-            id=pb_pid.id,
-            kp=pb_pid.kp,
-            ki=pb_pid.ki,
-            kd=pb_pid.kd,
-            integral_term_limit=pb_pid.integral_term_limit,
-        )
-
-        # Get JSON Schema
-        pid_schema = pid.model_json_schema()
-        # Add namespace in JSON Schema
-        pid_schema["namespace"] = "/copilot"
-        pid_schema["sio_event"] = "config_updated"
-        # Add current values in JSON Schema
-        pid_schema["title"] = pid.id.name
-        for prop, value in pid.model_dump().items():
-            if prop == "id":
-                continue
-            pid_schema["properties"][prop]["value"] = value
-            pid_schema["properties"][f"{pid.id}-{prop}"] = pid_schema["properties"][prop]
-            del pid_schema["properties"][prop]
-        # Send config
-        await self.sio_events.emit("config", pid_schema)
 
     async def handle_pose_reached(self) -> None:
         """
@@ -464,7 +424,7 @@ class Copilot:
                     continue
                 pose_order = models.PathPose.from_shared(self.shared_avoidance_path[0])
                 if self.id > 1:
-                    pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
+                    pose_order.motion_direction = MotionDirection.FORWARD_ONLY
                 pb_pose_order = PB_PathPose()
                 pose_order.copy_pb(pb_pose_order)
                 await self.pbcom.send_can_message(pose_order_uuid, pb_pose_order)

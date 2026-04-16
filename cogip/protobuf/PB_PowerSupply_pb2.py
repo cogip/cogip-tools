@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14PB_PowerSupply.proto\"e\n\x13PB_PowerRailsStatus\x12\x12\n\np3V3_pgood\x18\x01 \x01(\x08\x12\x12\n\np5V0_pgood\x18\x02 \x01(\x08\x12\x12\n\np7V5_pgood\x18\x03 \x01(\x08\x12\x12\n\npxVx_pgood\x18\x04 \x01(\x08\"0\n\x16PB_EmergencyStopStatus\x12\x16\n\x0e\x65mergency_stop\x18\x01 \x01(\x08\"F\n\x14PB_PowerSourceStatus\x12\x15\n\rbattery_valid\x18\x01 \x01(\x08\x12\x17\n\x0f\x64\x63_supply_valid\x18\x02 \x01(\x08\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14PB_PowerSupply.proto\"e\n\x13PB_PowerRailsStatus\x12\x12\n\np3V3_pgood\x18\x01 \x01(\x08\x12\x12\n\np5V0_pgood\x18\x02 \x01(\x08\x12\x12\n\np7V5_pgood\x18\x03 \x01(\x08\x12\x12\n\npxVx_pgood\x18\x04 \x01(\x08\"F\n\x14PB_PowerSourceStatus\x12\x15\n\rbattery_valid\x18\x01 \x01(\x08\x12\x17\n\x0f\x64\x63_supply_valid\x18\x02 \x01(\x08\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,8 +33,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_PB_POWERRAILSSTATUS']._serialized_start=24
   _globals['_PB_POWERRAILSSTATUS']._serialized_end=125
-  _globals['_PB_EMERGENCYSTOPSTATUS']._serialized_start=127
-  _globals['_PB_EMERGENCYSTOPSTATUS']._serialized_end=175
-  _globals['_PB_POWERSOURCESTATUS']._serialized_start=177
-  _globals['_PB_POWERSOURCESTATUS']._serialized_end=247
+  _globals['_PB_POWERSOURCESTATUS']._serialized_start=127
+  _globals['_PB_POWERSOURCESTATUS']._serialized_end=197
 # @@protoc_insertion_point(module_scope)
