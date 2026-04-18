@@ -20,8 +20,6 @@ from luma.core.render import canvas
 from luma.oled.device import sh1106
 from numpy.typing import NDArray
 from PIL import ImageFont
-from shapely.affinity import rotate, translate
-from shapely.geometry import Polygon
 
 from cogip import models
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
@@ -32,7 +30,6 @@ from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCi
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, SharedProperties, WritePriorityLock
 from cogip.models.actuators import ActuatorState
-from cogip.models.artifacts import ConstructionArea, FixedObstacleID
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from . import actuators, cameras, logger, pose, sio_events
@@ -315,6 +312,7 @@ class Planner:
         Start sending obstacles list.
         """
         logger.info("Planner: start")
+        self.loop = asyncio.get_running_loop()
         self.create_shared_memory()
         self.shared_memory.avoidance_exiting = False
         await self.soft_reset()
@@ -374,26 +372,23 @@ class Planner:
         self.strategy = strategy_classes.get(StrategyEnum(self.shared_properties.strategy), strategy.Strategy)(self)
         await self.set_pose_start(self.start_positions.get())
         self.pami_event.clear()
+        await self.sio_ns.emit("soft_reset")
 
     async def final_action(self):
         if not self.playing:
             return
         self.playing = False
         await self.sio_ns.emit("game_end")
-        if self.robot_id == 1:
-            if self.robot_in_parking():
-                self.game_context.score += 10
-
-            # Display score
-            await self.sio_ns.emit("score", self.game_context.score)
-
         self.flag_motor.on()
         self.pose_order = None
 
     def starter_changed_callback(self, pushed: bool):
-        asyncio.create_task(self.starter_changed(pushed))
+        logger.info(f"Planner: Starter callback: {pushed}")
+        if hasattr(self, "loop") and self.loop.is_running():
+            asyncio.run_coroutine_threadsafe(self.starter_changed(pushed), self.loop)
 
     async def starter_changed(self, pushed: bool):
+        logger.info(f"Starter changed: {'On' if pushed else 'Off'}")
         self.last_starter_event_timestamp = datetime.now(UTC)
         if not self.virtual:
             await self.sio_ns.emit("starter_changed", pushed)
@@ -496,7 +491,7 @@ class Planner:
                     asyncio.create_task(self.set_pose_reached())
         except Exception as exc:  # noqa
             logger.warning(f"Planner: Unknown exception {exc}")
-            traceback.print_exc()
+            logger.warning(traceback.format_exc())
             raise
 
     async def set_action(self, action: "action.Action"):
@@ -517,8 +512,9 @@ class Planner:
             logger.info("Planner: blocked")
             if new_action := await self.strategy.get_next_action():
                 await self.set_action(new_action)
-            await current_action.recycle()
-            self.strategy.append(current_action)
+            if current_action.recyclable:
+                await current_action.recycle()
+                self.strategy.append(current_action)
             if not self.pose_order:
                 asyncio.create_task(self.set_pose_reached())
 
@@ -559,37 +555,8 @@ class Planner:
             if not self.shared_properties.disable_fixed_obstacles:
                 if self.robot_id == 1:
                     # Add artifact obstacles
-                    construction_areas: list[ConstructionArea] = list(
-                        self.game_context.construction_areas.values()
-                    ) + list(self.game_context.opponent_construction_areas.values())
-                    for construction_area in construction_areas:
-                        if not construction_area.enabled:
-                            continue
-                        if not table.contains(construction_area, margin):
-                            continue
-                        self.shared_rectangle_obstacles.append(
-                            x=construction_area.x,
-                            y=construction_area.y,
-                            angle=construction_area.O,
-                            length_x=construction_area.length + self.shared_properties.robot_width,
-                            length_y=construction_area.width + self.shared_properties.robot_width,
-                            bounding_box_margin=margin,
-                            id=construction_area.id.value,
-                        )
-                    for tribune in self.game_context.tribunes.values():
-                        if not tribune.enabled:
-                            continue
-                        if not table.contains(tribune, margin):
-                            continue
-                        self.shared_rectangle_obstacles.append(
-                            x=tribune.x,
-                            y=tribune.y,
-                            angle=tribune.O,
-                            length_x=tribune.width + self.shared_properties.robot_width,
-                            length_y=tribune.length + self.shared_properties.robot_width,
-                            bounding_box_margin=margin,
-                            id=tribune.id.value,
-                        )
+                    # (keep placeholder for future artifact obstacles)
+                    pass
 
                 # Add fixed obstacles
                 for fixed_obstacle in self.game_context.fixed_obstacles.values():
@@ -1057,34 +1024,6 @@ class Planner:
         # actuators_states[actuator_state.id] = actuator_state
         # if not self.virtual and actuator_state.id in self.game_context.emulated_actuator_states:
         #     self.game_context.emulated_actuator_states.remove(actuator_state.id)
-        pass
-
-    def robot_in_parking(self) -> bool:
-        pose_current = self.pose_current.model_copy()
-        robot_half = self.shared_properties.robot_width / 2.0
-        robot_square = Polygon(
-            [
-                (-robot_half, -robot_half),
-                (robot_half, -robot_half),
-                (robot_half, robot_half),
-                (-robot_half, robot_half),
-            ]
+        logger.info(
+            f"Planner: Actuator state updated: {actuator_state.kind.name} {actuator_state.id} = {actuator_state.state}"
         )
-        robot_square = rotate(robot_square, pose_current.O, origin=(0, 0), use_radians=False)
-        robot_square = translate(robot_square, xoff=pose_current.x, yoff=pose_current.y)
-
-        parking = self.game_context.fixed_obstacles[FixedObstacleID.Backstage]
-        parking_half = parking.width / 2.0
-        parking_square = Polygon(
-            [
-                (-parking_half, -parking_half),
-                (parking_half, -parking_half),
-                (parking_half, parking_half),
-                (-parking_half, parking_half),
-            ]
-        )
-        parking_square = translate(parking_square, xoff=parking.x, yoff=parking.y)
-
-        result = robot_square.intersects(parking_square)
-        logger.info(f"Planner: Robot in parking={result}")
-        return result

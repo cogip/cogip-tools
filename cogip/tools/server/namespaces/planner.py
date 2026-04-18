@@ -87,6 +87,7 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         Callback on starter_pushed message.
         """
+        logger.info(f"[planner => dashboard] Starter changed: {pushed}.")
         await self.emit("starter_changed", pushed, namespace="/dashboard")
 
     async def on_close_wizard(self, sid):
@@ -194,3 +195,10 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         logger.info("[planner => beacon] PAMI play.")
         await self.emit("pami_play", timestamp, namespace="/beacon")
+
+    async def on_soft_reset(self, sid):
+        """
+        Callback on soft_reset message.
+        """
+        logger.info("[planner => dashboard] soft reset.")
+        await self.emit("soft_reset", namespace="/dashboard")

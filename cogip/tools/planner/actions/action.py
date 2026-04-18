@@ -21,14 +21,23 @@ class Action:
 
     logger = logger
 
-    def __init__(self, name: str, planner: "Planner", strategy: "Strategy", interruptable: bool = True):
+    def __init__(
+        self,
+        name: str,
+        planner: "Planner",
+        strategy: "Strategy",
+        interruptable: bool = True,
+        recyclable: bool = True,
+    ):
         self.name = name
         self.planner = planner
         self.strategy = strategy
         self.interruptable = interruptable
+        self.recyclable = recyclable
         self.poses: list[Pose] = []
         self.before_action_func: Callable[[], Awaitable[None]] | None = None
         self.after_action_func: Callable[[], Awaitable[None]] | None = None
+        self.on_blocked_func: Callable[[], Awaitable[None]] | None = None
         self.recycled: bool = False
 
     def weight(self) -> float:
@@ -58,6 +67,14 @@ class Action:
         # Re-enable all actions after a successful action
         for action in self.strategy:
             action.recycled = False
+
+    @final
+    async def act_on_blocked(self):
+        """
+        Function executed when the action is blocked.
+        """
+        if self.on_blocked_func:
+            await self.on_blocked_func()
 
     async def recycle(self):
         """
