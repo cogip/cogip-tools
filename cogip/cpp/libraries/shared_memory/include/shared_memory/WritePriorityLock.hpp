@@ -4,6 +4,8 @@
 
 #include <semaphore.h>
 #include <string>
+#include <unordered_map>
+#include <sys/types.h>
 
 namespace cogip {
 
@@ -66,15 +68,18 @@ private:
     std::string consumer_count_shm_name_; ///< Name of the shared memory for consumer count.
     sem_t* sem_mutex_;              ///< Semaphore for synchronizing access to shared memory.
     sem_t* sem_write_lock_;         ///< Semaphore for ensuring write access priority.
-    sem_t* sem_update_;             ///< Semaphore for signaling updated data.
+    sem_t* my_update_sem_;          ///< Semaphore specific to this process for update signal.
+    std::string my_update_sem_name_;///< Name of my_update_sem_
     sem_t* sem_register_;           ///< Semaphore for consumer registration.
     int reader_shm_fd_;             ///< File descriptor for shared memory of reader count.
     int write_request_shm_fd_;      ///< File descriptor for shared memory of write request count.
     int consumer_count_shm_fd_;     ///< File descriptor for shared memory of consumer count.
     int* reader_count_;             ///< Shared memory pointer for reader count.
     int* write_request_count_;      ///< Shared memory pointer for writer request count.
-    int* consumer_count_;           ///< Shared memory pointer for consumer count.
+    pid_t* consumer_pids_;          ///< Shared memory pointer for consumer PIDs array.
+    std::unordered_map<pid_t, sem_t*> update_sems_cache_; ///< Cache of opened semaphores for postUpdate
     bool debug_;                    ///< Debug flag for logging.
+    static constexpr int MAX_CONSUMERS = 32; ///< Maximum number of registered consumers.
 };
 
 } // namespace shared_memory

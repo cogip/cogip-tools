@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <iostream>
 #include <time.h>
+#include <signal.h>
+#include <errno.h>
 
 namespace cogip {
 
@@ -29,14 +31,14 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
     consumer_count_shm_name_("/" + name_ + "_consumer_count"),
     sem_mutex_(nullptr),
     sem_write_lock_(nullptr),
-    sem_update_(nullptr),
+    my_update_sem_(nullptr),
     sem_register_(nullptr),
     reader_shm_fd_(-1),
     write_request_shm_fd_(-1),
     consumer_count_shm_fd_(-1),
     reader_count_(nullptr),
     write_request_count_(nullptr),
-    consumer_count_(nullptr),
+    consumer_pids_(nullptr),
     debug_(false)
 {
     int shm_flags = O_RDWR;
@@ -66,17 +68,6 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
     }
     if (sem_write_lock_ == SEM_FAILED) {
         throw std::runtime_error("Failed to open write lock semaphore");
-    }
-
-    // Open or create the update semaphore
-    if (owner) {
-        sem_update_ = sem_open(update_name_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0666, 1);
-    }
-    else {
-        sem_update_ = sem_open(update_name_.c_str(), O_RDWR);
-    }
-    if (sem_update_ == SEM_FAILED) {
-        throw std::runtime_error("Failed to open update semaphore");
     }
 
     // Open or create the register semaphore
@@ -125,12 +116,12 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
         throw std::runtime_error("Failed to open shared memory for consumer count");
     }
     if (owner_) {
-        if (ftruncate(consumer_count_shm_fd_, sizeof(int)) < 0) {
+        if (ftruncate(consumer_count_shm_fd_, MAX_CONSUMERS * sizeof(pid_t)) < 0) {
             throw std::runtime_error("Failed to truncate shared memory for consumer count");
         }
     }
-    consumer_count_ = static_cast<int*>(mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, consumer_count_shm_fd_, 0));
-    if (consumer_count_ == MAP_FAILED) {
+    consumer_pids_ = static_cast<pid_t*>(mmap(NULL, MAX_CONSUMERS * sizeof(pid_t), PROT_READ | PROT_WRITE, MAP_SHARED, consumer_count_shm_fd_, 0));
+    if (consumer_pids_ == MAP_FAILED) {
         throw std::runtime_error("Failed to map shared memory for consumer count");
     }
     if (owner_) {
@@ -142,11 +133,31 @@ WritePriorityLock::WritePriorityLock(const std::string& name, bool owner):
 WritePriorityLock::~WritePriorityLock() {
     if (registered_consumer_) {
         sem_wait(sem_register_);
-        (*consumer_count_)--;
+        pid_t current_pid = getpid();
+        for (int i = 0; i < MAX_CONSUMERS; ++i) {
+            if (consumer_pids_[i] == current_pid) {
+                consumer_pids_[i] = 0;
+                break;
+            }
+        }
         sem_post(sem_register_);
+
+        if (my_update_sem_ != nullptr) {
+            sem_close(my_update_sem_);
+            sem_unlink(my_update_sem_name_.c_str());
+        }
     }
-    if (consumer_count_ != nullptr) {
-        munmap(consumer_count_, sizeof(int));
+
+    // Close cached semaphores
+    for (auto& pair : update_sems_cache_) {
+        if (pair.second != nullptr) {
+            sem_close(pair.second);
+        }
+    }
+    update_sems_cache_.clear();
+
+    if (consumer_pids_ != nullptr) {
+        munmap(consumer_pids_, MAX_CONSUMERS * sizeof(pid_t));
     }
     if (write_request_count_ != nullptr) {
         munmap(write_request_count_, sizeof(int));
@@ -166,9 +177,6 @@ WritePriorityLock::~WritePriorityLock() {
     if (sem_register_ != nullptr) {
         sem_close(sem_register_);
     }
-    if (sem_update_ != nullptr) {
-        sem_close(sem_update_);
-    }
     if (sem_write_lock_ != nullptr) {
         sem_close(sem_write_lock_);
     }
@@ -177,7 +185,6 @@ WritePriorityLock::~WritePriorityLock() {
     }
     if (owner_) {
         sem_unlink(registration_name_.c_str());
-        sem_unlink(update_name_.c_str());
         sem_unlink(mutex_name_.c_str());
         sem_unlink(write_lock_name_.c_str());
         shm_unlink(reader_count_shm_name_.c_str());
@@ -240,32 +247,97 @@ void WritePriorityLock::finishWriting() {
 }
 
 void WritePriorityLock::registerConsumer() {
-    registered_consumer_ = true;
     sem_wait(sem_register_);
-    (*consumer_count_)++;
+    pid_t current_pid = getpid();
+    int empty_slot = -1;
+
+    for (int i = 0; i < MAX_CONSUMERS; ++i) {
+        pid_t pid = consumer_pids_[i];
+        if (pid != 0) {
+            // Check if process still exists
+            if (kill(pid, 0) == -1 && errno == ESRCH) {
+                // Process is dead, clean up
+                consumer_pids_[i] = 0;
+                std::string dead_sem_name = "/" + name_ + "_update_" + std::to_string(pid);
+                sem_unlink(dead_sem_name.c_str());
+                if (empty_slot == -1) empty_slot = i;
+            } else if (pid == current_pid) {
+                // Already registered
+                empty_slot = i;
+            }
+        } else if (empty_slot == -1) {
+            empty_slot = i;
+        }
+    }
+
+    if (empty_slot != -1) {
+        consumer_pids_[empty_slot] = current_pid;
+    } else {
+        sem_post(sem_register_);
+        throw std::runtime_error("Maximum number of consumers reached");
+    }
     sem_post(sem_register_);
+
+    my_update_sem_name_ = "/" + name_ + "_update_" + std::to_string(current_pid);
+    my_update_sem_ = sem_open(my_update_sem_name_.c_str(), O_CREAT, 0666, 0);
+    if (my_update_sem_ == SEM_FAILED) {
+        throw std::runtime_error("Failed to open specific update semaphore");
+    }
+
+    registered_consumer_ = true;
 }
 
 void WritePriorityLock::postUpdate() {
     if (debug_) {
-        int value;
-        sem_getvalue(sem_update_, &value);
-        std::cout << name_ << " postUpdate: count= " << *consumer_count_ << " sem_update_=" << value << std::endl;
+        std::cout << name_ << " postUpdate: start" << std::endl;
     }
-    for (int i = 0; i < *consumer_count_; ++i) {
-        sem_post(sem_update_);
+
+    for (int i = 0; i < MAX_CONSUMERS; ++i) {
+        pid_t pid = consumer_pids_[i];
+        if (pid != 0) {
+            sem_t* target_sem = nullptr;
+            auto it = update_sems_cache_.find(pid);
+            if (it != update_sems_cache_.end()) {
+                target_sem = it->second;
+            } else {
+                std::string target_sem_name = "/" + name_ + "_update_" + std::to_string(pid);
+                target_sem = sem_open(target_sem_name.c_str(), O_RDWR);
+                if (target_sem != SEM_FAILED) {
+                    update_sems_cache_[pid] = target_sem;
+                } else {
+                    target_sem = nullptr; // could be unlinked or not created yet
+                }
+            }
+
+            if (target_sem != nullptr) {
+                sem_post(target_sem);
+                if (debug_) {
+                    int value;
+                    sem_getvalue(target_sem, &value);
+                    std::cout << name_ << " postUpdate: pid=" << pid << " sem_update_=" << value << std::endl;
+                }
+            }
+        }
+    }
+
+    if (debug_) {
+        std::cout << name_ << " postUpdate: end" << std::endl;
     }
 }
 
 bool WritePriorityLock::waitUpdate(double timeout_seconds) {
+    if (my_update_sem_ == nullptr) {
+        throw std::runtime_error("waitUpdate called but consumer is not registered");
+    }
+
     if (debug_) {
         int value;
-        sem_getvalue(sem_update_, &value);
-        std::cout << name_ << " waitUpdate: count=" << *consumer_count_ << " sem_update_=" << value << std::endl;
+        sem_getvalue(my_update_sem_, &value);
+        std::cout << name_ << " waitUpdate: pid=" << getpid() << " sem_update_=" << value << std::endl;
     }
 
     if (timeout_seconds < 0) {
-        sem_wait(sem_update_);
+        sem_wait(my_update_sem_);
         if (debug_) std::cout << name_ << " waitUpdate: end" << std::endl;
         return true;
     } else {
@@ -284,7 +356,7 @@ bool WritePriorityLock::waitUpdate(double timeout_seconds) {
             ts.tv_nsec -= 1000000000;
         }
 
-        if (sem_timedwait(sem_update_, &ts) == -1) {
+        if (sem_timedwait(my_update_sem_, &ts) == -1) {
             return false;
         }
         if (debug_) std::cout << name_ << " waitUpdate: end" << std::endl;
@@ -297,11 +369,12 @@ void WritePriorityLock::reset() {
     *reader_count_ = 0;
     *write_request_count_ = 0;
     registered_consumer_ = false;
-    *consumer_count_ = 0;
+    for (int i = 0; i < MAX_CONSUMERS; ++i) {
+        consumer_pids_[i] = 0;
+    }
 
     sem_init(sem_mutex_, 1, 1);
     sem_init(sem_write_lock_, 1, 1);
-    sem_init(sem_update_, 1, 0);
     sem_init(sem_register_, 1, 1);
     if (debug_) std::cout << name_ << " reset: end" << std::endl;
 }
