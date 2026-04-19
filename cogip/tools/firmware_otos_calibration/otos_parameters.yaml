@@ -1,0 +1,17 @@
+# OTOS Calibration Parameter Definitions
+#
+# Defines the parameters the OTOS calibration tool reads and writes through
+# the firmware parameter manager. The 'content' values are only fallback
+# defaults used by the schema validator; real values come from the firmware
+# at runtime via load_parameters().
+
+parameters:
+  - name: otos_linear_scalar
+    value:
+      type: float
+      content: 1.0
+
+  - name: otos_angular_scalar
+    value:
+      type: float
+      content: 1.0
