@@ -33,3 +33,9 @@ from .odometry_calibration import (  # noqa
     EncoderDeltas,
     OdometryParameters,
 )
+from .otos_calibration import (  # noqa
+    OTOS_SCALAR_MAX,
+    OTOS_SCALAR_MIN,
+    OTOSCalibrationResult,
+    OTOSParameters,
+)
