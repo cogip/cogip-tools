@@ -57,7 +57,7 @@ class PidType(Enum):
     LINEAR_POSE = dict(
         label="Linear Pose",
         description="Position control (distance)",
-        param_names=("linear_pose_pid_kp", "linear_pose_pid_ki", "linear_pose_pid_kd"),
+        param_names=("tracker_linear_pose_pid_kp", "tracker_linear_pose_pid_ki", "tracker_linear_pose_pid_kd"),
         controller=PB_ControllerEnum.QUADPID_TRACKER,
         command_kind=CommandKind.POSE,
         motion_kind=MotionKind.LINEAR,
@@ -66,7 +66,7 @@ class PidType(Enum):
     ANGULAR_POSE = dict(
         label="Angular Pose",
         description="Position control (rotation)",
-        param_names=("angular_pose_pid_kp", "angular_pose_pid_ki", "angular_pose_pid_kd"),
+        param_names=("tracker_angular_pose_pid_kp", "tracker_angular_pose_pid_ki", "tracker_angular_pose_pid_kd"),
         controller=PB_ControllerEnum.QUADPID_TRACKER,
         command_kind=CommandKind.POSE,
         motion_kind=MotionKind.ANGULAR,
@@ -75,7 +75,7 @@ class PidType(Enum):
     LINEAR_SPEED = dict(
         label="Linear Speed",
         description="Velocity control (linear)",
-        param_names=("linear_speed_pid_kp", "linear_speed_pid_ki", "linear_speed_pid_kd"),
+        param_names=("tracker_linear_speed_pid_kp", "tracker_linear_speed_pid_ki", "tracker_linear_speed_pid_kd"),
         controller=PB_ControllerEnum.TRACKER_SPEED_TUNING,
         command_kind=CommandKind.SPEED,
         motion_kind=MotionKind.LINEAR,
@@ -85,7 +85,7 @@ class PidType(Enum):
     ANGULAR_SPEED = dict(
         label="Angular Speed",
         description="Velocity control (angular)",
-        param_names=("angular_speed_pid_kp", "angular_speed_pid_ki", "angular_speed_pid_kd"),
+        param_names=("tracker_angular_speed_pid_kp", "tracker_angular_speed_pid_ki", "tracker_angular_speed_pid_kd"),
         controller=PB_ControllerEnum.TRACKER_SPEED_TUNING,
         command_kind=CommandKind.SPEED,
         motion_kind=MotionKind.ANGULAR,
