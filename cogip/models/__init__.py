@@ -17,6 +17,7 @@ from .models import (  # noqa
     DynRoundObstacle,
     EmergencyStopStatus,
     MenuEntry,
+    MotionDirection,
     Obstacle,
     PathPose,
     Pose,
