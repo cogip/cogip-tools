@@ -110,7 +110,7 @@ class FirmwareAdapter:
         ) as progress:
             progress.add_task("", distance=distance_mm)
 
-            success = await self.goto(distance_mm, 0, 0, timeout=60.0)
+            success = await self.goto(distance_mm, 0, 0, timeout=10.0)
             if not success:
                 self._console.show_error("Straight line movement failed (timeout)")
                 return False
