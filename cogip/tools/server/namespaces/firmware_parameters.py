@@ -40,3 +40,11 @@ class FirmwareParametersNamespace(socketio.AsyncNamespace):
         """
         logger.info(f"[parameters => copilot] Set parameter: {data}")
         await self.emit("set_parameter_value", data, namespace="/copilot")
+
+    async def on_parameter_announce_request(self, sid, data: dict[str, Any] | None = None):
+        """
+        Callback on parameter_announce_request message.
+        Forward to copilot so it can broadcast it on the CAN bus.
+        """
+        logger.info(f"[parameters => copilot] Parameter announce request: {data}")
+        await self.emit("parameter_announce_request", data, namespace="/copilot")

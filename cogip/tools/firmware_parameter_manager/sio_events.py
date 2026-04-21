@@ -91,3 +91,24 @@ class SioEvents(socketio.AsyncClientNamespace):
                 future.set_result(response)
         else:
             logger.warning(f"No pending request found for firmware parameter hash: 0x{response.key_hash:08x}")
+
+    async def on_parameter_announce_header(self, data: dict[str, Any]):
+        """
+        Handle an announce header frame from copilot. Routed to the manager's
+        active announce aggregator; ignored when no announce is in flight.
+        """
+        self.manager._ingest_announce_header(data)
+
+    async def on_parameter_announce_name(self, data: dict[str, Any]):
+        """
+        Handle an announce name frame from copilot. Routed to the manager's
+        active announce aggregator; ignored when no announce is in flight.
+        """
+        self.manager._ingest_announce_name(data)
+
+    async def on_parameter_announce_bounds(self, data: dict[str, Any]):
+        """
+        Handle an announce bounds frame from copilot. Routed to the manager's
+        active announce aggregator; ignored when no announce is in flight.
+        """
+        self.manager._ingest_announce_bounds(data)

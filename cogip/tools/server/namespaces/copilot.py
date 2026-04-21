@@ -122,6 +122,30 @@ class CopilotNamespace(socketio.AsyncNamespace):
         logger.info(f"[copilot => parameters] Set response: {response}")
         await self.emit("set_parameter_response", response, namespace="/parameters")
 
+    async def on_parameter_announce_header(self, sid, payload: dict[str, Any]) -> None:
+        """
+        Callback on parameter_announce_header message from copilot.
+        Forward to firmware parameter manager for reassembly.
+        """
+        logger.info(f"[copilot => parameters] Announce header: {payload}")
+        await self.emit("parameter_announce_header", payload, namespace="/parameters")
+
+    async def on_parameter_announce_name(self, sid, payload: dict[str, Any]) -> None:
+        """
+        Callback on parameter_announce_name message from copilot.
+        Forward to firmware parameter manager for reassembly.
+        """
+        logger.info(f"[copilot => parameters] Announce name: {payload}")
+        await self.emit("parameter_announce_name", payload, namespace="/parameters")
+
+    async def on_parameter_announce_bounds(self, sid, payload: dict[str, Any]) -> None:
+        """
+        Callback on parameter_announce_bounds message from copilot.
+        Forward to firmware parameter manager for reassembly.
+        """
+        logger.info(f"[copilot => parameters] Announce bounds: {payload}")
+        await self.emit("parameter_announce_bounds", payload, namespace="/parameters")
+
     async def on_telemetry_data(self, sid, telemetry: dict[str, Any]) -> None:
         """
         Callback on telemetry_data message from copilot.

@@ -11,8 +11,10 @@ from cogip.models.actuators import ActuatorCommand, PositionalActuatorCommand
 from cogip.protobuf import (
     PB_ActuatorCommand,
     PB_Controller,
+    PB_ParameterAnnounceRequest,
     PB_ParameterGetRequest,
     PB_ParameterSetRequest,
+    PB_ParameterTag,
     PB_PathPose,
     PB_SpeedOrder,
 )
@@ -200,6 +202,22 @@ class SioEvents(socketio.AsyncClientNamespace):
         parameter.pb_copy(pb_set_request)
 
         await self.copilot.pbcom.send_can_message(copilot.parameter_set_uuid, pb_set_request)
+
+    async def on_parameter_announce_request(self, data: dict[str, Any] | None = None):
+        """
+        Callback on parameter_announce_request.
+        Forward to firmware as PB_ParameterAnnounceRequest, filtered by tag.
+        """
+        tag_filter = PB_ParameterTag.PARAM_TAG_NONE
+        if isinstance(data, dict):
+            tag_filter = data.get("tag_filter", PB_ParameterTag.PARAM_TAG_NONE)
+
+        logger.info(f"[SIO] Parameter announce request (tag_filter={tag_filter})")
+
+        pb_request = PB_ParameterAnnounceRequest()
+        pb_request.tag_filter = tag_filter
+
+        await self.copilot.pbcom.send_can_message(copilot.parameter_announce_request_uuid, pb_request)
 
     async def on_telemetry_enable(self, data: dict[str, Any] | None = None):
         """
