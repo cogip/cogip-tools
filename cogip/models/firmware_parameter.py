@@ -1,3 +1,4 @@
+from enum import IntEnum
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -20,6 +21,44 @@ from cogip.protobuf import (
     PB_ParameterStatus,
 )
 from cogip.utils.fnv1a import fnv1a_hash
+
+
+class ParameterTag(IntEnum):
+    """Semantic tags attached to a parameter at registration.
+
+    Values MUST mirror PB_ParameterTag in PB_ParameterCommands.proto: they are
+    used as bit indices in PB_ParameterAnnounceHeader.tags_bitmask.
+    """
+
+    NONE = 0
+    PID = 1
+    TRACKER = 2
+    QUADPID = 3
+    LINEAR = 4
+    ANGULAR = 5
+    POSE = 6
+    SPEED = 7
+    INTEGRAL_LIMIT = 8
+    LOCALIZATION = 9
+    ENCODER = 10
+    OTOS = 11
+    POLARITY = 12
+    WHEEL_GEOMETRY = 13
+    SPEED_LIMIT = 14
+    ACCELERATION_LIMIT = 15
+    POSE_THRESHOLD = 16
+
+
+class ParameterType(IntEnum):
+    """Scalar type of a parameter value; mirrors PB_ParameterType."""
+
+    FLOAT = 0
+    DOUBLE = 1
+    INT32 = 2
+    UINT32 = 3
+    INT64 = 4
+    UINT64 = 5
+    BOOL = 6
 
 
 class FirmwareParameterValidationFailed(Exception):
@@ -193,6 +232,30 @@ class FirmwareParameter(BaseModel):
 
             # Update the firmware parameter content
             self.value_obj.content = content
+
+
+class AnnouncedParameter(BaseModel):
+    """Parameter metadata reassembled from firmware announce frames.
+
+    Populated by FirmwareParameterManager.announce() from the three CAN-relayed
+    payloads: PB_ParameterAnnounceHeader (board_id, key_hash, type, tags,
+    flags, total_count, index), PB_ParameterAnnounceName (name), and the
+    optional PB_ParameterAnnounceBounds (min / max). `current_value` stays
+    None until fetched via the existing get_parameter_value flow.
+    """
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    board_id: int
+    key_hash: int
+    name: str
+    type: ParameterType
+    tags: set[ParameterTag] = Field(default_factory=set)
+    read_only: bool = False
+    has_bounds: bool = False
+    min_value: float | int | bool | None = None
+    max_value: float | int | bool | None = None
+    current_value: float | int | bool | None = None
 
 
 class FirmwareParametersGroup(RootModel):
