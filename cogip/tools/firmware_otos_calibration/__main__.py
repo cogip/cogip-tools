@@ -9,13 +9,10 @@ and firmware parameter manager).
 
 import asyncio
 import logging
-from pathlib import Path
 from typing import Annotated
 
 import typer
-import yaml
 
-from cogip.models import FirmwareParametersGroup
 from cogip.tools.firmware_otos_calibration import logger
 from cogip.tools.firmware_otos_calibration.otos_calibration import OTOSCalibration
 
@@ -57,12 +54,9 @@ def main_opt(
     if not server_url:
         server_url = f"http://localhost:809{robot_id}"
 
-    params_path = Path(__file__).with_name("otos_parameters.yaml")
-    parameters_data = yaml.safe_load(params_path.read_text())
-
-    parameters_group = FirmwareParametersGroup.model_validate(parameters_data["parameters"])
-
-    calibration = OTOSCalibration(server_url, parameters_group)
+    # Parameter catalog comes from the firmware announce stream at connect
+    # time, so no local YAML is needed.
+    calibration = OTOSCalibration(server_url)
     asyncio.run(calibration.run())
 
 

@@ -20,11 +20,9 @@ from threading import Thread
 from typing import Annotated
 
 import typer
-import yaml
 from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication
 
-from cogip.models import FirmwareParametersGroup
 from cogip.tools.firmware_pid_calibration import logger
 from cogip.tools.firmware_pid_calibration.pid_calibration import PidCalibration
 from cogip.tools.firmware_telemetry.graph import create_telemetry_graph
@@ -67,11 +65,6 @@ def main_opt(
     if not server_url:
         server_url = f"http://localhost:809{robot_id}"
 
-    # Load bundled parameters definition YAML
-    params_path = Path(__file__).with_name("pid_parameters.yaml")
-    parameters_data = yaml.safe_load(params_path.read_text())
-    parameters_group = FirmwareParametersGroup.model_validate(parameters_data["parameters"])
-
     # Create Qt application (must be in main thread)
     app = QApplication(sys.argv)
 
@@ -79,8 +72,9 @@ def main_opt(
     graph_config_path = Path(__file__).with_name("pid_graph_pose_layout.yaml")
     widget, bridge = create_telemetry_graph(graph_config_path)
 
-    # Create calibration controller with graph bridge
-    calibration = PidCalibration(server_url, parameters_group, graph_bridge=bridge)
+    # The parameter catalog is discovered from the firmware itself via the
+    # announce flow (see PidCalibration._connect). No local YAML needed.
+    calibration = PidCalibration(server_url, graph_bridge=bridge)
 
     def run_asyncio():
         """Run the asyncio event loop in a background thread."""

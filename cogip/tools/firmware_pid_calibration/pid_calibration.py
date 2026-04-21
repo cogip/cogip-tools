@@ -22,7 +22,7 @@ import sys
 import socketio
 import yaml
 
-from cogip.models import FirmwareParametersGroup
+from cogip.models import ParameterTag
 from cogip.protobuf import PB_ControllerEnum
 from cogip.tools.firmware_parameter_manager.firmware_parameter_manager import FirmwareParameterManager
 from cogip.tools.firmware_telemetry.firmware_telemetry_manager import FirmwareTelemetryManager
@@ -48,7 +48,6 @@ class PidCalibration:
     def __init__(
         self,
         server_url: str,
-        parameters_group: FirmwareParametersGroup,
         graph_bridge: TelemetryGraphBridge | None = None,
     ):
         """
@@ -56,8 +55,12 @@ class PidCalibration:
 
         Args:
             server_url: URL of the cogip-server
-            parameters_group: Firmware parameters configuration
             graph_bridge: Optional bridge for telemetry graph visualization
+
+        Note:
+            The firmware parameter catalog is discovered over CAN via the
+            announce protocol once the /parameters namespace is connected
+            (cf. `_connect`).
         """
         self.server_url = server_url
         self.console = ConsoleUI()
@@ -71,8 +74,10 @@ class PidCalibration:
         self.sio_ns = SioEvents(self)
         self.sio.register_namespace(self.sio_ns)
 
-        # Managers (they register their own namespaces)
-        self.param_manager = FirmwareParameterManager(self.sio, parameters_group)
+        # Managers (they register their own namespaces). The parameter
+        # manager starts empty; it is populated from the firmware announce
+        # stream in _connect().
+        self.param_manager = FirmwareParameterManager(self.sio)
         self.telemetry_manager = FirmwareTelemetryManager(self.sio)
 
         # Firmware adapter for motion control
@@ -104,6 +109,19 @@ class PidCalibration:
             await asyncio.sleep(0.1)
 
         self.console.show_success("Connected to cogip-server")
+
+        # Discover the firmware's PID parameters dynamically.
+        self.console.show_info("Discovering PID parameters from firmware...")
+        announced = await self.param_manager.populate_from_announce(tag=ParameterTag.PID)
+        self.console.show_success(f"Discovered {len(announced)} PID parameters from firmware")
+
+        # Sanity-check that every name the tool needs is present. This
+        # catches firmware / tool drift early rather than failing mid-motion.
+        missing = [name for pt in PidType for name in pt.param_names if name not in self.param_manager.parameter_group]
+        if missing:
+            self.console.show_warning(
+                f"Parameters missing from firmware announce: {missing}. " "The matching rows will fail to calibrate."
+            )
 
         # Enable telemetry
         await self.telemetry_manager.enable()

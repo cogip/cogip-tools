@@ -25,8 +25,8 @@ from cogip.models import (
     CalibrationResult,
     CalibrationState,
     EncoderDeltas,
-    FirmwareParametersGroup,
     OdometryParameters,
+    ParameterTag,
 )
 from cogip.tools.firmware_parameter_manager.firmware_parameter_manager import FirmwareParameterManager
 from cogip.tools.firmware_telemetry.firmware_telemetry_manager import FirmwareTelemetryManager
@@ -52,13 +52,17 @@ class OdometryCalibration:
     - User interaction via ConsoleUI
     """
 
-    def __init__(self, server_url: str, parameters_group: FirmwareParametersGroup):
+    def __init__(self, server_url: str):
         """
         Initialize the calibration controller.
 
         Args:
             server_url: URL of the cogip-server
-            parameters_group: Firmware parameters configuration
+
+        Note:
+            The firmware parameter catalog is discovered over CAN via the
+            announce protocol once the /parameters namespace is connected
+            (cf. `_connect`).
         """
         self.server_url = server_url
         self.console = ConsoleUI()
@@ -71,8 +75,10 @@ class OdometryCalibration:
         self.sio_ns = SioEvents(self)
         self.sio.register_namespace(self.sio_ns)
 
-        # Managers (they register their own namespaces)
-        self.param_manager = FirmwareParameterManager(self.sio, parameters_group)
+        # Managers (they register their own namespaces). The parameter
+        # manager starts empty; it is populated from the firmware announce
+        # stream in _connect().
+        self.param_manager = FirmwareParameterManager(self.sio)
         self.telemetry_manager = FirmwareTelemetryManager(self.sio)
 
         # Firmware adapter for motion control
@@ -103,6 +109,27 @@ class OdometryCalibration:
             await asyncio.sleep(0.1)
 
         self.console.show_success("Connected to cogip-server")
+
+        # Discover the encoder/odometry parameters from firmware. The
+        # ENCODER tag is declared on every parameter the tool cares about
+        # (wheel geometry, polarity, resolution).
+        self.console.show_info("Discovering odometry parameters from firmware...")
+        announced = await self.param_manager.populate_from_announce(tag=ParameterTag.ENCODER)
+        self.console.show_success(f"Discovered {len(announced)} odometry parameters from firmware")
+
+        expected = {
+            "qdec_left_polarity",
+            "qdec_right_polarity",
+            "left_wheel_diameter_mm",
+            "right_wheel_diameter_mm",
+            "encoder_wheels_distance_mm",
+            "encoder_wheels_resolution_pulses",
+        }
+        missing = expected - {p.name for p in announced}
+        if missing:
+            self.console.show_warning(
+                f"Firmware announce is missing {sorted(missing)}. " "The matching calibration steps will fail."
+            )
 
         # Enable telemetry
         await self.telemetry_manager.enable()

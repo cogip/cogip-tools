@@ -18,7 +18,7 @@ import sys
 
 import socketio
 
-from cogip.models import FirmwareParametersGroup, OTOSParameters
+from cogip.models import OTOSParameters, ParameterTag
 from cogip.tools.firmware_parameter_manager.firmware_parameter_manager import FirmwareParameterManager
 from cogip.utils.console_ui import ConsoleUI
 from . import logger
@@ -31,7 +31,7 @@ from .types import OtosCalibrationPhaseType
 class OTOSCalibration:
     """OTOS calibration controller."""
 
-    def __init__(self, server_url: str, parameters_group: FirmwareParametersGroup):
+    def __init__(self, server_url: str):
         self.server_url = server_url
         self.console = ConsoleUI()
 
@@ -41,7 +41,9 @@ class OTOSCalibration:
         self.sio_ns = SioEvents(self)
         self.sio.register_namespace(self.sio_ns)
 
-        self.param_manager = FirmwareParameterManager(self.sio, parameters_group)
+        # Parameter group is rebuilt from the firmware announce stream in
+        # `_connect()`; start empty.
+        self.param_manager = FirmwareParameterManager(self.sio)
 
         self.firmware = FirmwareAdapter(self.sio, self.param_manager, self.pose_reached_event, self.console)
 
@@ -61,6 +63,20 @@ class OTOSCalibration:
         while not (self.sio_ns.connected and self.param_manager.is_connected):
             await asyncio.sleep(0.1)
         self.console.show_success("Connected to cogip-server")
+
+        # Discover the OTOS parameters from firmware.
+        self.console.show_info("Discovering OTOS parameters from firmware...")
+        announced = await self.param_manager.populate_from_announce(tag=ParameterTag.OTOS)
+        self.console.show_success(f"Discovered {len(announced)} OTOS parameters from firmware")
+
+        expected = {"otos_linear_scalar", "otos_angular_scalar"}
+        missing = expected - {p.name for p in announced}
+        if missing:
+            self.console.show_error(
+                f"Firmware does not expose {sorted(missing)}; aborting. "
+                "Make sure the robot is built with ROBOT_HAS_OTOS."
+            )
+            raise RuntimeError(f"Missing OTOS parameters: {sorted(missing)}")
 
     async def _disconnect(self) -> None:
         if self.sio and self.sio.connected:

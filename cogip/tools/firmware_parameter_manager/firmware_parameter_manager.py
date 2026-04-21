@@ -3,9 +3,66 @@ from dataclasses import dataclass, field
 
 import socketio
 
-from cogip.models import AnnouncedParameter, FirmwareParametersGroup, ParameterTag, ParameterType
+from cogip.models import (
+    AnnouncedParameter,
+    FirmwareParameter,
+    FirmwareParametersGroup,
+    ParameterTag,
+    ParameterType,
+)
 from . import logger
 from .sio_events import SioEvents
+
+_TYPE_TO_PB_TYPE_NAME: dict[ParameterType, str] = {
+    ParameterType.FLOAT: "float",
+    ParameterType.DOUBLE: "double",
+    ParameterType.INT32: "int32",
+    ParameterType.UINT32: "uint32",
+    ParameterType.INT64: "int64",
+    ParameterType.UINT64: "uint64",
+    ParameterType.BOOL: "bool",
+}
+
+
+def _default_content_for(type_: ParameterType) -> float | int | bool:
+    """Neutral initial content used when building a FirmwareParameter shell.
+
+    The real value is fetched from firmware via get_parameter_value; this
+    default only satisfies FirmwareParameter's pydantic schema.
+    """
+    if type_ == ParameterType.BOOL:
+        return False
+    if type_ in (ParameterType.FLOAT, ParameterType.DOUBLE):
+        return 0.0
+    return 0
+
+
+def firmware_parameters_group_from_announced(
+    announced: list[AnnouncedParameter],
+) -> FirmwareParametersGroup:
+    """Build a FirmwareParametersGroup shell from announce metadata.
+
+    The returned group has the right names and declared scalar types but
+    zero-initialized values; callers must hydrate it via
+    FirmwareParameterManager.get_parameter_value to pick up live firmware
+    values.
+    """
+    entries: list[FirmwareParameter] = []
+    for param in announced:
+        pb_type_name = _TYPE_TO_PB_TYPE_NAME[param.type]
+        entries.append(
+            FirmwareParameter.model_validate(
+                {
+                    "name": param.name,
+                    "value": {
+                        "type": pb_type_name,
+                        "content": _default_content_for(param.type),
+                    },
+                }
+            )
+        )
+    return FirmwareParametersGroup(entries)
+
 
 _ONEOF_FIELD_BY_TYPE: dict[ParameterType, str] = {
     ParameterType.FLOAT: "float_value",
@@ -204,7 +261,7 @@ class FirmwareParameterManager:
     def __init__(
         self,
         sio: socketio.AsyncClient,
-        parameter_group: FirmwareParametersGroup,
+        parameter_group: FirmwareParametersGroup | None = None,
     ):
         """
         Initialize the FirmwareParameterManager.
@@ -212,10 +269,13 @@ class FirmwareParameterManager:
         Args:
             sio: External Socket.IO client on which to register the /parameters namespace.
                  The host client is responsible for connection management.
-            parameter_group: The firmware parameters to manage
+            parameter_group: Pre-populated firmware parameters. When None, the
+                 manager starts with an empty group; callers are expected to
+                 fill it from the firmware's own announce stream via
+                 `populate_from_announce()`.
         """
         self.sio = sio
-        self.parameter_group = parameter_group
+        self.parameter_group = parameter_group if parameter_group is not None else FirmwareParametersGroup()
 
         self.sio_events = SioEvents(self)
         self.sio.register_namespace(self.sio_events)
@@ -417,6 +477,24 @@ class FirmwareParameterManager:
                 return result
             finally:
                 self._active_announce = None
+
+    async def populate_from_announce(
+        self,
+        tag: ParameterTag = ParameterTag.NONE,
+        timeout: float = 3.0,
+    ) -> list[AnnouncedParameter]:
+        """Announce and rebuild `self.parameter_group` from the result.
+
+        Convenience wrapper around announce() for calibration tools that used
+        to ship a hand-written YAML catalog: after this call, the internal
+        parameter_group contains exactly the parameters the firmware declared
+        for the requested tag, with the correct scalar types. Values must
+        still be fetched individually via get_parameter_value.
+        """
+        announced = await self.announce(tag=tag, timeout=timeout)
+        self.parameter_group = firmware_parameters_group_from_announced(announced)
+        logger.info(f"Rebuilt parameter_group from announce (tag={tag.name}): " f"{len(self.parameter_group)} entries")
+        return announced
 
     def _ingest_announce_header(self, payload: dict) -> None:
         """Feed a header frame into the active aggregator, if any."""
