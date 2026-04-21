@@ -290,10 +290,17 @@ class FirmwareParameterManager:
         self._announce_lock = asyncio.Lock()
         self._active_announce: _AnnounceAggregator | None = None
 
-        # Cache of the most recent announce, keyed by key_hash. Populated by
-        # announce(); tools can use it to avoid re-announcing when the
-        # firmware registry is stable.
+        # Cache of every parameter announced so far, keyed by key_hash.
+        # Updated by explicit announce() calls and by stray frames received
+        # when the firmware auto-announces on copilot connect. Tools can
+        # read it to avoid a round-trip when the firmware is stable.
         self.announced_cache: dict[int, AnnouncedParameter] = {}
+
+        # Always-on reassembly state for frames received outside of an
+        # explicit announce() call (typically the firmware's auto-announce
+        # on copilot connect). Entries graduate to `announced_cache` as
+        # soon as they are complete.
+        self._ambient_partials: dict[int, _PartialAnnouncedParameter] = {}
 
     @property
     def namespace(self) -> str:
@@ -482,6 +489,7 @@ class FirmwareParameterManager:
         self,
         tag: ParameterTag = ParameterTag.NONE,
         timeout: float = 3.0,
+        prefer_cache: bool = True,
     ) -> list[AnnouncedParameter]:
         """Announce and rebuild `self.parameter_group` from the result.
 
@@ -490,62 +498,112 @@ class FirmwareParameterManager:
         parameter_group contains exactly the parameters the firmware declared
         for the requested tag, with the correct scalar types. Values must
         still be fetched individually via get_parameter_value.
+
+        When `prefer_cache` is true and the ambient cache already contains at
+        least one entry matching `tag`, skip the round-trip. The firmware
+        auto-announces every parameter on copilot connect, so the cache is
+        usually warm by the time a tool reaches this method; pass
+        `prefer_cache=False` to force a fresh request.
         """
-        announced = await self.announce(tag=tag, timeout=timeout)
+        filtered = self._filter_cache(tag) if prefer_cache else []
+        if filtered:
+            announced = filtered
+            logger.info(f"Parameter group satisfied from ambient cache (tag={tag.name}): {len(announced)} entries")
+        else:
+            announced = await self.announce(tag=tag, timeout=timeout)
+
         self.parameter_group = firmware_parameters_group_from_announced(announced)
-        logger.info(f"Rebuilt parameter_group from announce (tag={tag.name}): " f"{len(self.parameter_group)} entries")
+        logger.info(f"Rebuilt parameter_group from announce (tag={tag.name}): {len(self.parameter_group)} entries")
         return announced
 
+    def _filter_cache(self, tag: ParameterTag) -> list[AnnouncedParameter]:
+        """Return cached AnnouncedParameter entries matching `tag`.
+
+        An entry matches when tag is NONE (all entries) or when tag is set
+        on the entry.
+        """
+        if tag == ParameterTag.NONE:
+            return list(self.announced_cache.values())
+        return [p for p in self.announced_cache.values() if tag in p.tags]
+
+    def _ambient_update(self, partial: _PartialAnnouncedParameter) -> None:
+        """Promote a completed ambient partial to `announced_cache`."""
+        if partial.complete and partial.key_hash is not None:
+            self.announced_cache[partial.key_hash] = partial.to_announced()
+
     def _ingest_announce_header(self, payload: dict) -> None:
-        """Feed a header frame into the active aggregator, if any."""
-        if self._active_announce is None:
-            logger.warning("Received announce_header with no active announce")
-            return
+        """Feed a header frame into the explicit aggregator (if any) and the
+        ambient cache so auto-announces land in `announced_cache` too."""
         try:
             type_ = ParameterType(int(payload.get("type", 0)))
             tags_bitmask = int(payload.get("tags_bitmask", 0))
             tags = {t for t in ParameterTag if t != ParameterTag.NONE and (tags_bitmask & (1 << int(t)))}
             flags = int(payload.get("flags", 0))
-            self._active_announce.on_header(
-                board_id=int(payload["board_id"]),
-                key_hash=int(payload["key_hash"]),
-                type=type_,
-                tags=tags,
-                read_only=bool(flags & 0x1),
-                has_bounds=bool(flags & 0x2),
-                total_count=int(payload.get("total_count", 0)),
-                index=int(payload.get("index", 0)),
-            )
+            board_id = int(payload["board_id"])
+            key_hash = int(payload["key_hash"])
+            read_only = bool(flags & 0x1)
+            has_bounds = bool(flags & 0x2)
+            total_count = int(payload.get("total_count", 0))
+            index = int(payload.get("index", 0))
+
+            if self._active_announce is not None:
+                self._active_announce.on_header(
+                    board_id=board_id,
+                    key_hash=key_hash,
+                    type=type_,
+                    tags=tags,
+                    read_only=read_only,
+                    has_bounds=has_bounds,
+                    total_count=total_count,
+                    index=index,
+                )
+            else:
+                partial = self._ambient_partials.setdefault(key_hash, _PartialAnnouncedParameter())
+                partial.board_id = board_id
+                partial.key_hash = key_hash
+                partial.type = type_
+                partial.tags = tags
+                partial.read_only = read_only
+                partial.has_bounds = has_bounds
+                partial.has_header = True
+                self._ambient_update(partial)
         except Exception as exc:
             logger.error(f"Invalid announce_header payload {payload}: {exc}")
 
     def _ingest_announce_name(self, payload: dict) -> None:
-        """Feed a name frame into the active aggregator, if any."""
-        if self._active_announce is None:
-            logger.warning("Received announce_name with no active announce")
-            return
+        """Feed a name frame. Routed to the explicit aggregator if an
+        announce() call is in flight, else to the ambient cache."""
         try:
-            self._active_announce.on_name(
-                key_hash=int(payload["key_hash"]),
-                name=str(payload.get("name", "")),
-            )
+            key_hash = int(payload["key_hash"])
+            name = str(payload.get("name", ""))
+            if self._active_announce is not None:
+                self._active_announce.on_name(key_hash=key_hash, name=name)
+            else:
+                partial = self._ambient_partials.setdefault(key_hash, _PartialAnnouncedParameter())
+                partial.name = name
+                partial.has_name = True
+                self._ambient_update(partial)
         except Exception as exc:
             logger.error(f"Invalid announce_name payload {payload}: {exc}")
 
     def _ingest_announce_bounds(self, payload: dict) -> None:
-        """Feed a bounds frame into the active aggregator, if any."""
-        if self._active_announce is None:
-            logger.warning("Received announce_bounds with no active announce")
-            return
+        """Feed a bounds frame. Routed to the explicit aggregator if an
+        announce() call is in flight, else to the ambient cache."""
         try:
             key_hash = int(payload["key_hash"])
-            partial = self._active_announce.partials.get(key_hash)
-            # Without a prior header we don't know the scalar type; default to
-            # FLOAT as a best-effort (bounds will still be usable if floats).
-            type_ = partial.type if (partial and partial.type is not None) else ParameterType.FLOAT
-            min_value = _extract_scalar(payload.get("min_value", {}) or {}, type_)
-            max_value = _extract_scalar(payload.get("max_value", {}) or {}, type_)
-            self._active_announce.on_bounds(key_hash, min_value, max_value)
+            if self._active_announce is not None:
+                partial = self._active_announce.partials.get(key_hash)
+                type_ = partial.type if (partial and partial.type is not None) else ParameterType.FLOAT
+                min_value = _extract_scalar(payload.get("min_value", {}) or {}, type_)
+                max_value = _extract_scalar(payload.get("max_value", {}) or {}, type_)
+                self._active_announce.on_bounds(key_hash, min_value, max_value)
+            else:
+                partial = self._ambient_partials.setdefault(key_hash, _PartialAnnouncedParameter())
+                type_ = partial.type if partial.type is not None else ParameterType.FLOAT
+                partial.min_value = _extract_scalar(payload.get("min_value", {}) or {}, type_)
+                partial.max_value = _extract_scalar(payload.get("max_value", {}) or {}, type_)
+                partial.has_bounds_data = True
+                self._ambient_update(partial)
         except Exception as exc:
             logger.error(f"Invalid announce_bounds payload {payload}: {exc}")
 
