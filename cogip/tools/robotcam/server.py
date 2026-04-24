@@ -15,7 +15,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from uvicorn.main import Server as UvicornServer
 
-from cogip import logger
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
 from cogip.models import CameraExtrinsicParameters, Pose, models
@@ -37,6 +36,7 @@ from cogip.tools.camera.utils import (
     load_camera_intrinsic_params,
     make_transform_matrix,
 )
+from . import logger
 from .settings import Settings
 
 
