@@ -5,6 +5,7 @@ from collections.abc import Callable
 
 import can
 from google.protobuf.message import DecodeError as ProtobufDecodeError
+from google.protobuf.message import Message
 
 from . import logger
 
@@ -41,8 +42,10 @@ class PBCom:
         self.message_handlers = message_handlers
 
         # Create asyncio queues
+        # Queue for messages received
         self.messages_received = asyncio.Queue()  # Queue for messages received
-        self.messages_to_send = asyncio.Queue()  # Queue for messages waiting to be sent
+        # Queue for messages waiting to be sent
+        self.messages_to_send: asyncio.Queue[tuple[int, Message | None]] = asyncio.Queue()
 
     def register_message_handler(self, uuid: int, handler: Callable) -> None:
         """
@@ -99,8 +102,8 @@ class PBCom:
         except asyncio.CancelledError:
             raise
 
-    async def send_can_message(self, *args) -> None:
-        await self.messages_to_send.put(args)
+    async def send_can_message(self, message_id: int, pb_message: Message | None = None) -> None:
+        await self.messages_to_send.put((message_id, pb_message))
 
     async def can_receiver(self):
         """
@@ -143,7 +146,10 @@ class PBCom:
         try:
             while True:
                 uuid, pb_message = await self.messages_to_send.get()
-                logger.info(f"Send 0x{uuid:04x}:\n{pb_message}")
+                if pb_message is None:
+                    logger.info(f"Send 0x{uuid:04x} with no payload")
+                else:
+                    logger.info(f"Send 0x{uuid:04x}:\n{str(pb_message)}")
                 if pb_message:
                     response_serialized = await self.loop.run_in_executor(None, pb_message.SerializeToString)
                     response_base64 = await self.loop.run_in_executor(None, base64.encodebytes, response_serialized)
