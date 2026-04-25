@@ -17,6 +17,7 @@ from .models import (  # noqa
     DynRoundObstacle,
     EmergencyStopStatus,
     MenuEntry,
+    MotionDirection,
     Obstacle,
     PathPose,
     Pose,
@@ -32,4 +33,10 @@ from .odometry_calibration import (  # noqa
     CalibrationState,
     EncoderDeltas,
     OdometryParameters,
+)
+from .otos_calibration import (  # noqa
+    OTOS_SCALAR_MAX,
+    OTOS_SCALAR_MIN,
+    OTOSCalibrationResult,
+    OTOSParameters,
 )
