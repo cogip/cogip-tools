@@ -334,7 +334,8 @@ class Planner:
         """
         logger.info("Planner: stop")
 
-        self.shared_memory.avoidance_exiting = True
+        if self.shared_memory is not None:
+            self.shared_memory.avoidance_exiting = True
         await self.sio_ns.emit("stop_video_record")
         await self.event_manager.stop_loops()
         await self.obstacles_updater_loop.stop()
