@@ -11,8 +11,6 @@ WorkingDirectory=/opt
 ExecStart=/opt/.venv/bin/python -m cogip.tools.robotcam
 RestartSec=5
 EnvironmentFile=/etc/environment
-StandardOutput=null
-StandardError=null
 
 [Install]
 WantedBy=multi-user.target
