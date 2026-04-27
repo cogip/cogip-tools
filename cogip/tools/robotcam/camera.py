@@ -11,9 +11,9 @@ import cv2
 import polling2
 import socketio
 
-from cogip import logger
 from cogip.tools.camera.arguments import CameraName, VideoCodec
 from cogip.tools.camera.camera import Camera, RPiCamera, SimCamera, USBCamera
+from . import logger
 from .settings import Settings
 
 

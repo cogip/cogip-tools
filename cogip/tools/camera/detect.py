@@ -43,6 +43,10 @@ marker_sizes: dict[int, float] = {
     21: 100.0,  # Back/Right   400/-900
     22: 100.0,  # Front/Left   -400/900
     23: 100.0,  # Front/Right  -400/-900
+    # Crates
+    36: 30,  # blue hazelnut crates
+    41: 30,  # empty crates
+    47: 30,  # yellow hazelnut crates
 }
 
 table_markers_positions = {
@@ -56,7 +60,7 @@ table_markers_tvecs = {n: np.array([t["x"], t["y"], 0]) for n, t in table_marker
 
 
 robot_width = 295.0
-robot_length = 295.0
+robot_length = 289.0
 
 
 def get_robot_position(n: int) -> Pose | None:

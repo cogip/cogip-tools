@@ -12,8 +12,6 @@ ExecStartPre=/bin/sh -c 'rm -rf /dev/shm/*'
 ExecStart=/opt/.venv/bin/python -m cogip.tools.server
 RestartSec=5
 EnvironmentFile=/etc/environment
-StandardOutput=null
-StandardError=null
 KillSignal=SIGKILL
 
 [Install]
