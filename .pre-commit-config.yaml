@@ -15,9 +15,11 @@ repos:
       entry: pyside6-qmllint
       language: system
       files: ^cogip/tools/monitor/.*\.qml$
+      exclude: ^cogip/tools/monitor/.*\.mesh/.*$
 
     - id: qmlformat
       name: QML Format
       entry: pyside6-qmlformat --inplace
       language: system
       files: ^cogip/tools/monitor/.*\.qml$
+      exclude: ^cogip/tools/monitor/.*\.mesh/.*$
