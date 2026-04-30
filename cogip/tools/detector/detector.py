@@ -100,10 +100,13 @@ class Detector:
             cluster_eps=cluster_eps,
         )
 
-        if robot_id == 1:
-            self.LIDAR_OFFSET_X = 0.0
-        else:
-            self.LIDAR_OFFSET_X = 75.5
+        match robot_id:
+            case 1:
+                self.LIDAR_OFFSET_X = 0.0
+            case 2:
+                self.LIDAR_OFFSET_X = 50.0
+            case _:
+                self.LIDAR_OFFSET_X = 75.5
         self.LIDAR_OFFSET_Y = 0.0
 
         self.shared_memory: SharedMemory | None = None
