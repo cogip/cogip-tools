@@ -13,7 +13,7 @@ case ${ROBOT_ID} in
         DOCKER_TAG=robot
         HOSTNAME=robot${ROBOT_ID}
         ;;
-    [2-9]) # PAMIs
+    [2-9]) # Ninja & PAMIs
         DOCKER_TAG=pami
         HOSTNAME=robot${ROBOT_ID}
         ;;
