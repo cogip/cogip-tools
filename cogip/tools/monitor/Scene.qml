@@ -143,13 +143,29 @@ Item {
         }
 
         function onSignal_servo_changed(servoName, angle) {
-            if (!sceneRoot.liveRobotNode)
-                return;
-            var targetNode = sceneRoot.findNodeByName(sceneRoot.liveRobotNode, servoName);
-            if (targetNode) {
-                sceneRoot.animateServo(targetNode, angle);
+            if (sceneRoot.liveRobotNode) {
+                var targetNode = sceneRoot.findNodeByName(sceneRoot.liveRobotNode, servoName);
+                if (targetNode) {
+                    sceneRoot.animateServo(targetNode, angle);
+                } else {
+                    console.warn("Servo node not found: " + servoName);
+                }
+            }
+
+            var manualRobot = null;
+            if (sceneRoot.robotId === 1) {
+                manualRobot = typeof robotManual !== "undefined" ? robotManual : null;
+            } else if (sceneRoot.robotId === 2) {
+                manualRobot = typeof ninjaManual !== "undefined" ? ninjaManual : null;
             } else {
-                console.warn("Servo node not found: " + servoName);
+                manualRobot = typeof pamiManual !== "undefined" ? pamiManual : null;
+            }
+
+            if (manualRobot) {
+                var targetNodeManual = sceneRoot.findNodeByName(manualRobot, servoName);
+                if (targetNodeManual) {
+                    sceneRoot.animateServo(targetNodeManual, angle);
+                }
             }
         }
 
