@@ -10,6 +10,7 @@ from . import logger
 from .menu import (
     cameras_menu,
     menu,
+    ninja_actuators_menu,
     pami_actuators_menu,
     robot_actuators_multi_menu,
     robot_back_actuators_menu,
@@ -56,6 +57,9 @@ class SioEvents(socketio.AsyncClientNamespace):
             await self.emit(
                 "register_menu", {"name": "actuators_multi", "menu": robot_actuators_multi_menu.model_dump()}
             )
+        elif self.planner.robot_id == 2:
+            await self.emit("register_menu", {"name": "actuators", "menu": ninja_actuators_menu.model_dump()})
+
         else:
             await self.emit("register_menu", {"name": "actuators", "menu": pami_actuators_menu.model_dump()})
         await self.emit("register_menu", {"name": "cameras", "menu": cameras_menu.model_dump()})

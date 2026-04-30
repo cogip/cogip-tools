@@ -13,10 +13,11 @@ class StartPositionEnum(ArgEnum):
     """
 
     Top = auto()
-    PAMI2 = auto()
+    NINJA = auto()
     PAMI3 = auto()
     PAMI4 = auto()
     PAMI5 = auto()
+    PAMI6 = auto()
 
 
 class StartPositions:
@@ -36,29 +37,35 @@ class StartPositions:
                     y=-1100 - self.shared_properties.robot_width / 2,
                     O=180,
                 ).pose
-            case StartPositionEnum.PAMI2:
+            case StartPositionEnum.NINJA:
+                return AdaptedPose(
+                    x=800 + self.shared_properties.robot_width / 2 + training_offset_x,
+                    y=-700 - self.shared_properties.robot_length / 2,
+                    O=90,
+                ).pose
+            case StartPositionEnum.PAMI3:
                 return AdaptedPose(
                     x=550 + 100 * 0.5 + training_offset_x,
                     y=-934,
                     O=-90,
                 ).pose
-            case StartPositionEnum.PAMI3:
+            case StartPositionEnum.PAMI4:
                 return AdaptedPose(
                     x=550 + 100 * 1.5 + training_offset_x,
                     y=-934,
                     O=-90,
                 ).pose
-            case StartPositionEnum.PAMI4:
+            case StartPositionEnum.PAMI5:
                 return AdaptedPose(
                     x=550 + 100 * 2.5 + training_offset_x,
                     y=-934,
                     O=-90,
                 ).pose
-            case StartPositionEnum.PAMI5:
+            case StartPositionEnum.PAMI6:
                 return AdaptedPose(
-                    x=800 + self.shared_properties.robot_width / 2 + training_offset_x,
-                    y=-700 - self.shared_properties.robot_length / 2,
-                    O=90,
+                    x=550 + 100 * 3.5 + training_offset_x,
+                    y=-934,
+                    O=-90,
                 ).pose
 
     @property
@@ -70,12 +77,13 @@ class StartPositions:
             position = StartPositionEnum(position)
         if self.shared_properties.robot_id == 1 and position != StartPositionEnum.Top:
             return False
-        if self.shared_properties.robot_id in [2, 3, 4] and position not in [
-            StartPositionEnum.PAMI2,
+        if self.shared_properties.robot_id == 2 and position != StartPositionEnum.NINJA:
+            return False
+        if self.shared_properties.robot_id in [3, 4, 5, 6] and position not in [
             StartPositionEnum.PAMI3,
             StartPositionEnum.PAMI4,
+            StartPositionEnum.PAMI5,
+            StartPositionEnum.PAMI6,
         ]:
-            return False
-        if self.shared_properties.robot_id == 5 and position != StartPositionEnum.PAMI5:
             return False
         return True

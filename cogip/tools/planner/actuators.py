@@ -22,6 +22,7 @@ AXIS_MOVE_DURATION_SEC = 0.5
 ARM_MOVE_DURATION_SEC = 0.5
 LIFT_MOVE_DURATION_SEC = 1.5
 SCISSOR_MOVE_DURATION_SEC = 0.5
+NINJA_ARM_MOVE_DURATION_SEC = 0.5
 
 # Define center and offset for servos positions
 FRONT_GRIP_LEFT_SIDE_ZERO = 528
@@ -54,6 +55,9 @@ BACK_SCISSOR_LEFT_CLOSE = 295
 BACK_SCISSOR_RIGHT_OPEN = 550  # ZERO
 BACK_SCISSOR_RIGHT_CLOSE = 410
 
+NINJA_ARM_LEFT_ZERO = 500  # Front  # TO CALIBRATE
+NINJA_ARM_RIGHT_ZERO = 500  # Front  # TO CALIBRATE
+
 GRIP_OFFSET_OPEN = 70
 GRIP_OFFSET_CLOSE = -40
 AXIS_OFFSET_OUT = 0
@@ -62,28 +66,34 @@ ARM_OFFSET_OPEN = 393
 ARM_OFFSET_CLOSE = -45
 SCISSOR_OFFSET_OPEN = 135
 SCISSOR_OFFSET_CLOSE = 0
+NINJA_ARM_OFFSET_CLOSE = -300  # TO CALIBRATE
+NINJA_ARM_OFFSET_FRONT = 0
+NINJA_ARM_OFFSET_SIDE = 300  # TO CALIBRATE
 
 
 async def actuators_init(planner: "Planner"):
     """
     Send actuators initialization command to the firmware.
     """
-    await front_lift_init(planner)
-    await back_lift_init(planner)
-    await front_arms_close(planner)
-    await back_arms_close(planner)
-    await front_grips_close(planner)
-    await back_grips_close(planner)
-    await front_scissors_open(planner)
-    duration = await back_scissors_open(planner)
-    await asyncio.sleep(duration)
-    await front_axis_left_side_out(planner)
-    await front_axis_left_center_out(planner)
-    await front_axis_right_center_out(planner)
-    duration = await front_axis_right_side_out(planner)
-    await asyncio.sleep(duration)
-    await front_scissors_close(planner)
-    await back_scissors_close(planner)
+    if planner.robot_id == 1:
+        await front_lift_init(planner)
+        await back_lift_init(planner)
+        await front_arms_close(planner)
+        await back_arms_close(planner)
+        await front_grips_close(planner)
+        await back_grips_close(planner)
+        await front_scissors_open(planner)
+        duration = await back_scissors_open(planner)
+        await asyncio.sleep(duration)
+        await front_axis_left_side_out(planner)
+        await front_axis_left_center_out(planner)
+        await front_axis_right_center_out(planner)
+        duration = await front_axis_right_side_out(planner)
+        await asyncio.sleep(duration)
+        await front_scissors_close(planner)
+        await back_scissors_close(planner)
+    elif planner.robot_id == 2:
+        await ninja_arms_close(planner)
 
 
 # Positional Motors
@@ -533,6 +543,55 @@ async def back_scissor_right_close(planner: "Planner", speed: int = 1000, reg_on
     return SCISSOR_MOVE_DURATION_SEC
 
 
+## Ninja Arms
+async def ninja_arm_left_close(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_LEFT, NINJA_ARM_LEFT_ZERO + NINJA_ARM_OFFSET_CLOSE, speed=speed, reg_only=reg_only
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_LEFT, 0))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_left_front(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_LEFT, NINJA_ARM_LEFT_ZERO + NINJA_ARM_OFFSET_FRONT, speed=speed, reg_only=reg_only
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_LEFT, 1))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_left_side(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_LEFT, NINJA_ARM_LEFT_ZERO + NINJA_ARM_OFFSET_SIDE, speed=speed, reg_only=reg_only
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_LEFT, 2))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_right_close(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_RIGHT, NINJA_ARM_RIGHT_ZERO - NINJA_ARM_OFFSET_CLOSE, speed=speed, reg_only=reg_only
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_RIGHT, 0))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_right_front(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_RIGHT, NINJA_ARM_RIGHT_ZERO - NINJA_ARM_OFFSET_FRONT, speed=speed, reg_only=reg_only
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_RIGHT, 1))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_right_side(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_RIGHT, NINJA_ARM_RIGHT_ZERO - NINJA_ARM_OFFSET_SIDE, speed=speed, reg_only=reg_only
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_RIGHT, 2))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
 # Multi-commands
 async def front_arms_open(planner: "Planner") -> float:
     await front_arm_left_open(planner, reg_only=True)
@@ -624,3 +683,24 @@ async def back_scissors_close(planner: "Planner", speed: int = 1000) -> float:
     await back_scissor_right_close(planner, speed=speed, reg_only=True)
     planner.scservos.action()
     return SCISSOR_MOVE_DURATION_SEC
+
+
+async def ninja_arms_close(planner: "Planner", speed: int = 1000) -> float:
+    await ninja_arm_left_close(planner, speed=speed, reg_only=True)
+    await ninja_arm_right_close(planner, speed=speed, reg_only=True)
+    planner.scservos.action()
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arms_front(planner: "Planner", speed: int = 1000) -> float:
+    await ninja_arm_left_front(planner, speed=speed, reg_only=True)
+    await ninja_arm_right_front(planner, speed=speed, reg_only=True)
+    planner.scservos.action()
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arms_side(planner: "Planner", speed: int = 1000) -> float:
+    await ninja_arm_left_side(planner, speed=speed, reg_only=True)
+    await ninja_arm_right_side(planner, speed=speed, reg_only=True)
+    planner.scservos.action()
+    return NINJA_ARM_MOVE_DURATION_SEC

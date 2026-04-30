@@ -157,6 +157,25 @@ robot_actuators_multi_menu = models.ShellMenu(
     ],
 )
 
+ninja_actuators_commands = [
+    "ninja_arms_close",
+    "ninja_arms_front",
+    "ninja_arms_side",
+    "ninja_arm_left_close",
+    "ninja_arm_left_front",
+    "ninja_arm_left_side",
+    "ninja_arm_right_close",
+    "ninja_arm_right_front",
+    "ninja_arm_right_side",
+]
+
+ninja_actuators_menu = models.ShellMenu(
+    name="Actuators Ninja",
+    entries=[
+        models.MenuEntry(cmd=f"act_{cmd}", desc=f"{cmd.replace('_', ' ').title()}") for cmd in ninja_actuators_commands
+    ],
+)
+
 pami_actuators_commands = []
 
 pami_actuators_menu = models.ShellMenu(

@@ -15,13 +15,13 @@ if TYPE_CHECKING:
     from ..planner import Planner
 
 
-class Pami2Action(Action):
+class Pami3Action(Action):
     """
-    PAMI 2 action.
+    PAMI 3 action.
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, start_delay: int, wait: bool = True):
-        super().__init__("PAMI 2 action", planner, strategy, interruptable=False)
+        super().__init__("PAMI 3 action", planner, strategy, interruptable=False)
         self.before_action_func = self.before_action
         self.start_delay = start_delay
         self.wait = wait
@@ -138,13 +138,13 @@ class Pami2Action(Action):
         return 9_999_999.0
 
 
-class Pami3Action(Action):
+class Pami4Action(Action):
     """
-    PAMI 3 action.
+    PAMI 4 action.
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, start_delay: int, wait: bool = True):
-        super().__init__("PAMI 3 action", planner, strategy, interruptable=False)
+        super().__init__("PAMI 4 action", planner, strategy, interruptable=False)
         self.before_action_func = self.before_action
         self.start_delay = start_delay
         self.wait = wait
@@ -239,13 +239,13 @@ class Pami3Action(Action):
         return 9_999_999.0
 
 
-class Pami4Action(Action):
+class Pami5Action(Action):
     """
-    PAMI 4 action.
+    PAMI 5 action.
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, start_delay: int, wait: bool = True):
-        super().__init__("PAMI 4 action", planner, strategy, interruptable=False)
+        super().__init__("PAMI 5 action", planner, strategy, interruptable=False)
         self.before_action_func = self.before_action
         self.start_delay = start_delay
         self.wait = wait
@@ -320,13 +320,13 @@ class Pami4Action(Action):
         return 9_999_999.0
 
 
-class Pami5Action(Action):
+class Pami6Action(Action):
     """
-    PAMI 5 action.
+    PAMI 6 action.
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, start_delay: int, wait: bool = True):
-        super().__init__("PAMI 5 action", planner, strategy, interruptable=False)
+        super().__init__("PAMI 6 action", planner, strategy, interruptable=False)
         self.wait = wait
         self.before_action_func = self.before_action
         self.start_delay = start_delay
@@ -396,37 +396,31 @@ class Pami5Action(Action):
         return 9_999_999.0
 
 
-class Pami2Strategy(Strategy):
-    def __init__(self, planner: "Planner"):
-        super().__init__(planner)
-        self.append(Pami2Action(planner, self, start_delay=0))
-
-
 class Pami3Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
-        self.append(Pami3Action(planner, self, start_delay=3))
+        self.append(Pami3Action(planner, self, start_delay=0))
 
 
 class Pami4Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
-        self.append(Pami4Action(planner, self, start_delay=6))
+        self.append(Pami4Action(planner, self, start_delay=3))
 
 
 class Pami5Strategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
-        self.append(Pami5Action(planner, self, start_delay=9))
+        self.append(Pami5Action(planner, self, start_delay=6))
+
+
+class Pami6Strategy(Strategy):
+    def __init__(self, planner: "Planner"):
+        super().__init__(planner)
+        self.append(Pami6Action(planner, self, start_delay=9))
 
 
 # Standalone strategies
-
-
-class Pami2StandaloneStrategy(Strategy):
-    def __init__(self, planner: "Planner"):
-        super().__init__(planner)
-        self.append(Pami2Action(planner, self, start_delay=0, wait=False))
 
 
 class Pami3StandaloneStrategy(Strategy):
@@ -444,4 +438,10 @@ class Pami4StandaloneStrategy(Strategy):
 class Pami5StandaloneStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
-        self.append(Pami5Action(planner, self, start_delay=7, wait=False))
+        self.append(Pami5Action(planner, self, start_delay=0, wait=False))
+
+
+class Pami6StandaloneStrategy(Strategy):
+    def __init__(self, planner: "Planner"):
+        super().__init__(planner)
+        self.append(Pami6Action(planner, self, start_delay=7, wait=False))

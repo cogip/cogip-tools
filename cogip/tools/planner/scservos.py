@@ -41,6 +41,9 @@ class SCServoEnum(IntEnum):
     BACK_SCISSOR_LEFT = 23
     BACK_SCISSOR_RIGHT = 24
 
+    NINJA_ARM_LEFT = 30
+    NINJA_ARM_RIGHT = 31
+
 
 class SCServosProperties(BaseModel):
     FRONT_GRIP_LEFT_SIDE: Annotated[int, Field(ge=1, le=1200)] = 1
@@ -68,6 +71,9 @@ class SCServosProperties(BaseModel):
     BACK_ARM_RIGHT: Annotated[int, Field(ge=1, le=1200)] = 1
     BACK_SCISSOR_LEFT: Annotated[int, Field(ge=1, le=1200)] = 1
     BACK_SCISSOR_RIGHT: Annotated[int, Field(ge=1, le=1200)] = 1
+
+    NINJA_ARM_LEFT: Annotated[int, Field(ge=1, le=1200)] = 1
+    NINJA_ARM_RIGHT: Annotated[int, Field(ge=1, le=1200)] = 1
 
 
 class SCServos:

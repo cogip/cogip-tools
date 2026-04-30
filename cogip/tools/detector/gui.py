@@ -8,7 +8,7 @@ from matplotlib.collections import PathCollection
 from matplotlib.patches import Ellipse
 
 if typing.TYPE_CHECKING:
-    from cogip.tools.detector_pami.detector import Detector
+    from cogip.tools.detector.detector import Detector
 
 
 class DetectorGUI:

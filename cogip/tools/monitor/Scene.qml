@@ -5,6 +5,7 @@ import QtQuick3D
 import "." as Components
 import "artifacts" as Artifacts
 import "cursor.mesh"
+import "ninja.mesh"
 import "pami.mesh"
 import "robot.mesh"
 import "robots"
@@ -143,13 +144,29 @@ Item {
         }
 
         function onSignal_servo_changed(servoName, angle) {
-            if (!sceneRoot.liveRobotNode)
-                return;
-            var targetNode = sceneRoot.findNodeByName(sceneRoot.liveRobotNode, servoName);
-            if (targetNode) {
-                sceneRoot.animateServo(targetNode, angle);
+            if (sceneRoot.liveRobotNode) {
+                var targetNode = sceneRoot.findNodeByName(sceneRoot.liveRobotNode, servoName);
+                if (targetNode) {
+                    sceneRoot.animateServo(targetNode, angle);
+                } else {
+                    console.warn("Servo node not found: " + servoName);
+                }
+            }
+
+            var manualRobot = null;
+            if (sceneRoot.robotId === 1) {
+                manualRobot = typeof robotManual !== "undefined" ? robotManual : null;
+            } else if (sceneRoot.robotId === 2) {
+                manualRobot = typeof ninjaManual !== "undefined" ? ninjaManual : null;
             } else {
-                console.warn("Servo node not found: " + servoName);
+                manualRobot = typeof pamiManual !== "undefined" ? pamiManual : null;
+            }
+
+            if (manualRobot) {
+                var targetNodeManual = sceneRoot.findNodeByName(manualRobot, servoName);
+                if (targetNodeManual) {
+                    sceneRoot.animateServo(targetNodeManual, angle);
+                }
             }
         }
 
@@ -257,12 +274,12 @@ Item {
         }
 
         function addOrderRobotInstance(robotId) {
-            const component = robotId === 1 ? orderRobotComponent : orderPamiComponent;
+            const component = robotId === 1 ? orderRobotComponent : robotId === 2 ? orderNinjaComponent : orderPamiComponent;
             if (!component) {
                 console.warn("Missing component for robotId", robotId);
                 return null;
             }
-            const namePrefix = robotId === 1 ? "robot" : "pami";
+            const namePrefix = robotId === 1 ? "robot" : robotId === 2 ? "ninja" : "pami";
             const expectedName = namePrefix + "_order_" + robotId;
             if (orderRobotNode) {
                 if (orderRobotNode.objectName === expectedName) {
@@ -272,7 +289,8 @@ Item {
                 orderRobotNode = null;
             }
             const node = component.createObject(orderRobotGroup, {
-                objectName: expectedName
+                objectName: expectedName,
+                z: robotId === 2 ? 55 : 0
             });
             if (!node) {
                 console.error("Failed to create order robot instance for", robotId);
@@ -283,12 +301,12 @@ Item {
         }
 
         function addRobotInstance(robotId) {
-            const component = robotId === 1 ? liveRobotComponent : livePamiComponent;
+            const component = robotId === 1 ? liveRobotComponent : robotId === 2 ? liveNinjaComponent : livePamiComponent;
             if (!component) {
                 console.warn("Missing component for robotId", robotId);
                 return null;
             }
-            const namePrefix = robotId === 1 ? "robot" : "pami";
+            const namePrefix = robotId === 1 ? "robot" : robotId === 2 ? "ninja" : "pami";
             const expectedName = namePrefix + "_live_" + robotId;
             if (liveRobotNode) {
                 if (liveRobotNode.objectName === expectedName) {
@@ -299,7 +317,7 @@ Item {
             }
             const node = component.createObject(sceneGroup, {
                 objectName: expectedName,
-                z: robotId === 5 ? 55 : 0
+                z: robotId === 2 ? 55 : 0
             });
             if (!node) {
                 console.error("Failed to create robot instance for", robotId);
@@ -532,6 +550,13 @@ Item {
         }
 
         Component {
+            id: liveNinjaComponent
+
+            Ninja {
+            }
+        }
+
+        Component {
             id: livePamiComponent
 
             Pami {
@@ -542,6 +567,13 @@ Item {
             id: orderRobotComponent
 
             Robot {
+            }
+        }
+
+        Component {
+            id: orderNinjaComponent
+
+            Ninja {
             }
         }
 
@@ -1030,7 +1062,7 @@ Item {
                 }
             }
 
-            Pami {
+            Ninja {
                 id: ninjaManual
 
                 property bool dragging: false

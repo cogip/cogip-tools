@@ -7,6 +7,8 @@ Node {
     property real angleDeg: 0
     property vector3d directionVector: Qt.vector3d(1, 0, 0)
     property real distance: 0
+    property real ninjaHeight: 62.8
+    property real ninjaShiftX: 50.0
     property real pamiHeight: 60.8
     property real pamiShiftX: 75.5
     property real rayLength: 4000
@@ -15,8 +17,8 @@ Node {
     property int robotId: 1
     property real robotShiftX: 0
     property Node sceneRoot: null
-    readonly property real sensorHeight: robotId === 1 ? robotHeight : pamiHeight
-    readonly property real sensorShiftX: robotId === 1 ? robotShiftX : pamiShiftX
+    readonly property real sensorHeight: robotId === 1 ? robotHeight : robotId === 2 ? ninjaHeight : pamiHeight
+    readonly property real sensorShiftX: robotId === 1 ? robotShiftX : robotId === 2 ? ninjaShiftX : pamiShiftX
     property View3D view3d: null
 
     function hasValidScene() {

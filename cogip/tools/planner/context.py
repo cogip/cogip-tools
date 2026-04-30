@@ -142,7 +142,7 @@ class GameContext:
             length=1800,
             width=450,
             id=FixedObstacleID.Granary,
-            enabled=self.shared_properties.robot_id != 5,
+            enabled=self.shared_properties.robot_id != 2,
         )
 
         # Nest
@@ -154,7 +154,7 @@ class GameContext:
             length=600,
             width=450,
             id=FixedObstacleID.Nest,
-            enabled=self.shared_properties.robot_id == 5,
+            enabled=self.shared_properties.robot_id == 2,
         )
 
         # Opposite Nest
@@ -172,7 +172,7 @@ class GameContext:
             length=3000 if self.shared_properties.table == TableEnum.Game else 1500,
             width=1550 if self.shared_properties.table == TableEnum.Game else 550,
             id=FixedObstacleID.Table,
-            enabled=self.shared_properties.robot_id == 5,
+            enabled=self.shared_properties.robot_id == 2,
         )
 
     def create_actuators_states(self):

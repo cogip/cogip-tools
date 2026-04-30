@@ -216,8 +216,8 @@ Node {
 
     // Nodes:
     Node {
-        id: scene
-        objectName: "Scene"
+        id: robot
+        objectName: "Robot"
         rotation: Qt.quaternion(0.707107, -0.707107, 0, 0)
         Model {
             id: node0
