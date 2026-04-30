@@ -7,13 +7,14 @@ const robotColors = [
   "#890098",
   "#530000",
   "#232678",
+  "#b36720",
 ];
 
 let ratioX = null, ratioY = null,  coordX = 0, coordY = 0;
 
 // Preload robot and order images
 (function loadImages() {
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     robotImages[i] = new Image();
     orderImages[i] = new Image();
     robotImages[i].src = `static/img/robot${i}.png`;
