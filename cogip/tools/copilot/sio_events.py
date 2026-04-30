@@ -6,6 +6,7 @@ import socketio
 from pydantic import TypeAdapter
 
 from cogip import models
+from cogip.cpp.libraries.models import MotionDirection
 from cogip.models import FirmwareParameter
 from cogip.models.actuators import ActuatorCommand, PositionalActuatorCommand
 from cogip.protobuf import (
@@ -83,8 +84,8 @@ class SioEvents(socketio.AsyncClientNamespace):
         """
         logger.info(f"[SIO] Pose order: {data}")
         pose_order = models.PathPose.model_validate(data)
-        if self.copilot.id > 1:
-            pose_order.motion_direction = models.MotionDirection.FORWARD_ONLY
+        if self.copilot.id > 2:
+            pose_order.motion_direction = MotionDirection.FORWARD_ONLY
         pb_pose_order = PB_PathPose()
         pose_order.copy_pb(pb_pose_order)
         await self.copilot.pbcom.send_can_message(copilot.pose_order_uuid, pb_pose_order)
