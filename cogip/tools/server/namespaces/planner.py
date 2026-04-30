@@ -144,12 +144,12 @@ class PlannerNamespace(socketio.AsyncNamespace):
         logger.info(f"[planner => copilot] Actuator command: {data}")
         await self.emit("actuator_command", data, namespace="/copilot")
 
-    async def on_actuator_init(self, sid):
+    async def on_actuator_init(self, sid, actuator_id: int | None = None):
         """
         Callback on actuator_init message.
         """
         logger.info("[planner => copilot] Actuator init.")
-        await self.emit("actuator_init", namespace="/copilot")
+        await self.emit("actuator_init", actuator_id, namespace="/copilot")
 
     async def on_start_video_record(self, sid):
         """
@@ -202,3 +202,19 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         logger.info("[planner => dashboard] soft reset.")
         await self.emit("soft_reset", namespace="/dashboard")
+
+    async def on_servo(self, sid, servo_id: int, position: int):
+        """
+        Callback on servo message.
+        Forward to monitor.
+        """
+        logger.info(f"[planner => monitor] Servo command: {(servo_id, position)}")
+        await self.emit("servo", (servo_id, position), namespace="/monitor")
+
+    async def on_lift(self, sid, actuator_id: int, position: int):
+        """
+        Callback on lift message.
+        Forward to monitor.
+        """
+        logger.info(f"[planner => monitor] Lift command: {(actuator_id, position)}")
+        await self.emit("lift", (actuator_id, position), namespace="/monitor")

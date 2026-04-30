@@ -272,6 +272,7 @@ def avoidance_process(robot_id: int):
             pose.to_shared(shared_pose)
         shared_avoidance_path_lock.finish_writing()
         shared_avoidance_path_lock.post_update()
+        logger.info(f"Avoidance: Path updated with {len(adjusted_path) - 1} poses")
 
     # Remove reference to shared memory data to trigger garbage collection
     shared_avoidance_path_lock = None

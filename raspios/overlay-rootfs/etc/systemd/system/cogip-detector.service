@@ -12,8 +12,6 @@ ExecStartPre=/opt/.venv/bin/python /opt/.venv/lib/python3.13/site-packages/cogip
 ExecStart=/opt/.venv/bin/python -m cogip.tools.detector
 RestartSec=5
 EnvironmentFile=/etc/environment
-StandardOutput=null
-StandardError=null
 
 [Install]
 WantedBy=multi-user.target

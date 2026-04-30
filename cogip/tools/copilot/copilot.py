@@ -4,13 +4,14 @@ import traceback
 
 import socketio
 from google.protobuf.json_format import MessageToDict
+from pydantic import TypeAdapter
 
 from cogip import models
 from cogip.cpp.libraries.models import MotionDirection
 from cogip.cpp.libraries.models import PoseBuffer as SharedPoseBuffer
 from cogip.cpp.libraries.models import PoseOrderList as SharedPoseOrderList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePriorityLock
-from cogip.models.actuators import ActuatorsKindEnum
+from cogip.models.actuators import ActuatorsKindEnum, ActuatorState
 from cogip.protobuf import (
     PB_ActuatorState,
     PB_EmergencyStopStatus,
@@ -240,6 +241,9 @@ class Copilot:
             use_integers_for_enums=True,
         )
         actuator_state["kind"] = ActuatorsKindEnum[kind]
+        state_schema = TypeAdapter(ActuatorState).validate_python(actuator_state)
+        logger.info(f"[CAN] Received actuator state: {state_schema}")
+
         if self.sio_events.connected:
             await self.sio_events.emit("actuator_state", actuator_state)
 
@@ -423,6 +427,7 @@ class Copilot:
                 if len(self.shared_avoidance_path) == 0:
                     continue
                 pose_order = models.PathPose.from_shared(self.shared_avoidance_path[0])
+                logger.info(f"Copilot: New path available in shared memory: {pose_order}")
                 if self.id > 1:
                     pose_order.motion_direction = MotionDirection.FORWARD_ONLY
                 pb_pose_order = PB_PathPose()

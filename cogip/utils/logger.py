@@ -64,13 +64,6 @@ class Logger:
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
 
-        # Add syslog handler
-        if Path("/dev/log").exists():
-            syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
-            syslog_handler.setLevel(level)
-            syslog_handler.setFormatter(formatter)
-            self.logger.addHandler(syslog_handler)
-
         if enable_cpp:
             self.enable_cpp_logging()
 

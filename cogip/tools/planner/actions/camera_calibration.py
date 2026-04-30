@@ -2,7 +2,9 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from cogip.models.models import CameraExtrinsicParameters
+from cogip.tools.planner import actuators
 from cogip.tools.planner.actions.action import Action
+from cogip.tools.planner.actions.action_align import AlignTopCornerAction
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.cameras import calibrate_camera
 from cogip.tools.planner.pose import Pose
@@ -20,26 +22,18 @@ class CameraCalibrationAction(Action):
     def __init__(self, planner: "Planner", strategy: Strategy):
         super().__init__("CameraCalibration action", planner, strategy)
         self.camera_positions: list[CameraExtrinsicParameters] = []
-        self.after_action_func = self.print_camera_positions
+        self.before_action_func = self.before_action
+        self.after_action_func = self.after_action
+        self.linear_speed = 20
+        self.angular_speed = 20
 
         self.poses.append(
             Pose(
-                x=-500,
-                y=-1200,
-                O=90,
-                max_speed_linear=66,
-                max_speed_angular=66,
-                after_pose_func=self.calibrate_camera,
-            )
-        )
-
-        self.poses.append(
-            Pose(
-                x=-240,
-                y=-1200,
-                O=130,
-                max_speed_linear=66,
-                max_speed_angular=66,
+                x=-220,
+                y=-1220,
+                O=120,
+                max_speed_linear=self.linear_speed,
+                max_speed_angular=self.angular_speed,
                 after_pose_func=self.calibrate_camera,
             )
         )
@@ -48,9 +42,9 @@ class CameraCalibrationAction(Action):
             Pose(
                 x=-240,
                 y=-570,
-                O=-130,
-                max_speed_linear=66,
-                max_speed_angular=66,
+                O=-120,
+                max_speed_linear=self.linear_speed,
+                max_speed_angular=self.angular_speed,
                 after_pose_func=self.calibrate_camera,
             )
         )
@@ -59,9 +53,9 @@ class CameraCalibrationAction(Action):
             Pose(
                 x=-240,
                 y=-440,
-                O=-130,
-                max_speed_linear=66,
-                max_speed_angular=66,
+                O=-120,
+                max_speed_linear=self.linear_speed,
+                max_speed_angular=self.angular_speed,
                 after_pose_func=self.calibrate_camera,
             )
         )
@@ -70,9 +64,9 @@ class CameraCalibrationAction(Action):
             Pose(
                 x=-500,
                 y=-420,
-                O=-90,
-                max_speed_linear=66,
-                max_speed_angular=66,
+                O=-80,
+                max_speed_linear=self.linear_speed,
+                max_speed_angular=self.angular_speed,
                 after_pose_func=self.calibrate_camera,
             )
         )
@@ -82,19 +76,19 @@ class CameraCalibrationAction(Action):
                 x=-610,
                 y=-510,
                 O=-70,
-                max_speed_linear=66,
-                max_speed_angular=66,
+                max_speed_linear=self.linear_speed,
+                max_speed_angular=self.angular_speed,
                 after_pose_func=self.calibrate_camera,
             )
         )
 
         self.poses.append(
             Pose(
-                x=-710,
+                x=-750,
                 y=-910,
                 O=0,
-                max_speed_linear=66,
-                max_speed_angular=66,
+                max_speed_linear=self.linear_speed,
+                max_speed_angular=self.angular_speed,
                 after_pose_func=self.calibrate_camera,
             )
         )
@@ -103,20 +97,54 @@ class CameraCalibrationAction(Action):
             Pose(
                 x=-610,
                 y=-1250,
-                O=90,
-                max_speed_linear=66,
-                max_speed_angular=66,
+                O=60,
+                max_speed_linear=self.linear_speed,
+                max_speed_angular=self.angular_speed,
                 after_pose_func=self.calibrate_camera,
             )
         )
 
+        self.poses.append(
+            Pose(
+                x=-400,
+                y=-1250,
+                O=90,
+                max_speed_linear=self.linear_speed,
+                max_speed_angular=self.angular_speed,
+                after_pose_func=self.calibrate_camera,
+            )
+        )
+
+    async def before_action(self):
+        self.disable_fixed_obstacles_backup = self.planner.shared_properties.disable_fixed_obstacles
+        self.planner.shared_properties.disable_fixed_obstacles = True
+        await actuators.front_arms_open(self.planner)
+        await actuators.front_lift_mid(self.planner)
+        await actuators.back_arms_open(self.planner)
+        await actuators.back_lift_mid(self.planner)
+        start_position = self.planner.start_positions.get()
+        self.poses.append(
+            Pose(
+                x=start_position.x,
+                y=start_position.y,
+                O=start_position.O,
+                max_speed_linear=self.linear_speed,
+                max_speed_angular=self.angular_speed,
+            )
+        )
+
     async def calibrate_camera(self):
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(2.0)
         if pose := await calibrate_camera(self.planner):
             self.camera_positions.append(pose)
-        await asyncio.sleep(0.2)
 
-    async def print_camera_positions(self):
+    async def after_action(self):
+        self.planner.shared_properties.disable_fixed_obstacles = self.disable_fixed_obstacles_backup
+        await actuators.front_arms_close(self.planner)
+        await actuators.front_lift_down(self.planner)
+        await actuators.back_arms_close(self.planner)
+        await actuators.back_lift_down(self.planner)
+
         x = 0
         y = 0
         z = 0
@@ -151,4 +179,11 @@ class CameraCalibrationAction(Action):
 class CameraCalibrationStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
+        self.append(CameraCalibrationAction(planner, self))
+
+
+class CameraCalibrationWithAlignmentStrategy(Strategy):
+    def __init__(self, planner: "Planner"):
+        super().__init__(planner)
+        self.append(AlignTopCornerAction(planner, self))
         self.append(CameraCalibrationAction(planner, self))

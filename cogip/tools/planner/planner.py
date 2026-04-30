@@ -334,7 +334,8 @@ class Planner:
         """
         logger.info("Planner: stop")
 
-        self.shared_memory.avoidance_exiting = True
+        if self.shared_memory is not None:
+            self.shared_memory.avoidance_exiting = True
         await self.sio_ns.emit("stop_video_record")
         await self.event_manager.stop_loops()
         await self.obstacles_updater_loop.stop()
@@ -555,8 +556,34 @@ class Planner:
             if not self.shared_properties.disable_fixed_obstacles:
                 if self.robot_id == 1:
                     # Add artifact obstacles
-                    # (keep placeholder for future artifact obstacles)
-                    pass
+                    for collection_area in self.game_context.collection_areas.values():
+                        if not collection_area.enabled:
+                            continue
+                        if not table.contains(collection_area, margin):
+                            continue
+                        self.shared_rectangle_obstacles.append(
+                            x=collection_area.x,
+                            y=collection_area.y,
+                            angle=collection_area.O,
+                            length_x=collection_area.length + self.shared_properties.robot_width,
+                            length_y=collection_area.width + self.shared_properties.robot_width,
+                            bounding_box_margin=margin,
+                            id=collection_area.id.value,
+                        )
+                    for pantry in self.game_context.pantries.values():
+                        if not pantry.enabled:
+                            continue
+                        if not table.contains(pantry, margin):
+                            continue
+                        self.shared_rectangle_obstacles.append(
+                            x=pantry.x,
+                            y=pantry.y,
+                            angle=pantry.O,
+                            length_x=pantry.length + self.shared_properties.robot_width,
+                            length_y=pantry.width + self.shared_properties.robot_width,
+                            bounding_box_margin=margin,
+                            id=pantry.id.value,
+                        )
 
                 # Add fixed obstacles
                 for fixed_obstacle in self.game_context.fixed_obstacles.values():
@@ -1024,6 +1051,4 @@ class Planner:
         # actuators_states[actuator_state.id] = actuator_state
         # if not self.virtual and actuator_state.id in self.game_context.emulated_actuator_states:
         #     self.game_context.emulated_actuator_states.remove(actuator_state.id)
-        logger.info(
-            f"Planner: Actuator state updated: {actuator_state.kind.name} {actuator_state.id} = {actuator_state.state}"
-        )
+        logger.info(f"Planner: Actuator state updated: {actuator_state}")
