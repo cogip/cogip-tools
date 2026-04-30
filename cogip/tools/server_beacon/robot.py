@@ -103,13 +103,15 @@ class Robot:
                     strategy: actions.StrategyEnum | None = None
                     match robot_id:
                         case 2:
-                            strategy = actions.StrategyEnum.Pami2
+                            strategy = actions.StrategyEnum.Ninja
                         case 3:
                             strategy = actions.StrategyEnum.Pami3
                         case 4:
                             strategy = actions.StrategyEnum.Pami4
                         case 5:
                             strategy = actions.StrategyEnum.Pami5
+                        case 6:
+                            strategy = actions.StrategyEnum.Pami6
 
                     if strategy:
                         await robot.sio.emit(
@@ -148,13 +150,15 @@ class Robot:
                     position: StartPositionEnum | None = None
                     match robot_id:
                         case 2:
-                            position = StartPositionEnum.PAMI2
+                            position = StartPositionEnum.NINJA
                         case 3:
                             position = StartPositionEnum.PAMI3
                         case 4:
                             position = StartPositionEnum.PAMI4
                         case 5:
                             position = StartPositionEnum.PAMI5
+                        case 6:
+                            position = StartPositionEnum.PAMI6
 
                     if position:
                         await robot.sio.emit(

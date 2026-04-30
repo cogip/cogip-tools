@@ -106,13 +106,15 @@ class Server:
                     case 1:
                         position = StartPositionEnum.Top
                     case 2:
-                        position = StartPositionEnum.PAMI2
+                        position = StartPositionEnum.NINJA
                     case 3:
                         position = StartPositionEnum.PAMI3
                     case 4:
                         position = StartPositionEnum.PAMI4
                     case 5:
                         position = StartPositionEnum.PAMI5
+                    case 6:
+                        position = StartPositionEnum.PAMI6
                 if position:
                     await robot.sio.emit(
                         "wizard",
