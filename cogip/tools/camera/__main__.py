@@ -10,6 +10,7 @@ from .calibrate import cmd_calibrate
 from .capture import cmd_capture
 from .charuco import cmd_charuco
 from .detect import cmd_detect
+from .focus import cmd_focus
 from .info import cmd_info
 
 if os.getenv("QT_QPA_PLATFORM") is None:
@@ -21,6 +22,7 @@ app.command(name="charuco")(cmd_charuco)
 app.command(name="capture")(cmd_capture)
 app.command(name="calibrate")(cmd_calibrate)
 app.command(name="detect")(cmd_detect)
+app.command(name="focus")(cmd_focus)
 
 
 @app.callback()
