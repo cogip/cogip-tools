@@ -7,6 +7,7 @@ from google.protobuf.json_format import ParseDict
 
 from cogip.protobuf import (
     PB_ParameterGetResponse,
+    PB_ParameterResetResponse,
     PB_ParameterSetResponse,
 )
 from . import logger
@@ -87,6 +88,23 @@ class SioEvents(socketio.AsyncClientNamespace):
         # Retrieve the Future corresponding to this request
         if response.key_hash in self.manager.pending_set_requests:
             future = self.manager.pending_set_requests.pop(response.key_hash)
+            if not future.done():
+                future.set_result(response)
+        else:
+            logger.warning(f"No pending request found for firmware parameter hash: 0x{response.key_hash:08x}")
+
+    async def on_reset_parameter_response(self, data: dict[str, Any]):
+        """
+        Handle reset_parameter_response from copilot.
+        Resolve the pending Future with the response.
+        """
+        response = ParseDict(data, PB_ParameterResetResponse())
+
+        logger.info(f"[SIO] Received reset_response for firmware parameter hash: 0x{response.key_hash:08x}")
+
+        # Retrieve the Future corresponding to this request
+        if response.key_hash in self.manager.pending_reset_requests:
+            future = self.manager.pending_reset_requests.pop(response.key_hash)
             if not future.done():
                 future.set_result(response)
         else:

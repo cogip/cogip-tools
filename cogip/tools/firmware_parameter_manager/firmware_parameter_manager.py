@@ -48,6 +48,7 @@ class FirmwareParameterManager:
         # Key: firmware parameter hash (int), Value: asyncio.Future
         self.pending_get_requests: dict[int, asyncio.Future] = {}
         self.pending_set_requests: dict[int, asyncio.Future] = {}
+        self.pending_reset_requests: dict[int, asyncio.Future] = {}
 
     @property
     def namespace(self) -> str:
@@ -186,6 +187,90 @@ class FirmwareParameterManager:
             logger.error(f"Error in set_parameter: {exc}")
             raise
 
+    async def reset_parameter_value(
+        self,
+        parameter_name: str,
+        timeout: float = 1,
+    ) -> None:
+        """
+        Sends a reset_firmware_parameter request and waits for the response.
+
+        The firmware restores the parameter to its default value.
+
+        Args:
+            parameter_name: Name of the firmware parameter to reset
+            timeout: Timeout in seconds (default: 1)
+
+        Raises:
+            KeyError: If the firmware parameter name is not found in the firmware parameter group
+            FirmwareParameterValidationFailed: If the firmware rejects the reset
+            FirmwareParameterNotFound: If the firmware does not know this parameter
+            TimeoutError: If no response is received within the timeout
+        """
+        # Validate that firmware parameter exists in the group
+        parameter = self.parameter_group.get(parameter_name)
+
+        # Create a Future for this request
+        future = asyncio.Future()
+
+        # Store pending request for response correalation
+        parameter_hash = hash(parameter)
+        self.pending_reset_requests[parameter_hash] = future
+
+        try:
+            logger.info(f"[firmware_parameter => server] reset: {parameter}")
+            await self.sio.emit("reset_parameter_value", parameter.model_dump(by_alias=True), namespace="/parameters")
+
+            logger.info(f"Sent reset_parameter request for hash: 0x{parameter_hash:08x}")
+
+            # Wait for the response with timeout
+            response = await asyncio.wait_for(future, timeout=timeout)
+
+            # Validate status (raises on VALIDATION_FAILED / NOT_FOUND)
+            parameter.pb_read(response)
+
+        except TimeoutError:
+            # Clean up on timeout
+            if not future.done():
+                future.cancel()
+
+            self.pending_reset_requests.pop(parameter_hash, None)
+            logger.error(f"Timeout waiting for reset_firmware_parameter response (hash: 0x{parameter_hash:08x})")
+            raise TimeoutError(f"No response received for firmware parameter hash 0x{parameter_hash:08x}")
+
+        except Exception as exc:
+            # Clean up on error
+            if not future.done():
+                future.cancel()
+
+            self.pending_reset_requests.pop(parameter_hash, None)
+            logger.error(f"Error in reset_parameter: {exc}")
+            raise
+
+    async def reset_all_parameters(
+        self,
+        timeout: float = 1,
+    ) -> dict[str, Exception | None]:
+        """
+        Resets every firmware parameter declared in the loaded YAML group.
+
+        Each reset is dispatched concurrently. Failures do not interrupt the others;
+        they are returned in the result dict.
+
+        Args:
+            timeout: Per-parameter timeout in seconds (default: 1)
+
+        Returns:
+            A dict mapping each parameter name to None on success, or to the raised
+            exception on failure.
+        """
+        names = [parameter.name for parameter in self.parameter_group]
+        results = await asyncio.gather(
+            *(self.reset_parameter_value(name, timeout) for name in names),
+            return_exceptions=True,
+        )
+        return {name: (result if isinstance(result, Exception) else None) for name, result in zip(names, results)}
+
     def cleanup(self):
         """
         Cleans up all pending Futures.
@@ -196,6 +281,10 @@ class FirmwareParameterManager:
         for future in self.pending_set_requests.values():
             if not future.done():
                 future.cancel()
+        for future in self.pending_reset_requests.values():
+            if not future.done():
+                future.cancel()
 
         self.pending_get_requests.clear()
         self.pending_set_requests.clear()
+        self.pending_reset_requests.clear()
