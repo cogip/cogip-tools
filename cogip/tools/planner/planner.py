@@ -712,7 +712,6 @@ class Planner:
             (self.robot_id, self.game_context.game_duration, self.countdown_start_timestamp.isoformat(), "deepskyblue"),
         )
 
-        await self.sio_ns.emit("start_video_record")
         asyncio.create_task(self.set_pose_reached())
 
     async def cmd_stop(self):
@@ -721,7 +720,6 @@ class Planner:
         """
         logger.info("Planner: cmd_stop()")
         self.playing = False
-        await self.sio_ns.emit("stop_video_record")
 
     async def cmd_next(self):
         """
