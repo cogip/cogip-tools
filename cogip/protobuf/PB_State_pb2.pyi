@@ -6,7 +6,7 @@ from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Opti
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class PB_State(_message.Message):
-    __slots__ = ["cycle", "speed_current", "speed_order"]
+    __slots__ = ("cycle", "speed_current", "speed_order")
     CYCLE_FIELD_NUMBER: _ClassVar[int]
     SPEED_CURRENT_FIELD_NUMBER: _ClassVar[int]
     SPEED_ORDER_FIELD_NUMBER: _ClassVar[int]
