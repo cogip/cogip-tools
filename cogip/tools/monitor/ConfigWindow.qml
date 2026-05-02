@@ -7,6 +7,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 
+import "."
+
 Window {
     id: configWindow
 
