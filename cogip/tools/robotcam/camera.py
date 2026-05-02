@@ -43,6 +43,8 @@ class CameraHandler:
         self.camera: Camera | None = None
         self.record_filename: Path | None = None
         self.record_writer: cv2.VideoWriter | None = None
+        self._start_record_requested: bool = False
+        self._stop_record_requested: bool = False
 
         self.sio = socketio.Client(logger=False, engineio_logger=False, handle_sigint=False)
         self.register_sio_events()
@@ -182,6 +184,14 @@ class CameraHandler:
         Read one frame from camera, process it, send samples to cogip-server
         and generate image to stream.
         """
+        if self._start_record_requested:
+            self._start_video_record()
+            self._start_record_requested = False
+
+        if self._stop_record_requested:
+            self._stop_video_record()
+            self._stop_record_requested = False
+
         image_main, image_stream = self.camera.read()
         if image_main is None:
             raise Exception("Camera handler: Cannot read frame.")
@@ -229,8 +239,14 @@ class CameraHandler:
             self.record_writer.write(image_record)
 
     def start_video_record(self):
+        self._start_record_requested = True
+
+    def stop_video_record(self):
+        self._stop_record_requested = True
+
+    def _start_video_record(self):
         if self.record_writer:
-            self.stop_video_record()
+            self._stop_video_record()
         records_dir = Path.home() / "records"
         records_dir.mkdir(exist_ok=True)
         # Keep only 20 last records
@@ -247,7 +263,7 @@ class CameraHandler:
             (self.settings.camera_width, self.settings.camera_height),
         )
 
-    def stop_video_record(self):
+    def _stop_video_record(self):
         if self.record_writer:
             logger.info("Stop recording video")
             self.record_writer.release()
