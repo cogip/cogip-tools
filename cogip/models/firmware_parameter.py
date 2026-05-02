@@ -201,6 +201,34 @@ class FirmwareParameter(BaseModel):
             self.value_obj.content = content
 
 
+class FirmwareParameterSection(BaseModel):
+    """A named group of firmware parameters used for display purposes.
+
+    Sections only carry presentation metadata (title + ordered list of parameters);
+    they do not change how parameters are addressed on the firmware side.
+    """
+
+    title: str
+    parameters: list[FirmwareParameter]
+
+
+class FirmwareParameterSchema(BaseModel):
+    """Top-level schema for a sectioned firmware parameter YAML.
+
+    Wraps a list of :class:`FirmwareParameterSection`. Use :meth:`group` to
+    obtain a flat :class:`FirmwareParametersGroup` for use with the
+    FirmwareParameterManager (the same FirmwareParameter instances are shared,
+    so updates propagate transparently).
+    """
+
+    sections: list[FirmwareParameterSection]
+
+    def group(self) -> "FirmwareParametersGroup":
+        """Return a flat parameter group sharing the same FirmwareParameter instances."""
+        flat = [parameter for section in self.sections for parameter in section.parameters]
+        return FirmwareParametersGroup(root=flat)
+
+
 class FirmwareParametersGroup(RootModel):
     """Container for a group of firmware parameters with name-based access.
 
