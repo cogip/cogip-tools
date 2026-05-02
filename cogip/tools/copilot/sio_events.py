@@ -14,6 +14,7 @@ from cogip.protobuf import (
     PB_ActuatorInit,
     PB_Controller,
     PB_ParameterGetRequest,
+    PB_ParameterResetRequest,
     PB_ParameterSetRequest,
     PB_PathPose,
     PB_SpeedOrder,
@@ -206,6 +207,19 @@ class SioEvents(socketio.AsyncClientNamespace):
         parameter.pb_copy(pb_set_request)
 
         await self.copilot.pbcom.send_can_message(copilot.parameter_set_uuid, pb_set_request)
+
+    async def on_reset_parameter_value(self, data: dict[str, Any]):
+        """
+        Callback on reset_parameter_value.
+        Forward to firmware.
+        """
+        logger.info(f"[SIO] Reset parameter: {data}")
+
+        parameter = FirmwareParameter.model_validate(data)
+        pb_reset_request = PB_ParameterResetRequest()
+        parameter.pb_copy(pb_reset_request)
+
+        await self.copilot.pbcom.send_can_message(copilot.parameter_reset_uuid, pb_reset_request)
 
     async def on_telemetry_enable(self, data: dict[str, Any] | None = None):
         """

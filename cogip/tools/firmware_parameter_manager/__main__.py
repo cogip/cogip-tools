@@ -1,42 +1,31 @@
 import asyncio
+from pathlib import Path
 from typing import Annotated
 
 import socketio
 import typer
 import yaml
 
-from cogip.models import FirmwareParametersGroup
+from cogip.models import FirmwareParameterSchema
+from cogip.tools.firmware_parameter_manager import shell
 from cogip.tools.firmware_parameter_manager.firmware_parameter_manager import FirmwareParameterManager
+from cogip.utils.console_ui import ConsoleUI
+
+DEFAULT_PARAMETERS_FILE = Path(__file__).with_name("firmware_parameters.yaml")
 
 
-async def main_async(server_url: str, parameters_group: FirmwareParametersGroup):
-    """
-    CLI utility to test firmware parameter communication.
-    Creates its own Socket.IO client to host the FirmwareParameterManager.
-    """
+async def main_async(server_url: str, schema: FirmwareParameterSchema) -> None:
     sio = socketio.AsyncClient(logger=False)
-    manager = FirmwareParameterManager(sio=sio, parameter_group=parameters_group)
+    manager = FirmwareParameterManager(sio=sio, parameter_group=schema.group())
+    ui = ConsoleUI()
 
     await sio.connect(server_url, namespaces=[manager.namespace])
-
-    print("Firmware parameter values before reading from firmware:")
-    for param in manager.parameter_group:
-        print(f"  {param.name:.<40} {param.value}")
-    print()
-
-    for param in manager.parameter_group:
-        try:
-            await manager.get_parameter_value(param.name)
-        except TimeoutError:
-            print(f"  {param.name:.<40} TIMEOUT")
-
-    print("Firmware parameter values after reading from firmware:")
-    for param in manager.parameter_group:
-        print(f"  {param.name:.<40} {param.value}")
-    print()
-
-    manager.cleanup()
-    await sio.disconnect()
+    try:
+        await shell.run(manager, ui, schema)
+    finally:
+        manager.cleanup()
+        if sio.connected:
+            await sio.disconnect()
 
 
 def main_opt(
@@ -59,22 +48,25 @@ def main_opt(
         ),
     ] = 1,
     parameters: Annotated[
-        typer.FileText,
+        typer.FileText | None,
         typer.Option(
             "-p",
             "--parameters",
-            help="YAML file containing firmware parameter list",
+            help=f"YAML file containing firmware parameter sections (default: {DEFAULT_PARAMETERS_FILE.name})",
             envvar="PARAMETER_LIST",
         ),
-    ],
+    ] = None,
 ):
     if not server_url:
         server_url = f"http://localhost:809{robot_id}"
 
-    parameters_data = yaml.safe_load(parameters)
-    parameters_group = FirmwareParametersGroup.model_validate(parameters_data["parameters"])
+    if parameters is None:
+        parameters_data = yaml.safe_load(DEFAULT_PARAMETERS_FILE.read_text())
+    else:
+        parameters_data = yaml.safe_load(parameters)
 
-    asyncio.run(main_async(server_url, parameters_group))
+    schema = FirmwareParameterSchema.model_validate(parameters_data)
+    asyncio.run(main_async(server_url, schema))
 
 
 def main():

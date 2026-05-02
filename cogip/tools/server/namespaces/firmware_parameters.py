@@ -40,3 +40,11 @@ class FirmwareParametersNamespace(socketio.AsyncNamespace):
         """
         logger.info(f"[parameters => copilot] Set parameter: {data}")
         await self.emit("set_parameter_value", data, namespace="/copilot")
+
+    async def on_reset_parameter_value(self, sid, data: dict[str, Any]):
+        """
+        Callback on reset_parameter_value message.
+        Forward to copilot.
+        """
+        logger.info(f"[parameters => copilot] Reset parameter: {data}")
+        await self.emit("reset_parameter_value", data, namespace="/copilot")

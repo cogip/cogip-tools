@@ -122,6 +122,14 @@ class CopilotNamespace(socketio.AsyncNamespace):
         logger.info(f"[copilot => parameters] Set response: {response}")
         await self.emit("set_parameter_response", response, namespace="/parameters")
 
+    async def on_reset_parameter_response(self, sid, response: dict[str, Any]) -> None:
+        """
+        Callback on reset_parameter_response message from copilot.
+        Forward to firmware parameter manager.
+        """
+        logger.info(f"[copilot => parameters] Reset response: {response}")
+        await self.emit("reset_parameter_response", response, namespace="/parameters")
+
     async def on_telemetry_data(self, sid, telemetry: dict[str, Any]) -> None:
         """
         Callback on telemetry_data message from copilot.
