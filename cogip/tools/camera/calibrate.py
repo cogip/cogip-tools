@@ -131,7 +131,7 @@ def cmd_calibrate(
 
         frame_obj_points, frame_img_points = board.matchImagePoints(char_corners, char_ids)
 
-        if len(frame_obj_points) < 4:
+        if len(frame_obj_points) < 10:
             logger.info(f"{im}: KO (not enough points: {len(frame_obj_points)})")
             continue
 

@@ -25,6 +25,7 @@ class DropCratesAction(Action):
         planner: "Planner",
         strategy: Strategy,
         pantry_id: PantryID,
+        force_side: str | None = None,
         weight: float = 2000000.0,
     ):
         self.custom_weight = weight
@@ -32,9 +33,9 @@ class DropCratesAction(Action):
         self.before_action_func = self.before_action
         self.after_action_func = self.after_action
         self.pantry_id = pantry_id
-        self.shift_approach = 0
-        self.shift_push_forward = 100
-        self.shift_step_back = 90
+        self.force_side = force_side
+        self.shift_push_forward = 100  # Distance from end of drop pose
+        self.shift_step_back = 80  # Distance from push pose
         self.approach_orientation_threshold = 30
 
     @property
@@ -49,16 +50,21 @@ class DropCratesAction(Action):
         self.logger.info(f"{self.name}: before_action: begin")
         self.poses.clear()
         self.pantry_enabled_backup = self.pantry.enabled
-        self.side = "front" if not self.planner.game_context.front_free else "back"
-
+        self.side = (
+            self.force_side
+            if self.force_side is not None
+            else ("front" if not self.planner.game_context.front_free else "back")
+        )
         if self.side == "front":
             self.arms_close = functools.partial(actuators.front_arms_close, self.planner)
             self.arms_open = functools.partial(actuators.front_arms_open, self.planner)
             self.lift_up = functools.partial(actuators.front_lift_up, self.planner)
+            self.lift_init = functools.partial(actuators.front_lift_init, self.planner)
         else:
             self.arms_close = functools.partial(actuators.back_arms_close, self.planner)
             self.arms_open = functools.partial(actuators.back_arms_open, self.planner)
             self.lift_up = functools.partial(actuators.back_lift_up, self.planner)
+            self.lift_init = functools.partial(actuators.back_lift_init, self.planner)
 
         # Approach
         x, y = crates_utils.shift_pantry_center_from_border(self.pantry)
@@ -153,6 +159,23 @@ class DropCratesAction(Action):
         self.poses.append(push_pose)
         self.logger.info(f"{self.name}: push: x={push_pose.x: 5.2f} y={push_pose.y: 5.2f} O={push_pose.O: 3.2f}°")
 
+        self.logger.info(f"{self.name}: after_drop: end")
+
+    async def before_push(self):
+        self.logger.info(f"{self.name}: before_push")
+
+    async def after_push(self):
+        self.logger.info(f"{self.name}: after_push: begin")
+
+        # Open arms
+        duration = await self.arms_open()
+        await asyncio.sleep(duration / 2)
+
+        # Re-init lift in case the lift got stuck on the ground and to prepare for the next lift up
+        await self.lift_init()
+
+        pose_current = self.pose_current
+
         # Step back
         shift_step_back = self.shift_step_back if self.side == "front" else -self.shift_step_back
         step_back_pose = Pose(
@@ -168,17 +191,8 @@ class DropCratesAction(Action):
         self.logger.info(
             f"{self.name}: step back: x={step_back_pose.x: 5.2f} y={step_back_pose.y: 5.2f} O={step_back_pose.O: 3.2f}°"
         )
-        self.logger.info(f"{self.name}: after_drop: end")
 
-    async def before_push(self):
-        self.logger.info(f"{self.name}: before_push")
-
-    async def after_push(self):
-        self.logger.info(f"{self.name}: after_push")
-
-        # Open arms
-        duration = await self.arms_open()
-        await asyncio.sleep(duration / 2)
+        self.logger.info(f"{self.name}: after_push: end")
 
     async def before_step_back(self):
         self.logger.info(f"{self.name}: before_step_back")

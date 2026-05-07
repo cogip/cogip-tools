@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 # Lift positions
 LIFT_DOWN = 0
 LIFT_MID = 80
-LIFT_UP = 130
+LIFT_UP = 128
 
 # Duration of actuator movements is seconds
 GRIP_MOVE_DURATION_SEC = 0.3
