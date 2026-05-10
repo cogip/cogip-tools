@@ -55,8 +55,8 @@ BACK_SCISSOR_LEFT_CLOSE = 295
 BACK_SCISSOR_RIGHT_OPEN = 550  # ZERO
 BACK_SCISSOR_RIGHT_CLOSE = 410
 
-NINJA_ARM_LEFT_ZERO = 500  # Front  # TO CALIBRATE
-NINJA_ARM_RIGHT_ZERO = 500  # Front  # TO CALIBRATE
+NINJA_ARM_LEFT_ZERO = 238  # Side
+NINJA_ARM_RIGHT_ZERO = 785  # Side
 
 GRIP_OFFSET_OPEN = 70
 GRIP_OFFSET_CLOSE = -40
@@ -66,9 +66,13 @@ ARM_OFFSET_OPEN = 393
 ARM_OFFSET_CLOSE = -45
 SCISSOR_OFFSET_OPEN = 135
 SCISSOR_OFFSET_CLOSE = 0
-NINJA_ARM_OFFSET_CLOSE = -300  # TO CALIBRATE
-NINJA_ARM_OFFSET_FRONT = 0
-NINJA_ARM_OFFSET_SIDE = 300  # TO CALIBRATE
+NINJA_ARM_OFFSET_CLOSE = 785
+NINJA_ARM_OFFSET_FRONT = 365
+NINJA_ARM_OFFSET_SIDE = 100
+NINJA_ARM_OFFSET_OPEN = -238
+NINJA_ARM_OFFSET_HOLD_ONE_LONG = 250
+NINJA_ARM_OFFSET_HOLD_3 = 250
+NINJA_ARM_OFFSET_HOLD_4 = 250
 
 
 async def actuators_init(planner: "Planner"):
@@ -568,6 +572,14 @@ async def ninja_arm_left_side(planner: "Planner", speed: int = 1000, reg_only: b
     return NINJA_ARM_MOVE_DURATION_SEC
 
 
+async def ninja_arm_left_open(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_LEFT, NINJA_ARM_LEFT_ZERO + NINJA_ARM_OFFSET_OPEN, speed=speed, reg_only=reg_only
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_LEFT, 3))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
 async def ninja_arm_right_close(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
     planner.scservos.set(
         SCServoEnum.NINJA_ARM_RIGHT, NINJA_ARM_RIGHT_ZERO - NINJA_ARM_OFFSET_CLOSE, speed=speed, reg_only=reg_only
@@ -589,6 +601,80 @@ async def ninja_arm_right_side(planner: "Planner", speed: int = 1000, reg_only: 
         SCServoEnum.NINJA_ARM_RIGHT, NINJA_ARM_RIGHT_ZERO - NINJA_ARM_OFFSET_SIDE, speed=speed, reg_only=reg_only
     )
     await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_RIGHT, 2))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_right_open(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_RIGHT, NINJA_ARM_RIGHT_ZERO - NINJA_ARM_OFFSET_OPEN, speed=speed, reg_only=reg_only
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_RIGHT, 3))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_left_hold_one_long(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_LEFT,
+        NINJA_ARM_LEFT_ZERO + NINJA_ARM_OFFSET_HOLD_ONE_LONG,
+        speed=speed,
+        reg_only=reg_only,
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_LEFT, 4))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_right_hold_one_long(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_RIGHT,
+        NINJA_ARM_RIGHT_ZERO - NINJA_ARM_OFFSET_HOLD_ONE_LONG,
+        speed=speed,
+        reg_only=reg_only,
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_RIGHT, 4))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_left_hold_3(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_LEFT,
+        NINJA_ARM_LEFT_ZERO + NINJA_ARM_OFFSET_HOLD_3,
+        speed=speed,
+        reg_only=reg_only,
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_LEFT, 5))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_right_hold_3(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_RIGHT,
+        NINJA_ARM_RIGHT_ZERO - NINJA_ARM_OFFSET_HOLD_3,
+        speed=speed,
+        reg_only=reg_only,
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_RIGHT, 5))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_left_hold_4(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_LEFT,
+        NINJA_ARM_LEFT_ZERO + NINJA_ARM_OFFSET_HOLD_4,
+        speed=speed,
+        reg_only=reg_only,
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_LEFT, 6))
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arm_right_hold_4(planner: "Planner", speed: int = 1000, reg_only: bool = False) -> float:
+    planner.scservos.set(
+        SCServoEnum.NINJA_ARM_RIGHT,
+        NINJA_ARM_RIGHT_ZERO - NINJA_ARM_OFFSET_HOLD_4,
+        speed=speed,
+        reg_only=reg_only,
+    )
+    await planner.sio_ns.emit("servo", (SCServoEnum.NINJA_ARM_RIGHT, 6))
     return NINJA_ARM_MOVE_DURATION_SEC
 
 
@@ -702,5 +788,33 @@ async def ninja_arms_front(planner: "Planner", speed: int = 1000) -> float:
 async def ninja_arms_side(planner: "Planner", speed: int = 1000) -> float:
     await ninja_arm_left_side(planner, speed=speed, reg_only=True)
     await ninja_arm_right_side(planner, speed=speed, reg_only=True)
+    planner.scservos.action()
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arms_open(planner: "Planner", speed: int = 1000) -> float:
+    await ninja_arm_left_open(planner, speed=speed, reg_only=True)
+    await ninja_arm_right_open(planner, speed=speed, reg_only=True)
+    planner.scservos.action()
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arms_hold_one_long(planner: "Planner", speed: int = 1000) -> float:
+    await ninja_arm_left_hold_one_long(planner, speed=speed, reg_only=True)
+    await ninja_arm_right_hold_one_long(planner, speed=speed, reg_only=True)
+    planner.scservos.action()
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arms_hold_3(planner: "Planner", speed: int = 1000) -> float:
+    await ninja_arm_left_hold_3(planner, speed=speed, reg_only=True)
+    await ninja_arm_right_hold_3(planner, speed=speed, reg_only=True)
+    planner.scservos.action()
+    return NINJA_ARM_MOVE_DURATION_SEC
+
+
+async def ninja_arms_hold_4(planner: "Planner", speed: int = 1000) -> float:
+    await ninja_arm_left_hold_4(planner, speed=speed, reg_only=True)
+    await ninja_arm_right_hold_4(planner, speed=speed, reg_only=True)
     planner.scservos.action()
     return NINJA_ARM_MOVE_DURATION_SEC

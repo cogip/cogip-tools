@@ -39,8 +39,8 @@ class StartPositions:
                 ).pose
             case StartPositionEnum.NINJA:
                 return AdaptedPose(
-                    x=800 + self.shared_properties.robot_width / 2 + training_offset_x,
-                    y=-700 - self.shared_properties.robot_length / 2,
+                    x=880 + training_offset_x,
+                    y=-810,
                     O=90,
                 ).pose
             case StartPositionEnum.PAMI3:

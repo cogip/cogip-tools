@@ -354,12 +354,28 @@ class SocketioClient(QtCore.QObject):
                     orientation = -90
                 case (SCServoEnum.NINJA_ARM_LEFT, 2):
                     orientation = -180
+                case (SCServoEnum.NINJA_ARM_LEFT, 3):
+                    orientation = -270
+                case (SCServoEnum.NINJA_ARM_LEFT, 4):
+                    orientation = -135
+                case (SCServoEnum.NINJA_ARM_LEFT, 5):
+                    orientation = -135
+                case (SCServoEnum.NINJA_ARM_LEFT, 6):
+                    orientation = -135
                 case (SCServoEnum.NINJA_ARM_RIGHT, 0):
                     orientation = 0
                 case (SCServoEnum.NINJA_ARM_RIGHT, 1):
                     orientation = 90
                 case (SCServoEnum.NINJA_ARM_RIGHT, 2):
                     orientation = 180
+                case (SCServoEnum.NINJA_ARM_RIGHT, 3):
+                    orientation = 270
+                case (SCServoEnum.NINJA_ARM_RIGHT, 4):
+                    orientation = 135
+                case (SCServoEnum.NINJA_ARM_RIGHT, 5):
+                    orientation = 135
+                case (SCServoEnum.NINJA_ARM_RIGHT, 6):
+                    orientation = 135
                 case _:
                     logger.warning(f"Unknown servo ID: {servo_id} or position: {position}")
                     return

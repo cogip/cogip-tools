@@ -161,12 +161,15 @@ ninja_actuators_commands = [
     "ninja_arms_close",
     "ninja_arms_front",
     "ninja_arms_side",
+    "ninja_arms_open",
     "ninja_arm_left_close",
     "ninja_arm_left_front",
     "ninja_arm_left_side",
+    "ninja_arm_left_open",
     "ninja_arm_right_close",
     "ninja_arm_right_front",
     "ninja_arm_right_side",
+    "ninja_arm_right_open",
 ]
 
 ninja_actuators_menu = models.ShellMenu(
