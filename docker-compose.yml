@@ -333,7 +333,7 @@ services:
       << : *env-robot
       ROBOT_ID: 2
       COPILOT_CAN_CHANNEL: vcan2
-      PLANNER_START_POSITION: Ninja
+      PLANNER_START_POSITION: NINJA
       PLANNER_ROBOT_LENGTH: 154
       PLANNER_ROBOT_WIDTH: 160
     profiles:
