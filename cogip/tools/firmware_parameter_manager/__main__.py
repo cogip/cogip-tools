@@ -33,6 +33,8 @@ def main_opt(
     server_url: Annotated[
         str | None,
         typer.Option(
+            "-s",
+            "--server_url",
             help="Socket.IO Server URL",
             envvar="COGIP_SOCKETIO_SERVER_URL",
         ),
