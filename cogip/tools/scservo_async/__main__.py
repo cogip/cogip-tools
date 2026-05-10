@@ -10,15 +10,19 @@ from .action import cmd_action
 from .config import cmd_set_id
 from .ping import cmd_ping
 from .read import cmd_read
+from .read_reg import cmd_read_reg
 from .reg_write import cmd_reg_write
 from .torque import cmd_torque
 from .wait import cmd_wait
 from .write import cmd_write
+from .write_reg import cmd_write_reg
 
 app = typer.Typer()
 app.command(name="ping")(cmd_ping)
 app.command(name="read")(cmd_read)
+app.command(name="read-reg")(cmd_read_reg)
 app.command(name="write")(cmd_write)
+app.command(name="write-reg")(cmd_write_reg)
 app.command(name="reg_write")(cmd_reg_write)
 app.command(name="action")(cmd_action)
 app.command(name="torque")(cmd_torque)
