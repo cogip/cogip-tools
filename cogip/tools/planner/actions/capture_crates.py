@@ -39,8 +39,8 @@ class CaptureCratesAction(Action):
         self.before_action_func = self.before_action
         self.collection_area_id = collection_area_id
         self.shift_align = 160
-        self.shift_capture_front = self.shift_align + 15
-        self.shift_capture_back = self.shift_align + 15
+        self.shift_capture_front = self.shift_align + 10
+        self.shift_capture_back = self.shift_align + 10
         self.shift_approach = self.shift_align + 160
         if Camp().color == Camp.Colors.blue:
             self.good_crate_id = 36
@@ -360,6 +360,12 @@ class TestCaptureAndDropStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         self.append(CaptureAndDropCratesAction(planner, self, CollectionAreaID.LocalBottomSide, 2_000_000.0))
+
+
+class TestAlignCaptureAndDropStrategy(TestCaptureAndDropStrategy):
+    def __init__(self, planner: "Planner"):
+        super().__init__(planner)
+        self.insert(0, AlignTopCornerAction(planner, self, weight=3_000_000.0))
 
 
 class CaptureAndDropCratesCameraAction(CaptureAndDropCratesAction):

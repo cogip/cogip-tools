@@ -1,4 +1,5 @@
 import copy
+from collections.abc import Generator
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -24,9 +25,16 @@ class Strategy(list[Action]):
     def __init__(self, planner: "Planner"):
         super().__init__()
         self.planner = planner
+        self.priority = self._priority_generator()
         self.evaluated_actions: list[Action] = []  # Actions done in the evaluation
         self.goap_allowed: bool = False  # Allow GOAP evaluation
         self.can_wait: bool = False  # Use a WaitAction if no other action is possible
+
+    def _priority_generator(self, start: float = 1_000_000.0, step: float = 10_000.0) -> Generator[float]:
+        current = start
+        while True:
+            yield current
+            current -= step
 
     async def get_next_action(self) -> Action | None:
         """

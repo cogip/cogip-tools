@@ -25,8 +25,8 @@ class DropCratesAction(Action):
         planner: "Planner",
         strategy: Strategy,
         pantry_id: PantryID,
+        weight: float = 2_000_000.0,
         force_side: str | None = None,
-        weight: float = 2000000.0,
     ):
         self.custom_weight = weight
         super().__init__(f"DropCrates {pantry_id.name}", planner, strategy)
@@ -73,8 +73,7 @@ class DropCratesAction(Action):
             y=y,
             max_speed_linear=100,
             max_speed_angular=100,
-            # motion_direction=MotionDirection.FORWARD_ONLY if self.side == "front" else MotionDirection.BACKWARD_ONLY,
-            motion_direction=MotionDirection.BIDIRECTIONAL,
+            motion_direction=MotionDirection.FORWARD_ONLY if self.side == "front" else MotionDirection.BACKWARD_ONLY,
             bypass_final_orientation=True,
             before_pose_func=self.before_approach,
             after_pose_func=self.after_approach,
@@ -108,10 +107,16 @@ class DropCratesAction(Action):
             diff = (pose_current.O - ideal_angle + 180) % 360 - 180
             if abs(diff) > self.approach_orientation_threshold:
                 needs_orientation_fix = True
-                target_angle = (
-                    ideal_angle
-                    + (self.approach_orientation_threshold if diff > 0 else -self.approach_orientation_threshold)
-                ) % 360
+
+                # Determines which threshold boundary to pick
+                sign = 1 if diff > 0 else -1
+                # If arriving backwards (difference > 90°), the most natural direction
+                # to turn around corresponds to its "flipped" orientation (opposite sign)
+                if abs(diff) > 90:
+                    sign = -sign
+
+                target_angle = (ideal_angle + sign * self.approach_orientation_threshold) % 360
+
                 self.logger.info(f"{self.name}: Add optimized approach orientation pose: {target_angle}°")
                 fix_orientation_pose = Pose(
                     x=pose_current.x,
@@ -159,20 +164,27 @@ class DropCratesAction(Action):
         self.poses.append(push_pose)
         self.logger.info(f"{self.name}: push: x={push_pose.x: 5.2f} y={push_pose.y: 5.2f} O={push_pose.O: 3.2f}°")
 
+        # Set new pantry pose
+        crate_shift = (
+            92  # Distance between center and front of robot
+            + 75  # Half of crate length
+        )
+        new_pantry_pose = get_relative_pose(
+            push_pose,
+            front_offset=crate_shift if self.side == "front" else -crate_shift,
+        )
+        self.pantry.x = new_pantry_pose.x
+        self.pantry.y = new_pantry_pose.y
+        self.pantry.O = new_pantry_pose.O
+
         self.logger.info(f"{self.name}: after_drop: end")
 
     async def before_push(self):
         self.logger.info(f"{self.name}: before_push")
+        await self.arms_open()
 
     async def after_push(self):
         self.logger.info(f"{self.name}: after_push: begin")
-
-        # Open arms
-        duration = await self.arms_open()
-        await asyncio.sleep(duration / 2)
-
-        # Re-init lift in case the lift got stuck on the ground and to prepare for the next lift up
-        await self.lift_init()
 
         pose_current = self.pose_current
 
@@ -196,6 +208,9 @@ class DropCratesAction(Action):
 
     async def before_step_back(self):
         self.logger.info(f"{self.name}: before_step_back")
+
+        # Re-init lift in case the lift got stuck on the ground and to prepare for the next lift up
+        await self.lift_init()
 
     async def after_step_back(self):
         self.logger.info(f"{self.name}: after_step_back: begin")

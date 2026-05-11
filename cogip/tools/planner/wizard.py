@@ -250,5 +250,6 @@ class GameWizard:
         self.planner.shared_properties.strategy = self.game_strategy
         self.planner.strategy = strategy_classes.get(StrategyEnum(self.game_strategy))(self.planner)
         await self.planner.sio_ns.emit("game_start")
-        await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
-        await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())
+        if self.planner.last_starter_event_timestamp:
+            await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
+            await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())

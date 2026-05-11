@@ -13,9 +13,12 @@ from .avoidance import Avoidance, AvoidanceStrategy
 
 
 def avoidance_process(robot_id: int):
-    logger = Logger("cogip-avoidance", enable_cpp=True)
+    logger = Logger("cogip-avoidance", enable_cpp=False)
     if os.getenv("AVOIDANCE_DEBUG") not in [None, False, "False", "false", 0, "0", "no", "No"]:
         logger.setLevel(logging.DEBUG)
+    logger_cpp = Logger("cogip-avoidance-cpp", enable_cpp=True)
+    if os.getenv("AVOIDANCE_CPP_DEBUG") not in [None, False, "False", "false", 0, "0", "no", "No"]:
+        logger_cpp.setLevel(logging.DEBUG)
 
     logger.info("Avoidance: process started")
     shared_memory = SharedMemory(f"cogip_{robot_id}")
@@ -287,4 +290,5 @@ def avoidance_process(robot_id: int):
     shared_properties = None
     shared_memory = None
 
+    logger_cpp.info("Avoidance CPP: process exited")
     logger.info("Avoidance: process exited")

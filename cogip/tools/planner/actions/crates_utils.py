@@ -197,7 +197,7 @@ async def drop_crates(planner: "Planner", side: Literal["front", "back"]) -> Pos
     """
     linear_speed_front = 10
     linear_speed_back = 20
-    lift_speed_front = 25
+    lift_speed_front = 15
     lift_speed_back = 20
     lift_wait_front = 1.5
     lift_wait_back = 2

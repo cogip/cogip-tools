@@ -315,10 +315,11 @@ class Planner:
         self.loop = asyncio.get_running_loop()
         self.create_shared_memory()
         self.shared_memory.avoidance_exiting = False
+        # Send game_reset to FW before start_pose emitted by soft_reset or it will be ignored
+        await self.sio_ns.emit("game_reset")
         await self.soft_reset()
         await self.event_manager.start_loops()
         await self.sio_ns.emit("starter_changed", self.starter.is_pressed)
-        await self.sio_ns.emit("game_reset")
         self.obstacles_updater_loop.start()
         if self.oled_bus and self.oled_address:
             self.oled_update_loop.start()
@@ -346,7 +347,7 @@ class Planner:
             self.avoidance_process.join()
             self.avoidance_process = None
 
-        self.delete_shared_memory()
+        # self.delete_shared_memory()
 
     async def reset(self):
         """

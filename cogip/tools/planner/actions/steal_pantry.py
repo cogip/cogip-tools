@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from cogip import models
 from cogip.cpp.libraries.obstacles import ObstacleCircle, ObstacleRectangle
-from cogip.models.artifacts import Pantry, PantryID
+from cogip.models.artifacts import Pantry, PantryID, pantries
 from cogip.models.models import MotionDirection
 from cogip.tools.planner import actuators
 from cogip.tools.planner.actions import crates_utils
@@ -17,7 +17,7 @@ from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.actions.utils import get_relative_pose
 from cogip.tools.planner.cameras import get_crates_position
 from cogip.tools.planner.camp import Camp
-from cogip.tools.planner.pose import Pose
+from cogip.tools.planner.pose import AdaptedPose, Pose
 
 if TYPE_CHECKING:
     from ..planner import Planner
@@ -57,9 +57,9 @@ class StealPantryAction(Action):
         self.pantry_id = pantry_id
         self.best_approach_pose: models.Pose | None = None
         self.shift_inspect = 350  # Distance from the center of the pantry
-        self.shift_align = 155  # Distance from the center of the detected crates group
-        self.shift_approach = self.shift_align + 160  # Distance from the center of the detected crates group
-        self.shift_capture = 15  # Distance from the align pose
+        self.shift_approach = 315  # Distance from the center of the detected crates group
+        self.shift_align = 160  # Distance from the approach pose
+        self.shift_capture = 145  # Distance from the approach pose
         if Camp().color == Camp.Colors.blue:
             self.good_crate_id = 36
             self.bad_crate_id = 47
@@ -112,7 +112,7 @@ class StealPantryAction(Action):
             O=0,
             max_speed_linear=100,
             max_speed_angular=100,
-            motion_direction=MotionDirection.BIDIRECTIONAL,
+            motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
             stop_before_distance=self.shift_inspect,
             before_pose_func=self.before_inspect_pose,
@@ -269,37 +269,41 @@ class StealPantryAction(Action):
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.BIDIRECTIONAL,
-            bypass_final_orientation=True,
+            bypass_final_orientation=False,
             before_pose_func=self.before_approach,
             after_pose_func=self.after_approach,
         )
+        if self.side == "back":
+            # Add a rotation on approach pose for back side to be sure to be well aligned with pantry
+            approach_pose.O = (approach_pose.O + 180) % 360
+
         self.poses.append(approach_pose)
         self.logger.info(
             f"{self.name}: approach: x={approach_pose.x: 5.2f} y={approach_pose.y: 5.2f} O={approach_pose.O: 3.2f}°"
         )
 
-        if self.side == "back":
-            rotation_pose = Pose(
-                x=approach_pose.x,
-                y=approach_pose.y,
-                O=(approach_pose.O + 180) % 360,
-                max_speed_linear=30,
-                max_speed_angular=30,
-                motion_direction=MotionDirection.BIDIRECTIONAL,
-                bypass_final_orientation=False,
-                before_pose_func=self.before_rotation,
-                after_pose_func=self.after_rotation,
-            )
-            self.poses.append(rotation_pose)
-            self.logger.info(
-                f"{self.name}: rotation: x={rotation_pose.x: 5.2f} y={rotation_pose.y: 5.2f} O={rotation_pose.O: 3.2f}°"
-            )
+        # if self.side == "back":
+        #     rotation_pose = Pose(
+        #         x=approach_pose.x,
+        #         y=approach_pose.y,
+        #         O=(approach_pose.O + 180) % 360,
+        #         max_speed_linear=30,
+        #         max_speed_angular=30,
+        #         motion_direction=MotionDirection.BIDIRECTIONAL,
+        #         bypass_final_orientation=False,
+        #         before_pose_func=self.before_rotation,
+        #         after_pose_func=self.after_rotation,
+        #     )
+        #     self.poses.append(rotation_pose)
+        #     self.logger.info(
+        #         f"{self.name}: rotation: x={rotation_pose.x: 5.2f} y={rotation_pose.y: 5.2f} O={rotation_pose.O: 3.2f}°"
+        #     )
 
         # Align
         align_pose = Pose(
             **get_relative_pose(
-                self.pantry,
-                front_offset=-self.shift_align,
+                approach_pose,
+                front_offset=self.shift_align if self.side == "front" else -self.shift_align,
                 angular_offset=0,
             ).model_dump(),
             max_speed_linear=10,
@@ -315,8 +319,8 @@ class StealPantryAction(Action):
         # Capture
         capture_pose = Pose(
             **get_relative_pose(
-                align_pose,
-                front_offset=-self.shift_capture,
+                approach_pose,
+                front_offset=self.shift_capture if self.side == "front" else -self.shift_capture,
                 angular_offset=0,
             ).model_dump(),
             max_speed_linear=10,
@@ -448,11 +452,11 @@ class StealPantryAction(Action):
     async def after_approach(self):
         self.logger.info(f"{self.name}: after_approach")
 
-    async def before_rotation(self):
-        self.logger.info(f"{self.name}: before_rotation")
+    # async def before_rotation(self):
+    #     self.logger.info(f"{self.name}: before_rotation")
 
-    async def after_rotation(self):
-        self.logger.info(f"{self.name}: after_rotation")
+    # async def after_rotation(self):
+    #     self.logger.info(f"{self.name}: after_rotation")
 
     async def before_align(self):
         self.logger.info(f"{self.name}: before_align")
@@ -477,6 +481,10 @@ class StealPantryAction(Action):
         # TODO: force back, to remove
         # self.planner.game_context.front_free = True
 
+        if self.crates_ids[:] == [None, None, None, None]:
+            self.logger.info(f"{self.name}: No crates captured, skipping related drop action")
+            return
+
         # Find the corresponding drop action
         for action in self.strategy:
             if isinstance(action, DropCratesAction) and action.pantry_id == self.pantry_id:
@@ -496,6 +504,10 @@ class StealPantryAction(Action):
                 force_side=self.side,
             )
             self.strategy.append(drop_action)
+
+        # Reset default pantry position to avoid issues for next drop actions on the same pantry
+        self.planner.game_context.create_pantry(self.pantry_id)
+        self.pantry.enabled = False
 
     def weight(self) -> float:
         if not self.planner.game_context.front_free and not self.planner.game_context.back_free:
