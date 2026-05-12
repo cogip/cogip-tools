@@ -202,3 +202,13 @@ class Robot:
                 (robot_id, countdown, timestamp, color),
                 namespace="/dashboard",
             )
+
+        @self.sio.event(namespace="/beacon")
+        async def crates_from_granary_available(value: bool):
+            logger.info(f"Crates from granary available: {value}")
+            for robot_id, robot in self.server.robots.items():
+                if robot_id != 1:
+                    continue
+                if robot.sio.connected:
+                    logger.info(f"Sending crates_from_granary_available to robot {robot_id}: {value}")
+                    await robot.sio.emit("crates_from_granary_available", value, namespace="/beacon")

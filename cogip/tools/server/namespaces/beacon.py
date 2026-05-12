@@ -48,3 +48,10 @@ class BeaconNamespace(socketio.AsyncNamespace):
         Callback on wizard message.
         """
         await self.emit("wizard", message, namespace="/planner")
+
+    async def on_crates_from_granary_available(self, sid, value: bool):
+        """
+        Callback on crates_from_granary_available message.
+        This message is sent by the Ninja Planner through the beacon server.
+        """
+        await self.emit("crates_from_granary_available", value, namespace="/planner")

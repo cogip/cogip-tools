@@ -33,6 +33,7 @@ class GameContext:
             self.front_free = True
             self.back_free = True
             self.cursor_moved = False
+            self.crates_from_granary_available = False
             self.front_crates: list[int | None] = [None, None, None, None]
             self.back_crates: list[int | None] = [None, None, None, None]
             self.collection_areas: dict[CollectionAreaID, CollectionArea] = {}
@@ -53,6 +54,7 @@ class GameContext:
         self.front_free = True
         self.back_free = True
         self.cursor_moved = False
+        self.crates_from_granary_available = False
         self.front_crates = [None, None, None, None]
         self.back_crates = [None, None, None, None]
         self.create_artifacts()
@@ -70,6 +72,7 @@ class GameContext:
         new_ctx.front_free = self.front_free
         new_ctx.back_free = self.back_free
         new_ctx.cursor_moved = self.cursor_moved
+        new_ctx.crates_from_granary_available = self.crates_from_granary_available
         new_ctx.front_crates = self.front_crates.copy()
         new_ctx.back_crates = self.back_crates.copy()
         new_ctx.countdown = self.countdown
