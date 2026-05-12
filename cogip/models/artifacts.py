@@ -12,6 +12,13 @@ class FixedObstacleID(IntEnum):
     Nest = auto()
     OppositeNest = auto()
     Table = auto()
+    NinjaArea1 = auto()
+    NinjaArea2 = auto()
+    NinjaDeposit = auto()
+    NinjaCrate1 = auto()
+    NinjaCrate2 = auto()
+    NinjaCrate3 = auto()
+    NinjaCrate4 = auto()
 
 
 class FixedObstacle(Vertex):
