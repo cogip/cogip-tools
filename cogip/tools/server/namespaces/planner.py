@@ -218,3 +218,10 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         logger.info(f"[planner => monitor] Lift command: {(actuator_id, position)}")
         await self.emit("lift", (actuator_id, position), namespace="/monitor")
+
+    async def on_crates_from_granary_available(self, sid, value: bool):
+        """
+        Callback on crates_from_granary_available message.
+        Message sent to the Robot through the beacon server when crates from granary become available or unavailable.
+        """
+        await self.emit("crates_from_granary_available", value, namespace="/beacon")
