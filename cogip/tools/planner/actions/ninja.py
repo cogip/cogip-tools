@@ -303,19 +303,26 @@ class NinjaDropFourAction(Action):
     along the way. Replaced the older smooth-arc NinjaExposeFourAction.
     """
 
-    DROP_FOUR_RECUL_MM = 210  # pose 2: back 220 mm from pose 1
-    # DROP_FOUR_2A_BACKWARD_MM = 110  # pose 2a: back 110 mm from pose 2
-    DROP_FOUR_2C_FORWARD_MM = 180  # pose 2c: forward 190 mm from pose 2
-    DROP_FOUR_2D_BACKWARD_MM = 100  # pose 2d: back 100 mm from pose 2c
-    DROP_FOUR_2E_FORWARD_MM = 100  # pose 2e: forward 100 mm from pose 2d
-    DROP_FOUR_ADVANCE_MM = 175  # pose 2b: forward 175 mm from pose 2
-    DROP_FOUR_PARK_FORWARD_MM = 40  # pose 5: 40 mm forward from pose 2e
-    DROP_FOUR_PARK_ANGULAR_DEG = 90  # pose 5: +90 deg heading vs pose 2e
+    DROP_FOUR_2_RECUL_MM = 50  # pose 2: back 250 mm from pose 1
+    DROP_FOUR_2b_RECUL_MM = 215  # pose 2: back 250 mm from pose 1
+    DROP_FOUR_3_FORWARD_MM = 200  # pose 3: forward 190 mm from pose 2 (current)
+    DROP_FOUR_4_BACKWARD_MM = 100  # pose 4: back 100 mm from pose 3 (current)
+    DROP_FOUR_5_FORWARD_MM = 100  # pose 5: forward 100 mm from pose 4 (current)
+    DROP_FOUR_6_NORTH_MM = 40  # pose 6: 40 mm north (raw +x) from pose 5
+    DROP_FOUR_8_EAST_MM = 100  # pose 8: 120 mm east (display) from pose 7 (current)
+    DROP_FOUR_9_WEST_MM = 40  # pose 9: 40 mm west (display) from pose 8 (current)
+    DROP_FOUR_10_X_TARGET = 880  # pose 10: north to absolute raw x = 880
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
         super().__init__("Ninja drop four", planner, strategy, interruptable=False)
         self.before_action_func = self.before_action
         self.wait = wait
+        # Placeholders for poses 8, 9, 10 computed at runtime from the
+        # robot's current pose (absolute directions or absolute x target
+        # that the chain-relative approach can't express cleanly).
+        self._pose8: Pose | None = None
+        self._pose9: Pose | None = None
+        self._pose10: Pose | None = None
 
     def set_avoidance(self, new_strategy: AvoidanceStrategy):
         self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
@@ -324,22 +331,13 @@ class NinjaDropFourAction(Action):
     async def before_action(self):
         self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
 
-        pose_approach = AdaptedPose(
-            x=880,
-            y=-500,
-            O=90,
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose_approach,
-        )
-        self.poses.append(pose_approach)
-
+        # pose 1 anchored on NinjaDropZone center (raw 675, -700): 205 mm
+        # north (front_offset → raw x = 880), aligned on the zone's Y axis,
+        # facing north. Reached BIDIRECTIONAL.
+        drop_zone_obstacle = self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDropZone]
+        drop_zone_anchor = Pose(x=drop_zone_obstacle.x, y=drop_zone_obstacle.y, O=0)
         pose1 = AdaptedPose(
-            x=880,
-            y=-690,
-            O=0,
+            **get_relative_pose(drop_zone_anchor, front_offset=205, side_offset=0, angular_offset=0).model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.BIDIRECTIONAL,
@@ -348,131 +346,284 @@ class NinjaDropFourAction(Action):
         )
         self.poses.append(pose1)
 
-        # 2: recul 150 mm relative to pose 1 (along pose 1's heading axis).
-        # arms_side fires at the start (before_pose_func) so the deployment
-        # runs in parallel with the BWD drive rather than waiting at the end.
+        # 2: recul 55 mm relative to pose 1 (along pose 1's heading axis).
+        # arms_side fires at the start (before_pose_func) at max speed so
+        # the deployment runs in parallel with the slow BWD drive.
         pose2 = Pose(
-            **get_relative_pose(pose1, front_offset=-self.DROP_FOUR_RECUL_MM).model_dump(),
+            **get_relative_pose(pose1, front_offset=-self.DROP_FOUR_2_RECUL_MM).model_dump(),
             max_speed_linear=10,
             max_speed_angular=100,
             motion_direction=MotionDirection.BACKWARD_ONLY,
-            bypass_final_orientation=True,
+            bypass_final_orientation=False,
             before_pose_func=self.before_pose2,
             after_pose_func=self.after_pose2,
         )
         self.poses.append(pose2)
 
-        # 2b: advance 175 mm relative to pose 2 (commented out for now).
-        # pose2b = Pose(
-        #     **get_relative_pose(pose2, front_offset=self.DROP_FOUR_ADVANCE_MM).model_dump(),
-        #     max_speed_linear=10,
-        #     max_speed_angular=100,
-        #     motion_direction=MotionDirection.FORWARD_ONLY,
-        #     bypass_final_orientation=True,
-        #     after_pose_func=self.after_pose2b,
-        # )
-        # self.poses.append(pose2b)
-
-        # 2a: recul 110 mm relative to pose 2, no servo action.
-        # pose2a = Pose(
-        #    **get_relative_pose(pose2, front_offset=-self.DROP_FOUR_2A_BACKWARD_MM).model_dump(),
-        #    max_speed_linear=10,
-        #    max_speed_angular=100,
-        #    motion_direction=MotionDirection.BACKWARD_ONLY,
-        #    bypass_final_orientation=True,
-        #    after_pose_func=self.after_pose2a,
-        # )
-        # self.poses.append(pose2a)
-
-        # 2c: advance 190 mm relative to pose 2, no servo action.
-        pose2c = Pose(
-            **get_relative_pose(pose2, front_offset=self.DROP_FOUR_2C_FORWARD_MM).model_dump(),
-            max_speed_linear=10,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose2c,
-        )
-        self.poses.append(pose2c)
-
-        # 2d: recul 100 mm relative to pose 2c, no servo action.
-        pose2d = Pose(
-            **get_relative_pose(pose2c, front_offset=-self.DROP_FOUR_2D_BACKWARD_MM).model_dump(),
+        # 2: recul 55 mm relative to pose 1 (along pose 1's heading axis).
+        # arms_side fires at the start (before_pose_func) at max speed so
+        # the deployment runs in parallel with the slow BWD drive.
+        pose2b = Pose(
+            **get_relative_pose(pose2, front_offset=-self.DROP_FOUR_2b_RECUL_MM).model_dump(),
             max_speed_linear=10,
             max_speed_angular=100,
             motion_direction=MotionDirection.BACKWARD_ONLY,
             bypass_final_orientation=True,
-            after_pose_func=self.after_pose2d,
+            before_pose_func=self.before_pose2b,
+            after_pose_func=self.after_pose2b,
         )
-        self.poses.append(pose2d)
+        self.poses.append(pose2b)
 
-        # 2e: advance 100 mm relative to pose 2d, opens arms at the end.
-        pose2e = Pose(
-            **get_relative_pose(pose2d, front_offset=self.DROP_FOUR_2E_FORWARD_MM).model_dump(),
+        # 3: forward 190 mm relative to pose 2 (along pose 2's heading).
+        pose3 = Pose(
+            **get_relative_pose(pose2b, front_offset=self.DROP_FOUR_3_FORWARD_MM).model_dump(),
             max_speed_linear=10,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=True,
-            after_pose_func=self.after_pose2e,
+            after_pose_func=self.after_pose3,
         )
-        self.poses.append(pose2e)
+        self.poses.append(pose3)
 
-        # 5: park 40 mm further forward with +90 deg heading relative to pose 2e.
-        pose5 = Pose(
-            **get_relative_pose(
-                pose2e,
-                front_offset=self.DROP_FOUR_PARK_FORWARD_MM,
-                angular_offset=self.DROP_FOUR_PARK_ANGULAR_DEG,
-            ).model_dump(),
+        ## 4: back 100 mm relative to pose 3.
+        # pose4 = Pose(
+        #    **get_relative_pose(pose3, front_offset=-self.DROP_FOUR_4_BACKWARD_MM).model_dump(),
+        #    max_speed_linear=10,
+        #    max_speed_angular=100,
+        #    motion_direction=MotionDirection.BACKWARD_ONLY,
+        #    bypass_final_orientation=True,
+        #    after_pose_func=self.after_pose4,
+        # )
+        # self.poses.append(pose4)
+
+        ## 5: forward 100 mm relative to pose 4.
+        # pose5 = Pose(
+        #    **get_relative_pose(pose4, front_offset=self.DROP_FOUR_5_FORWARD_MM).model_dump(),
+        #    max_speed_linear=10,
+        #    max_speed_angular=100,
+        #    motion_direction=MotionDirection.FORWARD_ONLY,
+        #    bypass_final_orientation=True,
+        #    after_pose_func=self.after_pose5,
+        # )
+        # self.poses.append(pose5)
+
+        # 6: 40 mm north of pose 5 (chain pose5, front=+40 along pose 5's
+        # north heading). arms_close fires in before_pose6 so the closing
+        # runs in parallel with the move.
+        pose6 = Pose(
+            **get_relative_pose(pose3, front_offset=self.DROP_FOUR_6_NORTH_MM).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=False,
+            before_pose_func=self.before_pose6,
+            after_pose_func=self.after_pose6,
+        )
+        self.poses.append(pose6)
+
+        # 6b: clearance/approach pose due north of pose 7 at raw x=880.
+        # Same raw y as pose 7 (-545), facing north (raw 0°). Smooths the
+        # diagonal transit between pose 6 (north heading) and pose 7
+        # (facing east) by aligning the robot on pose 7's N-S axis first.
+        pose6b = AdaptedPose(
+            x=880,
+            y=-545,
+            O=0,
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=True,
-            after_pose_func=self.after_pose5,
+            after_pose_func=self.after_pose6b,
         )
-        self.poses.append(pose5)
+        self.poses.append(pose6b)
+
+        # 7: relative to pose 6 — front=-215, side=165, angular=-90 places
+        # the robot at (raw 675, -535, -90°) when pose 6 ends at the
+        # theoretical (890, -700, 0°), i.e. 10 mm west of NinjaDropZone
+        # centered on its N-S axis, facing east. before_pose7 re-enables
+        # NinjaDropZone so the avoidance plans the path around it. Final
+        # orientation is bypassed so the robot ends at the motion direction.
+        pose7 = AdaptedPose(
+            **get_relative_pose(pose6, front_offset=-215, side_offset=165, angular_offset=-90).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=True,
+            before_pose_func=self.before_pose7,
+            after_pose_func=self.after_pose7,
+        )
+        self.poses.append(pose7)
+
+        # 8: 120 mm east (display) from the pose 7 end position, reached
+        # BACKWARD. Final heading is west in display so the backward motion
+        # direction is east. Target computed at runtime from pose_current.
+        self._pose8 = Pose(
+            x=0,
+            y=0,
+            O=0,
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.BACKWARD_ONLY,
+            bypass_final_orientation=False,
+            before_pose_func=self.before_pose8,
+            after_pose_func=self.after_pose8,
+        )
+        self.poses.append(self._pose8)
+
+        # 9: 40 mm west (display) from the pose 8 end position, reached
+        # FORWARD. Robot ends pose 8 facing west (raw +90°), so forward
+        # motion goes west. Target computed at runtime from pose_current.
+        self._pose9 = Pose(
+            x=0,
+            y=0,
+            O=0,
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=False,
+            before_pose_func=self.before_pose9,
+            after_pose_func=self.after_pose9,
+        )
+        self.poses.append(self._pose9)
+
+        # 10: drive north to raw x=880 (out of the NinjaDropZone area),
+        # preserving the current y. End facing north (raw 0°). Target
+        # computed at runtime from pose_current.
+        self._pose10 = Pose(
+            x=0,
+            y=0,
+            O=0,
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=False,
+            before_pose_func=self.before_pose10,
+            after_pose_func=self.after_pose10,
+        )
+        self.poses.append(self._pose10)
 
         if self.planner.shared_properties.table == TableEnum.Training:
             for pose in self.poses:
                 pose.x -= 1000
 
-    async def after_pose_approach(self):
-        self.logger.info(f"{self.name}: after_pose_approach")
-
     async def after_pose1(self):
         self.logger.info(f"{self.name}: after_pose1")
         await actuators.ninja_arms_open(self.planner, speed=0)
-        await asyncio.sleep(2)
+        await asyncio.sleep(0.5)
+        # First deposit is done: drop the start-area DropZone so the
+        # subsequent shake/recul poses can drive through it.
+        self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDropZone].enabled = False
+        self.logger.info(f"{self.name}: after_pose1 - NinjaDropZone disabled")
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
 
     async def before_pose2(self):
         self.logger.info(f"{self.name}: before_pose2 - deploying arms_side")
-        await actuators.ninja_arms_side(self.planner, speed=150)
 
     async def after_pose2(self):
         self.logger.info(f"{self.name}: after_pose2")
-        await asyncio.sleep(3)
+        # await actuators.ninja_arms_near_side(self.planner, speed=200)
+        # await asyncio.sleep(5)
+        await actuators.ninja_arms_side(self.planner, speed=1000)
+        await asyncio.sleep(1)
 
-    async def after_pose2a(self):
-        self.logger.info(f"{self.name}: after_pose2a")
+    async def before_pose2b(self):
+        self.logger.info(f"{self.name}: before_pose2")
 
     async def after_pose2b(self):
-        self.logger.info(f"{self.name}: after_pose2b")
+        self.logger.info(f"{self.name}: after_pose2")
 
-    async def after_pose2c(self):
-        self.logger.info(f"{self.name}: after_pose2c")
-
-    async def after_pose2d(self):
-        self.logger.info(f"{self.name}: after_pose2d")
-
-    async def after_pose2e(self):
-        self.logger.info(f"{self.name}: after_pose2e")
+    async def after_pose3(self):
+        self.logger.info(f"{self.name}: after_pose3")
         await actuators.ninja_arms_open(self.planner, speed=0)
         await asyncio.sleep(0.5)
 
-    async def after_pose5(self):
-        self.logger.info(f"{self.name}: after_pose5")
+    # async def after_pose4(self):
+    #    self.logger.info(f"{self.name}: after_pose4")
+
+    # async def after_pose5(self):
+    #    self.logger.info(f"{self.name}: after_pose5")
+    #    await actuators.ninja_arms_open(self.planner, speed=0)
+    #    await asyncio.sleep(0.5)
+
+    async def before_pose6(self):
+        self.logger.info(f"{self.name}: before_pose6 - closing arms")
+
+    async def after_pose6(self):
+        self.logger.info(f"{self.name}: after_pose6")
         await actuators.ninja_arms_close(self.planner, speed=0)
         await asyncio.sleep(0.5)
+
+    async def after_pose6b(self):
+        self.logger.info(f"{self.name}: after_pose6b")
+
+    async def before_pose7(self):
+        self.logger.info(f"{self.name}: before_pose7 - re-enabling NinjaDropZone")
+        self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDropZone].enabled = True
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
+
+    async def after_pose7(self):
+        self.logger.info(f"{self.name}: after_pose7")
+        self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDropZone].enabled = False
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
+
+    async def before_pose8(self):
+        cur = self.planner.pose_current
+        # 120 mm east in display = raw y decrease (user-frame east = y-).
+        # End facing west in display (raw +90°) so the BACKWARD motion
+        # direction is east. AdaptedPose wraps the deltas so the sign is
+        # camp-correct (y- east in blue stays y- east; in yellow it flips).
+        delta = AdaptedPose(x=0, y=-self.DROP_FOUR_8_EAST_MM, O=90)
+        self._pose8.x = cur.x + delta.x
+        self._pose8.y = cur.y + delta.y
+        self._pose8.O = delta.O
+        self.logger.info(
+            f"{self.name}: before_pose8 target ({self._pose8.x:.1f}, "
+            f"{self._pose8.y:.1f}, {self._pose8.O:.1f}) from "
+            f"current ({cur.x:.1f}, {cur.y:.1f}, {cur.O:.1f})"
+        )
+
+    async def after_pose8(self):
+        self.logger.info(f"{self.name}: after_pose8")
+
+    async def before_pose9(self):
+        cur = self.planner.pose_current
+        # 40 mm west in display (operating frame: west = raw +y). FORWARD
+        # motion with end heading raw +90° (facing west) so forward direction
+        # is west. AdaptedPose wraps the deltas to stay camp-correct.
+        delta = AdaptedPose(x=0, y=self.DROP_FOUR_9_WEST_MM, O=90)
+        self._pose9.x = cur.x + delta.x
+        self._pose9.y = cur.y + delta.y
+        self._pose9.O = delta.O
+        self.logger.info(
+            f"{self.name}: before_pose9 target ({self._pose9.x:.1f}, "
+            f"{self._pose9.y:.1f}, {self._pose9.O:.1f}) from "
+            f"current ({cur.x:.1f}, {cur.y:.1f}, {cur.O:.1f})"
+        )
+
+    async def after_pose9(self):
+        self.logger.info(f"{self.name}: after_pose9")
+        self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDropZone].enabled = False
+        self.logger.info(f"{self.name}: after_pose9 - NinjaDropZone disabled")
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
+        self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaCratesZone].enabled = True
+        self.logger.info(f"{self.name}: after_pose9 - NinjaCratesZone enabled")
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
+
+    async def before_pose10(self):
+        cur = self.planner.pose_current
+        # Drive north to raw x=DROP_FOUR_10_X_TARGET while preserving y.
+        # End facing north (raw 0°).
+        self._pose10.x = self.DROP_FOUR_10_X_TARGET
+        self._pose10.y = cur.y
+        self._pose10.O = 0
+        self.logger.info(
+            f"{self.name}: before_pose10 target ({self._pose10.x:.1f}, "
+            f"{self._pose10.y:.1f}, {self._pose10.O:.1f}) from "
+            f"current ({cur.x:.1f}, {cur.y:.1f}, {cur.O:.1f})"
+        )
+
+    async def after_pose10(self):
+        self.logger.info(f"{self.name}: after_pose10")
 
     def weight(self) -> float:
         # Highest weight: runs first in the standalone strategy.
@@ -665,12 +816,8 @@ class NinjaBuildGroupAction(Action):
         )
         self.poses.append(pose15)
 
-        # 16: side_offset 80 mm puts the robot 10 mm west of the
-        # NinjaDeposit west edge (display y=80 → target display y=70) so the
-        # robot is already outside the zone when after_pose16 enables the
-        # obstacle.
         pose16 = AdaptedPose(
-            **get_relative_pose(area2_anchor, front_offset=-125, side_offset=80, angular_offset=90).model_dump(),
+            **get_relative_pose(area2_anchor, front_offset=-125, side_offset=90, angular_offset=90).model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
@@ -678,135 +825,6 @@ class NinjaBuildGroupAction(Action):
             after_pose_func=self.after_pose16,
         )
         self.poses.append(pose16)
-
-        # 17: drive 205 mm north of the deposit zone center, aligned on its
-        # Y axis (side_offset=0 → same y as zone center). Raw (880, -250, 0°)
-        # → display (880, +250, 0°). Facing north. NinjaDeposit is already
-        # enabled by after_pose16 so the avoidance routes the path here
-        # around the released crates. front_offset capped at 205 mm so the
-        # robot front edge stays inside the table even if the zone is
-        # shifted further north (raw x_max = 1000, robot half-length 77).
-        deposit_obstacle = self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDeposit]
-        deposit_anchor = Pose(x=deposit_obstacle.x, y=deposit_obstacle.y, O=0)
-        pose17 = AdaptedPose(
-            **get_relative_pose(deposit_anchor, front_offset=205, side_offset=0, angular_offset=0).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose17,
-        )
-        self.poses.append(pose17)
-
-        # 18: descend to x=750 (130 mm south of pose 17) along the same
-        # heading (0°), driving backward since the robot is facing north.
-        # Part of the N-S corridor poses 17→18→19 sitting at display y=250.
-        # Target sits inside the NinjaDeposit inflated bbox, so disable the
-        # obstacle in before_pose18 and re-enable it in before_pose20.
-        pose18 = AdaptedPose(
-            **get_relative_pose(area1_anchor, front_offset=25, side_offset=150, angular_offset=0).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.BACKWARD_ONLY,
-            bypass_final_orientation=True,
-            before_pose_func=self.before_pose18,
-            after_pose_func=self.after_pose18,
-        )
-        self.poses.append(pose18)
-
-        # 19: climb back north to x=880, still facing north (forward).
-        pose19 = AdaptedPose(
-            **get_relative_pose(area1_anchor, front_offset=155, side_offset=150, angular_offset=0).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose19,
-        )
-        self.poses.append(pose19)
-
-        # 20: park east of the NinjaDeposit zone facing the zone, reached
-        # backward. Anchored on the deposit zone center: 25 mm north, 300 mm
-        # east (raw -y) of its center, facing west (raw +90° → display -90°).
-        # Re-enable NinjaDeposit in before_pose20 (it was disabled for the
-        # pose 18 dive) so the avoidance plans the detour around the
-        # released crates for the transit pose 19 → pose 20.
-        pose20 = AdaptedPose(
-            **get_relative_pose(deposit_anchor, front_offset=-40, side_offset=-350, angular_offset=90).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            before_pose_func=self.before_pose20,
-            after_pose_func=self.after_pose20,
-        )
-        self.poses.append(pose20)
-
-        # 21: drive west backward to 10 mm east of the zone's east edge.
-        # 25 mm north of the deposit zone center, side -180 mm = 170 mm
-        # (half of the 340 mm displayed length_y) + 10 mm clearance. Final
-        # heading raw -90° (display +90° = east) so the backward motion
-        # travels west. Target is now outside the inflated bbox so no
-        # obstacle toggle is needed.
-        pose21 = AdaptedPose(
-            **get_relative_pose(deposit_anchor, front_offset=-40, side_offset=-180, angular_offset=-90).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.BACKWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose21,
-        )
-        self.poses.append(pose21)
-
-        # 22: back up 50 mm east of pose 21. Final heading raw +90° (display
-        # -90° = west) so the backward motion (opposite to heading) is east
-        # in display.
-        pose22 = AdaptedPose(
-            **get_relative_pose(deposit_anchor, front_offset=-40, side_offset=-230, angular_offset=90).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose22,
-        )
-        self.poses.append(pose22)
-
-        # 23/24/25: replay the N-S-N corridor of poses 17→18→19 along the
-        # zone-center Y axis (side_offset=0 → raw y=-250). 23 north (x=880),
-        # 24 south dip (x=625, deeper than pose 18 to extend the maneuver),
-        # 25 back north (x=880). Pose 24 sits inside the NinjaDeposit bbox
-        # so before_pose24 disables the obstacle; pose 25's path keeps it
-        # disabled because the start is still inside the zone.
-        pose23 = AdaptedPose(
-            **get_relative_pose(deposit_anchor, front_offset=205, side_offset=0, angular_offset=0).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose23,
-        )
-        self.poses.append(pose23)
-
-        pose24 = AdaptedPose(
-            **get_relative_pose(deposit_anchor, front_offset=-50, side_offset=0, angular_offset=0).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.BACKWARD_ONLY,
-            bypass_final_orientation=True,
-            before_pose_func=self.before_pose24,
-            after_pose_func=self.after_pose24,
-        )
-        self.poses.append(pose24)
-
-        pose25 = AdaptedPose(
-            **get_relative_pose(deposit_anchor, front_offset=205, side_offset=0, angular_offset=0).model_dump(),
-            max_speed_linear=100,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose25,
-        )
-        self.poses.append(pose25)
 
         if self.planner.shared_properties.table == TableEnum.Training:
             for pose in self.poses:
@@ -880,12 +898,150 @@ class NinjaBuildGroupAction(Action):
         self.logger.info(f"{self.name}: after_pose16")
         await actuators.ninja_arms_close(self.planner, speed=0)
         await asyncio.sleep(0.5)
-        # Enable NinjaDeposit so the released crates show up on the monitor
-        # for the rest of BuildGroup. before_pose18 disables it again so
-        # the pose 18 dive into the zone is accepted by the avoidance.
+
+    def weight(self) -> float:
+        # Higher weight than NinjaPantryDepositAction so the strategy picks
+        # the build group first (Strategy.get_next_action sorts by weight
+        # ascending and takes the last entry).
+        return 10_000_000.0
+
+
+class NinjaPantryDepositAction(Action):
+    """
+    Deposit the assembled group at the pantry: travel from the build area
+    to the pantry, drop the items in two passes, and clear out.
+    """
+
+    def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
+        super().__init__("Ninja pantry deposit", planner, strategy, interruptable=False)
+        self.before_action_func = self.before_action
+        self.wait = wait
+
+    async def before_action(self):
+        # NinjaArea1 and NinjaArea2 are expected to be already disabled by
+        # NinjaBuildGroupAction which always runs before us (higher weight).
+        # Enable NinjaDeposit so the released crates show on the monitor
+        # and the avoidance routes around them for the rest of the action.
         self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDeposit].enabled = True
-        self.logger.info(f"{self.name}: after_pose16 - NinjaDeposit enabled")
+        self.logger.info(f"{self.name}: NinjaDeposit enabled")
         await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
+
+        area1_anchor = Pose(x=725, y=-400, O=0)
+        deposit_obstacle = self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDeposit]
+        deposit_anchor = Pose(x=deposit_obstacle.x, y=deposit_obstacle.y, O=0)
+
+        # 17: drive 205 mm north of the deposit zone center, aligned on its
+        # Y axis. Raw (880, -250, 0°) → display (880, +250, 0°). Facing
+        # north. front_offset capped at 205 mm so the robot front edge
+        # stays inside the table (raw x_max = 1000, robot half-length 77).
+        pose17 = AdaptedPose(
+            **get_relative_pose(deposit_anchor, front_offset=205, side_offset=0, angular_offset=0).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=True,
+            after_pose_func=self.after_pose17,
+        )
+        self.poses.append(pose17)
+
+        # 18: descend to x=750 along the same heading (0°), driving backward
+        # since the robot is facing north. Part of the N-S corridor poses
+        # 17→18→19. Target inside NinjaDeposit inflated bbox, so disable in
+        # before_pose18 and re-enable in before_pose20.
+        pose18 = AdaptedPose(
+            **get_relative_pose(area1_anchor, front_offset=25, side_offset=150, angular_offset=0).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.BACKWARD_ONLY,
+            bypass_final_orientation=True,
+            before_pose_func=self.before_pose18,
+            after_pose_func=self.after_pose18,
+        )
+        self.poses.append(pose18)
+
+        # 19: climb back north to x=880, still facing north (forward).
+        pose19 = AdaptedPose(
+            **get_relative_pose(area1_anchor, front_offset=155, side_offset=150, angular_offset=0).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=True,
+            after_pose_func=self.after_pose19,
+        )
+        self.poses.append(pose19)
+
+        # 20: park east of the NinjaDeposit zone facing west, reached
+        # forward. Re-enable NinjaDeposit (disabled by pose 18) so the
+        # avoidance plans the detour around the released crates.
+        pose20 = AdaptedPose(
+            **get_relative_pose(deposit_anchor, front_offset=-40, side_offset=-350, angular_offset=90).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=True,
+            before_pose_func=self.before_pose20,
+            after_pose_func=self.after_pose20,
+        )
+        self.poses.append(pose20)
+
+        # 21: drive west backward to 10 mm east of the zone's east edge.
+        pose21 = AdaptedPose(
+            **get_relative_pose(deposit_anchor, front_offset=-40, side_offset=-180, angular_offset=-90).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.BACKWARD_ONLY,
+            bypass_final_orientation=True,
+            after_pose_func=self.after_pose21,
+        )
+        self.poses.append(pose21)
+
+        # 22: back up 50 mm east of pose 21.
+        pose22 = AdaptedPose(
+            **get_relative_pose(deposit_anchor, front_offset=-40, side_offset=-230, angular_offset=90).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=True,
+            after_pose_func=self.after_pose22,
+        )
+        self.poses.append(pose22)
+
+        # 23/24/25: replay the N-S-N corridor of poses 17→18→19 with a
+        # deeper south dip (x=625) for the second pass.
+        pose23 = AdaptedPose(
+            **get_relative_pose(deposit_anchor, front_offset=205, side_offset=0, angular_offset=0).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=True,
+            after_pose_func=self.after_pose23,
+        )
+        self.poses.append(pose23)
+
+        pose24 = AdaptedPose(
+            **get_relative_pose(deposit_anchor, front_offset=-60, side_offset=0, angular_offset=0).model_dump(),
+            max_speed_linear=20,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.BACKWARD_ONLY,
+            bypass_final_orientation=True,
+            before_pose_func=self.before_pose24,
+            after_pose_func=self.after_pose24,
+        )
+        self.poses.append(pose24)
+
+        pose25 = AdaptedPose(
+            **get_relative_pose(deposit_anchor, front_offset=205, side_offset=0, angular_offset=0).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=True,
+            after_pose_func=self.after_pose25,
+        )
+        self.poses.append(pose25)
+
+        if self.planner.shared_properties.table == TableEnum.Training:
+            for pose in self.poses:
+                pose.x -= 1000
 
     async def after_pose17(self):
         self.logger.info(f"{self.name}: after_pose17")
@@ -932,119 +1088,11 @@ class NinjaBuildGroupAction(Action):
 
     async def after_pose25(self):
         self.logger.info(f"{self.name}: after_pose25")
-
-    def weight(self) -> float:
-        # Higher weight than NinjaPantryDepositAction so the strategy picks
-        # the build group first (Strategy.get_next_action sorts by weight
-        # ascending and takes the last entry).
-        return 10_000_000.0
-
-
-class NinjaPantryDepositAction(Action):
-    """
-    Deposit the assembled group at the pantry: travel from the build area
-    to the pantry, drop the items in two passes, and clear out.
-    """
-
-    def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
-        super().__init__("Ninja pantry deposit", planner, strategy, interruptable=False)
-        self.before_action_func = self.before_action
-        self.wait = wait
-
-    async def before_action(self):
-        # NinjaArea1 and NinjaArea2 are expected to be already disabled by
-        # NinjaBuildGroupAction which always runs before us (higher weight).
-        # Enable the deposit obstacle now so the transit to pose 2 routes
-        # around the crates released by BuildGroup; before_pose5 will disable
-        # it again so the deposit poses can drive into the area.
-        self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDeposit].enabled = True
-        self.logger.info(f"{self.name}: NinjaDeposit enabled")
-        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
-        area1_anchor = Pose(x=725, y=-400, O=0)
-        area2_anchor = Pose(x=775, y=-150, O=0)
-
-        pose2 = AdaptedPose(
-            **get_relative_pose(area1_anchor, front_offset=155, side_offset=50, angular_offset=0).model_dump(),
-            max_speed_linear=66,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=False,
-            after_pose_func=self.after_pose2,
-        )
-        self.poses.append(pose2)
-
-        pose3 = AdaptedPose(
-            **get_relative_pose(area1_anchor, front_offset=0, side_offset=50, angular_offset=0).model_dump(),
-            max_speed_linear=20,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.BACKWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose3,
-        )
-        self.poses.append(pose3)
-
-        pose4 = AdaptedPose(
-            **get_relative_pose(area2_anchor, front_offset=105, side_offset=-100, angular_offset=0).model_dump(),
-            max_speed_linear=20,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose4,
-        )
-        self.poses.append(pose4)
-
-        pose5 = AdaptedPose(
-            **get_relative_pose(area2_anchor, front_offset=-155, side_offset=-100, angular_offset=0).model_dump(),
-            max_speed_linear=20,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.BACKWARD_ONLY,
-            bypass_final_orientation=False,
-            before_pose_func=self.before_pose5,
-            after_pose_func=self.after_pose5,
-        )
-        self.poses.append(pose5)
-
-        pose6 = AdaptedPose(
-            **get_relative_pose(area2_anchor, front_offset=-60, side_offset=-100, angular_offset=0).model_dump(),
-            max_speed_linear=66,
-            max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=True,
-            after_pose_func=self.after_pose6,
-        )
-        self.poses.append(pose6)
-
-        if self.planner.shared_properties.table == TableEnum.Training:
-            for pose in self.poses:
-                pose.x -= 1000
-
-    async def after_pose2(self):
-        self.logger.info(f"{self.name}: after_pose2")
-        await actuators.ninja_arms_open(self.planner, speed=0)
-        await asyncio.sleep(0.5)
-
-    async def after_pose3(self):
-        self.logger.info(f"{self.name}: after_pose3")
-        await actuators.ninja_arms_close(self.planner, speed=0)
-        await asyncio.sleep(0.5)
-
-    async def after_pose4(self):
-        self.logger.info(f"{self.name}: after_pose4")
-
-    async def before_pose5(self):
-        self.logger.info(f"{self.name}: before_pose5 - disabling NinjaDeposit")
+        # PantryDeposit done: drop the NinjaDeposit obstacle so the next
+        # actions can move freely through the deposit area.
         self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDeposit].enabled = False
+        self.logger.info(f"{self.name}: after_pose25 - NinjaDeposit disabled")
         await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
-
-    async def after_pose5(self):
-        self.logger.info(f"{self.name}: after_pose5")
-        await actuators.ninja_arms_open(self.planner, speed=0)
-        await asyncio.sleep(0.5)
-
-    async def after_pose6(self):
-        self.logger.info(f"{self.name}: after_pose6")
-        await actuators.ninja_arms_close(self.planner, speed=0)
-        await asyncio.sleep(0.5)
 
     def weight(self) -> float:
         # Dependency guard: do not run until NinjaBuildGroupAction has been
@@ -1056,7 +1104,9 @@ class NinjaPantryDepositAction(Action):
 
 class NinjaRottenDepositAction(Action):
     """
-    Deposit rotten boxes in their dedicated zone.
+    Pick up two crates from NinjaCratesZone one at a time and deposit them
+    at the rotten zone (reuse the existing arms_open coords from the
+    original action). Each pickup uses `arms_hold_one_long`.
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
@@ -1065,9 +1115,19 @@ class NinjaRottenDepositAction(Action):
         self.wait = wait
 
     async def before_action(self):
+        # Disable NinjaCratesZone so the pickup poses (inside the inflated
+        # bbox) are accepted by the avoidance. The crates' physical presence
+        # is handled by the pose offsets below.
+        self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaCratesZone].enabled = False
+        self.logger.info(f"{self.name}: NinjaCratesZone disabled")
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
+
+        # Approach: 40 mm west of pickup 1 (raw y +40 in operating frame).
+        # Robot stops here and opens its arms before moving to the first
+        # crate, so the arms are already open at pickup time.
         pose_approach = AdaptedPose(
-            x=880,
-            y=-490,
+            x=675,
+            y=-550,
             O=90,
             max_speed_linear=100,
             max_speed_angular=100,
@@ -1077,127 +1137,161 @@ class NinjaRottenDepositAction(Action):
         )
         self.poses.append(pose_approach)
 
+        # 1: pickup 1 at the DropFour pose 8 position (675, -635, +90°),
+        # facing west toward the crate. Reached BACKWARD from pose_approach
+        # so the rear of the robot leads into the crate. arms_hold_one_long
+        # grabs the first crate after arrival.
         pose1 = AdaptedPose(
-            x=715,
-            y=-490,
+            x=675,
+            y=-635,
             O=90,
             max_speed_linear=100,
             max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=False,
+            motion_direction=MotionDirection.BACKWARD_ONLY,
+            bypass_final_orientation=True,
             after_pose_func=self.after_pose1,
         )
         self.poses.append(pose1)
 
-        pose2 = AdaptedPose(
-            x=715,
-            y=-550,
+        # Clearance after pickup 1: 100 mm full west of pickup 1 so the
+        # robot exits the crates zone in a straight line before turning
+        # toward the deposit. FORWARD since the robot is already facing
+        # west after pose 1.
+        pose1_clear = AdaptedPose(
+            x=675,
+            y=-535,
             O=90,
-            max_speed_linear=20,
+            max_speed_linear=100,
             max_speed_angular=100,
-            motion_direction=MotionDirection.BACKWARD_ONLY,
+            motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=True,
-            after_pose_func=self.after_pose2,
+            after_pose_func=self.after_pose1_clear,
         )
-        self.poses.append(pose2)
+        self.poses.append(pose1_clear)
 
-        pose3 = AdaptedPose(
-            x=715,
-            y=-300,
+        # 2: deposit 1 at (775, -280, -90°). arms_open at arrival.
+        pose2 = AdaptedPose(
+            x=775,
+            y=-200,
             O=-90,
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
-            after_pose_func=self.after_pose3,
+            after_pose_func=self.after_pose2,
         )
-        self.poses.append(pose3)
+        self.poses.append(pose2)
 
-        pose3b = AdaptedPose(
-            x=715,
-            y=-500,
+        # Approach 2: 85 mm west of pickup 2, mirroring the first approach.
+        # Robot stops here and re-opens its arms before the BACKWARD pickup.
+        pose_approach2 = AdaptedPose(
+            x=675,
+            y=-600,
             O=90,
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
-            bypass_final_orientation=False,
-            after_pose_func=self.after_pose3b,
+            bypass_final_orientation=True,
+            after_pose_func=self.after_pose_approach2,
         )
-        self.poses.append(pose3b)
+        self.poses.append(pose_approach2)
 
-        pose4 = AdaptedPose(
-            x=715,
-            y=-600,
+        # 3: pickup 2 at (675, -685, +90°) — 50 mm east of pickup 1 in the
+        # operating frame. Reached BACKWARD from pose_approach2.
+        # before_pose3 shrinks the crates zone by 50 mm (one crate already
+        # removed) and shifts its center 25 mm east.
+        pose3 = AdaptedPose(
+            x=675,
+            y=-685,
             O=90,
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.BACKWARD_ONLY,
             bypass_final_orientation=True,
-            after_pose_func=self.after_pose4,
+            before_pose_func=self.before_pose3,
+            after_pose_func=self.after_pose3,
         )
-        self.poses.append(pose4)
+        self.poses.append(pose3)
 
-        pose5 = AdaptedPose(
-            x=715,
-            y=-275,
+        # 4: deposit 2 at (725, -250, 90°). arms_open at arrival.
+        pose4 = AdaptedPose(
+            x=725,
+            y=-250,
             O=90,
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
-            after_pose_func=self.after_pose5,
+            after_pose_func=self.after_pose4,
         )
-        self.poses.append(pose5)
+        self.poses.append(pose4)
 
-        pose6 = AdaptedPose(
-            x=715,
+        # 5: deposit 2 at (725, -200, 90°). arms_close at arrival.
+        pose5 = AdaptedPose(
+            x=725,
             y=-200,
             O=90,
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=True,
-            after_pose_func=self.after_pose6,
+            after_pose_func=self.after_pose5,
         )
-        self.poses.append(pose6)
+        self.poses.append(pose5)
 
         if self.planner.shared_properties.table == TableEnum.Training:
             for pose in self.poses:
                 pose.x -= 1000
 
     async def after_pose_approach(self):
-        self.logger.info(f"{self.name}: after_pose_approach")
+        self.logger.info(f"{self.name}: after_pose_approach - opening arms")
+        self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaCratesZone].enabled = False
+        self.logger.info(f"{self.name}: after_pose9 - NinjaCratesZone disabled")
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
+        await actuators.ninja_arms_open(self.planner, speed=0)
+        await asyncio.sleep(0.5)
 
     async def after_pose1(self):
-        self.logger.info(f"{self.name}: after_pose1")
-        await actuators.ninja_arms_open(self.planner, speed=0)
+        self.logger.info(f"{self.name}: after_pose1 - pickup 1")
+        await actuators.ninja_arms_hold_one_long(self.planner, speed=0)
         await asyncio.sleep(0.5)
+
+    async def after_pose1_clear(self):
+        self.logger.info(f"{self.name}: after_pose1_clear")
 
     async def after_pose2(self):
-        self.logger.info(f"{self.name}: after_pose2")
-        await actuators.ninja_arms_hold_one_long(self.planner, speed=0)
-        await asyncio.sleep(0.5)
-
-    async def after_pose3(self):
-        self.logger.info(f"{self.name}: after_pose3")
+        self.logger.info(f"{self.name}: after_pose2 - deposit 1")
         await actuators.ninja_arms_open(self.planner, speed=0)
         await asyncio.sleep(0.5)
 
-    async def after_pose3b(self):
-        self.logger.info(f"{self.name}: after_pose3b")
+    async def after_pose_approach2(self):
+        self.logger.info(f"{self.name}: after_pose_approach2 - opening arms")
+        await actuators.ninja_arms_open(self.planner, speed=0)
+        await asyncio.sleep(0.5)
+
+    async def before_pose3(self):
+        # First crate removed: shrink the crates zone by 50 mm along y and
+        # shift its center 25 mm east so the remaining 2 crates are still
+        # represented accurately. The avoidance picks up the new shape via
+        # the next update_obstacles cycle.
+        zone = self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaCratesZone]
+        zone.length -= 50
+        zone.y -= 25
+        self.logger.info(f"{self.name}: before_pose3 - NinjaCratesZone shrunk " f"(length={zone.length}, y={zone.y})")
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
+
+    async def after_pose3(self):
+        self.logger.info(f"{self.name}: after_pose3 - pickup 2")
+        await actuators.ninja_arms_hold_one_long(self.planner, speed=0)
+        await asyncio.sleep(0.5)
 
     async def after_pose4(self):
-        self.logger.info(f"{self.name}: after_pose4")
-        await actuators.ninja_arms_hold_one_long(self.planner, speed=0)
+        self.logger.info(f"{self.name}: after_pose4 - deposit 2")
+        await actuators.ninja_arms_open(self.planner, speed=0)
         await asyncio.sleep(0.5)
 
     async def after_pose5(self):
-        self.logger.info(f"{self.name}: after_pose5")
-        await actuators.ninja_arms_open(self.planner, speed=0)
-        await asyncio.sleep(0.5)
-
-    async def after_pose6(self):
-        self.logger.info(f"{self.name}: after_pose6")
+        self.logger.info(f"{self.name}: after_pose5 - close")
         await actuators.ninja_arms_close(self.planner, speed=0)
         await asyncio.sleep(0.5)
 
@@ -1217,13 +1311,14 @@ class NinjaAtTableAction(Action):
 
     async def before_action(self):
         pose3 = AdaptedPose(
-            x=600,
+            x=620,
             y=-200,
-            O=0,
+            O=45,
             max_speed_linear=100,
             max_speed_angular=100,
-            motion_direction=MotionDirection.BACKWARD_ONLY,
+            motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
+            before_pose_func=self.before_pose3,
             after_pose_func=self.after_pose3,
         )
         self.poses.append(pose3)
@@ -1231,6 +1326,12 @@ class NinjaAtTableAction(Action):
         if self.planner.shared_properties.table == TableEnum.Training:
             for pose in self.poses:
                 pose.x -= 1000
+
+    async def before_pose3(self):
+        self.logger.info(f"{self.name}: before_pose3 - disabling all fixed obstacles")
+        for obstacle in self.planner.game_context.fixed_obstacles.values():
+            obstacle.enabled = False
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
 
     async def after_pose3(self):
         self.logger.info(f"{self.name}: after_pose3 - oscillating arms until reset")
@@ -1254,10 +1355,10 @@ class NinjaAtTableAction(Action):
 class NinjaStandaloneStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
-        # Debug: BuildGroup only (PantryDeposit disabled while testing pose 17).
+        # NinjaExposeFourAction stays parked (smooth-arc alternative).
         # self.append(NinjaExposeFourAction(planner, self))
-        # self.append(NinjaDropFourAction(planner, self))
+        self.append(NinjaDropFourAction(planner, self))
         self.append(NinjaBuildGroupAction(planner, self))
-        # self.append(NinjaPantryDepositAction(planner, self))
-        # self.append(NinjaRottenDepositAction(planner, self))
-        # self.append(NinjaAtTableAction(planner, self))
+        self.append(NinjaPantryDepositAction(planner, self))
+        self.append(NinjaRottenDepositAction(planner, self))
+        self.append(NinjaAtTableAction(planner, self))

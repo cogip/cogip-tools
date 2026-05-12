@@ -194,7 +194,7 @@ class GameContext:
         # Ninja Area 2: rectangle (700..850, -200..-100), center (775, -150),
         # 150 x 100 mm. Same role as NinjaArea1 for the upper crate location.
         self.fixed_obstacles[FixedObstacleID.NinjaArea2] = FixedObstacle(
-            x=800,
+            x=820,
             y=-200,
             width=140,
             length=100,
@@ -219,6 +219,34 @@ class GameContext:
             width=160,
             length=200,
             id=FixedObstacleID.NinjaDeposit,
+            enabled=False,
+        )
+
+        # Ninja Drop Zone: raw rectangle 150 x 150 mm centered at (675, -700).
+        # `length` (y / east-west) shrunk by 50 mm vs the initial 200 mm
+        # spec. Represents the start-area crate stacks; enabled by default
+        # so the avoidance routes around them, disabled once DropFour
+        # finishes its first deposit (pose 1) and re-enabled by pose 6
+        # before parking west of the zone.
+        self.fixed_obstacles[FixedObstacleID.NinjaDropZone] = FixedObstacle(
+            x=675,
+            y=-700,
+            width=150,
+            length=100,
+            id=FixedObstacleID.NinjaDropZone,
+            enabled=self.shared_properties.robot_id == 2,
+        )
+
+        # Ninja Crates Zone: raw rectangle 150 x 150 mm centered at
+        # (675, -710) — pose 8 raw y minus 75 mm. Holds 3 crates the Ninja
+        # will pick up in a separate action. Disabled by default; enabled
+        # by DropFour `after_pose9` once the shake/recul moves are done.
+        self.fixed_obstacles[FixedObstacleID.NinjaCratesZone] = FixedObstacle(
+            x=675,
+            y=-790,
+            width=150,
+            length=150,
+            id=FixedObstacleID.NinjaCratesZone,
             enabled=False,
         )
 
