@@ -178,6 +178,15 @@ class GameContext:
             enabled=self.shared_properties.robot_id == 2,
         )
 
+        # Crates from granary
+        self.fixed_obstacles[FixedObstacleID.CratesFromGranary] = FixedObstacle(
+            **AdaptedPose(x=475, y=-800).model_dump(include={"x", "y"}),
+            length=150,
+            width=200,
+            id=FixedObstacleID.CratesFromGranary,
+            enabled=self.shared_properties.robot_id == 1 and self.shared_properties.table == TableEnum.Game,
+        )
+
     def create_actuators_states(self):
         self.positional_actuator_states: dict[PositionalActuatorEnum, PositionalActuator] = {}
         self.bool_sensor_states: dict[BoolSensorEnum, BoolSensor] = {id: BoolSensor(id=id) for id in BoolSensorEnum}
