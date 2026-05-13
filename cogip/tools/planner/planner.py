@@ -602,7 +602,12 @@ class Planner:
                             id=pantry.id.value,
                         )
 
-                # Add fixed obstacles
+                # Add fixed obstacles. Fixed obstacles are stored in raw
+                # (default blue camp) coordinates so action code can use
+                # them as anchors and wrap derived poses in AdaptedPose; we
+                # mirror y here only when pushing to the avoidance/monitor
+                # shared memory so the displayed and routed-around obstacle
+                # matches the current camp.
                 for fixed_obstacle in self.game_context.fixed_obstacles.values():
                     if not fixed_obstacle.enabled:
                         continue
@@ -610,7 +615,7 @@ class Planner:
                         continue
                     self.shared_rectangle_obstacles.append(
                         x=fixed_obstacle.x,
-                        y=fixed_obstacle.y,
+                        y=self.camp.adapt_y(fixed_obstacle.y),
                         angle=0,
                         length_x=fixed_obstacle.width + self.shared_properties.robot_width,
                         length_y=fixed_obstacle.length + self.shared_properties.robot_width,

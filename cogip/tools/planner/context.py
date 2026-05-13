@@ -147,10 +147,8 @@ class GameContext:
 
         # Nest
         self.fixed_obstacles[FixedObstacleID.Nest] = FixedObstacle(
-            **AdaptedPose(
-                x=775 if self.shared_properties.table == TableEnum.Game else -225,
-                y=-1200,
-            ).model_dump(include={"x", "y"}),
+            x=775 if self.shared_properties.table == TableEnum.Game else -225,
+            y=-1200,
             length=600,
             width=450,
             id=FixedObstacleID.Nest,
@@ -159,7 +157,8 @@ class GameContext:
 
         # Opposite Nest
         self.fixed_obstacles[FixedObstacleID.OppositeNest] = FixedObstacle(
-            **AdaptedPose(x=775, y=1200).model_dump(include={"x", "y"}),
+            x=775,
+            y=1200,
             length=600,
             width=450,
             id=FixedObstacleID.OppositeNest,
