@@ -113,15 +113,6 @@ class NinjaAction(Action):
         return 9_999_999.0
 
 
-class NinjaStrategy(Strategy):
-    def __init__(self, planner: "Planner"):
-        super().__init__(planner)
-        self.append(NinjaAction(planner, self))
-
-
-# Standalone strategy (for testing and qualification purposes)
-
-
 class NinjaExposeFourAction(Action):
     """
     Smooth-arc expose four (restored): deposits at (880, -700), recul to ~750,
@@ -292,7 +283,7 @@ class NinjaExposeFourAction(Action):
 
     def weight(self) -> float:
         # Runs first when both NinjaExposeFourAction and NinjaDropFourAction are
-        # enabled. Comment one out in NinjaStandaloneStrategy to use only one.
+        # enabled. Comment one out in NinjaStrategy to use only one.
         return 11_000_000.0
 
 
@@ -1414,7 +1405,7 @@ class NinjaHomologationAction(Action):
         return 9_999_999.0
 
 
-class NinjaStandaloneStrategy(Strategy):
+class NinjaStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
         # can_wait keeps a WaitAction running between regular actions so the
