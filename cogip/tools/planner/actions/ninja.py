@@ -322,13 +322,21 @@ class NinjaDropFourAction(Action):
     async def before_action(self):
         self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
 
+        # Chain is built in raw (blue camp) coordinates so side_offset and
+        # angular_offset keep their raw-frame meaning across the whole
+        # sequence. Each action pose wraps the current `chain` in
+        # AdaptedPose for camp adaptation at the leaf level; the chain
+        # itself never gets mirrored, so a downstream pose anchored on the
+        # previous one stays consistent in both camps.
+
         # pose 1 anchored on NinjaDropZone center (raw 675, -700): 205 mm
         # north (front_offset → raw x = 880), aligned on the zone's Y axis,
         # facing north. Reached BIDIRECTIONAL.
         drop_zone_obstacle = self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDropZone]
         drop_zone_anchor = Pose(x=drop_zone_obstacle.x, y=drop_zone_obstacle.y, O=0)
+        chain = get_relative_pose(drop_zone_anchor, front_offset=205, side_offset=0, angular_offset=0)
         pose1 = AdaptedPose(
-            **get_relative_pose(drop_zone_anchor, front_offset=205, side_offset=0, angular_offset=0).model_dump(),
+            **chain.model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.BIDIRECTIONAL,
@@ -337,11 +345,12 @@ class NinjaDropFourAction(Action):
         )
         self.poses.append(pose1)
 
-        # 2: recul 55 mm relative to pose 1 (along pose 1's heading axis).
+        # 2: recul relative to pose 1 (along pose 1's heading axis).
         # arms_side fires at the start (before_pose_func) at max speed so
         # the deployment runs in parallel with the slow BWD drive.
-        pose2 = Pose(
-            **get_relative_pose(pose1, front_offset=-self.DROP_FOUR_2_RECUL_MM).model_dump(),
+        chain = get_relative_pose(chain, front_offset=-self.DROP_FOUR_2_RECUL_MM)
+        pose2 = AdaptedPose(
+            **chain.model_dump(),
             max_speed_linear=10,
             max_speed_angular=100,
             motion_direction=MotionDirection.BACKWARD_ONLY,
@@ -351,11 +360,10 @@ class NinjaDropFourAction(Action):
         )
         self.poses.append(pose2)
 
-        # 2: recul 55 mm relative to pose 1 (along pose 1's heading axis).
-        # arms_side fires at the start (before_pose_func) at max speed so
-        # the deployment runs in parallel with the slow BWD drive.
-        pose2b = Pose(
-            **get_relative_pose(pose2, front_offset=-self.DROP_FOUR_2b_RECUL_MM).model_dump(),
+        # 2b: continued recul, faster final approach speed.
+        chain = get_relative_pose(chain, front_offset=-self.DROP_FOUR_2b_RECUL_MM)
+        pose2b = AdaptedPose(
+            **chain.model_dump(),
             max_speed_linear=30,
             max_speed_angular=100,
             motion_direction=MotionDirection.BACKWARD_ONLY,
@@ -365,9 +373,10 @@ class NinjaDropFourAction(Action):
         )
         self.poses.append(pose2b)
 
-        # 3: forward 190 mm relative to pose 2 (along pose 2's heading).
-        pose3 = Pose(
-            **get_relative_pose(pose2b, front_offset=self.DROP_FOUR_3_FORWARD_MM).model_dump(),
+        # 3: forward relative to pose 2b (along pose 2b's heading).
+        chain = get_relative_pose(chain, front_offset=self.DROP_FOUR_3_FORWARD_MM)
+        pose3 = AdaptedPose(
+            **chain.model_dump(),
             max_speed_linear=10,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
@@ -398,11 +407,12 @@ class NinjaDropFourAction(Action):
         # )
         # self.poses.append(pose5)
 
-        # 6: 40 mm north of pose 5 (chain pose5, front=+40 along pose 5's
-        # north heading). arms_close fires in before_pose6 so the closing
-        # runs in parallel with the move.
-        pose6 = Pose(
-            **get_relative_pose(pose3, front_offset=self.DROP_FOUR_6_NORTH_MM).model_dump(),
+        # 6: north of pose 3 (chain, front along pose 3's heading).
+        # arms_close fires in before_pose6 so the closing runs in parallel
+        # with the move.
+        chain = get_relative_pose(chain, front_offset=self.DROP_FOUR_6_NORTH_MM)
+        pose6 = AdaptedPose(
+            **chain.model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
@@ -434,8 +444,9 @@ class NinjaDropFourAction(Action):
         # centered on its N-S axis, facing east. before_pose7 re-enables
         # NinjaDropZone so the avoidance plans the path around it. Final
         # orientation is bypassed so the robot ends at the motion direction.
+        chain = get_relative_pose(chain, front_offset=-215, side_offset=165, angular_offset=-90)
         pose7 = AdaptedPose(
-            **get_relative_pose(pose6, front_offset=-215, side_offset=165, angular_offset=-90).model_dump(),
+            **chain.model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
