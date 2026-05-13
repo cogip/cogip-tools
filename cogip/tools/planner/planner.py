@@ -325,6 +325,8 @@ class Planner:
 
         self.avoidance_process = Process(target=avoidance_process, args=(self.robot_id,))
         self.avoidance_process.start()
+        await asyncio.sleep(1)
+        self.shared_avoidance_blocked_lock.register_consumer()
 
         await actuators.actuators_init(self)
 
