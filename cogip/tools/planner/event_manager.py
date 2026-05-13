@@ -129,6 +129,14 @@ class EventManager:
                     logger.info("Planner: countdown==7: disable GOAP, force blocked")
                     self.planner.strategy.goap_allowed = False
                     asyncio.create_task(self.planner.blocked())
+                if (
+                    self.planner.robot_id == 2
+                    and self.planner.game_context.countdown < 5
+                    and self.planner.game_context.last_countdown > 5
+                ):
+                    logger.info("Planner: countdown==5: ninja final action, force blocked")
+                    self.planner.strategy.goap_allowed = False
+                    asyncio.create_task(self.planner.blocked())
                 if self.planner.game_context.countdown < 0 and self.planner.game_context.last_countdown > 0:
                     logger.info("Planner: countdown==0: final action")
                     await self.planner.final_action()

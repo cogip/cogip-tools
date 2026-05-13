@@ -30,7 +30,7 @@ class NinjaAction(Action):
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = True):
-        super().__init__("Ninja action", planner, strategy, interruptable=False)
+        super().__init__("Ninja action", planner, strategy, interruptable=True)
         self.before_action_func = self.before_action
         self.wait = wait
 
@@ -134,7 +134,7 @@ class NinjaExposeFourAction(Action):
     EXPOSE_FOUR_BACKWARD_MM = 130
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
-        super().__init__("Ninja expose four", planner, strategy, interruptable=False)
+        super().__init__("Ninja expose four", planner, strategy, interruptable=True)
         self.before_action_func = self.before_action
         self.wait = wait
         self._pose2: AdaptedPose | None = None
@@ -314,7 +314,7 @@ class NinjaDropFourAction(Action):
     DROP_FOUR_10_X_TARGET = 880  # pose 10: north to absolute raw x = 880
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
-        super().__init__("Ninja drop four", planner, strategy, interruptable=False)
+        super().__init__("Ninja drop four", planner, strategy, interruptable=True)
         self.before_action_func = self.before_action
         self.wait = wait
         # Placeholders for poses 8, 9, 10 computed at runtime from the
@@ -638,7 +638,7 @@ class NinjaBuildGroupAction(Action):
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
-        super().__init__("Ninja build group", planner, strategy, interruptable=False)
+        super().__init__("Ninja build group", planner, strategy, interruptable=True)
         self.before_action_func = self.before_action
         self.wait = wait
 
@@ -913,7 +913,7 @@ class NinjaPantryDepositAction(Action):
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
-        super().__init__("Ninja pantry deposit", planner, strategy, interruptable=False)
+        super().__init__("Ninja pantry deposit", planner, strategy, interruptable=True)
         self.before_action_func = self.before_action
         self.wait = wait
 
@@ -1110,7 +1110,7 @@ class NinjaRottenDepositAction(Action):
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
-        super().__init__("Ninja rotten deposit", planner, strategy, interruptable=False)
+        super().__init__("Ninja rotten deposit", planner, strategy, interruptable=True)
         self.before_action_func = self.before_action
         self.wait = wait
 
@@ -1277,7 +1277,7 @@ class NinjaRottenDepositAction(Action):
         zone = self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaCratesZone]
         zone.length -= 50
         zone.y -= 25
-        self.logger.info(f"{self.name}: before_pose3 - NinjaCratesZone shrunk " f"(length={zone.length}, y={zone.y})")
+        self.logger.info(f"{self.name}: before_pose3 - NinjaCratesZone shrunk (length={zone.length}, y={zone.y})")
         await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
 
     async def after_pose3(self):
@@ -1305,7 +1305,7 @@ class NinjaAtTableAction(Action):
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
-        super().__init__("Ninja a table", planner, strategy, interruptable=False)
+        super().__init__("Ninja a table", planner, strategy, interruptable=True)
         self.before_action_func = self.before_action
         self.wait = wait
 
@@ -1349,7 +1349,9 @@ class NinjaAtTableAction(Action):
         self.logger.info(f"{self.name}: arm oscillation stopped (playing=False)")
 
     def weight(self) -> float:
-        return 9_000_000.0
+        if self.planner.game_context.countdown > 5:
+            return 0
+        return 99_999_999.0
 
 
 class NinjaHomologationAction(Action):
@@ -1361,7 +1363,7 @@ class NinjaHomologationAction(Action):
     """
 
     def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
-        super().__init__("Ninja homologation", planner, strategy, interruptable=False)
+        super().__init__("Ninja homologation", planner, strategy, interruptable=True)
         self.before_action_func = self.before_action
         self.wait = wait
 
@@ -1397,7 +1399,7 @@ class NinjaHomologationAction(Action):
                     x=x,
                     y=y,
                     O=o,
-                    max_speed_linear=100,
+                    max_speed_linear=20,
                     max_speed_angular=100,
                     motion_direction=MotionDirection.FORWARD_ONLY,
                     bypass_final_orientation=True,
@@ -1415,12 +1417,14 @@ class NinjaHomologationAction(Action):
 class NinjaStandaloneStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
-        # Only the homologation action is enabled — every other Ninja action
-        # is parked while running the homologation course.
+        # can_wait keeps a WaitAction running between regular actions so the
+        # blocked() preemption at T-5s has something to interrupt, instead of
+        # an idle planner (self.action == None silently skipped in blocked()).
+        self.can_wait = True
         # self.append(NinjaExposeFourAction(planner, self))
-        # self.append(NinjaDropFourAction(planner, self))
-        # self.append(NinjaBuildGroupAction(planner, self))
-        # self.append(NinjaPantryDepositAction(planner, self))
-        # self.append(NinjaRottenDepositAction(planner, self))
-        # self.append(NinjaAtTableAction(planner, self))
-        self.append(NinjaHomologationAction(planner, self))
+        self.append(NinjaDropFourAction(planner, self))
+        self.append(NinjaBuildGroupAction(planner, self))
+        self.append(NinjaPantryDepositAction(planner, self))
+        self.append(NinjaRottenDepositAction(planner, self))
+        self.append(NinjaAtTableAction(planner, self))
+        # self.append(NinjaHomologationAction(planner, self))
