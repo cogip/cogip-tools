@@ -10,6 +10,7 @@ from cogip.models.artifacts import (
     CollectionAreaID,
     FixedObstacle,
     FixedObstacleID,
+    MirrorMode,
     Pantry,
     PantryID,
     collection_areas,
@@ -152,14 +153,13 @@ class GameContext:
             width=450,
             id=FixedObstacleID.Granary,
             enabled=self.shared_properties.robot_id != 2,
+            mirror_mode=MirrorMode.NONE,
         )
 
         # Nest
         self.fixed_obstacles[FixedObstacleID.Nest] = FixedObstacle(
-            **AdaptedPose(
-                x=775 if self.shared_properties.table == TableEnum.Game else -225,
-                y=-1200,
-            ).model_dump(include={"x", "y"}),
+            x=775 if self.shared_properties.table == TableEnum.Game else -225,
+            y=-1200,
             length=600,
             width=450,
             id=FixedObstacleID.Nest,
@@ -168,10 +168,12 @@ class GameContext:
 
         # Opposite Nest
         self.fixed_obstacles[FixedObstacleID.OppositeNest] = FixedObstacle(
-            **AdaptedPose(x=775, y=1200).model_dump(include={"x", "y"}),
+            x=775,
+            y=1200,
             length=600,
             width=450,
             id=FixedObstacleID.OppositeNest,
+            enabled=self.shared_properties.robot_id == 2,
         )
 
         # Table
@@ -185,11 +187,13 @@ class GameContext:
             width=1510 if self.shared_properties.table == TableEnum.Game else 510,
             id=FixedObstacleID.Table,
             enabled=self.shared_properties.robot_id == 2,
+            mirror_mode=MirrorMode.NONE,
         )
 
         # Crates from granary
         self.fixed_obstacles[FixedObstacleID.CratesFromGranary] = FixedObstacle(
-            **AdaptedPose(x=475, y=-700).model_dump(include={"x", "y"}),
+            x=475,
+            y=-700,
             length=150,
             width=200,
             id=FixedObstacleID.CratesFromGranary,

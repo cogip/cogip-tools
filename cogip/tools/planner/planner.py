@@ -31,6 +31,7 @@ from cogip.cpp.libraries.obstacles import ObstacleCircleList as SharedObstacleCi
 from cogip.cpp.libraries.obstacles import ObstacleRectangleList as SharedObstacleRectangleList
 from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, SharedProperties, WritePriorityLock
 from cogip.models.actuators import ActuatorState
+from cogip.models.artifacts import MirrorMode
 from cogip.tools.copilot.controller import ControllerEnum
 from cogip.utils.asyncloop import AsyncLoop
 from . import actuators, cameras, logger, pose, sio_events
@@ -630,15 +631,24 @@ class Planner:
                             id=pantry.id.value,
                         )
 
-                # Add fixed obstacles
+                # Add fixed obstacles. Fixed obstacles are stored in raw
+                # coordinates so action code can use them as anchors and wrap
+                # derived poses in AdaptedPose; we map y to the current camp
+                # here only when pushing to the avoidance/monitor shared memory
+                # according to each obstacle's mirror_mode (NONE: pushed as
+                # stored, MIRROR: y adapted to the camp).
                 for fixed_obstacle in self.game_context.fixed_obstacles.values():
                     if not fixed_obstacle.enabled:
                         continue
                     if not table.contains(fixed_obstacle, margin):
                         continue
+                    if fixed_obstacle.mirror_mode == MirrorMode.NONE:
+                        camp_y = fixed_obstacle.y
+                    else:
+                        camp_y = self.camp.adapt_y(fixed_obstacle.y)
                     self.shared_rectangle_obstacles.append(
                         x=fixed_obstacle.x,
-                        y=fixed_obstacle.y,
+                        y=camp_y,
                         angle=0,
                         length_x=fixed_obstacle.width + self.shared_properties.robot_width,
                         length_y=fixed_obstacle.length + self.shared_properties.robot_width,
