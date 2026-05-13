@@ -356,7 +356,7 @@ class NinjaDropFourAction(Action):
         # the deployment runs in parallel with the slow BWD drive.
         pose2b = Pose(
             **get_relative_pose(pose2, front_offset=-self.DROP_FOUR_2b_RECUL_MM).model_dump(),
-            max_speed_linear=10,
+            max_speed_linear=30,
             max_speed_angular=100,
             motion_direction=MotionDirection.BACKWARD_ONLY,
             bypass_final_orientation=True,
