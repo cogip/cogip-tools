@@ -92,6 +92,15 @@ def main_opt(
             envvar="PLANNER_OBSTACLE_BB_VERTICES",
         ),
     ] = properties["obstacle_bb_vertices"]["default"],
+    table_limits_margin_extra: Annotated[
+        float,
+        typer.Option(
+            min=properties["table_limits_margin_extra"]["minimum"],
+            max=properties["table_limits_margin_extra"]["maximum"],
+            help=properties["table_limits_margin_extra"]["description"],
+            envvar="PLANNER_TABLE_LIMITS_MARGIN_EXTRA",
+        ),
+    ] = properties["table_limits_margin_extra"]["default"],
     obstacle_updater_interval: Annotated[
         float,
         typer.Option(
@@ -288,6 +297,7 @@ def main_opt(
         obstacle_radius,
         obstacle_bb_margin,
         obstacle_bb_vertices,
+        table_limits_margin_extra,
         obstacle_updater_interval,
         path_refresh_interval,
         starter_pin,

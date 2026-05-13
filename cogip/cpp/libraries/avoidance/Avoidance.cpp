@@ -31,11 +31,15 @@ Avoidance::Avoidance(const std::string& name):
     table_limits_(shared_memory_.getTableLimits()),
     is_avoidance_computed_(false)
 {
-    // table limits margin is the half of the max robot size,
-    // increase of the bounding box margin to not touch the borders during rotations.
+    // Table limits margin uses the same formula shape that used to be driven
+    // by obstacle_bb_margin (now decoupled): max robot size divided by
+    // (2 - extra). At extra=0 it collapses to max/2 (the physical minimum so
+    // the robot stays inside the table); at extra=X it matches the former
+    // bb_margin=X behaviour. Decoupled from obstacle_bb_margin so inflating
+    // obstacles does not restrict where the robot can be placed.
     table_limits_margin_ = (
         std::max(shared_memory_properties_.robot_length, shared_memory_properties_.robot_width)
-        / (2 - shared_memory_properties_.obstacle_bb_margin)
+        / (2.0 - shared_memory_properties_.table_limits_margin_extra)
     );
 }
 

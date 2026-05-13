@@ -78,6 +78,7 @@ NB_MODULE(shared_memory, m) {
         .def_rw("obstacle_radius", &shared_properties_t::obstacle_radius, "Obstacle radius in mm")
         .def_rw("obstacle_bb_margin", &shared_properties_t::obstacle_bb_margin, "Obstacle bounding box margin in mm")
         .def_rw("obstacle_bb_vertices", &shared_properties_t::obstacle_bb_vertices, "Number of vertices for the obstacle bounding box")
+        .def_rw("table_limits_margin_extra", &shared_properties_t::table_limits_margin_extra, "Extra margin (fraction of the robot half-size) added to the table-limits inset")
         .def_rw("obstacle_updater_interval", &shared_properties_t::obstacle_updater_interval, "Obstacle updater interval in seconds")
         .def_rw("path_refresh_interval", &shared_properties_t::path_refresh_interval, "Path refresh interval in seconds")
         .def_rw("bypass_detector", &shared_properties_t::bypass_detector, "Bypass detector flag")
