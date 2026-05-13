@@ -1334,19 +1334,19 @@ class NinjaAtTableAction(Action):
         await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
 
     async def after_pose3(self):
-        self.logger.info(f"{self.name}: after_pose3 - oscillating arms until reset")
+        self.logger.info(f"{self.name}: after_pose3 - spawning arm oscillation task")
+        self.planner.final_action_task = asyncio.create_task(self._oscillate_arms())
+
+    async def _oscillate_arms(self):
         try:
-            while self.planner.playing:
+            while True:
                 await actuators.ninja_arms_open(self.planner, speed=0)
                 await asyncio.sleep(0.5)
-                if not self.planner.playing:
-                    break
                 await actuators.ninja_arms_close(self.planner, speed=0)
                 await asyncio.sleep(0.5)
         except asyncio.CancelledError:
-            self.logger.info(f"{self.name}: arm oscillation cancelled")
+            self.logger.info(f"{self.name}: arm oscillation cancelled by reset")
             raise
-        self.logger.info(f"{self.name}: arm oscillation stopped (playing=False)")
 
     def weight(self) -> float:
         if self.planner.game_context.countdown > 5:

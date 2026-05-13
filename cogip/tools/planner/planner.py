@@ -182,6 +182,10 @@ class Planner:
         self._pose_order: pose.Pose | None = None
         self.pose_reached: bool = True
         self.blocked_counter: int = 0
+        # Background task spawned by the final action (e.g. NinjaAtTableAction's
+        # post-pose arm oscillation) that must outlive game_end but be cancelled
+        # on the next reset.
+        self.final_action_task: asyncio.Task | None = None
         self.controller = self.default_controller
         self.game_wizard = GameWizard(self)
         self.event_manager = EventManager(self)
@@ -365,6 +369,13 @@ class Planner:
         """
         Only reset context and strategy.
         """
+        if self.final_action_task and not self.final_action_task.done():
+            self.final_action_task.cancel()
+            try:
+                await self.final_action_task
+            except (asyncio.CancelledError, Exception):
+                pass
+        self.final_action_task = None
         self.game_context.reset()
         self.playing = False
         await self.set_controller(self.default_controller, True)
