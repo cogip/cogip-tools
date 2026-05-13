@@ -1352,13 +1352,75 @@ class NinjaAtTableAction(Action):
         return 9_000_000.0
 
 
+class NinjaHomologationAction(Action):
+    """
+    Homologation run: disables every Ninja fixed obstacle and traces a
+    fixed 4-pose path at full speed in FORWARD with bypass_final_orientation
+    so the robot keeps moving without rotating to the target heading at
+    each waypoint.
+    """
+
+    def __init__(self, planner: "Planner", strategy: Strategy, *, wait: bool = False):
+        super().__init__("Ninja homologation", planner, strategy, interruptable=False)
+        self.before_action_func = self.before_action
+        self.wait = wait
+
+    def set_avoidance(self, new_strategy: AvoidanceStrategy):
+        self.logger.info(f"{self.name}: set avoidance to {new_strategy.name}")
+        self.planner.shared_properties.avoidance_strategy = new_strategy.val
+
+    async def before_action(self):
+        self.set_avoidance(AvoidanceStrategy.AvoidanceCpp)
+
+        # Disable every Ninja-specific fixed obstacle so the avoidance has
+        # a clean path for the homologation course.
+        for obstacle_id in (
+            FixedObstacleID.NinjaArea1,
+            FixedObstacleID.NinjaArea2,
+            FixedObstacleID.NinjaDeposit,
+            FixedObstacleID.NinjaDropZone,
+            FixedObstacleID.NinjaCratesZone,
+        ):
+            self.planner.game_context.fixed_obstacles[obstacle_id].enabled = False
+        self.logger.info(f"{self.name}: all Ninja obstacles disabled")
+        await asyncio.sleep(OBSTACLE_TOGGLE_DELAY_S)
+
+        waypoints = [
+            (880, -600, 0),
+            (750, -600, 0),
+            (750, -100, 0),
+            (880, -750, 90),
+        ]
+        for x, y, o in waypoints:
+            self.poses.append(
+                AdaptedPose(
+                    x=x,
+                    y=y,
+                    O=o,
+                    max_speed_linear=100,
+                    max_speed_angular=100,
+                    motion_direction=MotionDirection.FORWARD_ONLY,
+                    bypass_final_orientation=True,
+                )
+            )
+
+        if self.planner.shared_properties.table == TableEnum.Training:
+            for pose in self.poses:
+                pose.x -= 1000
+
+    def weight(self) -> float:
+        return 9_999_999.0
+
+
 class NinjaStandaloneStrategy(Strategy):
     def __init__(self, planner: "Planner"):
         super().__init__(planner)
-        # NinjaExposeFourAction stays parked (smooth-arc alternative).
+        # Only the homologation action is enabled — every other Ninja action
+        # is parked while running the homologation course.
         # self.append(NinjaExposeFourAction(planner, self))
-        self.append(NinjaDropFourAction(planner, self))
-        self.append(NinjaBuildGroupAction(planner, self))
-        self.append(NinjaPantryDepositAction(planner, self))
-        self.append(NinjaRottenDepositAction(planner, self))
-        self.append(NinjaAtTableAction(planner, self))
+        # self.append(NinjaDropFourAction(planner, self))
+        # self.append(NinjaBuildGroupAction(planner, self))
+        # self.append(NinjaPantryDepositAction(planner, self))
+        # self.append(NinjaRottenDepositAction(planner, self))
+        # self.append(NinjaAtTableAction(planner, self))
+        self.append(NinjaHomologationAction(planner, self))
