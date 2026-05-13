@@ -44,6 +44,15 @@ properties_schema = {
             "minimum": 3,
             "default": 6,
         },
+        "table_limits_margin_extra": {
+            "title": "Table Limits Margin Extra",
+            "description": "Extra margin added to the table-limits inset, as a fraction of the robot half-size (%)",
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "multipleOf": 0.01,
+            "default": 0.0,
+        },
         "obstacle_updater_interval": {
             "title": "Obstacle Updater Interval",
             "description": "Interval between each obstacles list update (seconds)",

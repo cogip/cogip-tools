@@ -27,6 +27,7 @@ typedef struct shared_properties_t {
     std::uint16_t obstacle_radius;  ///< Radius of the obstacle (mm)
     double obstacle_bb_margin;  ///< Margin for the bounding box of the obstacle (mm)
     std::uint8_t obstacle_bb_vertices;  ///< Number of vertices for the bounding box of the obstacle
+    double table_limits_margin_extra;  ///< Extra margin (fraction of the robot half-size) added to the table-limits inset
     double obstacle_updater_interval;  ///< Interval for updating obstacles (seconds)
     double path_refresh_interval;  ///< Interval for refreshing the path (seconds)
     bool bypass_detector;  ///< Whether to bypass the detector
@@ -51,6 +52,7 @@ inline std::ostream& operator<<(std::ostream& os, const shared_properties_t& dat
        << "obstacle_radius=" << data.obstacle_radius << ", "
        << "obstacle_bb_margin=" << data.obstacle_bb_margin << ", "
        << "obstacle_bb_vertices=" << static_cast<int>(data.obstacle_bb_vertices) << ", "
+       << "table_limits_margin_extra=" << data.table_limits_margin_extra << ", "
        << "obstacle_updater_interval=" << data.obstacle_updater_interval << ", "
        << "path_refresh_interval=" << data.path_refresh_interval << ", "
        << "bypass_detector=" << (data.bypass_detector ? "true" : "false") << ", "

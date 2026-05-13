@@ -60,6 +60,7 @@ class Planner:
         obstacle_radius: int,
         obstacle_bb_margin: float,
         obstacle_bb_vertices: int,
+        table_limits_margin_extra: float,
         obstacle_updater_interval: float,
         path_refresh_interval: float,
         starter_pin: int | None,
@@ -91,6 +92,8 @@ class Planner:
             obstacle_radius: Radius of a dynamic obstacle (in mm)
             obstacle_bb_margin: Obstacle bounding box margin in percent of the radius
             obstacle_bb_vertices: Number of obstacle bounding box vertices
+            table_limits_margin_extra: Extra margin added to the table-limits inset, as a fraction
+                of the robot half-size
             obstacle_updater_interval: Interval between each send of obstacles to dashboards (in seconds)
             path_refresh_interval: Interval between each update of robot paths (in seconds)
             starter_pin: GPIO pin connected to the starter
@@ -147,6 +150,7 @@ class Planner:
         self.shared_properties.obstacle_radius = obstacle_radius
         self.shared_properties.obstacle_bb_margin = obstacle_bb_margin
         self.shared_properties.obstacle_bb_vertices = obstacle_bb_vertices
+        self.shared_properties.table_limits_margin_extra = table_limits_margin_extra
         self.shared_properties.obstacle_updater_interval = obstacle_updater_interval
         self.shared_properties.path_refresh_interval = path_refresh_interval
         self.shared_properties.bypass_detector = bypass_detector
