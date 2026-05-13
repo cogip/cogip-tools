@@ -121,6 +121,13 @@ class SioEvents(socketio.AsyncClientNamespace):
         logger.info("[SIO] Reset.")
         await self.planner.reset()
 
+    async def on_soft_reset(self):
+        """
+        Callback on reset message from copilot.
+        """
+        logger.info("[SIO] Soft reset.")
+        await self.planner.soft_reset()
+
     async def on_pose_reached(self):
         """
         Callback on pose reached message.

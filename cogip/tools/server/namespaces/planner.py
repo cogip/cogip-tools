@@ -189,6 +189,18 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         await self.emit("pami_table", data, namespace="/beacon")
 
+    async def on_pami_start_pose(self, sid):
+        """
+        Callback on pami_start_pose message.
+        """
+        await self.emit("pami_start_pose", namespace="/beacon")
+
+    async def on_pami_strategy(self, sid):
+        """
+        Callback on pami_strategy message.
+        """
+        await self.emit("pami_strategy", namespace="/beacon")
+
     async def on_pami_play(self, sid, timestamp: str):
         """
         Callback on pami_play message.
