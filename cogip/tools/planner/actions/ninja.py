@@ -295,8 +295,8 @@ class NinjaDropFourAction(Action):
     """
 
     DROP_FOUR_2_RECUL_MM = 50  # pose 2: back 250 mm from pose 1
-    DROP_FOUR_2b_RECUL_MM = 215  # pose 2: back 250 mm from pose 1
-    DROP_FOUR_3_FORWARD_MM = 200  # pose 3: forward 190 mm from pose 2 (current)
+    DROP_FOUR_2b_RECUL_MM = 140  # pose 2: back 250 mm from pose 1
+    DROP_FOUR_3_FORWARD_MM = 150  # pose 3: forward 190 mm from pose 2 (current)
     DROP_FOUR_4_BACKWARD_MM = 100  # pose 4: back 100 mm from pose 3 (current)
     DROP_FOUR_5_FORWARD_MM = 100  # pose 5: forward 100 mm from pose 4 (current)
     DROP_FOUR_6_NORTH_MM = 40  # pose 6: 40 mm north (raw +x) from pose 5
@@ -972,11 +972,24 @@ class NinjaPantryDepositAction(Action):
         )
         self.poses.append(pose19)
 
+        # 19b: approach pose for pose 20, 205 mm north of the deposit zone
+        # aligned on pose 20's side axis (side_offset = -240, mirroring
+        # the pose 20 lateral offset). Same heading 0° as pose 17/19.
+        pose19b = AdaptedPose(
+            **get_relative_pose(deposit_anchor, front_offset=205, side_offset=-300, angular_offset=0).model_dump(),
+            max_speed_linear=100,
+            max_speed_angular=100,
+            motion_direction=MotionDirection.FORWARD_ONLY,
+            bypass_final_orientation=True,
+            after_pose_func=self.after_pose19b,
+        )
+        self.poses.append(pose19b)
+
         # 20: park east of the NinjaDeposit zone facing west, reached
         # forward. Re-enable NinjaDeposit (disabled by pose 18) so the
         # avoidance plans the detour around the released crates.
         pose20 = AdaptedPose(
-            **get_relative_pose(deposit_anchor, front_offset=-40, side_offset=-350, angular_offset=90).model_dump(),
+            **get_relative_pose(deposit_anchor, front_offset=-40, side_offset=-300, angular_offset=90).model_dump(),
             max_speed_linear=100,
             max_speed_angular=100,
             motion_direction=MotionDirection.FORWARD_ONLY,
@@ -1058,6 +1071,9 @@ class NinjaPantryDepositAction(Action):
 
     async def after_pose19(self):
         self.logger.info(f"{self.name}: after_pose19")
+
+    async def after_pose19b(self):
+        self.logger.info(f"{self.name}: after_pose19b")
 
     async def before_pose20(self):
         self.logger.info(f"{self.name}: before_pose20 - enabling NinjaDeposit")
@@ -1318,7 +1334,7 @@ class NinjaAtTableAction(Action):
             O=45,
             max_speed_linear=100,
             max_speed_angular=100,
-            motion_direction=MotionDirection.FORWARD_ONLY,
+            motion_direction=MotionDirection.BIDIRECTIONAL,
             bypass_final_orientation=False,
             before_pose_func=self.before_pose3,
             after_pose_func=self.after_pose3,
@@ -1424,9 +1440,11 @@ class NinjaStrategy(Strategy):
         # an idle planner (self.action == None silently skipped in blocked()).
         self.can_wait = True
         # self.append(NinjaExposeFourAction(planner, self))
-        self.append(NinjaDropFourAction(planner, self))
+        # self.append(NinjaDropFourAction(planner, self))
+        self.planner.game_context.fixed_obstacles[FixedObstacleID.NinjaDropZone].enabled = False
+
         self.append(NinjaBuildGroupAction(planner, self))
         self.append(NinjaPantryDepositAction(planner, self))
-        self.append(NinjaRottenDepositAction(planner, self))
+        # self.append(NinjaRottenDepositAction(planner, self))
         self.append(NinjaAtTableAction(planner, self))
         # self.append(NinjaHomologationAction(planner, self))
