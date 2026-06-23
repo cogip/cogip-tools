@@ -119,8 +119,8 @@ export function displayMsg(robot_id, msg) {
     // Draw orderPose
     const orderPose = pose_order[robot_id];
     if (orderPose) {
-      const previousFilter = context.filter;
-      context.filter = "opacity(60%)";
+      const previousAlpha = context.globalAlpha;
+      context.globalAlpha = 0.6;
       drawRobot(
         getImage(robot_id, "order"),
         orderPose.x,
@@ -128,7 +128,7 @@ export function displayMsg(robot_id, msg) {
         orderPose.O,
         context
       );
-      context.filter = previousFilter;
+      context.globalAlpha = previousAlpha;
     }
 
     // Check if current position is valid
@@ -207,10 +207,10 @@ function drawObstacles(color, obstacle, context) {
   const obstacleX = x * ratioX;
   const obstacleY = y * ratioY;
 
-  const previousFilter = context.filter;
+  const previousAlpha = context.globalAlpha;
   const obstacle_color = obstacle.id ? robotColors[0] : color;
   context.fillStyle = obstacle_color;
-  context.filter = "opacity(40%)";
+  context.globalAlpha = 0.4;
 
   context.save(); // Save the current context state
 
@@ -248,7 +248,7 @@ function drawObstacles(color, obstacle, context) {
     );
   }
 
-  context.filter = previousFilter;
+  context.globalAlpha = previousAlpha;
 }
 
 export function addNewTab(robot_id) {
