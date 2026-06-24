@@ -8,10 +8,13 @@ import serial
 import socketio
 import socketio.exceptions
 import systemd.daemon
-from matplotlib import pyplot as plt
 from numpy.typing import NDArray
-from sklearn.cluster import DBSCAN
 
+# matplotlib (via .gui) and sklearn are heavy imports (matplotlib+pyplot,
+# sklearn pulls scipy) only needed for the optional GUI and the clustering
+# step. They are imported lazily (in the gui branch / cluster_obstacles) so
+# the headless robot's detector starts ~13s faster -- it was the slowest tool
+# to come up at boot.
 from cogip.cpp.drivers.lidar_ld19 import LDLidarDriver
 from cogip.cpp.drivers.ydlidar_g2 import YDLidar
 from cogip.cpp.libraries.models import CircleList as SharedCircleList
@@ -20,7 +23,6 @@ from cogip.cpp.libraries.shared_memory import LockName, SharedMemory, WritePrior
 from cogip.cpp.libraries.utils import LidarDataConverter
 from cogip.utils import ThreadLoop
 from . import logger
-from .gui import DetectorGUI
 from .properties import Properties
 from .sio_events import SioEvents
 from .web import start_web
@@ -132,6 +134,8 @@ class Detector:
         )
 
         if gui:
+            from .gui import DetectorGUI  # lazy: pulls matplotlib, GUI-only
+
             self.gui_handler = DetectorGUI(self)
 
         if web:
@@ -195,6 +199,8 @@ class Detector:
             self.web_thread.start()
 
         if self.gui:
+            from matplotlib import pyplot as plt  # lazy: GUI-only
+
             self.gui_handler.start_animation()
             try:
                 plt.show()
@@ -245,6 +251,8 @@ class Detector:
         """
         if len(lidar_coords) == 0:
             return []
+
+        from sklearn.cluster import DBSCAN  # lazy: pulls scipy, first cluster only
 
         db = DBSCAN(
             eps=self.properties.cluster_eps,
