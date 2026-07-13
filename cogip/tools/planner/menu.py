@@ -50,6 +50,7 @@ cameras_menu = models.ShellMenu(
 robot_front_actuators_commands = [
     "actuators_init",
     "front_lift_down",
+    "front_lift_granary",
     "front_lift_mid",
     "front_lift_up",
     "front_grip_left_side_open",
@@ -92,6 +93,7 @@ robot_front_actuators_menu = models.ShellMenu(
 robot_back_actuators_commands = [
     "actuators_init",
     "back_lift_down",
+    "back_lift_granary",
     "back_lift_mid",
     "back_lift_up",
     "back_grip_left_side_open",
@@ -134,6 +136,7 @@ robot_actuators_multi_commands = [
     "front_grips_open",
     "front_grips_close",
     "front_lift_down",
+    "front_lift_granary",
     "front_lift_mid",
     "front_lift_up",
     "front_scissors_open",
@@ -143,6 +146,7 @@ robot_actuators_multi_commands = [
     "back_grips_open",
     "back_grips_close",
     "back_lift_down",
+    "back_lift_granary",
     "back_lift_mid",
     "back_lift_up",
     "back_scissors_open",

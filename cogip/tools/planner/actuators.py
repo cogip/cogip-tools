@@ -13,8 +13,9 @@ if TYPE_CHECKING:
 
 # Lift positions
 LIFT_DOWN = 0
-LIFT_MID = 80
-LIFT_UP = 130
+LIFT_GRANARY = 56
+LIFT_MID = 90
+LIFT_UP = 128
 
 # Duration of actuator movements is seconds
 GRIP_MOVE_DURATION_SEC = 0.3
@@ -129,6 +130,14 @@ async def front_lift_down(planner: "Planner", pose: int = LIFT_DOWN, speed: int 
     return LIFT_MOVE_DURATION_SEC
 
 
+async def front_lift_granary(
+    planner: "Planner", pose: int = LIFT_GRANARY, speed: int = 100, timeout: int = 5000
+) -> float:
+    await positional_motor_command(planner, PositionalActuatorEnum.FRONT_LIFT, pose, speed, timeout)
+    await planner.sio_ns.emit("lift", (PositionalActuatorEnum.FRONT_LIFT, pose))
+    return LIFT_MOVE_DURATION_SEC / 2
+
+
 async def front_lift_mid(planner: "Planner", pose: int = LIFT_MID, speed: int = 100, timeout: int = 5000) -> float:
     await positional_motor_command(planner, PositionalActuatorEnum.FRONT_LIFT, pose, speed, timeout)
     await planner.sio_ns.emit("lift", (PositionalActuatorEnum.FRONT_LIFT, pose))
@@ -151,6 +160,14 @@ async def back_lift_down(planner: "Planner", pose: int = LIFT_DOWN, speed: int =
     await positional_motor_command(planner, PositionalActuatorEnum.BACK_LIFT, pose, speed, timeout)
     await planner.sio_ns.emit("lift", (PositionalActuatorEnum.BACK_LIFT, pose))
     return LIFT_MOVE_DURATION_SEC
+
+
+async def back_lift_granary(
+    planner: "Planner", pose: int = LIFT_GRANARY, speed: int = 100, timeout: int = 5000
+) -> float:
+    await positional_motor_command(planner, PositionalActuatorEnum.BACK_LIFT, pose, speed, timeout)
+    await planner.sio_ns.emit("lift", (PositionalActuatorEnum.BACK_LIFT, pose))
+    return LIFT_MOVE_DURATION_SEC / 2
 
 
 async def back_lift_mid(planner: "Planner", pose: int = LIFT_MID, speed: int = 100, timeout: int = 5000) -> float:
