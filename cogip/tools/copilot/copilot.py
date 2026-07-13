@@ -430,6 +430,12 @@ class Copilot:
                 logger.info(f"Copilot: New path available in shared memory: {pose_order}")
                 if self.id > 2:
                     pose_order.motion_direction = MotionDirection.FORWARD_ONLY
+
+                if pose_order.max_speed_linear > 70:
+                    pose_order.max_speed_linear = 70
+                if pose_order.max_speed_angular > 70:
+                    pose_order.max_speed_angular = 70
+
                 pb_pose_order = PB_PathPose()
                 pose_order.copy_pb(pb_pose_order)
                 await self.pbcom.send_can_message(pose_order_uuid, pb_pose_order)
