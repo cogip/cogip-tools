@@ -381,7 +381,13 @@ class Planner:
             return
         self.playing = False
         await self.sio_ns.emit("game_end")
-        self.flag_motor.on()
+        if self.robot_id == 1:
+            await actuators.front_arms_open(self)
+            await actuators.back_arms_open(self)
+            await actuators.front_grips_open(self)
+            await actuators.back_grips_open(self)
+        if self.robot_id > 2:
+            self.flag_motor.on()
         self.pose_order = None
 
     def starter_changed_callback(self, pushed: bool):
