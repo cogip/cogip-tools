@@ -36,6 +36,13 @@ class BeaconNamespace(socketio.AsyncNamespace):
         logger.info("[beacon => planner] reset.")
         await self.emit("reset", namespace="/planner")
 
+    async def on_soft_reset(self, sid):
+        """
+        Callback on soft reset message.
+        """
+        logger.info("[beacon => planner] soft reset.")
+        await self.emit("soft_reset", namespace="/planner")
+
     async def on_command(self, sid, cmd, *args):
         """
         Callback on command.
