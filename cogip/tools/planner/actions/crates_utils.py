@@ -195,16 +195,17 @@ async def drop_crates(planner: "Planner", side: Literal["front", "back"]) -> Pos
     """
     Drop the crates.
     """
-    linear_speed_front = 10
-    linear_speed_back = 20
-    lift_speed_front = 25
+    linear_speed_front = 20
+    linear_speed_back = 15
+    lift_speed_front = 15
     lift_speed_back = 20
     lift_wait_front = 1.5
-    lift_wait_back = 2
+    lift_wait_back = 1.5
     backward_distance_front = 200
-    backward_distance_back = 300
-    distance_to_move_before_lift_down_front = 2
+    backward_distance_back = 250
+    distance_to_move_before_lift_down_front = 1
     distance_to_move_before_lift_down_back = 1
+
     action_during_backward_end_event = asyncio.Event()
 
     if side == "front":
@@ -213,7 +214,6 @@ async def drop_crates(planner: "Planner", side: Literal["front", "back"]) -> Pos
         lift_wait = lift_wait_front
         backward_distance = backward_distance_front
         distance_to_move_before_lift_down = distance_to_move_before_lift_down_front
-        lift_init = functools.partial(actuators.front_lift_init, planner)
         lift_down = functools.partial(actuators.front_lift_down, planner)
         grips_open = functools.partial(actuators.front_grips_open, planner)
     else:
@@ -222,7 +222,6 @@ async def drop_crates(planner: "Planner", side: Literal["front", "back"]) -> Pos
         lift_wait = lift_wait_back
         backward_distance = -backward_distance_back
         distance_to_move_before_lift_down = distance_to_move_before_lift_down_back
-        lift_init = functools.partial(actuators.back_lift_init, planner)
         lift_down = functools.partial(actuators.back_lift_down, planner)
         grips_open = functools.partial(actuators.back_grips_open, planner)
 
@@ -277,9 +276,6 @@ async def drop_crates(planner: "Planner", side: Literal["front", "back"]) -> Pos
         # Move lift down
         await lift_down(speed=lift_speed)
         await asyncio.sleep(lift_wait)
-
-        # Re-init lift in case the lift got stuck on the ground and to prepare for the next lift up
-        await lift_init()
 
         action_during_backward_end_event.set()
         logger.info("drop_crates: action_during_backward end")
