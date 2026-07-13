@@ -20,6 +20,7 @@ class GameWizard:
         self.planner = planner
         self.step = 0
         self.game_strategy = self.planner.shared_properties.strategy
+        self.waiting_start_since: datetime | None = None
         self.waiting_starter_pressed_loop = AsyncLoop(
             "Waiting starter pressed thread",
             0.1,
@@ -217,6 +218,7 @@ class GameWizard:
         logger.info("Wizard: Requesting wait for game.")
         await self.planner.sio_ns.emit("close_wizard")
         await self.planner.sio_ns.emit("pami_reset")
+        self.waiting_start_since = datetime.now(UTC)
 
         message = {
             "name": "Game Wizard: Waiting Start",
@@ -264,6 +266,16 @@ class GameWizard:
         if self.planner.starter.is_pressed:
             return
 
+        polling_timestamp = datetime.now(UTC)
+        callback_timestamp = self.planner.get_starter_release_timestamp_since(self.waiting_start_since)
+        start_timestamp = callback_timestamp or polling_timestamp
+        timestamp_source = "callback" if callback_timestamp else "polling"
+        logger.info(
+            f"Wizard: game start timestamp source={timestamp_source} value={start_timestamp.isoformat()}"
+            f" waiting_since={self.waiting_start_since.isoformat() if self.waiting_start_since else None}"
+        )
+        self.waiting_start_since = None
+
         self.waiting_start_loop.exit = True
         await self.waiting_start_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
@@ -272,6 +284,5 @@ class GameWizard:
         self.planner.shared_properties.strategy = self.game_strategy
         self.planner.strategy = strategy_classes.get(StrategyEnum(self.game_strategy))(self.planner)
         await self.planner.sio_ns.emit("game_start")
-        if self.planner.last_starter_event_timestamp:
-            await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
-            await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())
+        await self.planner.sio_ns.emit("pami_play", start_timestamp.isoformat())
+        await self.planner.cmd_play(start_timestamp.isoformat())
