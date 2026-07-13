@@ -332,20 +332,28 @@ class SocketioClient(QtCore.QObject):
             logger.info(f"Servo ID: {servo_id}, Position: {position}")
 
             match (servo_id, position):
-                case (SCServoEnum.FRONT_ARM_LEFT, 1):
+                case (SCServoEnum.FRONT_ARM_LEFT, 2):
                     orientation = 90
+                case (SCServoEnum.FRONT_ARM_LEFT, 1):
+                    orientation = 30
                 case (SCServoEnum.FRONT_ARM_LEFT, 0):
                     orientation = 0
-                case (SCServoEnum.FRONT_ARM_RIGHT, 1):
+                case (SCServoEnum.FRONT_ARM_RIGHT, 2):
                     orientation = -90
+                case (SCServoEnum.FRONT_ARM_RIGHT, 1):
+                    orientation = -30
                 case (SCServoEnum.FRONT_ARM_RIGHT, 0):
                     orientation = 0
-                case (SCServoEnum.BACK_ARM_LEFT, 1):
+                case (SCServoEnum.BACK_ARM_LEFT, 2):
                     orientation = -90
+                case (SCServoEnum.BACK_ARM_LEFT, 1):
+                    orientation = -30
                 case (SCServoEnum.BACK_ARM_LEFT, 0):
                     orientation = 0
-                case (SCServoEnum.BACK_ARM_RIGHT, 1):
+                case (SCServoEnum.BACK_ARM_RIGHT, 2):
                     orientation = 90
+                case (SCServoEnum.BACK_ARM_RIGHT, 1):
+                    orientation = 30
                 case (SCServoEnum.BACK_ARM_RIGHT, 0):
                     orientation = 0
                 case (SCServoEnum.NINJA_ARM_LEFT, 0):
