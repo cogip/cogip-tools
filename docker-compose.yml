@@ -188,7 +188,7 @@ services:
     ipc: host
     environment:
       ROBOT_ID: 0
-      SERVER_BEACON_MAX_ROBOTS: 5
+      SERVER_BEACON_MAX_ROBOTS: 6
       SERVER_BEACON_RELOAD:
       SERVER_BEACON_DEBUG:
     volumes:
@@ -238,6 +238,7 @@ services:
       - robot3
       - robot4
       - robot5
+      - robot6
 
   firmware1-motion-control:
     << : *firmware
@@ -300,6 +301,18 @@ services:
     profiles:
       - robot5
 
+  firmware6:
+    << : *firmware
+    hostname: firmware6
+    environment:
+      << : *env-firmware-pami
+      ROBOT_ID: 6
+    depends_on:
+      make-firmware-pami:
+        condition: service_completed_successfully
+    profiles:
+      - robot6
+
   robot1:
     << : *robot
     hostname: robot1
@@ -307,6 +320,9 @@ services:
       << : *env-robot
       ROBOT_ID: 1
       COPILOT_CAN_CHANNEL: vcan1
+      PLANNER_START_POSITION: Top
+      PLANNER_ROBOT_LENGTH: 289
+      PLANNER_ROBOT_WIDTH: 295
     profiles:
       - robot1
 
@@ -317,6 +333,9 @@ services:
       << : *env-robot
       ROBOT_ID: 2
       COPILOT_CAN_CHANNEL: vcan2
+      PLANNER_START_POSITION: Ninja
+      PLANNER_ROBOT_LENGTH: 154
+      PLANNER_ROBOT_WIDTH: 160
     profiles:
       - robot2
 
@@ -327,6 +346,9 @@ services:
       << : *env-robot
       ROBOT_ID: 3
       COPILOT_CAN_CHANNEL: vcan3
+      PLANNER_START_POSITION: PAMI3
+      PLANNER_ROBOT_LENGTH: 212
+      PLANNER_ROBOT_WIDTH: 100
     profiles:
       - robot3
 
@@ -337,6 +359,9 @@ services:
       << : *env-robot
       ROBOT_ID: 4
       COPILOT_CAN_CHANNEL: vcan4
+      PLANNER_START_POSITION: PAMI4
+      PLANNER_ROBOT_LENGTH: 212
+      PLANNER_ROBOT_WIDTH: 100
     profiles:
       - robot4
 
@@ -347,8 +372,24 @@ services:
       << : *env-robot
       ROBOT_ID: 5
       COPILOT_CAN_CHANNEL: vcan5
+      PLANNER_START_POSITION: PAMI5
+      PLANNER_ROBOT_LENGTH: 212
+      PLANNER_ROBOT_WIDTH: 100
     profiles:
       - robot5
+
+  robot6:
+    << : *robot
+    hostname: robot6
+    environment:
+      << : *env-robot
+      ROBOT_ID: 6
+      COPILOT_CAN_CHANNEL: vcan6
+      PLANNER_START_POSITION: PAMI6
+      PLANNER_ROBOT_LENGTH: 212
+      PLANNER_ROBOT_WIDTH: 100
+    profiles:
+      - robot6
 
   monitor1:
     << : *monitor
@@ -404,6 +445,17 @@ services:
       - robot5
     profiles:
       - monitor5
+
+  monitor6:
+    << : *monitor
+    hostname: monitor6
+    environment:
+      << : *env-monitor
+      ROBOT_ID: 6
+    depends_on:
+      - robot6
+    profiles:
+      - monitor6
 
   build_wheel:
     build:
