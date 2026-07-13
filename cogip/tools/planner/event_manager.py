@@ -62,6 +62,9 @@ class EventManager:
         logger.info("Planner: Task Blocked Event Watcher Loop started")
         try:
             while True:
+                if self.planner.shared_avoidance_blocked_lock is None:
+                    await asyncio.sleep(0.1)
+                    continue
                 updated = await asyncio.to_thread(self.planner.shared_avoidance_blocked_lock.wait_update, 1.0)
                 if not updated:
                     continue
@@ -115,7 +118,7 @@ class EventManager:
 
                 logger.info(f"Planner: countdown = {self.planner.game_context.countdown: 3.2f}")
                 if (
-                    self.planner.robot_id > 1
+                    self.planner.robot_id > 2
                     and self.planner.game_context.countdown < 15
                     and self.planner.game_context.last_countdown > 15
                 ):
@@ -123,8 +126,16 @@ class EventManager:
                     self.planner.pami_event.set()
                 if (
                     self.planner.robot_id == 1
-                    and self.planner.game_context.countdown < 7
-                    and self.planner.game_context.last_countdown > 7
+                    and self.planner.game_context.countdown < 15
+                    and self.planner.game_context.last_countdown > 15
+                ):
+                    logger.info("Planner: countdown==15: disable GOAP, force blocked")
+                    self.planner.strategy.goap_allowed = False
+                    asyncio.create_task(self.planner.blocked())
+                if (
+                    self.planner.robot_id == 1
+                    and self.planner.game_context.countdown < 5
+                    and self.planner.game_context.last_countdown > 5
                 ):
                     logger.info("Planner: countdown==7: disable GOAP, force blocked")
                     self.planner.strategy.goap_allowed = False
