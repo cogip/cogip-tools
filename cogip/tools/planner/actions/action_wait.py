@@ -14,7 +14,7 @@ class WaitAction(Action):
     Reset recycled attribute of all actions at the end.
     """
 
-    def __init__(self, planner: "Planner", strategy: "Strategy", delay_seconds: int = 2):
+    def __init__(self, planner: "Planner", strategy: "Strategy", delay_seconds: float = 0.5):
         super().__init__("Wait action", planner, strategy)
         self.delay_seconds = delay_seconds
         self.before_action_func = self.before_wait
