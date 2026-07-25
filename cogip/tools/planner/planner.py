@@ -2,6 +2,7 @@ import asyncio
 import platform
 import re
 import sys
+import threading
 import time
 import traceback
 from datetime import UTC, datetime
@@ -183,7 +184,8 @@ class Planner:
         self.event_manager = EventManager(self)
         self.scservos = SCServos(self.scservos_port, scservos_baud_rate)
         self.pami_event = asyncio.Event()
-        self.last_starter_event_timestamp: datetime | None = None
+        self.starter_release_lock = threading.Lock()
+        self.starter_release_timestamp: datetime | None = None
         self.countdown_start_timestamp: datetime = datetime.now(UTC)
 
         if not self.start_positions.is_valid(start_position):
@@ -315,10 +317,11 @@ class Planner:
         self.loop = asyncio.get_running_loop()
         self.create_shared_memory()
         self.shared_memory.avoidance_exiting = False
+        # Send game_reset to FW before start_pose emitted by soft_reset or it will be ignored
+        await self.sio_ns.emit("game_reset")
         await self.soft_reset()
         await self.event_manager.start_loops()
         await self.sio_ns.emit("starter_changed", self.starter.is_pressed)
-        await self.sio_ns.emit("game_reset")
         self.obstacles_updater_loop.start()
         if self.oled_bus and self.oled_address:
             self.oled_update_loop.start()
@@ -361,6 +364,8 @@ class Planner:
         """
         self.game_context.reset()
         self.playing = False
+        with self.starter_release_lock:
+            self.starter_release_timestamp = None
         await self.set_controller(self.default_controller, True)
         table = get_table(self.shared_properties.table)
         self.shared_table_limits[0] = table.x_min
@@ -380,19 +385,44 @@ class Planner:
             return
         self.playing = False
         await self.sio_ns.emit("game_end")
-        self.flag_motor.on()
+        if self.robot_id == 1:
+            await actuators.front_arms_open(self)
+            await actuators.back_arms_open(self)
+            await actuators.front_grips_open(self)
+            await actuators.back_grips_open(self)
+        if self.robot_id > 2:
+            self.flag_motor.on()
         self.pose_order = None
 
     def starter_changed_callback(self, pushed: bool):
+        if not pushed:
+            # Keep the GPIO callback timestamp to preserve edge precision.
+            with self.starter_release_lock:
+                self.starter_release_timestamp = datetime.now(UTC)
         logger.info(f"Planner: Starter callback: {pushed}")
         if hasattr(self, "loop") and self.loop.is_running():
             asyncio.run_coroutine_threadsafe(self.starter_changed(pushed), self.loop)
 
     async def starter_changed(self, pushed: bool):
         logger.info(f"Starter changed: {'On' if pushed else 'Off'}")
-        self.last_starter_event_timestamp = datetime.now(UTC)
         if not self.virtual:
             await self.sio_ns.emit("starter_changed", pushed)
+
+    def get_starter_release_timestamp_since(self, since: datetime | None) -> datetime | None:
+        """
+        Return the last starter release timestamp captured in GPIO callback,
+        only if it happened after the provided `since` timestamp.
+        """
+        with self.starter_release_lock:
+            timestamp = self.starter_release_timestamp
+
+        if timestamp is None:
+            return None
+
+        if since is not None and timestamp < since:
+            return None
+
+        return timestamp
 
     @property
     def default_controller(self) -> ControllerEnum:
@@ -712,7 +742,6 @@ class Planner:
             (self.robot_id, self.game_context.game_duration, self.countdown_start_timestamp.isoformat(), "deepskyblue"),
         )
 
-        await self.sio_ns.emit("start_video_record")
         asyncio.create_task(self.set_pose_reached())
 
     async def cmd_stop(self):
@@ -721,7 +750,6 @@ class Planner:
         """
         logger.info("Planner: cmd_stop()")
         self.playing = False
-        await self.sio_ns.emit("stop_video_record")
 
     async def cmd_next(self):
         """

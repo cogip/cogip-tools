@@ -82,6 +82,16 @@ def add_crates(root: QObject) -> None:
     add_crates_yellow(root, x - 50, y - 3, 0.0, 90.0)
     add_crates_blue(root, x - 105, y + 2, 0.0, 90.0)
 
+    ## LocalCenter
+    ## - compatible alignment
+    ## - horizontal but too close to granary border
+    ## - do nothing
+    x, y, angle, _ = pantries[PantryID.LocalCenter]
+    add_crates_blue(root, x + 20, y + 60, 0.0, 160.0)
+    add_crates_yellow(root, x + 5, y + 10, 0.0, 160.0)
+    add_crates_yellow(root, x - 15, y - 40, 0.0, 160.0)
+    add_crates_blue(root, x - 35, y - 90, 0.0, 160.0)
+
     ## MiddleCenter
     ## - compatible alignment
     ## - 2 rows of 4 crates

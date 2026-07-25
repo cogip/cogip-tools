@@ -33,6 +33,7 @@ class GameContext:
             self.front_free = True
             self.back_free = True
             self.cursor_moved = False
+            self.crates_from_granary_available = False
             self.front_crates: list[int | None] = [None, None, None, None]
             self.back_crates: list[int | None] = [None, None, None, None]
             self.collection_areas: dict[CollectionAreaID, CollectionArea] = {}
@@ -53,6 +54,7 @@ class GameContext:
         self.front_free = True
         self.back_free = True
         self.cursor_moved = False
+        self.crates_from_granary_available = False
         self.front_crates = [None, None, None, None]
         self.back_crates = [None, None, None, None]
         self.create_artifacts()
@@ -70,6 +72,7 @@ class GameContext:
         new_ctx.front_free = self.front_free
         new_ctx.back_free = self.back_free
         new_ctx.cursor_moved = self.cursor_moved
+        new_ctx.crates_from_granary_available = self.crates_from_granary_available
         new_ctx.front_crates = self.front_crates.copy()
         new_ctx.back_crates = self.back_crates.copy()
         new_ctx.countdown = self.countdown
@@ -78,6 +81,27 @@ class GameContext:
         new_ctx.collection_areas = {k: v.model_copy() for k, v in self.collection_areas.items()}
         new_ctx.pantries = {k: v.model_copy() for k, v in self.pantries.items()}
         return new_ctx
+
+    def create_pantry(self, pantry_id: PantryID):
+        x, y, angle, training = pantries[pantry_id]
+        enabled = (
+            self.shared_properties.table == TableEnum.Game
+            or (self.shared_properties.table == TableEnum.Training and training)
+            or self.shared_properties.robot_id >= 2
+        )
+        pose = AdaptedPose(x=x, y=y, O=angle)
+        if angle is None:
+            self.pantries[pantry_id] = Pantry(
+                **pose.model_dump(include={"x", "y"}),
+                id=pantry_id,
+                enabled=enabled,
+            )
+        else:
+            self.pantries[pantry_id] = Pantry(
+                **pose.model_dump(include={"x", "y", "O"}),
+                id=pantry_id,
+                enabled=enabled,
+            )
 
     def create_artifacts(self):
         self.collection_areas = {}
@@ -91,37 +115,22 @@ class GameContext:
                 self.collection_areas[collection_area_id] = CollectionArea(
                     **pose.model_dump(include={"x", "y"}),
                     id=collection_area_id,
-                    enabled=enabled,
+                    enabled=enabled and self.shared_properties.robot_id == 1,
                 )
             else:
                 self.collection_areas[collection_area_id] = CollectionArea(
                     **pose.model_dump(include={"x", "y", "O"}),
                     id=collection_area_id,
-                    enabled=enabled,
+                    enabled=enabled and self.shared_properties.robot_id == 1,
                 )
 
         self.pantries = {}
-        for pantry_id, values in pantries.items():
-            x, y, angle, training = values
-            enabled = self.shared_properties.table == TableEnum.Game or (
-                self.shared_properties.table == TableEnum.Training and training
-            )
-            pose = AdaptedPose(x=x, y=y, O=angle)
-            if angle is None:
-                self.pantries[pantry_id] = Pantry(
-                    **pose.model_dump(include={"x", "y"}),
-                    id=pantry_id,
-                    enabled=enabled,
-                )
-            else:
-                self.pantries[pantry_id] = Pantry(
-                    **pose.model_dump(include={"x", "y", "O"}),
-                    id=pantry_id,
-                    enabled=enabled,
-                )
+        for pantry_id in pantries.keys():
+            self.create_pantry(pantry_id)
 
         # We can consider that these pantries won't be used by the opponent robot
         if self.shared_properties.robot_id == 1:
+            self.pantries[PantryID.LocalTop].enabled = False
             self.pantries[PantryID.LocalSide].enabled = False
             self.pantries[PantryID.LocalCenter].enabled = False
             self.pantries[PantryID.LocalBottom].enabled = False
@@ -173,6 +182,15 @@ class GameContext:
             width=1550 if self.shared_properties.table == TableEnum.Game else 550,
             id=FixedObstacleID.Table,
             enabled=self.shared_properties.robot_id == 2,
+        )
+
+        # Crates from granary
+        self.fixed_obstacles[FixedObstacleID.CratesFromGranary] = FixedObstacle(
+            **AdaptedPose(x=475, y=-700).model_dump(include={"x", "y"}),
+            length=150,
+            width=200,
+            id=FixedObstacleID.CratesFromGranary,
+            enabled=self.shared_properties.robot_id == 1 and self.shared_properties.table == TableEnum.Game,
         )
 
     def create_actuators_states(self):

@@ -44,6 +44,9 @@ class View3DBackend(QObject):
         self.robot_manual = RobotManual(self.view_item.findChild(QObject, "robotManual"))
         self.ninja_manual = NinjaManual(self.view_item.findChild(QObject, "ninjaManual"))
         self.pami_manual = PamiManual(self.view_item.findChild(QObject, "pamiManual"))
+        self.pami2_manual = PamiManual(self.view_item.findChild(QObject, "pami2Manual"))
+        self.pami3_manual = PamiManual(self.view_item.findChild(QObject, "pami3Manual"))
+        self.pami4_manual = PamiManual(self.view_item.findChild(QObject, "pami4Manual"))
         self.obstacle_window_settings = ObstacleWindowSettings()
         self.view_item.setProperty("obstacleSettings", self.obstacle_window_settings)
         self.live_robot: Robot | None = None

@@ -98,42 +98,18 @@ class Robot:
 
         @self.sio.event(namespace="/beacon")
         async def pami_reset():
+            logger.info("pami_reset command received from beacon server.")
             for robot_id, robot in self.server.robots.items():
+                if robot_id == 1:
+                    continue
+                logger.info(f"Resetting robot {robot_id} (connected={robot.sio.connected})")
                 if robot.sio.connected:
-                    strategy: actions.StrategyEnum | None = None
-                    match robot_id:
-                        case 2:
-                            strategy = actions.StrategyEnum.Ninja
-                        case 3:
-                            strategy = actions.StrategyEnum.Pami3
-                        case 4:
-                            strategy = actions.StrategyEnum.Pami4
-                        case 5:
-                            strategy = actions.StrategyEnum.Pami5
-                        case 6:
-                            strategy = actions.StrategyEnum.Pami6
-
-                    if strategy:
-                        await robot.sio.emit(
-                            "wizard",
-                            {
-                                "name": "Choose Strategy",
-                                "value": strategy.name,
-                            },
-                            namespace="/beacon",
-                        )
-
-                    await robot.sio.emit(
-                        "wizard",
-                        {
-                            "name": "Choose Avoidance",
-                            "value": "Disabled",
-                        },
-                        namespace="/beacon",
-                    )
+                    logger.info(f"Sending soft_reset to robot {robot_id}")
+                    await robot.sio.emit("soft_reset", namespace="/beacon")
 
         @self.sio.event(namespace="/beacon")
         async def pami_table(table):
+            logger.info(f"pami_table command received from beacon server: {table}")
             for robot_id, robot in self.server.robots.items():
                 if robot_id == 1:
                     continue
@@ -147,6 +123,31 @@ class Robot:
                         },
                         namespace="/beacon",
                     )
+
+        @self.sio.event(namespace="/beacon")
+        async def pami_camp(camp):
+            logger.info(f"pami_camp command received from beacon server: {camp}")
+            for robot_id, robot in self.server.robots.items():
+                if robot_id == 1:
+                    continue
+                if robot.sio.connected:
+                    await robot.sio.emit(
+                        "wizard",
+                        {
+                            "name": "Choose Camp",
+                            "type": "camp",
+                            "value": camp,
+                        },
+                        namespace="/beacon",
+                    )
+
+        @self.sio.event(namespace="/beacon")
+        async def pami_start_pose():
+            logger.info("pami_start_pose command received from beacon server: send default start poses")
+            for robot_id, robot in self.server.robots.items():
+                if robot_id == 1:
+                    continue
+                if robot.sio.connected:
                     position: StartPositionEnum | None = None
                     match robot_id:
                         case 2:
@@ -171,23 +172,39 @@ class Robot:
                         )
 
         @self.sio.event(namespace="/beacon")
-        async def pami_camp(camp):
+        async def pami_strategy():
+            logger.info("pami_strategy command received from beacon server: send default strategies")
             for robot_id, robot in self.server.robots.items():
                 if robot_id == 1:
                     continue
                 if robot.sio.connected:
-                    await robot.sio.emit(
-                        "wizard",
-                        {
-                            "name": "Choose Camp",
-                            "type": "camp",
-                            "value": camp,
-                        },
-                        namespace="/beacon",
-                    )
+                    strategy: actions.StrategyEnum | None = None
+                    match robot_id:
+                        case 2:
+                            strategy = actions.StrategyEnum.Ninja
+                        case 3:
+                            strategy = actions.StrategyEnum.Pami3
+                        case 4:
+                            strategy = actions.StrategyEnum.Pami4
+                        case 5:
+                            strategy = actions.StrategyEnum.Pami5
+                        case 6:
+                            strategy = actions.StrategyEnum.Pami6
+
+                    if strategy:
+                        logger.info(f"Sending strategy {strategy.name} to robot {robot_id}")
+                        await robot.sio.emit(
+                            "wizard",
+                            {
+                                "name": "Choose Strategy",
+                                "value": strategy.name,
+                            },
+                            namespace="/beacon",
+                        )
 
         @self.sio.event(namespace="/beacon")
         async def pami_play(timestamp: str):
+            logger.info("pami_play command received from beacon server.")
             for robot_id, robot in self.server.robots.items():
                 if robot_id == 1:
                     continue
@@ -202,3 +219,13 @@ class Robot:
                 (robot_id, countdown, timestamp, color),
                 namespace="/dashboard",
             )
+
+        @self.sio.event(namespace="/beacon")
+        async def crates_from_granary_available(value: bool):
+            logger.info(f"Crates from granary available: {value}")
+            for robot_id, robot in self.server.robots.items():
+                if robot_id != 1:
+                    continue
+                if robot.sio.connected:
+                    logger.info(f"Sending crates_from_granary_available to robot {robot_id}: {value}")
+                    await robot.sio.emit("crates_from_granary_available", value, namespace="/beacon")

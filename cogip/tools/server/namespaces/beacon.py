@@ -36,6 +36,13 @@ class BeaconNamespace(socketio.AsyncNamespace):
         logger.info("[beacon => planner] reset.")
         await self.emit("reset", namespace="/planner")
 
+    async def on_soft_reset(self, sid):
+        """
+        Callback on soft reset message.
+        """
+        logger.info("[beacon => planner] soft reset.")
+        await self.emit("soft_reset", namespace="/planner")
+
     async def on_command(self, sid, cmd, *args):
         """
         Callback on command.
@@ -48,3 +55,10 @@ class BeaconNamespace(socketio.AsyncNamespace):
         Callback on wizard message.
         """
         await self.emit("wizard", message, namespace="/planner")
+
+    async def on_crates_from_granary_available(self, sid, value: bool):
+        """
+        Callback on crates_from_granary_available message.
+        This message is sent by the Ninja Planner through the beacon server.
+        """
+        await self.emit("crates_from_granary_available", value, namespace="/planner")

@@ -173,9 +173,9 @@ class PathPose(Pose):
         Arguments:
             pb_path_pose: Protobuf message to fill
         """
-        pb_path_pose.pose.x = int(self.x)
-        pb_path_pose.pose.y = int(self.y)
-        pb_path_pose.pose.O = int(self.O)  # noqa
+        pb_path_pose.pose.x = round(self.x)
+        pb_path_pose.pose.y = round(self.y)
+        pb_path_pose.pose.O = round(self.O)  # noqa
         pb_path_pose.max_speed_ratio_linear = self.max_speed_linear
         pb_path_pose.max_speed_ratio_angular = self.max_speed_angular
         pb_path_pose.motion_direction = self.motion_direction.value
@@ -193,9 +193,9 @@ class PathPose(Pose):
         """
         if shared_pose_order is None:
             return
-        shared_pose_order.x = int(self.x)
-        shared_pose_order.y = int(self.y)
-        shared_pose_order.angle = int(self.O)  # noqa
+        shared_pose_order.x = round(self.x)
+        shared_pose_order.y = round(self.y)
+        shared_pose_order.angle = round(self.O)  # noqa
         shared_pose_order.max_speed_linear = self.max_speed_linear
         shared_pose_order.max_speed_angular = self.max_speed_angular
         shared_pose_order.motion_direction = self.motion_direction.value

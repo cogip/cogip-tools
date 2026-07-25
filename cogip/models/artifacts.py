@@ -12,6 +12,7 @@ class FixedObstacleID(IntEnum):
     Nest = auto()
     OppositeNest = auto()
     Table = auto()
+    CratesFromGranary = auto()
 
 
 class FixedObstacle(Vertex):

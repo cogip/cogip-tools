@@ -20,14 +20,15 @@ class CursorAction(Action):
     Action used to move the cursor.
     """
 
-    def __init__(self, planner: "Planner", strategy: Strategy, weight: float = 2000000.0, unit_test: bool = True):
+    def __init__(self, planner: "Planner", strategy: Strategy, weight: float = 2_000_000.0, unit_test: bool = True):
         super().__init__("Cursor", planner, strategy)
         self.custom_weight = weight
         self.unit_test = unit_test
         self.before_action_func = self.before_action
-        self.x = -815
-        self.y_start = -1270
-        self.y_end = -740
+        self.x = -810
+        self.y_approach = -1110
+        self.y_start = -1320
+        self.y_end = -785
         self.approach_speed = 100
         self.end_speed = 50
 
@@ -44,12 +45,12 @@ class CursorAction(Action):
             self.approach_direction = MotionDirection.BACKWARD_ONLY
             self.direction = MotionDirection.FORWARD_ONLY
             if Camp().color == Camp.Colors.blue:
-                self.arm_open = functools.partial(actuators.back_arm_left_open, self.planner)
+                self.arm_side = functools.partial(actuators.back_arm_left_side, self.planner)
                 self.arm_close = functools.partial(actuators.back_arm_left_close, self.planner)
                 self.arms_close = functools.partial(actuators.back_arms_close, self.planner)
                 self.opposite_arms_close = functools.partial(actuators.front_arms_close, self.planner)
             else:
-                self.arm_open = functools.partial(actuators.back_arm_right_open, self.planner)
+                self.arm_side = functools.partial(actuators.back_arm_right_side, self.planner)
                 self.arm_close = functools.partial(actuators.back_arm_right_close, self.planner)
                 self.arms_close = functools.partial(actuators.back_arms_close, self.planner)
                 self.opposite_arms_close = functools.partial(actuators.front_arms_close, self.planner)
@@ -60,17 +61,31 @@ class CursorAction(Action):
             self.approach_direction = MotionDirection.FORWARD_ONLY
             self.direction = MotionDirection.BACKWARD_ONLY
             if Camp().color == Camp.Colors.blue:
-                self.arm_open = functools.partial(actuators.front_arm_right_open, self.planner)
+                self.arm_side = functools.partial(actuators.front_arm_right_side, self.planner)
                 self.arm_close = functools.partial(actuators.front_arm_right_close, self.planner)
                 self.arms_close = functools.partial(actuators.front_arms_close, self.planner)
                 self.opposite_arms_close = functools.partial(actuators.back_arms_close, self.planner)
             else:
-                self.arm_open = functools.partial(actuators.front_arm_left_open, self.planner)
+                self.arm_side = functools.partial(actuators.front_arm_left_side, self.planner)
                 self.arm_close = functools.partial(actuators.front_arm_left_close, self.planner)
                 self.arms_close = functools.partial(actuators.front_arms_close, self.planner)
                 self.opposite_arms_close = functools.partial(actuators.back_arms_close, self.planner)
             self.lift_up = functools.partial(actuators.front_lift_up, self.planner)
             self.lift_mid = functools.partial(actuators.front_lift_mid, self.planner)
+
+        # Approach
+        approach_pose = AdaptedPose(
+            x=self.x,
+            y=self.y_approach,
+            O=self.orientation,
+            max_speed_linear=self.approach_speed,
+            max_speed_angular=self.approach_speed,
+            motion_direction=self.approach_direction,
+            before_pose_func=self.before_approach,
+            after_pose_func=self.after_approach,
+        )
+        self.poses.append(approach_pose)
+        self.logger.info(f"{self.name}: approach: {approach_pose.pose}")
 
         # Start
         start_pose = AdaptedPose(
@@ -100,18 +115,24 @@ class CursorAction(Action):
         self.poses.append(end_pose)
         self.logger.info(f"{self.name}: end: {end_pose.pose}")
 
-    async def before_start(self):
-        self.logger.info(f"{self.name}: before_start")
+    async def before_approach(self):
+        self.logger.info(f"{self.name}: before_approach")
         await self.lift_up()
         await self.arms_close()
         await self.opposite_arms_close()
+
+    async def after_approach(self):
+        self.logger.info(f"{self.name}: after_approach")
+
+    async def before_start(self):
+        self.logger.info(f"{self.name}: before_start")
 
     async def after_start(self):
         self.logger.info(f"{self.name}: after_start")
 
     async def before_end(self):
         self.logger.info(f"{self.name}: before_end")
-        duration_arm = await self.arm_open()
+        duration_arm = await self.arm_side()
         duration_lift = await self.lift_mid()
         await asyncio.sleep(max(duration_arm, duration_lift / 2))
 
@@ -128,9 +149,6 @@ class CursorAction(Action):
             return 0
 
         if not self.unit_test:
-            # if self.planner.game_context.collection_areas[CollectionAreaID.LocalBottom].enabled:
-            #     self.logger.info(f"{self.name}: Rejected: local bottom collection area is not empty")
-            #     return 0
             if self.planner.game_context.collection_areas[CollectionAreaID.LocalBottomSide].enabled:
                 self.logger.info(f"{self.name}: Rejected: local bottom side collection area is not empty")
                 return 0

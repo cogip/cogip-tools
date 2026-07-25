@@ -253,15 +253,17 @@ function drawObstacles(color, obstacle, context) {
 
 export function addNewTab(robot_id) {
   //Check if nav-tab already exists and remove it
-  const existingNavTab = cacheElement(`#robot${robot_id}-tab`);
+  const existingNavTab = document.querySelector(`#robot${robot_id}-tab`);
   if (existingNavTab) {
     existingNavTab.parentElement.remove();
     const parent = existingNavTab.parentElement;
-    parent.replaceWith(parent.cloneNode(true));
+    if (parent) {
+      parent.replaceWith(parent.cloneNode(true));
+    }
   }
 
   //Check if tab-tab already exists and remove it
-  const existingTabPane = cacheElement(`#robot${robot_id}`);
+  const existingTabPane = document.querySelector(`#robot${robot_id}`);
   if (existingTabPane) {
     existingTabPane.remove();
   }
@@ -299,26 +301,26 @@ export function addNewTab(robot_id) {
   </iframe>`;
 
   // Append new nav-tab to the flex-wrap container
-  const navTabsContainer = cacheElement(".flex-wrap");
-  navTabsContainer.appendChild(newNavTab);
+  const navTabsContainer = document.querySelector(".flex-wrap");
+  if (navTabsContainer) navTabsContainer.appendChild(newNavTab);
 
   // Append new tab-pane to the tab-content container
-  const tabContentContainer = cacheElement(".tab-content");
-  tabContentContainer.appendChild(newTabPane);
+  const tabContentContainer = document.querySelector(".tab-content");
+  if (tabContentContainer) tabContentContainer.appendChild(newTabPane);
 }
 
 export function deleteTab(robot_id) {
   // Select the nav-tab and tab-pane elements
-  const navButton = cacheElement(`#robot${robot_id}-tab`);
+  const navButton = document.querySelector(`#robot${robot_id}-tab`);
   const navTab = navButton?.parentElement;
-  const tabPane = cacheElement(`#robot${robot_id}`);
+  const tabPane = document.querySelector(`#robot${robot_id}`);
 
   // Check if elements exist before attempting removal
   if (navTab && tabPane) {
-    const navTabsContainer = cacheElement(".flex-wrap");
+    const navTabsContainer = document.querySelector(".flex-wrap");
     navTabsContainer?.removeChild(navTab);
 
-    const tabContentContainer = cacheElement(".tab-content");
+    const tabContentContainer = document.querySelector(".tab-content");
     tabContentContainer?.removeChild(tabPane);
 
     // Activate beacon tab if the deleted tab was active

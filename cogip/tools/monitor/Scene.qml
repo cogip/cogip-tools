@@ -441,6 +441,18 @@ Item {
             obstacleWindow.showPanel(obstacle);
         }
 
+        function openPami2ManualDialog() {
+            pami2ManualWindow.showPanel();
+        }
+
+        function openPami3ManualDialog() {
+            pami3ManualWindow.showPanel();
+        }
+
+        function openPami4ManualDialog() {
+            pami4ManualWindow.showPanel();
+        }
+
         function openPamiManualDialog() {
             pamiManualWindow.showPanel();
         }
@@ -821,7 +833,7 @@ Item {
 
                 eulerRotation: Qt.vector3d(0, 0, 180)
                 objectName: "cursorBlue"
-                position: Qt.vector3d(-1023.5, -1250, 66)
+                position: Qt.vector3d(-1023.5, -1300, 66)
             }
 
             Cursor {
@@ -829,7 +841,7 @@ Item {
 
                 eulerRotation: Qt.vector3d(0, 0, 180)
                 objectName: "cursorYellow"
-                position: Qt.vector3d(-1023.5, 1250, 66)
+                position: Qt.vector3d(-1023.5, 1300, 66)
             }
 
             Model {
@@ -837,7 +849,7 @@ Item {
 
                 eulerRotation: Qt.vector3d(0, -90, -90)
                 objectName: "cursorTextureBlue"
-                position: Qt.vector3d(-1040, 1250, 66)
+                position: Qt.vector3d(-1040, 1300, 66)
                 scale: Qt.vector3d(1, 1.05, 1)
                 source: "#Rectangle"
 
@@ -855,7 +867,7 @@ Item {
 
                 eulerRotation: Qt.vector3d(0, -90, -90)
                 objectName: "cursorTextureYellow"
-                position: Qt.vector3d(-1040, -1250, 66)
+                position: Qt.vector3d(-1040, -1300, 66)
                 scale: Qt.vector3d(1, 1.05, 1)
                 source: "#Rectangle"
 
@@ -1050,7 +1062,7 @@ Item {
                 eulerRotation.z: 180
                 objectName: "robotManual"
                 x: 1200
-                y: 1200
+                y: 1400
 
                 PerspectiveCamera {
                     id: robotManualCamera
@@ -1084,7 +1096,43 @@ Item {
                 eulerRotation.z: 180
                 objectName: "pamiManual"
                 x: 1200
+                y: 1100
+            }
+
+            Pami {
+                id: pami2Manual
+
+                property bool dragging: false
+                property var windowSettings: null
+
+                eulerRotation.z: 180
+                objectName: "pami2Manual"
+                x: 1200
+                y: 950
+            }
+
+            Pami {
+                id: pami3Manual
+
+                property bool dragging: false
+                property var windowSettings: null
+
+                eulerRotation.z: 180
+                objectName: "pami3Manual"
+                x: 1200
                 y: 800
+            }
+
+            Pami {
+                id: pami4Manual
+
+                property bool dragging: false
+                property var windowSettings: null
+
+                eulerRotation.z: 180
+                objectName: "pami4Manual"
+                x: 1200
+                y: 650
             }
         }
 
@@ -1127,6 +1175,12 @@ Item {
                         ninjaManualWindow.syncFromNinja();
                     } else if (draggedObject === pamiManual && pamiManualWindow.visible) {
                         pamiManualWindow.syncFromPami();
+                    } else if (draggedObject === pami2Manual && pami2ManualWindow.visible) {
+                        pami2ManualWindow.syncFromPami();
+                    } else if (draggedObject === pami3Manual && pami3ManualWindow.visible) {
+                        pami3ManualWindow.syncFromPami();
+                    } else if (draggedObject === pami4Manual && pami4ManualWindow.visible) {
+                        pami4ManualWindow.syncFromPami();
                     } else if (obstacleWindow.visible && obstacleWindow.obstacle === draggedObject) {
                         obstacleWindow.syncFromObstacle();
                     }
@@ -1184,6 +1238,24 @@ Item {
                         clickPressY = mouse.y;
                         break;
                     }
+                    if (hitNode.objectName === "pami2Manual") {
+                        clickCandidate = pami2Manual;
+                        clickPressX = mouse.x;
+                        clickPressY = mouse.y;
+                        break;
+                    }
+                    if (hitNode.objectName === "pami3Manual") {
+                        clickCandidate = pami3Manual;
+                        clickPressX = mouse.x;
+                        clickPressY = mouse.y;
+                        break;
+                    }
+                    if (hitNode.objectName === "pami4Manual") {
+                        clickCandidate = pami4Manual;
+                        clickPressX = mouse.x;
+                        clickPressY = mouse.y;
+                        break;
+                    }
                     if (hitNode.objectName && hitNode.objectName.indexOf("obstacle_") === 0 && hitNode.objectName.indexOf("_base") === -1 && hitNode.objectName.indexOf("_beacon") === -1) {
                         clickCandidate = hitNode;
                         clickPressX = mouse.x;
@@ -1205,6 +1277,12 @@ Item {
                     view.openNinjaManualDialog();
                 } else if (clickCandidate === pamiManual && mouse.button === Qt.LeftButton) {
                     view.openPamiManualDialog();
+                } else if (clickCandidate === pami2Manual && mouse.button === Qt.LeftButton) {
+                    view.openPami2ManualDialog();
+                } else if (clickCandidate === pami3Manual && mouse.button === Qt.LeftButton) {
+                    view.openPami3ManualDialog();
+                } else if (clickCandidate === pami4Manual && mouse.button === Qt.LeftButton) {
+                    view.openPami4ManualDialog();
                 } else if (clickCandidate && clickCandidate.objectName && clickCandidate.objectName.indexOf("obstacle_") === 0 && mouse.button === Qt.LeftButton) {
                     view.openObstacleConfig(clickCandidate);
                 }
@@ -1234,6 +1312,30 @@ Item {
             pami: pamiManual
             parentWindow: view.Window.window
             settings: pamiManual.windowSettings
+        }
+
+        PamiManualWindow {
+            id: pami2ManualWindow
+
+            pami: pami2Manual
+            parentWindow: view.Window.window
+            settings: pami2Manual.windowSettings
+        }
+
+        PamiManualWindow {
+            id: pami3ManualWindow
+
+            pami: pami3Manual
+            parentWindow: view.Window.window
+            settings: pami3Manual.windowSettings
+        }
+
+        PamiManualWindow {
+            id: pami4ManualWindow
+
+            pami: pami4Manual
+            parentWindow: view.Window.window
+            settings: pami4Manual.windowSettings
         }
 
         ObstacleWindow {

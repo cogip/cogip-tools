@@ -30,11 +30,14 @@ class StartPositions:
         if isinstance(position, int):
             position = StartPositionEnum(position)
         training_offset_x = -1000 if self.shared_properties.table == TableEnum.Training else 0
+        pami_y = -1455
+        pami_angle = 90
+        pami_space_x = 5
         match position:
             case StartPositionEnum.Top:
                 return AdaptedPose(
-                    x=600 + self.shared_properties.robot_length / 2 + training_offset_x,
-                    y=-1100 - self.shared_properties.robot_width / 2,
+                    x=720 + training_offset_x,
+                    y=-1120,
                     O=180,
                 ).pose
             case StartPositionEnum.NINJA:
@@ -45,27 +48,27 @@ class StartPositions:
                 ).pose
             case StartPositionEnum.PAMI3:
                 return AdaptedPose(
-                    x=550 + 100 * 0.5 + training_offset_x,
-                    y=-934,
-                    O=-90,
+                    x=550 + self.shared_properties.robot_width * 0.5 + pami_space_x + training_offset_x,
+                    y=pami_y,
+                    O=pami_angle,
                 ).pose
             case StartPositionEnum.PAMI4:
                 return AdaptedPose(
-                    x=550 + 100 * 1.5 + training_offset_x,
-                    y=-934,
-                    O=-90,
+                    x=550 + self.shared_properties.robot_width * 1.5 + pami_space_x * 2 + training_offset_x,
+                    y=pami_y,
+                    O=pami_angle,
                 ).pose
             case StartPositionEnum.PAMI5:
                 return AdaptedPose(
-                    x=550 + 100 * 2.5 + training_offset_x,
-                    y=-934,
-                    O=-90,
+                    x=550 + self.shared_properties.robot_width * 2.5 + pami_space_x * 3 + training_offset_x,
+                    y=pami_y,
+                    O=pami_angle,
                 ).pose
             case StartPositionEnum.PAMI6:
                 return AdaptedPose(
-                    x=550 + 100 * 3.5 + training_offset_x,
-                    y=-934,
-                    O=-90,
+                    x=550 + self.shared_properties.robot_width * 3.5 + pami_space_x * 4 + training_offset_x,
+                    y=pami_y,
+                    O=pami_angle,
                 ).pose
 
     @property

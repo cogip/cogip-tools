@@ -6,6 +6,7 @@ import socketio
 from pydantic import TypeAdapter, ValidationError
 
 from cogip.models.actuators import ActuatorState
+from cogip.models.artifacts import FixedObstacleID
 from . import logger
 from .menu import (
     cameras_menu,
@@ -121,6 +122,13 @@ class SioEvents(socketio.AsyncClientNamespace):
         logger.info("[SIO] Reset.")
         await self.planner.reset()
 
+    async def on_soft_reset(self):
+        """
+        Callback on reset message from copilot.
+        """
+        logger.info("[SIO] Soft reset.")
+        await self.planner.soft_reset()
+
     async def on_pose_reached(self):
         """
         Callback on pose reached message.
@@ -185,3 +193,12 @@ class SioEvents(socketio.AsyncClientNamespace):
             return
 
         await self.planner.update_actuator_state(state)
+
+    async def on_crates_from_granary_available(self, value: bool):
+        """
+        Callback on crates_from_granary_available message.
+        """
+        logger.info(f"[SIO] Crates from granary available: {value}")
+        self.planner.context.crates_from_granary_available = value
+        if not value:
+            self.planner.context.fixed_obstacles[FixedObstacleID.CratesFromGranary].enabled = False

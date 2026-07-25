@@ -9,6 +9,7 @@ from cogip.tools.planner.actions.action import Action
 from cogip.tools.planner.actions.strategy import Strategy
 from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.cameras import get_robot_position
+from cogip.tools.planner.camp import Camp
 from cogip.tools.planner.pose import AdaptedPose, Pose
 from cogip.tools.planner.table import TableEnum
 
@@ -28,7 +29,7 @@ class AlignTopCornerAction(Action):
         *,
         final_pose: models.Pose | None = None,
         reset_countdown=False,
-        weight: float = 2000000.0,
+        weight: float = 2_000_000.0,
     ):
         self.final_pose = final_pose
         self.reset_countdown = reset_countdown
@@ -64,8 +65,8 @@ class AlignTopCornerAction(Action):
             x=1100,
             y=self.start_position.y,
             O=180,
-            max_speed_linear=5,
-            max_speed_angular=5,
+            max_speed_linear=10,
+            max_speed_angular=10,
             motion_direction=MotionDirection.BACKWARD_ONLY,
             bypass_anti_blocking=True,
             timeout_ms=0,
@@ -79,8 +80,6 @@ class AlignTopCornerAction(Action):
 
     async def before_align_top(self):
         self.logger.info(f"{self.name}: before_align_top")
-        await actuators.front_arms_open(self.planner)
-        await actuators.back_arms_open(self.planner)
         await actuators.front_lift_mid(self.planner)
         await actuators.back_lift_mid(self.planner)
 
@@ -102,9 +101,9 @@ class AlignTopCornerAction(Action):
         pose = Pose(
             x=self.start_position.x,
             y=pose_current.y,
-            O=180,
-            max_speed_linear=10,
-            max_speed_angular=10,
+            O=90 if Camp().color == Camp.Colors.blue else -90,
+            max_speed_linear=20,
+            max_speed_angular=20,
             motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
             before_pose_func=self.before_step_forward_from_top,
@@ -124,8 +123,8 @@ class AlignTopCornerAction(Action):
             x=pose_current.x,
             y=-1600,
             O=90,
-            max_speed_linear=5,
-            max_speed_angular=20,
+            max_speed_linear=10,
+            max_speed_angular=10,
             motion_direction=MotionDirection.BACKWARD_ONLY,
             bypass_anti_blocking=True,
             timeout_ms=0,
@@ -154,9 +153,9 @@ class AlignTopCornerAction(Action):
         pose = Pose(
             x=pose_current.x,
             y=self.start_position.y,
-            O=90,
-            max_speed_linear=10,
-            max_speed_angular=10,
+            O=90 if Camp().color == Camp.Colors.blue else -90,
+            max_speed_linear=20,
+            max_speed_angular=20,
             motion_direction=MotionDirection.FORWARD_ONLY,
             bypass_final_orientation=False,
             before_pose_func=self.before_step_forward_from_side,
@@ -175,8 +174,8 @@ class AlignTopCornerAction(Action):
             x=self.final_pose.x,
             y=self.final_pose.y,
             O=self.final_pose.O,
-            max_speed_linear=10,
-            max_speed_angular=10,
+            max_speed_linear=50,
+            max_speed_angular=50,
             motion_direction=MotionDirection.BIDIRECTIONAL,
             before_pose_func=self.before_final_pose,
             after_pose_func=self.after_final_pose,
@@ -188,8 +187,6 @@ class AlignTopCornerAction(Action):
 
     async def after_final_pose(self):
         self.logger.info(f"{self.name}: after_final_pose")
-        await actuators.front_arms_close(self.planner)
-        await actuators.back_arms_close(self.planner)
         await actuators.front_lift_down(self.planner)
         await actuators.back_lift_down(self.planner)
 
@@ -257,9 +254,9 @@ class AlignTopCornerCameraAction(AlignTopCornerAction):
                 x=550 + self.planner.shared_properties.robot_length / 2,
                 y=-1050 - self.planner.shared_properties.robot_width / 2,
                 O=90,
-            )
+            ).pose
             if self.planner.shared_properties.table == TableEnum.Training:
                 current_pose.x -= 1000
         self.planner.shared_pose_current_buffer.push(current_pose.x, current_pose.y, current_pose.O)
-        await self.planner.sio_ns.emit("pose_start", current_pose.pose.model_dump())
+        await self.planner.sio_ns.emit("pose_start", current_pose.model_dump())
         await asyncio.sleep(0.5)

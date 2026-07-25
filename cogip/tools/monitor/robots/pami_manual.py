@@ -15,41 +15,42 @@ class PamiManual:
         self.node = self.root.findChild(QObject, "Robot")
         self.models = [m for m in self.node.children() if m.metaObject().className() == "QQuick3DModel"]
         for model in self.models:
-            model.setObjectName(f"pami_manual_{model.objectName()}")
+            model.setObjectName(f"{self.root.objectName()}_{model.objectName()}")
             model.setProperty("pickable", True)
 
-        self.window_settings = PamiManualWindowSettings()
+        self.window_settings = PamiManualWindowSettings(self.root.objectName())
         self.root.setProperty("windowSettings", self.window_settings)
 
 
 class PamiManualWindowSettings(QObject):
-    def __init__(self) -> None:
+    def __init__(self, prefix: str = "PamiManual") -> None:
         super().__init__()
         self.settings = QSettings()
+        self.prefix = prefix
 
     def _get_int(self, key: str) -> int:
-        value = self.settings.value(key, -1)
+        value = self.settings.value(f"{self.prefix}Window/{key}", -1)
         try:
             return int(value)
         except (TypeError, ValueError):
             return -1
 
     def _set_int(self, key: str, value: int) -> None:
-        self.settings.setValue(key, int(value))
+        self.settings.setValue(f"{self.prefix}Window/{key}", int(value))
         self.settings.sync()
 
     @Property(int)
     def windowX(self) -> int:
-        return self._get_int("PamiManualWindow/windowX")
+        return self._get_int("windowX")
 
     @windowX.setter
     def windowX(self, value: int) -> None:
-        self._set_int("PamiManualWindow/windowX", value)
+        self._set_int("windowX", value)
 
     @Property(int)
     def windowY(self) -> int:
-        return self._get_int("PamiManualWindow/windowY")
+        return self._get_int("windowY")
 
     @windowY.setter
     def windowY(self, value: int) -> None:
-        self._set_int("PamiManualWindow/windowY", value)
+        self._set_int("windowY", value)

@@ -7,6 +7,7 @@ from cogip.tools.planner.avoidance.avoidance import AvoidanceStrategy
 from cogip.tools.planner.start_positions import StartPositionEnum
 from cogip.tools.planner.table import TableEnum
 from cogip.utils.asyncloop import AsyncLoop
+from . import logger
 from .actions import StrategyEnum, strategy_classes
 from .camp import Camp
 
@@ -19,6 +20,7 @@ class GameWizard:
         self.planner = planner
         self.step = 0
         self.game_strategy = self.planner.shared_properties.strategy
+        self.waiting_start_since: datetime | None = None
         self.waiting_starter_pressed_loop = AsyncLoop(
             "Waiting starter pressed thread",
             0.1,
@@ -57,7 +59,6 @@ class GameWizard:
         await self.waiting_calibration_loop.stop()
         await self.waiting_start_loop.stop()
         await self.planner.sio_ns.emit("game_reset")
-        await self.planner.sio_ns.emit("pami_reset")
         await self.next()
 
     async def next(self):
@@ -115,6 +116,7 @@ class GameWizard:
         start_position = StartPositionEnum[value]
         self.planner.shared_properties.start_position = start_position.val
         await self.planner.set_pose_start(self.planner.start_positions.get())
+        await self.planner.sio_ns.emit("pami_start_pose")
 
     async def request_avoidance(self):
         message = {
@@ -145,10 +147,12 @@ class GameWizard:
 
     async def response_strategy(self, message: dict[str, Any]):
         self.game_strategy = StrategyEnum[message["value"]].val
-        self.planner.shared_properties.strategy = StrategyEnum.TestAlignTopCornerCamera.val
+        self.planner.shared_properties.strategy = StrategyEnum.TestAlignTopCorner.val
         await self.planner.soft_reset()
+        await self.planner.sio_ns.emit("pami_strategy")
 
     async def request_starter_for_calibration(self):
+        logger.info("Wizard: Requesting starter for calibration.")
         if self.planner.starter.is_pressed:
             self.waiting_calibration_loop.start()
             await self.next()
@@ -161,16 +165,20 @@ class GameWizard:
         }
         await self.planner.sio_ns.emit("wizard", message)
 
-        self.check_starter_pressed = False
+        self.waiting_starter_pressed_loop.exit = False
         self.waiting_starter_pressed_loop.start()
 
     async def response_starter_for_calibration(self, message: dict[str, Any]):
+        logger.info("Wizard: Response starter for calibration.")
         if not self.planner.starter.is_pressed:
             self.step -= 1
 
     async def request_wait_for_calibration(self):
+        logger.info("Wizard: Requesting wait for calibration.")
+
         self.waiting_calibration_loop.start()
 
+        await self.planner.sio_ns.emit("close_wizard")
         message = {
             "name": "Game Wizard: Calibration - Waiting Start",
             "type": "message",
@@ -179,9 +187,13 @@ class GameWizard:
         await self.planner.sio_ns.emit("wizard", message)
 
     async def response_wait_for_calibration(self, message: dict[str, Any]):
+        logger.info("Wizard: Response wait for calibration.")
         self.step -= 1
 
     async def request_starter_for_game(self):
+        logger.info("Wizard: Requesting starter for game start.")
+        await self.planner.sio_ns.emit("close_wizard")
+
         if self.planner.starter.is_pressed:
             self.waiting_start_loop.start()
             await self.next()
@@ -190,17 +202,24 @@ class GameWizard:
         message = {
             "name": "Game Wizard: Game - Starter Check",
             "type": "message",
-            "value": "Please insert starter in Robot",
+            "value": "Install PAMIs and NINJA, then insert starter in Robot",
         }
         await self.planner.sio_ns.emit("wizard", message)
 
+        self.waiting_starter_pressed_loop.exit = False
         self.waiting_starter_pressed_loop.start()
 
     async def response_starter_for_game(self, message: dict[str, Any]):
+        logger.info("Wizard: Response starter for game.")
         if not self.planner.starter.is_pressed:
             self.step -= 1
 
     async def request_wait_for_game(self):
+        logger.info("Wizard: Requesting wait for game.")
+        await self.planner.sio_ns.emit("close_wizard")
+        await self.planner.sio_ns.emit("pami_reset")
+        self.waiting_start_since = datetime.now(UTC)
+
         message = {
             "name": "Game Wizard: Waiting Start",
             "type": "message",
@@ -210,6 +229,7 @@ class GameWizard:
         self.waiting_start_loop.start()
 
     async def response_wait_for_game(self, message: dict[str, Any]):
+        logger.info("Wizard: Response wait for game.")
         self.step -= 1
 
     async def check_starter_pressed(self):
@@ -218,13 +238,17 @@ class GameWizard:
 
         self.waiting_starter_pressed_loop.exit = True
         await self.waiting_starter_pressed_loop.stop()
-        await self.planner.sio_ns.emit("close_wizard")
         await self.next()
 
     async def check_calibration(self):
         if self.planner.starter.is_pressed:
+            # Loop if start is not pressed
             return
 
+        # if starter is pressed:
+        #   - exit current loop
+        #   - start the alignment strategy
+        #   - go to next step
         self.waiting_calibration_loop.exit = True
         await self.waiting_calibration_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
@@ -242,6 +266,16 @@ class GameWizard:
         if self.planner.starter.is_pressed:
             return
 
+        polling_timestamp = datetime.now(UTC)
+        callback_timestamp = self.planner.get_starter_release_timestamp_since(self.waiting_start_since)
+        start_timestamp = callback_timestamp or polling_timestamp
+        timestamp_source = "callback" if callback_timestamp else "polling"
+        logger.info(
+            f"Wizard: game start timestamp source={timestamp_source} value={start_timestamp.isoformat()}"
+            f" waiting_since={self.waiting_start_since.isoformat() if self.waiting_start_since else None}"
+        )
+        self.waiting_start_since = None
+
         self.waiting_start_loop.exit = True
         await self.waiting_start_loop.stop()
         await self.planner.sio_ns.emit("close_wizard")
@@ -250,5 +284,5 @@ class GameWizard:
         self.planner.shared_properties.strategy = self.game_strategy
         self.planner.strategy = strategy_classes.get(StrategyEnum(self.game_strategy))(self.planner)
         await self.planner.sio_ns.emit("game_start")
-        await self.planner.sio_ns.emit("pami_play", self.planner.last_starter_event_timestamp.isoformat())
-        await self.planner.cmd_play(self.planner.last_starter_event_timestamp.isoformat())
+        await self.planner.sio_ns.emit("pami_play", start_timestamp.isoformat())
+        await self.planner.cmd_play(start_timestamp.isoformat())

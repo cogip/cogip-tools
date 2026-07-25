@@ -189,6 +189,18 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         await self.emit("pami_table", data, namespace="/beacon")
 
+    async def on_pami_start_pose(self, sid):
+        """
+        Callback on pami_start_pose message.
+        """
+        await self.emit("pami_start_pose", namespace="/beacon")
+
+    async def on_pami_strategy(self, sid):
+        """
+        Callback on pami_strategy message.
+        """
+        await self.emit("pami_strategy", namespace="/beacon")
+
     async def on_pami_play(self, sid, timestamp: str):
         """
         Callback on pami_play message.
@@ -218,3 +230,10 @@ class PlannerNamespace(socketio.AsyncNamespace):
         """
         logger.info(f"[planner => monitor] Lift command: {(actuator_id, position)}")
         await self.emit("lift", (actuator_id, position), namespace="/monitor")
+
+    async def on_crates_from_granary_available(self, sid, value: bool):
+        """
+        Callback on crates_from_granary_available message.
+        Message sent to the Robot through the beacon server when crates from granary become available or unavailable.
+        """
+        await self.emit("crates_from_granary_available", value, namespace="/beacon")
