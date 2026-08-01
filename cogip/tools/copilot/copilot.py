@@ -16,6 +16,7 @@ from cogip.protobuf import (
     PB_ActuatorState,
     PB_EmergencyStopStatus,
     PB_ParameterGetResponse,
+    PB_ParameterResetResponse,
     PB_ParameterSetResponse,
     PB_PathPose,
     PB_Pose,
@@ -55,6 +56,8 @@ parameter_get_response_uuid: int = 0x3007
 telemetry_enable_uuid: int = 0x3008
 telemetry_disable_uuid: int = 0x3009
 telemetry_data_uuid: int = 0x300A
+parameter_reset_uuid: int = 0x300B
+parameter_reset_response_uuid: int = 0x300C
 # Game: 0x4000 - 0x4FFF
 game_start_uuid: int = 0x4001
 game_end_uuid: int = 0x4002
@@ -109,6 +112,7 @@ class Copilot:
             blocked_uuid: self.handle_blocked,
             parameter_get_response_uuid: self.handle_parameter_get_response,
             parameter_set_response_uuid: self.handle_parameter_set_response,
+            parameter_reset_response_uuid: self.handle_parameter_reset_response,
             telemetry_data_uuid: self.handle_telemetry_data,
             emergency_stop_status_uuid: self.handle_emergency_stop_status,
             power_source_status_uuid: self.handle_power_source_status,
@@ -322,6 +326,29 @@ class Copilot:
 
         if self.sio_events.connected:
             await self.sio_events.emit("set_parameter_response", response)
+
+    @pb_exception_handler
+    async def handle_parameter_reset_response(self, message: bytes | None = None):
+        """
+        Handle parameter reset response from firmware.
+
+        Forward response to the firmware_parameter_manager.
+        """
+        pb_response = PB_ParameterResetResponse()
+
+        if message:
+            await self.loop.run_in_executor(None, pb_response.ParseFromString, message)
+
+        response = MessageToDict(
+            pb_response,
+            always_print_fields_with_no_presence=True,
+            preserving_proto_field_name=True,
+            use_integers_for_enums=True,
+        )
+        logger.info(f"[CAN] reset_response: {response}")
+
+        if self.sio_events.connected:
+            await self.sio_events.emit("reset_parameter_response", response)
 
     @pb_exception_handler
     async def handle_telemetry_data(self, message: bytes | None = None):
