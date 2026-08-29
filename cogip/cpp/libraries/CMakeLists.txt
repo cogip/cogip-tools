@@ -1,6 +1,7 @@
 add_subdirectory(logger)
 add_subdirectory(models)
 add_subdirectory(obstacles)
+add_subdirectory(obstacles_new)
 add_subdirectory(shared_memory)
 add_subdirectory(avoidance)
 add_subdirectory(utils)
