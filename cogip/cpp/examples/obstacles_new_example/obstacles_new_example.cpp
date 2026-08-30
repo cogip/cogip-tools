@@ -240,6 +240,30 @@ void run()
     }
     check("make_polygon 0 point", outcome, std::string("throws"));
 
+    outcome = "no throw";
+    // A chevron: the notch at (100, 100) turns the opposite way from the four other vertices.
+    const std::vector<coords_t> concave = {
+        {0.0, 0.0}, {200.0, 0.0}, {200.0, 200.0}, {100.0, 100.0}, {0.0, 200.0},
+    };
+    try {
+        Obstacle::make_polygon(concave.data(), concave.size());
+    } catch (const std::runtime_error&) {
+        outcome = "throws";
+    }
+    check("make_polygon concave", outcome, std::string("throws"));
+
+    outcome = "no throw";
+    // A rectangle with a redundant vertex halfway along its bottom edge: collinear, still convex.
+    const std::vector<coords_t> collinear = {
+        {0.0, 0.0}, {100.0, 0.0}, {200.0, 0.0}, {200.0, 100.0}, {0.0, 100.0},
+    };
+    try {
+        Obstacle::make_polygon(collinear.data(), collinear.size());
+    } catch (const std::runtime_error&) {
+        outcome = "throws";
+    }
+    check("make_polygon collinear", outcome, std::string("no throw"));
+
     std::cout << "\n[summary]\n"
               << "  checks " << checks_total << "\n"
               << "  failed " << checks_failed << "\n";

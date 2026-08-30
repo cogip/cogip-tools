@@ -77,10 +77,15 @@ public:
     /// later predicate read a cross product sign as inside or outside without re-deriving the
     /// winding. Fewer than three vertices bound no area, hence no winding to normalise.
     ///
-    /// Convexity is a documented precondition and is not checked.
+    /// Convexity is checked here rather than trusted. It costs one pass over at most sixteen
+    /// vertices, on a path walked once per obstacle update, whereas a concave outline fails
+    /// silently: its inflated hull is wrong where it turns inwards, so the planner routes through
+    /// the obstacle instead of around it. The check rejects a shape that turns both ways; it does
+    /// not rule out a self-intersecting one.
     ///
     /// @return The constructed obstacle.
-    /// @throws std::runtime_error if @p count is zero or above OBSTACLE_OUTLINE_SIZE_MAX.
+    /// @throws std::runtime_error if @p count is zero or above OBSTACLE_OUTLINE_SIZE_MAX, or if
+    ///         the outline is not convex.
     static Obstacle make_polygon(
         const models::coords_t* points,  ///< [in] Vertices, absolute mm. Not owned.
         std::size_t count,               ///< [in] Number of vertices.

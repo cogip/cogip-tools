@@ -32,6 +32,64 @@ static double signed_area_twice(const models::coords_t* points, std::size_t coun
     return total;
 }
 
+/// Smallest turn angle counted as a real turn, expressed as a squared sine so the test needs no
+/// square root. Below it three vertices count as collinear, which a convex polygon may have.
+static constexpr double CONVEXITY_EPSILON_SQUARED = 1e-18;
+
+/// Check that a polygon turns the same way at every vertex.
+///
+/// The cross product of two consecutive edges gives the direction of the turn, but its magnitude
+/// grows with the size of the obstacle, so an absolute threshold would reject a small polygon and
+/// accept a large one. Comparing the squared sine of the turn instead makes the threshold
+/// dimensionless, and squaring both sides removes the two square roots it would otherwise need.
+///
+/// Consistent turns do not prove the outline is simple: a star polygon turns one way throughout
+/// while crossing itself. Ruling that out needs the total turning to be a single revolution, which
+/// is a far more delicate computation for a shape no caller produces by accident, whereas a
+/// concave one is exactly what a caller does produce by accident.
+///
+/// @param[in] points Vertices, absolute mm.
+/// @param[in] count Number of vertices.
+/// @return True when every turn goes the same way, or when the outline bounds no area.
+static bool is_convex(const models::coords_t* points, std::size_t count)
+{
+    if (count < 3) {
+        // A point or a segment bounds no area, so there is no turn that could go the wrong way.
+        return true;
+    }
+
+    int turn = 0;
+
+    for (std::size_t current = 0; current < count; current++) {
+        const models::coords_t& a = points[current];
+        const models::coords_t& b = points[(current + 1) % count];
+        const models::coords_t& c = points[(current + 2) % count];
+
+        const double incoming_x = b.x - a.x;
+        const double incoming_y = b.y - a.y;
+        const double outgoing_x = c.x - b.x;
+        const double outgoing_y = c.y - b.y;
+
+        const double cross = incoming_x * outgoing_y - incoming_y * outgoing_x;
+        const double lengths_squared = (incoming_x * incoming_x + incoming_y * incoming_y)
+                                     * (outgoing_x * outgoing_x + outgoing_y * outgoing_y);
+
+        if (cross * cross <= CONVEXITY_EPSILON_SQUARED * lengths_squared) {
+            // Collinear, or a repeated vertex leaving no direction to compare.
+            continue;
+        }
+
+        const int sign = cross > 0.0 ? 1 : -1;
+        if (turn == 0) {
+            turn = sign;
+        } else if (sign != turn) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 Obstacle Obstacle::make_circle(double x, double y, double radius, obstacle_t* data)
 {
     Obstacle obstacle(data);
@@ -89,6 +147,10 @@ Obstacle Obstacle::make_polygon(const models::coords_t* points, std::size_t coun
     if (count > OBSTACLE_OUTLINE_SIZE_MAX) {
         throw std::runtime_error("obstacle outline is full");
     }
+    // Checked before anything is written, so a rejected outline leaves the destination untouched.
+    if (!is_convex(points, count)) {
+        throw std::runtime_error("obstacle outline is not convex");
+    }
 
     Obstacle obstacle(data);
     obstacle_t* obstacle_data = obstacle.data_;
@@ -100,7 +162,7 @@ Obstacle Obstacle::make_polygon(const models::coords_t* points, std::size_t coun
     obstacle_data->corner_radius = 0.0;
 
     std::copy(points, points + count, obstacle_data->outline);
-    
+
     // Normalise the winding once, here, rather than letting every future predicate assume it.
     // Below three vertices there is no area, hence no winding to speak of.
     if (count >= 3 && signed_area_twice(obstacle_data->outline, count) < 0.0) {
