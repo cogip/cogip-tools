@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 320 165" xmlns="http://www.w3.org/2000/svg">
+  <!-- Summing with a convex polygon Q lands back in the same representation:
+       P (+) Q is again a convex polygon, and the radius rides along untouched. -->
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g font-family="sans-serif" font-size="11" fill="#334455">
+    <rect x="34" y="72" width="26" height="18" fill="none"
+          stroke="#334455" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="47" y="106" text-anchor="middle">Q</text>
+    <text x="47" y="120" text-anchor="middle" fill="#667788">robot footprint</text>
+
+    <rect x="160" y="62" width="70" height="46" fill="#cfd8e8"
+          stroke="#cfd8e8" stroke-width="28" stroke-linejoin="round"/>
+    <rect x="160" y="62" width="70" height="46" fill="none"
+          stroke="#8899bb" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <rect x="173" y="71" width="44" height="28" fill="none"
+          stroke="#334455" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="195" y="89" text-anchor="middle">P</text>
+
+    <line x1="232" y1="66" x2="256" y2="52" stroke="#8899bb" stroke-width="1"/>
+    <text x="258" y="50" fill="#8899bb">P &#8853; Q</text>
+
+    <line x1="244" y1="95" x2="262" y2="108" stroke="#7788aa" stroke-width="1"/>
+    <text x="264" y="112" fill="#667788">&#8853; D(r)</text>
+
+    <text x="160" y="152" text-anchor="middle">(P &#8853; D(r)) &#8853; Q = (P &#8853; Q) &#8853; D(r)</text>
+  </g>
+</svg>

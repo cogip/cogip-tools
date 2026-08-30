@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 430 145" xmlns="http://www.w3.org/2000/svg">
+  <!-- The same two fields describe every shape. Dashed is the outline, filled is
+       the outline grown by the corner radius. Only the left three are built by a
+       factory; the right one is what any of them becomes once inflated. -->
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g font-family="sans-serif" font-size="10" fill="#334455">
+    <text x="165" y="18" text-anchor="middle" fill="#667788">built by a factory</text>
+    <text x="375" y="18" text-anchor="middle" fill="#667788">after inflation</text>
+    <line x1="325" y1="10" x2="325" y2="136" stroke="#c8d0dc" stroke-width="1"
+          stroke-dasharray="4 4"/>
+
+    <circle cx="55" cy="67" r="28" fill="#cfd8e8"/>
+    <circle cx="55" cy="67" r="2.5" fill="#334455"/>
+    <text x="55" y="116" text-anchor="middle">disc</text>
+    <text x="55" y="129" text-anchor="middle" fill="#667788">1 point, r = R</text>
+
+    <rect x="120" y="45" width="66" height="44" fill="#cfd8e8"
+          stroke="#334455" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="153" y="116" text-anchor="middle">rectangle</text>
+    <text x="153" y="129" text-anchor="middle" fill="#667788">4 points, r = 0</text>
+
+    <polygon points="270,37 293.5,48.3 299.2,73.7 283,94 257,94 240.7,73.7 246.5,48.3"
+             fill="#cfd8e8" stroke="#334455" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="270" y="116" text-anchor="middle">polygon</text>
+    <text x="270" y="129" text-anchor="middle" fill="#667788">7 points, r = 0</text>
+
+    <polygon points="375,45 392.2,53.3 396.5,71.9 384.5,86.8 365.5,86.8 353.5,71.9 357.8,53.3"
+             fill="#cfd8e8" stroke="#cfd8e8" stroke-width="24" stroke-linejoin="round"/>
+    <polygon points="375,45 392.2,53.3 396.5,71.9 384.5,86.8 365.5,86.8 353.5,71.9 357.8,53.3"
+             fill="none" stroke="#334455" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="375" y="116" text-anchor="middle">same polygon</text>
+    <text x="375" y="129" text-anchor="middle" fill="#667788">7 points, r &gt; 0</text>
+  </g>
+</svg>
