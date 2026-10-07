@@ -13,6 +13,27 @@ class FixedObstacleID(IntEnum):
     OppositeNest = auto()
     Table = auto()
     CratesFromGranary = auto()
+    NinjaArea1 = auto()
+    NinjaArea2 = auto()
+    NinjaDeposit = auto()
+    NinjaDropZone = auto()
+    NinjaCratesZone = auto()
+    NinjaCrate1 = auto()
+    NinjaCrate2 = auto()
+    NinjaCrate3 = auto()
+    NinjaCrate4 = auto()
+
+
+class MirrorMode(IntEnum):
+    """
+    How a fixed obstacle maps to the current camp when pushed to the
+    avoidance/monitor shared memory.
+    """
+
+    # Camp-absolute: same physical position in both camps, pushed as stored.
+    NONE = auto()
+    # Camp-relative: stored for the default frame, y mirrored for the camp.
+    MIRROR = auto()
 
 
 class FixedObstacle(Vertex):
@@ -24,6 +45,7 @@ class FixedObstacle(Vertex):
     length: float
     width: float
     enabled: bool = True
+    mirror_mode: MirrorMode = MirrorMode.MIRROR
 
 
 class CollectionAreaID(IntEnum):

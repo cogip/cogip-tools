@@ -10,6 +10,7 @@ from cogip.models.artifacts import (
     CollectionAreaID,
     FixedObstacle,
     FixedObstacleID,
+    MirrorMode,
     Pantry,
     PantryID,
     collection_areas,
@@ -152,14 +153,13 @@ class GameContext:
             width=450,
             id=FixedObstacleID.Granary,
             enabled=self.shared_properties.robot_id != 2,
+            mirror_mode=MirrorMode.NONE,
         )
 
         # Nest
         self.fixed_obstacles[FixedObstacleID.Nest] = FixedObstacle(
-            **AdaptedPose(
-                x=775 if self.shared_properties.table == TableEnum.Game else -225,
-                y=-1200,
-            ).model_dump(include={"x", "y"}),
+            x=775 if self.shared_properties.table == TableEnum.Game else -225,
+            y=-1200,
             length=600,
             width=450,
             id=FixedObstacleID.Nest,
@@ -168,29 +168,108 @@ class GameContext:
 
         # Opposite Nest
         self.fixed_obstacles[FixedObstacleID.OppositeNest] = FixedObstacle(
-            **AdaptedPose(x=775, y=1200).model_dump(include={"x", "y"}),
+            x=775,
+            y=1200,
             length=600,
             width=450,
             id=FixedObstacleID.OppositeNest,
+            enabled=self.shared_properties.robot_id == 2,
         )
 
         # Table
+        # Width reduced by 40 mm vs the table's true span so the inflated east
+        # edge (center.x + (width + robot_width)/2) leaves enough room for the
+        # Ninja's pantry-deposit pose at x=620 to fall outside the obstacle.
         self.fixed_obstacles[FixedObstacleID.Table] = FixedObstacle(
             x=-225 if self.shared_properties.table == TableEnum.Game else -725,
             y=0 if self.shared_properties.table == TableEnum.Game else -750,
             length=3000 if self.shared_properties.table == TableEnum.Game else 1500,
-            width=1550 if self.shared_properties.table == TableEnum.Game else 550,
+            width=1510 if self.shared_properties.table == TableEnum.Game else 510,
             id=FixedObstacleID.Table,
             enabled=self.shared_properties.robot_id == 2,
+            mirror_mode=MirrorMode.NONE,
         )
 
         # Crates from granary
         self.fixed_obstacles[FixedObstacleID.CratesFromGranary] = FixedObstacle(
-            **AdaptedPose(x=475, y=-700).model_dump(include={"x", "y"}),
+            x=475,
+            y=-700,
             length=150,
             width=200,
             id=FixedObstacleID.CratesFromGranary,
             enabled=self.shared_properties.robot_id == 1 and self.shared_properties.table == TableEnum.Game,
+        )
+
+        # Ninja Area 1: rectangle (650..800, -450..-350), center (725, -400),
+        # 150 x 100 mm. Holds nut crates the Ninja picks up; enabled during
+        # transit so the avoidance routes around it, disabled by the pickup
+        # action while the robot enters to collect.
+        self.fixed_obstacles[FixedObstacleID.NinjaArea1] = FixedObstacle(
+            x=725,
+            y=-400,
+            width=150,
+            length=100,
+            id=FixedObstacleID.NinjaArea1,
+            enabled=self.shared_properties.robot_id == 2,
+        )
+
+        # Ninja Area 2: rectangle (700..850, -200..-100), center (775, -150),
+        # 150 x 100 mm. Same role as NinjaArea1 for the upper crate location.
+        self.fixed_obstacles[FixedObstacleID.NinjaArea2] = FixedObstacle(
+            x=820,
+            y=-200,
+            width=140,
+            length=100,
+            id=FixedObstacleID.NinjaArea2,
+            enabled=self.shared_properties.robot_id == 2,
+        )
+
+        # Ninja Deposit: zone where BuildGroup leaves the assembled nut crates,
+        # initial corners (750, -150) and (500, -350) → displayed bbox of
+        # 250 x 200 mm centered at (625, -250). Enlarged by 20% on each axis,
+        # then widened 100 mm along y (east-west) → displayed bbox of
+        # 300 x 340 mm. `planner.update_obstacles` inflates each fixed
+        # obstacle by `robot_width = 160 mm`, so the raw width/length stored
+        # here are shrunk by 160 mm to land the inflated bbox at the desired
+        # size.
+        # Disabled by default; enabled in BuildGroup `before_pose17` so the
+        # avoidance routes around the released crates from then on, then
+        # disabled again before PantryDeposit pose 5 dives into the area.
+        self.fixed_obstacles[FixedObstacleID.NinjaDeposit] = FixedObstacle(
+            x=675,
+            y=-250,
+            width=160,
+            length=200,
+            id=FixedObstacleID.NinjaDeposit,
+            enabled=False,
+        )
+
+        # Ninja Drop Zone: raw rectangle 150 x 150 mm centered at (675, -700).
+        # `length` (y / east-west) shrunk by 50 mm vs the initial 200 mm
+        # spec. Represents the start-area crate stacks; enabled by default
+        # so the avoidance routes around them, disabled once DropFour
+        # finishes its first deposit (pose 1) and re-enabled by pose 6
+        # before parking west of the zone.
+        self.fixed_obstacles[FixedObstacleID.NinjaDropZone] = FixedObstacle(
+            x=675,
+            y=-700,
+            width=150,
+            length=100,
+            id=FixedObstacleID.NinjaDropZone,
+            enabled=False,
+        )
+
+        # Ninja Crates Zone: raw rectangle 150 x 150 mm centered at
+        # (675, -710) — pose 8 raw y minus 75 mm. Holds 3 crates the Ninja
+        # will pick up in a separate action. Disabled by default; enabled
+        # by DropFour `after_pose9` once the shake/recul moves are done.
+        self.fixed_obstacles[FixedObstacleID.NinjaCratesZone] = FixedObstacle(
+            x=675,
+            y=-790,
+            width=150,
+            length=150,
+            id=FixedObstacleID.NinjaCratesZone,
+            enabled=False,
         )
 
     def create_actuators_states(self):
