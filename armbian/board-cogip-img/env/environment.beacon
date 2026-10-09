@@ -1,0 +1,7 @@
+# CLASS=BEACON (ROBOT_ID=0). Runs cogip-server-beacon + dashboard only, no
+# planner/detector/copilot, so no robot geometry. ROBOT_ID is the only build-time
+# sub (809ROBOT_ID -> 8090).
+
+# General
+VIRTUAL_ENV=/opt/.venv
+COGIP_SOCKETIO_SERVER_URL=http://localhost:809ROBOT_ID

@@ -1,0 +1,8 @@
+# Force any wireless interface to be named wlan0, whatever the board calls it
+# (wlP1p1s0 on Rockchip, etc). Applied by udev at boot, so the static
+# wpa_supplicant@wlan0 unit and networkd configs are board-agnostic.
+[Match]
+Type=wlan
+
+[Link]
+Name=wlan0

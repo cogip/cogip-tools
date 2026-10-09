@@ -1,0 +1,21 @@
+# --- COGIP peripherals ---
+# Pi4 robots (robot / pami / ninja). disable-bt frees the PL011 for the console
+# (ttyAMA0). uart2 = MCU logger (ttyAMA2, GPIO0/1), uart4 = lidar (ttyAMA4,
+# GPIO8/9). NO uart5: it maps GPIO12/13 (TXD5/RXD5) and would steal GPIO13 from
+# the ninja/pami RGB LED.
+enable_uart=1
+dtoverlay=disable-bt
+dtoverlay=uart2
+dtoverlay=uart4
+dtparam=i2c_arm=on
+dtparam=i2c1=on
+dtoverlay=spi1-1cs,cs0_pin=16                               # SPI1 CE0 for CAN
+dtoverlay=mcp251xfd,spi1-0,oscillator=20000000,interrupt=4  # CAN-FD mcp2518
+dtoverlay=i2c-rtc,pcf8523
+# Camera: explicit imx219 overlay, exactly like raspios. Works only with the
+# downstream unicam driver built by custom_kernel_config__cogip_unicam_legacy;
+# it matches the csi node's brcm,bcm2835-unicam compatible and libcamera's vc4
+# pipeline drives it. gpu_mem matches raspios.
+camera_auto_detect=0
+dtoverlay=imx219
+gpu_mem=128

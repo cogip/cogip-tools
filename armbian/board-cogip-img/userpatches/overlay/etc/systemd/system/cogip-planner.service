@@ -1,0 +1,16 @@
+[Unit]
+Description=COGIP Planner
+
+After=cogip-server.service
+BindsTo=cogip-server.service
+
+[Service]
+Type=simple
+Restart=on-failure
+WorkingDirectory=/opt
+ExecStart=uv run --no-sync cogip-planner
+RestartSec=5
+EnvironmentFile=/etc/environment
+
+[Install]
+WantedBy=multi-user.target

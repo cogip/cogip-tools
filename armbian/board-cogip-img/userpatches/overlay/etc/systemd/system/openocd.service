@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenOCD Server
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/openocd -f interface/rpi-cogip.cfg
+Restart=on-failure
+RestartSec=10
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

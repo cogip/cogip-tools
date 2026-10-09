@@ -1,0 +1,9 @@
+# --- COGIP beacon (Raspberry Pi 5) ---
+# The beacon runs on a Pi5 (same rpi4b image). The imx708 comes up through the
+# RP1 CFE + PiSP stack (no unicam); explicit overlay like the robots. None of the
+# Pi4 robot overlays apply, and openocd GPIO-SWD (iomem=relaxed) is Pi4-only.
+camera_auto_detect=0
+dtoverlay=imx708
+# TODO: fold in the rest of the running raspios Pi5 config.txt once captured
+# (keep only camera + any beacon-specific HW; networking is handled by the
+# systemd-networkd overlay, not config.txt).

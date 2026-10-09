@@ -1,0 +1,14 @@
+# Filled Wi-Fi config holds the passphrase, keep it out of the repo.
+board-probe-img/wpa_supplicant.conf
+board-probe-img/wpa_supplicant-wlan0.conf
+board-probe-img/armbian_first_run.txt
+# Local feasibility reports pulled off boards.
+board-probe-img/cogip-hw-report.txt
+cogip-hw-report.txt
+# Site-specific wlan0 static IP.
+board-probe-img/wlan0.network
+# board-cogip-img site-specific (same convention as board-probe-img)
+board-cogip-img/wpa_supplicant.conf
+board-cogip-img/wpa_supplicant-wlan0.conf
+# Operator authorized_keys drop-in (baked into root for passwordless ssh).
+board-cogip-img/authorized_keys

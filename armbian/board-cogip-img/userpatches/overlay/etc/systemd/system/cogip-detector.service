@@ -1,0 +1,17 @@
+[Unit]
+Description=COGIP Detector
+
+After=cogip-server.service
+BindsTo=cogip-server.service
+
+[Service]
+Type=notify
+Restart=on-failure
+WorkingDirectory=/opt
+ExecStartPre=/opt/.venv/bin/python /opt/.venv/lib/python3.13/site-packages/cogip/tools/detector/check_lidar_status.py
+ExecStart=/opt/.venv/bin/python -m cogip.tools.detector
+RestartSec=5
+EnvironmentFile=/etc/environment
+
+[Install]
+WantedBy=multi-user.target

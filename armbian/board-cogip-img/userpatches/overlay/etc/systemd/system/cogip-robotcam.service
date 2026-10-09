@@ -1,0 +1,16 @@
+[Unit]
+Description=COGIP Robotcam
+
+After=cogip-server.service
+BindsTo=cogip-server.service
+
+[Service]
+Type=notify
+Restart=on-failure
+WorkingDirectory=/opt
+ExecStart=/opt/.venv/bin/python -m cogip.tools.robotcam
+RestartSec=5
+EnvironmentFile=/etc/environment
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=COGIP Phase 0 hardware feasibility report
+After=multi-user.target systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Write to the boot partition so it is readable by pulling the SD, no network
+# needed. /boot/firmware on RPi-style boards, /boot elsewhere.
+ExecStart=/bin/bash -c 'd=/boot; [ -d /boot/firmware ] && d=/boot/firmware; /usr/local/sbin/cogip-check-hw.sh "$d/cogip-hw-report.txt"; cp -f "$d/cogip-hw-report.txt" /root/ 2>/dev/null || true'
+
+[Install]
+WantedBy=multi-user.target
