@@ -19,6 +19,7 @@ from cogip.protobuf import (
     PB_ParameterSetResponse,
     PB_PathPose,
     PB_Pose,
+    PB_PowerRailsMeasures,
     PB_PowerRailsStatus,
     PB_PowerSourceStatus,
     PB_State,
@@ -63,6 +64,7 @@ game_reset_uuid: int = 0x4003
 emergency_stop_status_uuid: int = 0x5001
 power_source_status_uuid: int = 0x5002
 power_rails_status_uuid: int = 0x5003
+power_rails_measures_uuid: int = 0x5004
 # Board: 0xF000 - 0xFFFF
 
 
@@ -113,6 +115,7 @@ class Copilot:
             emergency_stop_status_uuid: self.handle_emergency_stop_status,
             power_source_status_uuid: self.handle_power_source_status,
             power_rails_status_uuid: self.handle_power_rails_status,
+            power_rails_measures_uuid: self.handle_power_rails_measures,
         }
 
         self.pbcom = PBCom(can_channel, can_bitrate, canfd_data_bitrate, pb_message_handlers)
@@ -414,6 +417,29 @@ class Copilot:
 
         if self.sio_events.connected:
             await self.sio_events.emit("power_rails_status", status)
+
+    @pb_exception_handler
+    async def handle_power_rails_measures(self, message: bytes | None = None) -> None:
+        """
+        Handle power rails measures from power supply board.
+
+        Forward measures to connected clients.
+        """
+        pb_measures = PB_PowerRailsMeasures()
+
+        if message:
+            await self.loop.run_in_executor(None, pb_measures.ParseFromString, message)
+
+        measures = MessageToDict(
+            pb_measures,
+            always_print_fields_with_no_presence=True,
+            preserving_proto_field_name=True,
+            use_integers_for_enums=True,
+        )
+        logger.debug(f"[CAN] power rails measures: {measures}")
+
+        if self.sio_events.connected:
+            await self.sio_events.emit("power_rails_measures", measures)
 
     async def new_path_event_loop(self):
         """
