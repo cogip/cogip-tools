@@ -328,7 +328,7 @@ class Copilot:
         """
         Handle parameter telemetry data from firmware.
 
-        Forward response to the TODO:
+        Forward response to the connected clients
         """
         pb_telemetry = PB_TelemetryData()
 
