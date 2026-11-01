@@ -34,6 +34,7 @@ class CopilotNamespace(socketio.AsyncNamespace):
     async def on_disconnect(self, sid):
         self.context.copilot_sid = None
         self.context.shell_menu = None
+        self.context.power_supply.clear()
         await self.emit("copilot_disconnected", namespace="/planner")
         logger.info("Copilot disconnected.")
 
@@ -129,3 +130,35 @@ class CopilotNamespace(socketio.AsyncNamespace):
         """
         logger.debug(f"[copilot => telemetry] Telemetry Data: {telemetry}")
         await self.emit("telemetry_data", telemetry, namespace="/telemetry")
+
+    async def on_emergency_stop_status(self, sid, emergency_stop_status: dict[str, Any]) -> None:
+        """
+        Callback on emergency_stop_status message from copilot.
+        Forward to dashboards.
+        """
+        self.context.power_supply["emergency_stop_status"] = emergency_stop_status
+        await self.emit("emergency_stop_status", (self.context.robot_id, emergency_stop_status), namespace="/dashboard")
+
+    async def on_power_source_status(self, sid, power_source_status: dict[str, Any]) -> None:
+        """
+        Callback on power_source_status message from copilot.
+        Forward to dashboards.
+        """
+        self.context.power_supply["power_source_status"] = power_source_status
+        await self.emit("power_source_status", (self.context.robot_id, power_source_status), namespace="/dashboard")
+
+    async def on_power_rails_status(self, sid, power_rails_status: dict[str, Any]) -> None:
+        """
+        Callback on power_rails_status message from copilot.
+        Forward to dashboards.
+        """
+        self.context.power_supply["power_rails_status"] = power_rails_status
+        await self.emit("power_rails_status", (self.context.robot_id, power_rails_status), namespace="/dashboard")
+
+    async def on_power_rails_measures(self, sid, power_rails_measures: dict[str, Any]) -> None:
+        """
+        Callback on power_rails_measures message from copilot.
+        Forward to dashboards.
+        """
+        self.context.power_supply["power_rails_measures"] = power_rails_measures
+        await self.emit("power_rails_measures", (self.context.robot_id, power_rails_measures), namespace="/dashboard")
