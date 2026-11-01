@@ -71,6 +71,14 @@
           </button>
           {% endif %}
 
+          {% if robot_id == 1 %}
+          <a
+            class="relative w-14 h-14 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70"
+            id="buttonPowerSupply" href="/power_supply" target="_blank">
+            <img src="{{ url_for('static', path='img/power.svg') }}" class="w-full h-full" />
+          </a>
+          {% endif %}
+
           {% if robot_id == 0 %}
           <button
             class="relative w-14 h-14 rounded-lg border border-gray-800 bg-zinc-300 bg-opacity-30 hover:bg-zinc-800 hover:opacity-70"

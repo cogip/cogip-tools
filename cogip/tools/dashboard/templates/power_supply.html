@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html style="font-size: 16px; height: 100%; margin: 0; font-family: Arial, Helvetica, sans-serif">
+
+<head>
+  <title>COGIP Power Supply Monitoring</title>
+  <link rel="shortcut icon" href="#" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/prod/output.css') }}" />
+</head>
+
+<body class="flex flex-col h-full w-full bg-zinc-900 text-grey-color" data-robot-id="{{ robot_id }}">
+  <div class="flex items-center justify-between p-4 border-b border-gray-600">
+    <h5 class="text-lg font-medium">Power Supply - Robot {{ robot_id }}</h5>
+    <span id="connection">
+      <img class="w-[20px]" src="{{ url_for('static', path='img/cross_red_circle.svg') }}" />
+    </span>
+  </div>
+
+  {% if robot_id == 1 %}
+  <div class="flex flex-col items-center gap-8 p-4">
+    <div>
+      <h5 class="text-lg font-medium text-left mb-2">Status</h5>
+      <table>
+        <tr>
+          <th class="border border-gray-300 px-4 py-2 font-medium">Emergency stop</th>
+          <th class="border border-gray-300 px-4 py-2 font-medium">Battery</th>
+          <th class="border border-gray-300 px-4 py-2 font-medium">DC supply</th>
+        </tr>
+        <tr>
+          <td class="border border-gray-300 px-4 py-2" id="powerEmergencyStop">—</td>
+          <td class="border border-gray-300 px-4 py-2" id="powerBattery">—</td>
+          <td class="border border-gray-300 px-4 py-2" id="powerDcSupply">—</td>
+        </tr>
+      </table>
+    </div>
+    <div>
+      <h5 class="text-lg font-medium text-left mb-2">Rails</h5>
+      <table>
+        <tr>
+          <th class="border border-gray-300 px-4 py-2 font-medium">Rail</th>
+          <th class="border border-gray-300 px-4 py-2 font-medium">Power good</th>
+          <th class="border border-gray-300 px-4 py-2 font-medium">Voltage (V)</th>
+          <th class="border border-gray-300 px-4 py-2 font-medium">Current (mA)</th>
+          <th class="border border-gray-300 px-4 py-2 font-medium">Power (W)</th>
+        </tr>
+        {% for rail, label in [("p3V3", "3.3V"), ("p5V0", "5.0V"), ("p7V5", "7.5V"), ("pxVx", "Variable"), ("p12V0", "12V")] %}
+        <tr>
+          <td class="border border-gray-300 px-4 py-2">{{ label }}</td>
+          <td class="border border-gray-300 px-4 py-2" id="rail_{{ rail }}_pgood">
+            {%- if rail == "p12V0" -%}
+            {#- The 12V rail has no power-good signal. -#}
+            <span class="muted">N/A</span>
+            {%- else -%}
+            —
+            {%- endif -%}
+          </td>
+          <td class="border border-gray-300 px-4 py-2" id="rail_{{ rail }}_voltage">—</td>
+          <td class="border border-gray-300 px-4 py-2" id="rail_{{ rail }}_current">—</td>
+          <td class="border border-gray-300 px-4 py-2" id="rail_{{ rail }}_power">—</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="{{ url_for('static', path='js/external/socket.io.min.js') }}"></script>
+
+  <script type="module">
+    import * as powerSupplyModule from "../static/js/PowerSupplyModule.js";
+
+    const robotId = parseInt(document.body.dataset.robotId);
+    const connection = document.querySelector("#connection img");
+    const okIcon = "{{ url_for('static', path='img/check_green_circle.svg') }}";
+    const koIcon = "{{ url_for('static', path='img/cross_red_circle.svg') }}";
+
+    const socketioPort = parseInt(window.location.port) + 10;
+
+    io.connect(`:${socketioPort}/dashboard`)
+      .on("connect", function () {
+        connection.src = okIcon;
+        this.emit("connected");
+      })
+      .on("disconnect", function () {
+        connection.src = koIcon;
+        powerSupplyModule.reset();
+      })
+      .on("emergency_stop_status", function (robot_id, msg) {
+        if (robot_id === robotId) powerSupplyModule.updateEmergencyStop(msg);
+      })
+      .on("power_source_status", function (robot_id, msg) {
+        if (robot_id === robotId) powerSupplyModule.updatePowerSource(msg);
+      })
+      .on("power_rails_status", function (robot_id, msg) {
+        if (robot_id === robotId) powerSupplyModule.updatePowerRailsStatus(msg);
+      })
+      .on("power_rails_measures", function (robot_id, msg) {
+        if (robot_id === robotId) powerSupplyModule.updatePowerRailsMeasures(msg);
+      });
+  </script>
+  {% else %}
+  <p class="p-4">Power supply monitoring is not available on this robot.</p>
+  {% endif %}
+</body>
+
+</html>
