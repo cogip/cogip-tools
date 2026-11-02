@@ -11,17 +11,20 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
+import PB_RailMeasure_pb2 as PB__RailMeasure__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14PB_PowerSupply.proto\"e\n\x13PB_PowerRailsStatus\x12\x12\n\np3V3_pgood\x18\x01 \x01(\x08\x12\x12\n\np5V0_pgood\x18\x02 \x01(\x08\x12\x12\n\np7V5_pgood\x18\x03 \x01(\x08\x12\x12\n\npxVx_pgood\x18\x04 \x01(\x08\"F\n\x14PB_PowerSourceStatus\x12\x15\n\rbattery_valid\x18\x01 \x01(\x08\x12\x17\n\x0f\x64\x63_supply_valid\x18\x02 \x01(\x08\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14PB_PowerSupply.proto\x1a\x14PB_RailMeasure.proto\"e\n\x13PB_PowerRailsStatus\x12\x12\n\np3V3_pgood\x18\x01 \x01(\x08\x12\x12\n\np5V0_pgood\x18\x02 \x01(\x08\x12\x12\n\np7V5_pgood\x18\x03 \x01(\x08\x12\x12\n\npxVx_pgood\x18\x04 \x01(\x08\"F\n\x14PB_PowerSourceStatus\x12\x15\n\rbattery_valid\x18\x01 \x01(\x08\x12\x17\n\x0f\x64\x63_supply_valid\x18\x02 \x01(\x08\"\xb3\x01\n\x15PB_PowerRailsMeasures\x12\x1d\n\x04p3V3\x18\x01 \x01(\x0b\x32\x0f.PB_RailMeasure\x12\x1d\n\x04p5V0\x18\x02 \x01(\x0b\x32\x0f.PB_RailMeasure\x12\x1d\n\x04p7V5\x18\x03 \x01(\x0b\x32\x0f.PB_RailMeasure\x12\x1d\n\x04pxVx\x18\x04 \x01(\x0b\x32\x0f.PB_RailMeasure\x12\x1e\n\x05p12V0\x18\x05 \x01(\x0b\x32\x0f.PB_RailMeasureb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'PB_PowerSupply_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _PB_POWERRAILSSTATUS._serialized_start=24
-  _PB_POWERRAILSSTATUS._serialized_end=125
-  _PB_POWERSOURCESTATUS._serialized_start=127
-  _PB_POWERSOURCESTATUS._serialized_end=197
+  _PB_POWERRAILSSTATUS._serialized_start=46
+  _PB_POWERRAILSSTATUS._serialized_end=147
+  _PB_POWERSOURCESTATUS._serialized_start=149
+  _PB_POWERSOURCESTATUS._serialized_end=219
+  _PB_POWERRAILSMEASURES._serialized_start=222
+  _PB_POWERRAILSMEASURES._serialized_end=401
 # @@protoc_insertion_point(module_scope)

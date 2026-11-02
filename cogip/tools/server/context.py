@@ -1,5 +1,6 @@
 import platform
 from dataclasses import dataclass, field
+from typing import Any
 
 from cogip import models
 from cogip.utils.singleton import Singleton
@@ -26,6 +27,7 @@ class Context(metaclass=Singleton):
         virtual_planner:    Whether planner is virtual or not
         virtual_detector:   Whether detector is virtual or not
         robot_added:        Whether robot has been added or not
+        power_supply:       last received power supply messages, by event name
     """
 
     robot_id: int | None = None
@@ -43,3 +45,4 @@ class Context(metaclass=Singleton):
     virtual_planner = False
     virtual_detector = False
     robot_added = False
+    power_supply: dict[str, dict[str, Any]] = field(default_factory=dict)

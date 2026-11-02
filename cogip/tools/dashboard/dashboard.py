@@ -44,3 +44,4 @@ class Dashboard:
 
         # Register routes
         self.app.include_router(routes.BeaconRouter(self.templates), prefix="")
+        self.app.include_router(routes.PowerSupplyRouter(self.templates), prefix="")

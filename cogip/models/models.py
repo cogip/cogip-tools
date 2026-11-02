@@ -406,10 +406,10 @@ class EmergencyStopStatus(BaseModel):
     Model representing the emergency stop button status.
 
     Attributes:
-        emergency_stop: Emergency stop button status (True = released, False = engaged)
+        emergency_stop_engaged: Emergency stop button status (True = engaged, False = released)
     """
 
-    emergency_stop: bool = False
+    emergency_stop_engaged: bool = False
 
 
 class PowerSourceStatus(BaseModel):
@@ -423,3 +423,35 @@ class PowerSourceStatus(BaseModel):
 
     battery_valid: bool = False
     dc_supply_valid: bool = False
+
+
+class RailMeasure(BaseModel):
+    """
+    Model representing the voltage and current measured on a power rail.
+
+    Attributes:
+        voltage_mv: Rail voltage in millivolts
+        current_ma: Rail current in milliamps
+    """
+
+    voltage_mv: int = 0
+    current_ma: int = 0
+
+
+class PowerRailsMeasures(BaseModel):
+    """
+    Model representing the measures of power rails.
+
+    Attributes:
+        p3V3: 3.3V rail measure
+        p5V0: 5.0V rail measure
+        p7V5: 7.5V rail measure
+        pxVx: Variable voltage rail measure
+        p12V0: 12.0V rail measure
+    """
+
+    p3V3: RailMeasure = RailMeasure()
+    p5V0: RailMeasure = RailMeasure()
+    p7V5: RailMeasure = RailMeasure()
+    pxVx: RailMeasure = RailMeasure()
+    p12V0: RailMeasure = RailMeasure()
